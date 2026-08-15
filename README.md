@@ -1,0 +1,2 @@
+# SCIT_14_TEAM_3
+DSA SCIT 14기 3조 팀프로젝트
