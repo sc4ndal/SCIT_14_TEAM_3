@@ -23,9 +23,10 @@ public class WebSecurityConfig {
 	private static final List<String> PUBLIC_URLS = List.of(
 			"/",
 			"/login",
+			"/signupSelect",
+			"/signup",
 			"/css/**",
-			"/member/join",
-			"/product/list"
+			"/js/**"
 	);
 
 	@Bean
@@ -40,12 +41,12 @@ public class WebSecurityConfig {
 
 				.formLogin(formLogin -> formLogin
 						.loginPage("/login")
-						.defaultSuccessUrl("/product/list", true)
+						.defaultSuccessUrl("/", true)
 						.permitAll()
 				)
 
 				.logout(logout -> logout
-						.logoutSuccessUrl("/product/list")
+						.logoutSuccessUrl("/")
 				);
 
 		return http.build();
