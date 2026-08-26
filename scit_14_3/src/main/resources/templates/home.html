@@ -4,13 +4,15 @@
 	  xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Title</title>
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+	<meta content="width=device-width, initial-scale=1.0" name="viewport">
+	<script defer src="/js/common.js"></script>
 
 	<title>佛선자</title>
 
-	<link rel="stylesheet"
-	      th:href="@{/css/home.css}"
-	      href="/css/home.css">
+	<link rel="stylesheet" th:href="@{/css/home.css}" type="text/css">
+	<script defer th:src="@{/js/home.js}"></script>
 </head>
 
 <body>
@@ -22,7 +24,7 @@
 
 	<div class="header-inner">
 
-		<a href="/" class="brand">
+		<a class="brand" href="/">
 
             <span class="brand-circle">
                 禪
@@ -38,26 +40,26 @@
 		<div class="header-right">
 
 			<div class="language-area">
-
-				<button type="button"
-				        class="language-button active"
-				        data-lang="ko">
+				<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+				<button class="language-button active"
+				        data-lang="ko"
+				        type="button">
 					한국어
 				</button>
 
 				<span>·</span>
 
-				<button type="button"
-				        class="language-button"
-				        data-lang="ja">
+				<button class="language-button"
+				        data-lang="ja"
+				        type="button">
 					日本語
 				</button>
 
 				<span>·</span>
 
-				<button type="button"
-				        class="language-button"
-				        data-lang="en">
+				<button class="language-button"
+				        data-lang="en"
+				        type="button">
 					English
 				</button>
 
@@ -68,6 +70,19 @@
 
 
 			<nav class="member-menu">
+
+				<a href="/member/join">
+					회원가입
+				</a>
+
+				<a href="/login">
+					로그인
+				</a>
+
+				<a href="#">
+					마이페이지
+				</a>
+
 
 				<!-- ============================
 							미로그인 상태
@@ -146,7 +161,6 @@
 </header>
 
 
-
 <main>
 
 
@@ -182,7 +196,6 @@
 		</div>
 
 	</section>
-
 
 
 	<!-- =====================================================
@@ -243,7 +256,6 @@
 				</article>
 
 
-
 				<!-- 찾아보기 -->
 				<article class="type-item type-item-find">
 
@@ -279,15 +291,14 @@
 			</div>
 
 
-
 			<!-- =========================
                  IMAGE
             ========================== -->
 			<div class="feature-photo feature-photo-right">
 
 				<img
-						src="https://images.unsplash.com/photo-1448523183439-d2ac62aca997?w=1400&h=1000&fit=crop&auto=format"
-						alt="한국 사찰">
+						alt="한국 사찰"
+						src="https://images.unsplash.com/photo-1448523183439-d2ac62aca997?w=1400&h=1000&fit=crop&auto=format">
 
 				<div class="photo-gradient gradient-from-left"></div>
 
@@ -296,7 +307,6 @@
 		</div>
 
 	</section>
-
 
 
 	<!-- =====================================================
@@ -316,13 +326,12 @@
 			<div class="feature-photo feature-photo-left">
 
 				<img
-						src="https://images.unsplash.com/photo-1771321732667-881c52f78bbf?w=1400&h=1000&fit=crop&auto=format"
-						alt="숲속 사찰 길">
+						alt="숲속 사찰 길"
+						src="https://images.unsplash.com/photo-1771321732667-881c52f78bbf?w=1400&h=1000&fit=crop&auto=format">
 
 				<div class="photo-gradient gradient-from-right"></div>
 
 			</div>
-
 
 
 			<!-- =========================
@@ -362,7 +371,6 @@
 					</div>
 
 				</article>
-
 
 
 				<!-- 체험하기 -->
@@ -408,12 +416,10 @@
 	</section>
 
 
-
 	<!-- =====================================================
          DIVIDER
     ===================================================== -->
 	<div class="section-divider"></div>
-
 
 
 	<!-- =====================================================
@@ -431,7 +437,6 @@
 			</h2>
 
 
-
 			<div class="calendar-layout">
 
 
@@ -443,10 +448,10 @@
 
 					<div class="calendar-top">
 
-						<button type="button"
+						<button aria-label="이전 달"
 						        class="month-button"
 						        id="prevMonth"
-						        aria-label="이전 달">
+						        type="button">
 							‹
 						</button>
 
@@ -456,15 +461,14 @@
 						</strong>
 
 
-						<button type="button"
+						<button aria-label="다음 달"
 						        class="month-button"
 						        id="nextMonth"
-						        aria-label="다음 달">
+						        type="button">
 							›
 						</button>
 
 					</div>
-
 
 
 					<div class="week-row">
@@ -500,13 +504,11 @@
 					</div>
 
 
-
-					<div id="calendarGrid"
-					     class="calendar-grid">
+					<div class="calendar-grid"
+					     id="calendarGrid">
 					</div>
 
 				</div>
-
 
 
 				<!-- =========================
@@ -528,25 +530,19 @@
 </main>
 
 
-
 <!-- =====================================================
      BACK TO TOP
 ===================================================== -->
 
-<button type="button"
-        id="backToTop"
+<button aria-label="페이지 위로 이동"
         class="back-to-top"
-        aria-label="페이지 위로 이동">
+        id="backToTop"
+        type="button">
 
 	↑
 
 </button>
 
-
-
-<script th:src="@{/js/home.js}"
-        src="/js/home.js">
-</script>
 
 </body>
 </html>
