@@ -26,7 +26,8 @@ public class WebSecurityConfig {
 			"/signupSelect",
 			"/signup",
 			"/css/**",
-			"/js/**"
+			"/js/**",
+			"/images/**"
 	);
 
 	@Bean
