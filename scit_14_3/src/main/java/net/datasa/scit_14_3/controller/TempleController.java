@@ -8,9 +8,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
-@Controller
+@RestController //이 메서드가 리턴하는 건 화면이 아니라 그냥 데이터다.
+//@Controller // 프론트 화면용
 @RequiredArgsConstructor
 @RequestMapping("/temples")
 public class TempleController {
