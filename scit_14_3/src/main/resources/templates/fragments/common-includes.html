@@ -75,50 +75,76 @@
                 <div class="user-menu"
                      sec:authorize="isAuthenticated()">
 
-                    <!-- 프로필 아이콘 -->
-                    <a th:href="@{/mypage}"
-                       class="profile-button">
+                    <!-- 아이콘 + 닉네임 + 로그아웃 (한 줄) -->
+                    <div class="user-identity">
 
-        		    <span class="profile-icon">
-            	    👤
-					</span>
+                        <!-- 프로필 아이콘은 컬럼 추가 부담으로 빼기로 결정 (2026-08-26) -->
 
-                    </a>
+                        <!-- 닉네임
+                             TODO: 실제 인증 principal 필드에 맞게 th:text 연결
+                             예) th:text="${#authentication.principal.nickname}" -->
+                        <span class="user-nickname">
+                            닉네임명
+                        </span>
+
+                        <span class="identity-divider"></span>
+
+                        <!-- 로그아웃 -->
+                        <form th:action="@{/logout}"
+                              method="post"
+                              class="logout-form">
+
+                            <button type="submit"
+                                    class="logout-button">
+                                로그아웃
+                            </button>
+                        </form>
+
+                    </div>
 
 
-                    <!-- 마이페이지 dropdown -->
+                    <!-- 마이페이지 트리거 + dropdown
+                         user-identity 줄 바로 아래에 오버레이로 표시됨 -->
                     <div class="mypage-menu">
                         <a th:href="@{/mypage}"
                            class="mypage-title">
                             마이페이지
+
+                            <svg class="mypage-caret" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
                         </a>
 
                         <div class="mypage-dropdown">
 
-                            <a th:href="@{/mypage/profile}">
-                                회원정보
+                            <a th:href="@{/mypage/edit}">
+                                회원정보수정
                             </a>
-                            <a th:href="@{/mypage/temples}">
-                                관심사찰
+                            <a th:href="@{/mypage/reservations}">
+                                예약목록
                             </a>
-                            <a th:href="@{/mypage/events}">
-                                관심행사
+                            <a th:href="@{/mypage/reviews}">
+                                내가 쓴 리뷰
+                            </a>
+                            <a th:href="@{/mypage/favorites/temples}">
+                                관심 사찰
+                            </a>
+                            <a th:href="@{/mypage/favorites/events}">
+                                관심 행사
+                            </a>
+                            <a th:href="@{/mypage/favorites/quotes}">
+                                저장한 불교 한마디
+                            </a>
+                            <a th:href="@{/mypage/favorites/foods}">
+                                관심 사찰음식
+                            </a>
+                            <a th:href="@{/mypage/favorites/reviews}">
+                                좋아요한 리뷰
                             </a>
 
                         </div>
 
                     </div>
-
-
-                    <!-- 로그아웃 -->
-                    <form th:action="@{/logout}"
-                          method="post">
-
-                        <button type="submit"
-                                class="logout-button">
-                            로그아웃
-                        </button>
-                    </form>
 
                 </div>
 
