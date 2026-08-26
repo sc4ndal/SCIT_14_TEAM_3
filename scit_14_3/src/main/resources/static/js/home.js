@@ -1,41 +1,50 @@
-document.addEventListener("DOMContentLoaded", function () {
-
+document.addEventListener("DOMContentLoaded", () => {
 
     /* =====================================================
-       HEADER
+       HEADER + TOP BUTTON
     ===================================================== */
 
-    const header =
-        document.getElementById("siteHeader");
+    const header = document.getElementById("siteHeader");
+    const backToTop = document.getElementById("backToTop");
 
+    function onScroll() {
+        const scrollY = window.scrollY;
 
-    function updateHeader() {
+        header?.classList.toggle(
+            "scrolled",
+            scrollY > 20
+        );
 
-        if (window.scrollY > 20) {
-
-            header.classList.add("scrolled");
-
-        } else {
-
-            header.classList.remove("scrolled");
-
-        }
-
+        backToTop?.classList.toggle(
+            "show",
+            scrollY > 500
+        );
     }
-
 
     window.addEventListener(
         "scroll",
-        updateHeader
+        onScroll,
+        { passive: true }
+    );
+
+    onScroll();
+
+
+    backToTop?.addEventListener(
+        "click",
+        () => {
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+
+        }
     );
 
 
-    updateHeader();
-
-
-
     /* =====================================================
-       LANGUAGE BUTTON
+       LANGUAGE UI
     ===================================================== */
 
     const languageButtons =
@@ -45,20 +54,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     languageButtons.forEach(
-        function (button) {
+        button => {
 
             button.addEventListener(
                 "click",
-                function () {
+                () => {
 
                     languageButtons.forEach(
-                        function (other) {
-
+                        other =>
                             other.classList.remove(
                                 "active"
-                            );
-
-                        }
+                            )
                     );
 
 
@@ -73,74 +79,179 @@ document.addEventListener("DOMContentLoaded", function () {
     );
 
 
-
     /* =====================================================
-       FEATURE SUB MENU
+       FEATURE HOVER INTERACTION
     ===================================================== */
 
-    const typeItems =
+    const featureSections =
         document.querySelectorAll(
-            ".type-item"
+            ".feature-section"
         );
 
 
-    typeItems.forEach(
-        function (item) {
+    featureSections.forEach(
+        section => {
 
-            const title =
-                item.querySelector(
-                    ".type-title"
+            const typeItems =
+                section.querySelectorAll(
+                    ".type-item"
                 );
 
 
-            title.addEventListener(
-                "click",
-                function () {
+            function deactivateAll() {
+
+                typeItems.forEach(
+                    item =>
+                        item.classList.remove(
+                            "is-active"
+                        )
+                );
 
 
-                    const isOpen =
-                        item.classList.contains(
-                            "open"
+                section.classList.remove(
+                    "is-expanded",
+                    "active-first",
+                    "active-second"
+                );
+
+            }
+
+
+            typeItems.forEach(
+                (item, index) => {
+
+                    const title =
+                        item.querySelector(
+                            "h2.type-title"
                         );
 
 
-                    typeItems.forEach(
-                        function (other) {
+                    if (!title) {
+                        return;
+                    }
 
-                            other.classList.remove(
-                                "open"
+
+                    function activate() {
+
+                        deactivateAll();
+
+
+                        item.classList.add(
+                            "is-active"
+                        );
+
+
+                        section.classList.add(
+                            "is-expanded"
+                        );
+
+
+                        /*
+                            첫 번째 제목이 열리면
+                            아래 제목을 내려야 함
+                        */
+
+                        if (index === 0) {
+
+                            section.classList.add(
+                                "active-first"
+                            );
+
+                        } else {
+
+                            section.classList.add(
+                                "active-second"
+                            );
+
+                        }
+
+                    }
+
+
+                    title.addEventListener(
+                        "mouseenter",
+                        activate
+                    );
+
+
+                    /*
+                        제목 → 서브메뉴로 마우스를
+                        옮길 때 닫히면 안 되므로
+                        item 전체에서 leave 처리
+                    */
+
+                    item.addEventListener(
+                        "mouseleave",
+                        () => {
+
+                            /*
+                                다음 프레임까지 기다려
+                                sub-menu hover 전환 안정화
+                            */
+
+                            requestAnimationFrame(
+                                () => {
+
+                                    if (
+                                        !item.matches(":hover")
+                                    ) {
+
+                                        deactivateAll();
+
+                                    }
+
+                                }
                             );
 
                         }
                     );
 
 
-                    if (!isOpen) {
+                    /*
+                        키보드 / 클릭 접근
+                    */
 
-                        item.classList.add(
-                            "open"
-                        );
+                    title.addEventListener(
+                        "click",
+                        () => {
 
-                    }
+                            const active =
+                                item.classList.contains(
+                                    "is-active"
+                                );
 
-                }
-            );
+
+                            if (active) {
+
+                                deactivateAll();
+
+                            } else {
+
+                                activate();
+
+                            }
+
+                        }
+                    );
 
 
-            title.addEventListener(
-                "keydown",
-                function (event) {
+                    title.addEventListener(
+                        "keydown",
+                        event => {
 
-                    if (
-                        event.key === "Enter" ||
-                        event.key === " "
-                    ) {
+                            if (
+                                event.key === "Enter" ||
+                                event.key === " "
+                            ) {
 
-                        event.preventDefault();
+                                event.preventDefault();
 
-                        title.click();
+                                title.click();
 
-                    }
+                            }
+
+                        }
+                    );
 
                 }
             );
@@ -149,9 +260,8 @@ document.addEventListener("DOMContentLoaded", function () {
     );
 
 
-
     /* =====================================================
-       FADE IN
+       SCROLL FADE-IN
     ===================================================== */
 
     const fadeSections =
@@ -160,136 +270,86 @@ document.addEventListener("DOMContentLoaded", function () {
         );
 
 
-    const observer =
-        new IntersectionObserver(
+    if ("IntersectionObserver" in window) {
 
-            function (entries) {
+        const observer =
+            new IntersectionObserver(
 
-                entries.forEach(
-                    function (entry) {
+                entries => {
 
-                        if (
-                            entry.isIntersecting
-                        ) {
+                    entries.forEach(
+                        entry => {
 
-                            entry.target.classList.add(
-                                "visible"
-                            );
+                            if (
+                                entry.isIntersecting
+                            ) {
+
+                                entry.target.classList.add(
+                                    "visible"
+                                );
 
 
-                            observer.unobserve(
-                                entry.target
-                            );
+                                observer.unobserve(
+                                    entry.target
+                                );
+
+                            }
 
                         }
+                    );
 
-                    }
-                );
+                },
 
-            },
+                {
+                    threshold: 0.04,
+                    rootMargin:
+                        "100px 0px -20px 0px"
+                }
+            );
 
-            {
 
-                threshold: 0.05,
+        fadeSections.forEach(
+            section => {
 
-                rootMargin:
-                    "100px 0px -30px 0px"
+                const rect =
+                    section.getBoundingClientRect();
+
+
+                /*
+                    알아보기 / 찾아보기 세트가
+                    첫 스크롤부터 바로 보이도록
+                */
+
+                if (
+                    rect.top <
+                    window.innerHeight + 150
+                ) {
+
+                    section.classList.add(
+                        "visible"
+                    );
+
+                } else {
+
+                    observer.observe(
+                        section
+                    );
+
+                }
 
             }
-
         );
 
+    } else {
 
-    fadeSections.forEach(
-        function (section) {
-
-            const rect =
-                section.getBoundingClientRect();
-
-
-            /*
-               처음 스크롤할 때
-               알아보기/찾아보기가
-               너무 늦게 뜨는 문제 방지
-            */
-
-            if (
-                rect.top <
-                window.innerHeight + 120
-            ) {
-
+        fadeSections.forEach(
+            section =>
                 section.classList.add(
                     "visible"
-                );
-
-            } else {
-
-                observer.observe(
-                    section
-                );
-
-            }
-
-        }
-    );
-
-
-
-    /* =====================================================
-       BACK TO TOP
-    ===================================================== */
-
-    const backToTop =
-        document.getElementById(
-            "backToTop"
+                )
         );
 
-
-    function updateTopButton() {
-
-        if (
-            window.scrollY > 500
-        ) {
-
-            backToTop.classList.add(
-                "show"
-            );
-
-        } else {
-
-            backToTop.classList.remove(
-                "show"
-            );
-
-        }
-
     }
-
-
-    window.addEventListener(
-        "scroll",
-        updateTopButton
-    );
-
-
-    updateTopButton();
-
-
-    backToTop.addEventListener(
-        "click",
-        function () {
-
-            window.scrollTo({
-
-                top: 0,
-
-                behavior: "smooth"
-
-            });
-
-        }
-    );
-
 
 
     /* =====================================================
@@ -301,220 +361,125 @@ document.addEventListener("DOMContentLoaded", function () {
             "calendarGrid"
         );
 
-
     const calendarMonthTitle =
         document.getElementById(
             "calendarMonthTitle"
         );
-
 
     const eventPanel =
         document.getElementById(
             "eventPanel"
         );
 
-
-    const previousButton =
+    const prevMonth =
         document.getElementById(
             "prevMonth"
         );
 
-
-    const nextButton =
+    const nextMonth =
         document.getElementById(
             "nextMonth"
         );
 
 
+    if (
+        !calendarGrid ||
+        !calendarMonthTitle ||
+        !eventPanel
+    ) {
+        return;
+    }
+
 
     let currentYear = 2026;
-
-    /*
-       JavaScript month
-       0 = 1월
-       7 = 8월
-    */
-
     let currentMonth = 7;
-
     let selectedDate = 15;
 
 
-
-    /* =====================================================
-       TEMP EVENT DATA
-    ===================================================== */
-
     const eventData = {
 
-
         "2026-08-01": [
-
             {
-
-                title:
-                    "조계사 정기 법회",
-
-                location:
-                    "조계사 · 서울",
-
-                time:
-                    "10:00 시작"
-
+                title: "초하루 법회",
+                location: "전국 사찰",
+                time: "10:00 시작"
             }
-
         ],
-
 
         "2026-08-07": [
-
             {
-
-                title:
-                    "선 명상 입문 워크숍",
-
-                location:
-                    "서울",
-
-                time:
-                    "14:00 시작"
-
+                title: "칠석 기도",
+                location: "주요 사찰",
+                time: "09:00 시작"
             }
-
         ],
-
 
         "2026-08-15": [
-
             {
-
-                title:
-                    "백중 우란분절 법회",
-
-                location:
-                    "전국 사찰",
-
-                time:
-                    "10:00 시작"
-
+                title: "백중 우란분절 법회",
+                location: "전국 사찰",
+                time: "10:00 시작"
             },
-
-
             {
-
-                title:
-                    "백중 야외 법요식",
-
-                location:
-                    "해인사 · 합천",
-
-                time:
-                    "17:00 시작"
-
+                title: "백중 야외 법요식",
+                location: "해인사 · 합천",
+                time: "17:00 시작"
             }
-
         ],
-
 
         "2026-08-22": [
-
             {
-
-                title:
-                    "야간 반야심경 법회",
-
-                location:
-                    "지역 사찰",
-
-                time:
-                    "19:00 시작"
-
+                title: "주말 참선 프로그램",
+                location: "지역 사찰",
+                time: "14:00 시작"
             }
-
         ],
 
-
-        "2026-08-28": [
-
+        "2026-08-29": [
             {
-
-                title:
-                    "사찰 음식 체험",
-
-                location:
-                    "서울",
-
-                time:
-                    "13:00 시작"
-
+                title: "사찰 문화 체험 행사",
+                location: "지역 사찰",
+                time: "13:00 시작"
             }
-
         ],
-
 
         "2026-08-30": [
-
             {
-
-                title:
-                    "불교 문화 행사",
-
-                location:
-                    "지역 사찰",
-
-                time:
-                    "11:00 시작"
-
+                title: "일요 가족 법회",
+                location: "전국 사찰",
+                time: "10:30 시작"
             }
-
         ]
 
     };
 
 
-
     function pad(number) {
 
         return String(number)
-            .padStart(
-                2,
-                "0"
-            );
+            .padStart(2, "0");
 
     }
 
 
-
-    function createDateKey(
+    function makeKey(
         year,
         month,
-        date
+        day
     ) {
 
-        return (
-            year +
-            "-" +
-            pad(month + 1) +
-            "-" +
-            pad(date)
-        );
+        return `${year}-${pad(month + 1)}-${pad(day)}`;
 
     }
-
 
 
     function renderCalendar() {
 
-
-        calendarGrid.innerHTML =
-            "";
+        calendarGrid.innerHTML = "";
 
 
         calendarMonthTitle.textContent =
-            currentYear +
-            "년 " +
-            (currentMonth + 1) +
-            "월";
+            `${currentYear}년 ${currentMonth + 1}월`;
 
 
         const firstDay =
@@ -525,7 +490,7 @@ document.addEventListener("DOMContentLoaded", function () {
             ).getDay();
 
 
-        const daysInMonth =
+        const totalDays =
             new Date(
                 currentYear,
                 currentMonth + 1,
@@ -533,10 +498,8 @@ document.addEventListener("DOMContentLoaded", function () {
             ).getDate();
 
 
-
         /*
-           이전 달 영역
-           빈칸으로 통일
+            앞쪽 빈 셀
         */
 
         for (
@@ -562,28 +525,26 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
 
+        /*
+            실제 날짜
+        */
 
         for (
             let day = 1;
-            day <= daysInMonth;
+            day <= totalDays;
             day++
         ) {
 
-
-            const date =
+            const weekday =
                 new Date(
                     currentYear,
                     currentMonth,
                     day
-                );
-
-
-            const weekday =
-                date.getDay();
+                ).getDay();
 
 
             const key =
-                createDateKey(
+                makeKey(
                     currentYear,
                     currentMonth,
                     day
@@ -604,9 +565,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 "calendar-day";
 
 
-            if (
-                weekday === 0
-            ) {
+            if (weekday === 0) {
 
                 cell.classList.add(
                     "sunday"
@@ -615,9 +574,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
 
-            if (
-                weekday === 6
-            ) {
+            if (weekday === 6) {
 
                 cell.classList.add(
                     "saturday"
@@ -626,16 +583,13 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
 
-            if (
-                day === selectedDate
-            ) {
+            if (day === selectedDate) {
 
                 cell.classList.add(
                     "selected"
                 );
 
             }
-
 
 
             const number =
@@ -657,13 +611,8 @@ document.addEventListener("DOMContentLoaded", function () {
             );
 
 
-
-            /*
-               행사 존재 표시
-            */
-
             if (
-                eventData[key]
+                eventData[key]?.length
             ) {
 
                 const dot =
@@ -683,17 +632,15 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
 
-
             cell.addEventListener(
                 "click",
-                function () {
+                () => {
 
                     selectedDate =
                         day;
 
 
                     renderCalendar();
-
 
                     renderEventPanel();
 
@@ -708,63 +655,48 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
 
-
         /*
-           마지막 빈 칸도
-           앞쪽 빈칸과 동일하게
+            뒤쪽 빈 셀도
+            앞쪽과 완전히 같은 스타일
         */
 
-        const usedCells =
-            firstDay +
-            daysInMonth;
+        const used =
+            firstDay + totalDays;
 
 
-        const remainder =
-            usedCells % 7;
+        const remaining =
+            (7 - used % 7) % 7;
 
 
-        if (
-            remainder !== 0
+        for (
+            let i = 0;
+            i < remaining;
+            i++
         ) {
 
-            const emptyCount =
-                7 -
-                remainder;
-
-
-            for (
-                let i = 0;
-                i < emptyCount;
-                i++
-            ) {
-
-                const empty =
-                    document.createElement(
-                        "div"
-                    );
-
-
-                empty.className =
-                    "calendar-day empty";
-
-
-                calendarGrid.appendChild(
-                    empty
+            const empty =
+                document.createElement(
+                    "div"
                 );
 
-            }
+
+            empty.className =
+                "calendar-day empty";
+
+
+            calendarGrid.appendChild(
+                empty
+            );
 
         }
 
     }
 
 
-
     function renderEventPanel() {
 
-
         const key =
-            createDateKey(
+            makeKey(
                 currentYear,
                 currentMonth,
                 selectedDate
@@ -779,52 +711,45 @@ document.addEventListener("DOMContentLoaded", function () {
             "";
 
 
-
-        const dateText =
+        const date =
             document.createElement(
                 "div"
             );
 
 
-        dateText.className =
+        date.className =
             "event-date";
 
 
-        dateText.textContent =
-            currentYear +
-            "년 " +
-            (currentMonth + 1) +
-            "월 " +
-            selectedDate +
-            "일";
+        date.textContent =
+            `${currentYear}년 ${currentMonth + 1}월 ${selectedDate}일`;
 
 
         eventPanel.appendChild(
-            dateText
+            date
         );
-
 
 
         if (
             events.length === 0
         ) {
 
-            const empty =
+            const noEvent =
                 document.createElement(
                     "p"
                 );
 
 
-            empty.className =
+            noEvent.className =
                 "no-event";
 
 
-            empty.textContent =
+            noEvent.textContent =
                 "등록된 불교 행사가 없습니다.";
 
 
             eventPanel.appendChild(
-                empty
+                noEvent
             );
 
 
@@ -833,20 +758,17 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
 
-
         events.forEach(
-            function (event) {
+            event => {
 
-
-                const article =
+                const item =
                     document.createElement(
                         "article"
                     );
 
 
-                article.className =
+                item.className =
                     "event-item";
-
 
 
                 const title =
@@ -863,7 +785,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     event.title;
 
 
-
                 const location =
                     document.createElement(
                         "div"
@@ -875,9 +796,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
                 location.textContent =
-                    "⌖ " +
-                    event.location;
-
+                    `⌖ ${event.location}`;
 
 
                 const time =
@@ -891,9 +810,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
                 time.textContent =
-                    "◷ " +
-                    event.time;
-
+                    `◷ ${event.time}`;
 
 
                 const detail =
@@ -902,41 +819,26 @@ document.addEventListener("DOMContentLoaded", function () {
                     );
 
 
+                detail.href = "#";
+
                 detail.className =
                     "event-detail";
-
-
-                detail.href =
-                    "#";
 
 
                 detail.textContent =
                     "자세히 보기 →";
 
 
-
-                article.appendChild(
-                    title
-                );
-
-
-                article.appendChild(
-                    location
-                );
-
-
-                article.appendChild(
-                    time
-                );
-
-
-                article.appendChild(
+                item.append(
+                    title,
+                    location,
+                    time,
                     detail
                 );
 
 
                 eventPanel.appendChild(
-                    article
+                    item
                 );
 
             }
@@ -945,74 +847,47 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
+    function changeMonth(amount) {
 
-    function changeMonth(
-        amount
-    ) {
-
-
-        currentMonth +=
-            amount;
+        currentMonth += amount;
 
 
-        if (
-            currentMonth < 0
-        ) {
+        if (currentMonth < 0) {
 
-            currentMonth =
-                11;
-
-
+            currentMonth = 11;
             currentYear--;
 
         }
 
 
-        if (
-            currentMonth > 11
-        ) {
+        if (currentMonth > 11) {
 
-            currentMonth =
-                0;
-
-
+            currentMonth = 0;
             currentYear++;
 
         }
 
 
-        selectedDate =
-            1;
+        selectedDate = 1;
 
 
         renderCalendar();
-
 
         renderEventPanel();
 
     }
 
 
-
-    previousButton.addEventListener(
+    prevMonth?.addEventListener(
         "click",
-        function () {
-
-            changeMonth(-1);
-
-        }
+        () => changeMonth(-1)
     );
 
 
-    nextButton.addEventListener(
+    nextMonth?.addEventListener(
         "click",
-        function () {
-
-            changeMonth(1);
-
-        }
+        () => changeMonth(1)
     );
-
 
 
     renderCalendar();

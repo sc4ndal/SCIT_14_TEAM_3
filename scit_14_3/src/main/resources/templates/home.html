@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko"
+	  xmlns:th="http://www.thymeleaf.org"
+	  xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -67,17 +69,73 @@
 
 			<nav class="member-menu">
 
-				<a href="/member/join">
-					회원가입
-				</a>
+				<!-- ============================
+							미로그인 상태
+				================================= -->
+				<div class="guest-menu"
+					 sec:authorize="isAnoymous()">
 
-				<a href="/login">
-					로그인
-				</a>
+					<a th:href="@{/member/join}">
+						회원가입
+					</a>
 
-				<a href="#">
-					마이페이지
-				</a>
+					<a th:href="@{/login}">
+						로그인
+					</a>
+				</div>
+
+				<!-- ============================
+							로그인 상태
+				================================= -->
+				<div class="user-menu"
+				     sec:authorize="isAuthenticated()">
+
+					<!-- 프로필 아이콘 -->
+					<a th:href="@{/mypage}"
+					   class="profile-button">
+
+        		    <span class="profile-icon">
+            	    👤
+					</span>
+
+					</a>
+
+
+					<!-- 마이페이지 dropdown -->
+					<div class="mypage-menu">
+						<a th:href="@{/mypage}"
+						   class="mypage-title">
+							마이페이지
+						</a>
+
+						<div class="mypage-dropdown">
+
+							<a th:href="@{/mypage/profile}">
+								회원정보
+							</a>
+							<a th:href="@{/mypage/temples}">
+								관심사찰
+							</a>
+							<a th:href="@{/mypage/events}">
+								관심행사
+							</a>
+
+						</div>
+
+					</div>
+
+
+					<!-- 로그아웃 -->
+					<form th:action="@{/logout}"
+					      method="post">
+
+						<button type="submit"
+						        class="logout-button">
+							로그아웃
+						</button>
+					</form>
+
+				</div>
 
 			</nav>
 
