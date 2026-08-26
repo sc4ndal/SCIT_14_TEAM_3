@@ -27,8 +27,7 @@ public class WebSecurityConfig {
 			"/images/**",
 			"/login",
 			"/signupSelect",
-			"/signup",
-			"/test/**" // 시큐리티 안 걸리고 시험하는 경로
+			"/signup"
 	);
 
 	@Bean
