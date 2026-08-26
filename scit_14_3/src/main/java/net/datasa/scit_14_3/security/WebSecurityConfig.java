@@ -22,12 +22,13 @@ public class WebSecurityConfig {
 	// 로그인 없이 접근 가능한 경로
 	private static final List<String> PUBLIC_URLS = List.of(
 			"/",
+			"/css/**",
+			"/js/**",
+			"/images/**",
 			"/login",
 			"/signupSelect",
 			"/signup",
-			"/css/**",
-			"/js/**",
-			"/images/**"
+			"/test/**" // 시큐리티 안 걸리고 시험하는 경로
 	);
 
 	@Bean

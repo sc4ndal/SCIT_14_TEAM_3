@@ -61,27 +61,17 @@ body{
 .lang-opt.active{color:#fff;background:var(--wood-dark);font-weight:700;}
 .lang-opt:hover:not(.active){color:var(--wood-dark);}
 .lang-sep{color:var(--border);font-size:12px;}
-.tabs{
-    display:flex;
-    margin:20px 32px 0;
-    border:1px solid var(--border);
-    border-radius:6px;
-    overflow:hidden;
+.mode-label{
+    display:inline-block;
+    margin:20px 32px 20px;
+    padding:5px 14px;
+    background:#efe6d3;
+    color:var(--wood-dark);
+    font-size:12px;
+    font-weight:700;
+    border-radius:20px;
+    letter-spacing:.02em;
 }
-.tab{
-    flex:1;
-    text-align:center;
-    padding:11px 0;
-    font-size:14px;
-    font-weight:500;
-    cursor:pointer;
-    background:var(--surface);
-    color:var(--ink-soft);
-    transition:background .15s ease, color .15s ease;
-    user-select:none;
-}
-.tab.active{background:var(--wood);color:#fff;}
-.tab:first-child{border-right:1px solid var(--border);}
 
 form{padding:24px 32px 32px;}
 fieldset{border:none;padding:0;margin:0 0 22px;}
