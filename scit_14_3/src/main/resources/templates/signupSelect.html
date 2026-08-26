@@ -1,41 +1,41 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>회원가입 · 사찰 커뮤니티</title>
-    <link rel="stylesheet" th:href="@{/css/common.css}">
-    <link rel="stylesheet" th:href="@{/css/signupSelect.css}">
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0" name="viewport">
+	<title>회원가입 · 사찰 커뮤니티</title>
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+	<link rel="stylesheet" th:href="@{/css/signupSelect.css}">
 
 </head>
 <body>
 <div class="card">
-    <div class="beam">
-        <span></span><span></span><span></span><span></span><span></span>
-        <span></span><span></span><span></span><span></span><span></span>
-        <span></span><span></span><span></span><span></span><span></span>
-    </div>
-    <div th:replace="~{fragments/language-fragment :: languageBar}"></div>
-    <div class="header">
-        <h1>회원가입</h1>
-        <p>원하시는 방법으로 가입을 진행해주세요</p>
-    </div>
-
-    <div class="method-list">
-        <a class="method-btn email" th:href="@{/signup?mode=local}">이메일로 가입하기</a>
-        <a class="method-btn kakao" th:href="@{/signup?mode=kakao}">카카오로 가입하기</a>
-
-<!--        <div class="divider">다른 방법 (준비 중)</div>-->
-
-<!--        <span class="method-btn naver disabled" aria-disabled="true">-->
-<!--      네이버로 가입하기 <span class="soon-tag">준비중</span>-->
-<!--    </span>-->
-<!--        <span class="method-btn google disabled" aria-disabled="true">-->
-<!--      구글로 가입하기 <span class="soon-tag">준비중</span>-->
-<!--    </span>-->
-    </div>
-
-    <p class="footer-note">이미 계정이 있으신가요? <a href="#">로그인</a></p>
+	<div class="beam">
+		<span></span><span></span><span></span><span></span><span></span>
+		<span></span><span></span><span></span><span></span><span></span>
+		<span></span><span></span><span></span><span></span><span></span>
+	</div>
+	<div th:replace="~{fragments/language-fragment :: languageBar}"></div>
+	<div class="header">
+		<h1>회원가입</h1>
+		<p>원하시는 방법으로 가입을 진행해주세요</p>
+	</div>
+	
+	<div class="method-list">
+		<a class="method-btn email" th:href="@{/signup?mode=local}">이메일로 가입하기</a>
+		<a class="method-btn kakao" th:href="@{/signup?mode=kakao}">카카오로 가입하기</a>
+		
+		<!--        <div class="divider">다른 방법 (준비 중)</div>-->
+		
+		<!--        <span class="method-btn naver disabled" aria-disabled="true">-->
+		<!--      네이버로 가입하기 <span class="soon-tag">준비중</span>-->
+		<!--    </span>-->
+		<!--        <span class="method-btn google disabled" aria-disabled="true">-->
+		<!--      구글로 가입하기 <span class="soon-tag">준비중</span>-->
+		<!--    </span>-->
+	</div>
+	
+	<p class="footer-note">이미 계정이 있으신가요? <a href="#">로그인</a></p>
 </div>
 
 </body>
