@@ -1,0 +1,16 @@
+<!--
+
+    <div th:replace="~{fragments/language-fragment :: languageBar}"></div>
+
+    언어 설정하는 fragment
+
+-->
+<p class="preview-note">↓ 이 박스 안쪽이 실제 &lt;div th:fragment="languageBar"&gt; 조각입니다. 파일을 그대로 열면 이 안내문과 함께 미리보기로 보이고, Thymeleaf가 include 할 땐 이 안내문 없이 아래 div만 삽입됩니다.</p>
+
+<div th:fragment="languageBar" class="lang-bar" id="langBar">
+    <button type="button" class="lang-opt active" data-lang="ko" onclick="applyLanguage('ko')">한국어</button>
+    <span class="lang-sep">·</span>
+    <button type="button" class="lang-opt" data-lang="ja" onclick="applyLanguage('ja')">日本語</button>
+    <span class="lang-sep">·</span>
+    <button type="button" class="lang-opt" data-lang="en" onclick="applyLanguage('en')">English</button>
+</div>

@@ -1,0 +1,60 @@
+<!--
+
+<div th:replace="~{fragments/auth-nav-fragment :: authNav}"></div>
+
+    auth를 지원하는 fragment
+    로그인 로그아웃을 회원가입 마이페이지
+-->
+<div th:fragment="authNav" class="auth-nav-wrap" id="authNavWrap">
+
+    <button type="button" class="auth-trigger" id="authTrigger" aria-expanded="false" onclick="toggleAuthDropdown()">
+    <span class="avatar-wrap">
+      <span class="avatar-circle">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="8" r="3.6" stroke="#3a2a1e" stroke-width="1.8"/>
+          <path d="M5 19c1.2-3.6 4-5.4 7-5.4s5.8 1.8 7 5.4" stroke="#3a2a1e" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </span>
+
+        <!-- 관리자 배지: 왕관 -->
+      <span sec:authorize="hasRole('ADMIN')" id="badgeAdmin" class="role-badge admin" style="display:none;" title="관리자">
+        <svg viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg"><path d="M3 18h18l-1.5-9-4.5 4-3-6-3 6-4.5-4L3 18z"/></svg>
+      </span>
+        <!-- 사찰관리자 배지: 지붕 실루엣 -->
+      <span sec:authorize="hasRole('TEMPLE_ADMIN')" id="badgeTemple" class="role-badge temple-admin" style="display:none;" title="사찰관리자">
+        <svg viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg"><path d="M12 3 2 12h4v9h12v-9h4L12 3z"/></svg>
+      </span>
+    </span>
+
+        <span id="authTriggerLabel">로그인</span>
+
+        <svg class="auth-caret" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 1l4 4 4-4" stroke="#3a2a1e" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </button>
+
+    <div class="auth-dropdown-hitzone" id="authDropdownZone">
+        <div class="auth-dropdown">
+
+            <!-- 비로그인 상태: 로그인 / 회원가입 -->
+            <span sec:authorize="!isAuthenticated()" id="authNavGuest" class="dropdown-list">
+        <a th:href="@{/login}" class="dropdown-item">로그인</a>
+        <a th:href="@{/signupSelect}" class="dropdown-item">회원가입</a>
+      </span>
+
+            <!-- 로그인 상태: 역할 표시 + 마이페이지 / 로그아웃 -->
+            <span sec:authorize="isAuthenticated()" id="authNavMember" class="dropdown-list" style="display:none;">
+        <span class="dropdown-role-label" id="dropdownRoleLabel">일반회원</span>
+        <a th:href="@{/mypage}" class="dropdown-item">마이페이지</a>
+                <!--
+                  로그아웃은 <a href="/logout"> GET 링크로 만들면 안 됩니다.
+                  Spring Security 기본 로그아웃 엔드포인트는 CSRF 보호 때문에 POST만 받습니다.
+                -->
+        <form th:action="@{/logout}" method="post" style="margin:0;">
+          <button type="submit" class="dropdown-item">로그아웃</button>
+        </form>
+      </span>
+
+        </div>
+    </div>
+</div>
