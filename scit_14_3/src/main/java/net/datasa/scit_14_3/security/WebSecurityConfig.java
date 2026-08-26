@@ -24,8 +24,8 @@ public class WebSecurityConfig {
 			"/",
 			"/login",
 			"/css/**",
-			"/member/join",
-			"/product/list"
+			"/js/**",
+			"/images/**"
 	);
 
 	@Bean
