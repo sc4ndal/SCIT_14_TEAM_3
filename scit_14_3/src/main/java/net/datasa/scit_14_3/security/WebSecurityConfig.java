@@ -22,10 +22,12 @@ public class WebSecurityConfig {
 	// 로그인 없이 접근 가능한 경로
 	private static final List<String> PUBLIC_URLS = List.of(
 			"/",
-			"/login",
 			"/css/**",
 			"/js/**",
-			"/images/**"
+			"/images/**",
+			"/login",
+			"/signupSelect",
+			"/signup"
 	);
 
 	@Bean
@@ -40,12 +42,12 @@ public class WebSecurityConfig {
 
 				.formLogin(formLogin -> formLogin
 						.loginPage("/login")
-						.defaultSuccessUrl("/product/list", true)
+						.defaultSuccessUrl("/", true)
 						.permitAll()
 				)
 
 				.logout(logout -> logout
-						.logoutSuccessUrl("/product/list")
+						.logoutSuccessUrl("/")
 				);
 
 		return http.build();

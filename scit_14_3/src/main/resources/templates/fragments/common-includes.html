@@ -1,0 +1,135 @@
+<!--
+    <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+    대부분은 이것만
+-->
+
+<div class="site-header" id="siteHeader" th:fragment="commonIncludes">
+    <div class="header-inner">
+
+        <a class="brand" href="/">
+
+            <span class="brand-circle">
+                禪
+            </span>
+
+            <span class="brand-name">
+                佛선자
+            </span>
+
+        </a>
+
+
+        <div class="header-right">
+
+            <div class="language-area">
+
+
+                <button class="language-button active"
+                        data-lang="ko"
+                        type="button">
+                    한국어
+                </button>
+
+                <span>·</span>
+
+                <button class="language-button"
+                        data-lang="ja"
+                        type="button">
+                    日本語
+                </button>
+
+                <span>·</span>
+
+                <button class="language-button"
+                        data-lang="en"
+                        type="button">
+                    English
+                </button>
+
+            </div>
+
+
+            <span class="header-divider"></span>
+
+
+            <nav class="member-menu">
+
+                <!-- ============================
+                            미로그인 상태
+                ================================= -->
+                <div class="guest-menu"
+                     sec:authorize="isAnonymous()">
+
+                    <a th:href="@{/signupSelect}">
+                        회원가입
+                    </a>
+
+                    <a th:href="@{/login}">
+                        로그인
+                    </a>
+                </div>
+
+                <!-- ============================
+                            로그인 상태
+                ================================= -->
+                <div class="user-menu"
+                     sec:authorize="isAuthenticated()">
+
+                    <!-- 프로필 아이콘 -->
+                    <a th:href="@{/mypage}"
+                       class="profile-button">
+
+        		    <span class="profile-icon">
+            	    👤
+					</span>
+
+                    </a>
+
+
+                    <!-- 마이페이지 dropdown -->
+                    <div class="mypage-menu">
+                        <a th:href="@{/mypage}"
+                           class="mypage-title">
+                            마이페이지
+                        </a>
+
+                        <div class="mypage-dropdown">
+
+                            <a th:href="@{/mypage/profile}">
+                                회원정보
+                            </a>
+                            <a th:href="@{/mypage/temples}">
+                                관심사찰
+                            </a>
+                            <a th:href="@{/mypage/events}">
+                                관심행사
+                            </a>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- 로그아웃 -->
+                    <form th:action="@{/logout}"
+                          method="post">
+
+                        <button type="submit"
+                                class="logout-button">
+                            로그아웃
+                        </button>
+                    </form>
+
+                </div>
+
+            </nav>
+
+        </div>
+
+    </div>
+</div>
+<!--<div th:fragment="commonIncludes">-->
+<!--    <div th:replace="~{fragments/language-fragment :: languageBar}"></div>-->
+<!--    <div th:replace="~{fragments/auth-nav-fragment :: authNav}"></div>-->
+<!--    <script th:src="@{/js/common.js}"></script>-->
+<!--</div>-->

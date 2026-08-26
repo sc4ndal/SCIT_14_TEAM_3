@@ -1,619 +1,586 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500&display=swap');
 
-
-/* =========================================================
-   VARIABLES
-========================================================= */
-
 :root {
-
-    --background: #f8f4ef;
-
+    --bg: #f8f4ef;
     --paper: #fbf8f4;
-
     --text: #29231e;
-
-    --text-soft: rgba(41, 35, 30, 0.55);
-
+    --muted: rgba(41, 35, 30, 0.48);
     --line: rgba(41, 35, 30, 0.09);
 
     --brown: #9b6845;
-
     --green: #657e6a;
-
     --blue: #7c89a5;
-
     --gold: #98784c;
 
-    --serif:
-            "Noto Serif KR",
-            "Batang",
-            serif;
+    --serif: "Noto Serif KR", Batang, serif;
+    --sans: "Noto Sans KR", sans-serif;
 
-    --sans:
-            "Noto Sans KR",
-            sans-serif;
+    --feature-height: 720px;
+    --feature-expanded-height: 810px;
 
+    --motion: 0.55s cubic-bezier(.22,.61,.36,1);
 }
 
 
-
-/* =========================================================
-   RESET
-========================================================= */
+/* ======================================================
+   BASE
+====================================================== */
 
 * {
-
     box-sizing: border-box;
-
 }
-
 
 html {
-
     scroll-behavior: smooth;
-
 }
-
 
 body {
-
     margin: 0;
-
-    background: var(--background);
-
+    background: var(--bg);
     color: var(--text);
-
     font-family: var(--sans);
-
 }
-
 
 a {
-
     color: inherit;
-
     text-decoration: none;
-
 }
-
 
 button {
-
     font: inherit;
-
 }
-
 
 img {
-
     display: block;
-
 }
 
 
-
-/* =========================================================
+/* ======================================================
    HEADER
-========================================================= */
+====================================================== */
 
 .site-header {
-
     position: fixed;
-
     top: 0;
-
     left: 0;
-
     right: 0;
 
     z-index: 100;
 
-    background:
-            rgba(248, 244, 239, 0.96);
+    background: rgba(248, 244, 239, 0.97);
 
-    border-bottom:
-            1px solid transparent;
+    border-bottom: 1px solid transparent;
 
     transition:
-            border-color 0.25s ease,
-            box-shadow 0.25s ease;
-
+            border-color .3s ease,
+            box-shadow .3s ease;
 }
-
 
 .site-header.scrolled {
-
-    border-bottom-color:
-            rgba(41, 35, 30, 0.08);
-
-    box-shadow:
-            0 2px 12px rgba(30, 22, 16, 0.025);
-
+    border-bottom-color: rgba(41, 35, 30, .08);
+    box-shadow: 0 2px 14px rgba(30, 22, 16, .025);
 }
 
-
 .header-inner {
-
-    width:
-            min(1440px, calc(100% - 100px));
-
+    width: min(1440px, calc(100% - 100px));
     height: 74px;
 
     margin: 0 auto;
 
     display: flex;
-
     align-items: center;
-
     justify-content: space-between;
-
 }
-
-
 
 .brand {
-
     display: flex;
-
     align-items: center;
-
     gap: 12px;
-
 }
-
 
 .brand-circle {
-
     width: 32px;
-
     height: 32px;
 
-    display: flex;
-
-    justify-content: center;
-
-    align-items: center;
-
-    border:
-            1px solid rgba(41, 35, 30, 0.17);
-
+    border: 1px solid rgba(41, 35, 30, .17);
     border-radius: 50%;
 
-    font-family: var(--serif);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
+    font-family: var(--serif);
     font-size: 11px;
 
-    color:
-            rgba(41, 35, 30, 0.50);
-
+    color: rgba(41, 35, 30, .50);
 }
-
 
 .brand-name {
-
     font-family: var(--serif);
-
     font-size: 17px;
-
     font-weight: 500;
-
 }
-
-
 
 .header-right {
-
     display: flex;
-
     align-items: center;
-
     gap: 28px;
-
 }
-
 
 .language-area {
-
     display: flex;
-
     align-items: center;
-
     gap: 9px;
-
 }
-
 
 .language-area span {
-
-    color:
-            rgba(41, 35, 30, 0.18);
-
+    color: rgba(41, 35, 30, .18);
 }
-
 
 .language-button {
-
+    border: 0;
     padding: 0;
 
-    border: none;
+    background: transparent;
 
-    background: none;
+    color: rgba(41, 35, 30, .34);
+    font-size: 12px;
 
     cursor: pointer;
-
-    font-size: 12px;
-
-    color:
-            rgba(41, 35, 30, 0.34);
-
 }
-
 
 .language-button.active {
-
-    color:
-            rgba(41, 35, 30, 0.73);
-
+    color: rgba(41, 35, 30, .73);
 }
-
 
 .header-divider {
-
     width: 1px;
-
     height: 13px;
 
-    background:
-            rgba(41, 35, 30, 0.12);
-
+    background: rgba(41, 35, 30, .12);
 }
 
-
+/* 수정 -------------------------------------------------*/
 .member-menu {
+    display: flex;
+    gap: 27px;
+}
+
+/* 로그인 / 미로그인 공통 */
+
+.guest-menu,
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+}
+
+.member-menu a,
+.logout-button {
+    font-size: 12px;
+    color: rgba(41, 35, 30, .42);
+    transition: color 0.2s ease;
+}
+
+.member-menu a:hover,
+.logout-button:hover {
+    color: rgba(41, 35, 30, 0.85);
+}
+
+.user-menu form {
+    margin: 0;
+}
+
+/* 로그아웃 버튼 */
+
+.logout-button {
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+/* 프로필 */
+
+.profile-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-icon {
+    width: 28px;
+    height: 28px;
 
     display: flex;
+    align-items: center;
+    justify-content: center;
 
-    gap: 27px;
+    border-radius: 50%;
+    border: 1px solid rgba(41, 35, 30, 0.15);
 
+    font-size: 13px;
 }
 
+/* 마이페이지 dropdown */
 
-.member-menu a {
-
-    font-size: 12px;
-
-    color:
-            rgba(41, 35, 30, 0.42);
-
+.mypage-menu {
+    position: relative;
 }
 
+.mypage-title {
+    display: block;
+    padding: 20px 0;
+}
+
+.mypage-dropdown {
+    position: absolute;
+
+    top: calc(100% - 4px);
+    right: 0;
+
+    width: 130px;
+    padding: 12px 0;
+
+    background: #fbf8f4;
+
+    border: 1px solid rgba(41, 35, 30, 0.08);
+
+    box-shadow:
+            0 8px 24px rgba(41, 35, 30, 0.06);
+
+    opacity: 0;
+    visibility: hidden;
+
+    transform: translateY(-5px);
+
+    transition:
+            opacity 0.2s ease,
+            visibility 0.2s ease,
+            transform 0.2s ease;
+}
+
+.mypage-menu:hover .mypage-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.mypage-dropdown a {
+    display: block;
+    padding: 9px 16px;
+    white-space: nowrap;
+}
+
+.mypage-dropdown a:hover {
+    background: rgba(41, 35, 30, 0.035);
+}
+/* -------------------------------------------
+
+ */
 
 
-/* =========================================================
+
+/* ======================================================
    HERO
-========================================================= */
+====================================================== */
 
 .hero {
-
     padding-top: 74px;
-
 }
 
-
 .hero-inner {
-
-    width:
-            min(1360px, calc(100% - 140px));
+    width: min(1360px, calc(100% - 140px));
 
     margin: 0 auto;
 
     padding-top: 160px;
-
-    padding-bottom: 120px;
+    padding-bottom: 118px;
 
     text-align: center;
-
 }
 
-
 .hero h1 {
-
     margin: 0;
 
     font-family: var(--serif);
-
     font-size: 42px;
-
     font-weight: 500;
 
     line-height: 1.25;
-
-    letter-spacing: -0.045em;
-
+    letter-spacing: -.045em;
 }
 
-
 .hero p {
-
     margin: 32px 0 0;
 
     font-family: var(--serif);
-
     font-size: 15px;
-
     line-height: 2;
 
-    color:
-            rgba(41, 35, 30, 0.48);
-
+    color: rgba(41, 35, 30, .48);
 }
 
-
 .hero-decoration {
-
     margin-top: 42px;
 
     display: flex;
-
     justify-content: center;
-
     align-items: center;
-
     gap: 15px;
 
-    color:
-            rgba(155, 104, 69, 0.42);
-
+    color: rgba(155, 104, 69, .42);
 }
-
 
 .hero-decoration span {
-
     width: 48px;
-
     height: 1px;
 
-    background:
-            rgba(41, 35, 30, 0.10);
-
+    background: rgba(41, 35, 30, .10);
 }
-
 
 .hero-symbol {
-
     font-size: 12px;
-
 }
 
 
-
-/* =========================================================
-   FEATURE
-========================================================= */
+/* ======================================================
+   FEATURE SET
+====================================================== */
 
 .feature-section {
-
-    width:
-            min(1440px, calc(100% - 110px));
+    width: min(1440px, calc(100% - 110px));
 
     margin: 0 auto;
 
+    transition: height var(--motion);
 }
-
-
-.feature-set {
-
-    display: grid;
-
-    min-height: 720px;
-
-}
-
-
-/*
-   SET 1
-   TEXT 38 / IMAGE 62
-*/
-
-.feature-set-first {
-
-    grid-template-columns:
-        38% 62%;
-
-}
-
-
-/*
-   SET 2
-   IMAGE 62 / TEXT 38
-*/
-
-.feature-set-second {
-
-    grid-template-columns:
-        62% 38%;
-
-}
-
-
 
 .feature-section-second {
-
     margin-top: 92px;
+}
 
+.feature-set {
+    display: grid;
+
+    min-height: var(--feature-height);
+
+    transition:
+            min-height var(--motion),
+            grid-template-columns var(--motion);
 }
 
 
+/* 첫 번째 세트 */
 
-/* =========================================================
+.feature-set-first {
+    grid-template-columns: 38% 62%;
+}
+
+
+/* 두 번째 세트 */
+
+.feature-set-second {
+    grid-template-columns: 62% 38%;
+}
+
+
+/* hover 확장 */
+
+.feature-section.is-expanded .feature-set {
+    min-height: var(--feature-expanded-height);
+}
+
+
+/* SET 1 이미지가 조금 더 영역 차지 */
+
+.feature-section.is-expanded .feature-set-first {
+    grid-template-columns: 35% 65%;
+}
+
+
+/* SET 2 이미지가 조금 더 영역 차지 */
+
+.feature-section.is-expanded .feature-set-second {
+    grid-template-columns: 65% 35%;
+}
+
+
+/* ======================================================
    PHOTO
-========================================================= */
+====================================================== */
 
 .feature-photo {
-
     position: relative;
 
-    height: 720px;
+    height: var(--feature-height);
 
     overflow: hidden;
 
+    transition:
+            height var(--motion),
+            transform var(--motion);
+}
+
+.feature-section.is-expanded .feature-photo {
+    height: var(--feature-expanded-height);
 }
 
 
+/* 이미지 자체 확대 */
+
 .feature-photo img {
-
     width: 100%;
-
     height: 100%;
 
     object-fit: cover;
 
+    transform: scale(1);
+
+    transition:
+            transform .8s cubic-bezier(.22,.61,.36,1),
+            filter .6s ease;
+}
+
+.feature-section.is-expanded .feature-photo img {
+    transform: scale(1.065);
 }
 
 
-.photo-gradient {
+/* 사진과 배경 경계 */
 
+.photo-gradient {
     position: absolute;
 
     top: 0;
-
     bottom: 0;
 
     width: 180px;
 
-    pointer-events: none;
+    z-index: 2;
 
+    pointer-events: none;
 }
 
-
 .gradient-from-left {
-
     left: 0;
 
     background:
             linear-gradient(
                     to right,
-                    var(--background) 0%,
-                    rgba(248, 244, 239, 0.84) 15%,
-                    rgba(248, 244, 239, 0.45) 46%,
-                    rgba(248, 244, 239, 0) 100%
+                    var(--bg) 0%,
+                    rgba(248,244,239,.84) 15%,
+                    rgba(248,244,239,.45) 46%,
+                    transparent 100%
             );
-
 }
 
-
 .gradient-from-right {
-
     right: 0;
 
     background:
             linear-gradient(
                     to left,
-                    var(--background) 0%,
-                    rgba(248, 244, 239, 0.84) 15%,
-                    rgba(248, 244, 239, 0.45) 46%,
-                    rgba(248, 244, 239, 0) 100%
+                    var(--bg) 0%,
+                    rgba(248,244,239,.84) 15%,
+                    rgba(248,244,239,.45) 46%,
+                    transparent 100%
             );
-
 }
 
 
-
-/* =========================================================
+/* ======================================================
    TYPOGRAPHY CANVAS
-========================================================= */
+====================================================== */
 
 .type-canvas {
-
     position: relative;
 
-    height: 720px;
+    height: var(--feature-height);
 
+    transition: height var(--motion);
+}
+
+.feature-section.is-expanded .type-canvas {
+    height: var(--feature-expanded-height);
 }
 
 
-.type-canvas-left {
-
-    padding-left: 34px;
-
-}
-
-
-.type-canvas-right {
-
-    padding-right: 28px;
-
-}
-
-
-
-/* =========================================================
-   TYPOGRAPHY ITEM
-========================================================= */
+/* ======================================================
+   TYPE ITEMS
+====================================================== */
 
 .type-item {
-
     position: absolute;
 
     width: 390px;
 
+    transition:
+            top var(--motion),
+            bottom var(--motion),
+            transform var(--motion),
+            opacity .4s ease;
 }
 
 
-
-/*
-   윗 세트 대각선
-*/
+/* SET 1 */
 
 .type-item-learn {
-
-    top: 70px;
-
+    top: 68px;
     left: 22px;
-
 }
-
 
 .type-item-find {
-
-    top: 395px;
-
+    top: 402px;
     left: 100px;
-
 }
-
 
 
 /*
-   아래 세트 대각선
+   알아보기 확장 시
+   찾아보기 전체 블록이 아래로 이동
 */
 
-.type-item-prepare {
-
-    top: 72px;
-
-    right: 48px;
-
+.feature-section.active-first .type-item-find {
+    top: 500px;
 }
 
+
+/* SET 2 */
+
+.type-item-prepare {
+    top: 72px;
+    right: 48px;
+}
 
 .type-item-experience {
-
     top: 405px;
-
     right: 5px;
-
 }
 
 
+/*
+   준비하기 확장 시
+   체험하기가 아래로 이동
+*/
 
-/* =========================================================
-   LABEL
-========================================================= */
+.feature-section.active-first .type-item-experience {
+    top: 502px;
+}
+
+
+/*
+   두 번째 항목을 hover하는 경우에는
+   첫 번째 항목의 위치는 그대로 두고
+   전체 세트 높이만 확장
+*/
+
+
+/* ======================================================
+   LABEL + KANJI
+====================================================== */
 
 .type-label {
-
     position: relative;
 
     z-index: 5;
@@ -623,26 +590,15 @@ img {
     margin-bottom: 18px;
 
     font-size: 13px;
+    letter-spacing: .015em;
 
-    letter-spacing: 0.015em;
-
-    color:
-            rgba(41, 35, 30, 0.42);
-
+    color: rgba(41, 35, 30, .42);
 }
 
-
-
-/* =========================================================
-   BACKGROUND KANJI
-========================================================= */
-
 .background-kanji {
-
     position: absolute;
 
     left: -12px;
-
     top: 18px;
 
     z-index: 0;
@@ -650,98 +606,80 @@ img {
     font-family: var(--serif);
 
     font-size: 126px;
-
     font-weight: 400;
 
-    line-height: 0.9;
-
-    pointer-events: none;
+    line-height: .9;
 
     user-select: none;
-
+    pointer-events: none;
 }
-
 
 .kanji-learn {
-
-    color:
-            rgba(155, 104, 69, 0.105);
-
+    color: rgba(155, 104, 69, .105);
 }
-
 
 .kanji-find {
-
-    color:
-            rgba(101, 126, 106, 0.105);
-
+    color: rgba(101, 126, 106, .105);
 }
-
 
 .kanji-prepare {
-
-    color:
-            rgba(124, 137, 165, 0.105);
-
+    color: rgba(124, 137, 165, .105);
 }
-
 
 .kanji-experience {
-
-    color:
-            rgba(152, 120, 76, 0.105);
-
+    color: rgba(152, 120, 76, .105);
 }
 
 
+/* ======================================================
+   TITLE
+====================================================== */
 
-/* =========================================================
-   MAIN TYPE
-========================================================= */
-
-.type-title {
-
-    position: relative;
-
-    z-index: 2;
-
-    margin: 62px 0 0;
-
-    font-family: var(--serif);
-
-    font-size: 38px;
-
-    font-weight: 500;
-
-    line-height: 1.42;
-
-    letter-spacing: -0.045em;
-
-    cursor: default;
-
-    outline: none;
-
-}
-
-
-
-/* =========================================================
-   SUB MENU
-========================================================= */
-
-.sub-menu {
-
+h2.type-title {
     position: relative;
 
     z-index: 3;
 
-    margin-top: 33px;
+    margin: 62px 0 0;
+
+    width: max-content;
+
+    font-family: var(--serif);
+
+    font-size: 38px;
+    font-weight: 500;
+
+    line-height: 1.42;
+    letter-spacing: -.045em;
+
+    cursor: pointer;
+
+    outline: none;
+
+    transition:
+            transform .35s ease,
+            color .25s ease;
+}
+
+h2.type-title:hover {
+    transform: translateX(4px);
+}
+
+
+/* ======================================================
+   SUB MENU
+====================================================== */
+
+.sub-menu {
+    position: relative;
+
+    z-index: 5;
+
+    margin-top: 30px;
 
     display: flex;
-
     flex-direction: column;
-
-    gap: 17px;
+    gap: 19px;
 
     max-height: 0;
 
@@ -749,181 +687,144 @@ img {
 
     overflow: hidden;
 
-    transform:
-            translateY(-6px);
+    transform: translateY(-10px);
 
     transition:
-            max-height 0.45s ease,
-            opacity 0.35s ease,
-            transform 0.35s ease;
-
+            max-height .55s cubic-bezier(.22,.61,.36,1),
+            opacity .35s ease,
+            transform .45s cubic-bezier(.22,.61,.36,1);
 }
 
-
-.type-item:hover .sub-menu,
-.type-item.open .sub-menu {
-
-    max-height: 210px;
+.type-item.is-active .sub-menu {
+    max-height: 250px;
 
     opacity: 1;
 
-    transform:
-            translateY(0);
-
+    transform: translateY(0);
 }
 
-
-
 .sub-menu a {
-
     width: max-content;
 
     font-family: var(--serif);
 
-    font-size: 15px;
+    font-size: 17px;
 
-    color:
-            rgba(41, 35, 30, 0.55);
-
-    transition:
-            color 0.2s ease,
-            transform 0.2s ease;
-
-}
-
-
-/*
-   대각선 느낌
-*/
-
-.sub-menu a:nth-child(2) {
-
-    margin-left: 35px;
-
-}
-
-
-.sub-menu a:nth-child(3) {
-
-    margin-left: 14px;
-
-}
-
-
-.sub-menu a:nth-child(4) {
-
-    margin-left: 48px;
-
-}
-
-
-.sub-menu a:hover {
-
-    color: var(--brown);
-
-    transform:
-            translateX(3px);
-
-}
-
-
-
-/* =========================================================
-   SECTION DIVIDER
-========================================================= */
-
-.section-divider {
-
-    width:
-            min(1320px, calc(100% - 150px));
-
-    height: 1px;
-
-    margin:
-            115px auto 0;
-
-    background:
-            var(--line);
-
-}
-
-
-
-/* =========================================================
-   FADE
-========================================================= */
-
-.fade-section {
+    color: rgba(41, 35, 30, .55);
 
     opacity: 0;
 
-    transform:
-            translateY(30px);
+    transform: translateY(8px);
 
     transition:
-            opacity 0.8s ease,
-            transform 0.8s ease;
-
+            color .2s ease,
+            transform .35s ease,
+            opacity .35s ease;
 }
 
+.type-item.is-active .sub-menu a {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.type-item.is-active .sub-menu a:nth-child(1) {
+    transition-delay: .06s;
+}
+
+.type-item.is-active .sub-menu a:nth-child(2) {
+    transition-delay: .12s;
+}
+
+.type-item.is-active .sub-menu a:nth-child(3) {
+    transition-delay: .18s;
+}
+
+.type-item.is-active .sub-menu a:nth-child(4) {
+    transition-delay: .24s;
+}
+
+
+/* Figma의 계단식 느낌 */
+
+.sub-menu a:nth-child(2) {
+    margin-left: 35px;
+}
+
+.sub-menu a:nth-child(3) {
+    margin-left: 14px;
+}
+
+.sub-menu a:nth-child(4) {
+    margin-left: 48px;
+}
+
+.sub-menu a:hover {
+    color: var(--brown);
+
+    transform: translateX(3px);
+}
+
+
+/* ======================================================
+   SECTION DIVIDER
+====================================================== */
+
+.section-divider {
+    width: min(1320px, calc(100% - 150px));
+    height: 1px;
+
+    margin: 115px auto 0;
+
+    background: var(--line);
+}
+
+
+/* ======================================================
+   SCROLL FADE
+====================================================== */
+
+.fade-section {
+    opacity: 0;
+
+    transform: translateY(30px);
+
+    transition:
+            opacity .8s ease,
+            transform .8s ease;
+}
 
 .fade-section.visible {
-
     opacity: 1;
-
-    transform:
-            translateY(0);
-
+    transform: translateY(0);
 }
 
 
-
-/* =========================================================
-   CALENDAR SECTION
-========================================================= */
+/* ======================================================
+   CALENDAR
+====================================================== */
 
 .calendar-section {
-
-    padding:
-            80px 0 130px;
-
+    padding: 80px 0 130px;
 }
-
 
 .calendar-inner {
-
-    width:
-            min(1320px, calc(100% - 150px));
+    width: min(1320px, calc(100% - 150px));
 
     margin: 0 auto;
-
 }
 
-
 .calendar-section-title {
-
-    margin:
-            0 0 42px;
+    margin: 0 0 42px;
 
     font-family: var(--serif);
 
     font-size: 30px;
-
     font-weight: 500;
 
-    letter-spacing:
-            -0.035em;
-
+    letter-spacing: -.035em;
 }
 
-
-
-/* =========================================================
-   CALENDAR LAYOUT
-========================================================= */
-
 .calendar-layout {
-
     display: grid;
 
     grid-template-columns:
@@ -933,32 +834,18 @@ img {
     gap: 22px;
 
     align-items: start;
-
 }
-
-
-
-/* =========================================================
-   CALENDAR CARD
-========================================================= */
 
 .calendar-card {
-
     overflow: hidden;
 
-    border:
-            1px solid rgba(41, 35, 30, 0.09);
-
+    border: 1px solid rgba(41, 35, 30, .09);
     border-radius: 17px;
 
-    background:
-            rgba(251, 248, 244, 0.72);
-
+    background: rgba(251, 248, 244, .72);
 }
 
-
 .calendar-top {
-
     height: 94px;
 
     padding: 0 34px;
@@ -969,27 +856,19 @@ img {
         40px 1fr 40px;
 
     align-items: center;
-
 }
 
-
 .calendar-top strong {
-
     text-align: center;
 
     font-family: var(--serif);
 
     font-size: 20px;
-
     font-weight: 500;
-
 }
 
-
 .month-button {
-
     width: 38px;
-
     height: 38px;
 
     padding: 0;
@@ -998,23 +877,14 @@ img {
 
     background: transparent;
 
-    color:
-            rgba(41, 35, 30, 0.45);
+    color: rgba(41, 35, 30, .45);
 
     font-size: 25px;
 
     cursor: pointer;
-
 }
 
-
-
-/* =========================================================
-   WEEK
-========================================================= */
-
 .week-row {
-
     display: grid;
 
     grid-template-columns:
@@ -1026,50 +896,29 @@ img {
 
     text-align: center;
 
-    border-bottom:
-            1px solid rgba(41, 35, 30, 0.08);
+    border-bottom: 1px solid rgba(41, 35, 30, .08);
 
     font-size: 12px;
 
-    color:
-            rgba(41, 35, 30, 0.40);
-
+    color: rgba(41, 35, 30, .40);
 }
-
 
 .sunday {
-
     color: #ca706b;
-
 }
-
 
 .saturday {
-
     color: #7189b3;
-
 }
 
-
-
-/* =========================================================
-   CALENDAR GRID
-========================================================= */
-
 .calendar-grid {
-
     display: grid;
 
     grid-template-columns:
         repeat(7, 1fr);
-
 }
 
-
-/* 날짜 */
-
 .calendar-day {
-
     position: relative;
 
     height: 126px;
@@ -1078,314 +927,178 @@ img {
 
     border: none;
 
-    border-right:
-            1px solid rgba(41, 35, 30, 0.07);
+    border-right: 1px solid rgba(41, 35, 30, .07);
+    border-bottom: 1px solid rgba(41, 35, 30, .07);
 
-    border-bottom:
-            1px solid rgba(41, 35, 30, 0.07);
+    background: rgba(251, 248, 244, .74);
 
-    background:
-            rgba(251, 248, 244, 0.74);
-
-    text-align: left;
+    text-align: center;
 
     cursor: pointer;
 
-    color:
-            rgba(41, 35, 30, 0.80);
-
+    color: rgba(41, 35, 30, .80);
 }
-
 
 .calendar-day:nth-child(7n) {
-
     border-right: none;
-
 }
-
-
-/*
-   날짜 없는 셀도
-   동일 배경
-*/
 
 .calendar-day.empty {
-
     cursor: default;
-
 }
-
-
-/* 선택 */
 
 .calendar-day.selected {
-
-    background:
-            #e6ddd5;
-
+    background: #e6ddd5;
 }
-
-
-/* 날짜 숫자 */
 
 .day-number {
-
-    font-family: var(--sans);
-
     font-size: 13px;
-
 }
-
 
 .calendar-day.sunday .day-number {
-
     color: #cc706a;
-
 }
-
 
 .calendar-day.saturday .day-number {
-
     color: #7188b5;
-
 }
 
-
-
-/* 행사 점 */
-
 .day-event-dot {
-
     position: absolute;
 
-    left: 20px;
-
+    left: 50%;
     bottom: 17px;
 
     width: 4px;
-
     height: 4px;
 
     border-radius: 50%;
 
-    background:
-            #9b6845;
-
+    background: #9b6845;
 }
 
 
-
-/* =========================================================
+/* ======================================================
    EVENT PANEL
-========================================================= */
+====================================================== */
 
 .event-panel {
-
     min-height: 250px;
 
-    padding:
-            28px 27px;
+    padding: 28px 27px;
 
-    border:
-            1px solid rgba(41, 35, 30, 0.09);
-
+    border: 1px solid rgba(41, 35, 30, .09);
     border-radius: 17px;
 
-    background:
-            rgba(251, 248, 244, 0.72);
-
+    background: rgba(251, 248, 244, .72);
 }
 
-
 .event-date {
-
     margin-bottom: 24px;
 
     font-size: 13px;
 
-    color:
-            rgba(41, 35, 30, 0.58);
-
+    color: rgba(41, 35, 30, .58);
 }
 
-
 .event-item {
-
     position: relative;
 
     padding-left: 18px;
-
 }
-
 
 .event-item + .event-item {
-
     margin-top: 27px;
-
 }
 
-
 .event-item::before {
-
     content: "";
 
     position: absolute;
 
     left: 0;
-
     top: 1px;
-
     bottom: 0;
 
     width: 2px;
 
-    background:
-            rgba(174, 112, 71, 0.72);
-
+    background: rgba(174, 112, 71, .72);
 }
 
-
 .event-title {
-
     margin: 0 0 8px;
 
     font-family: var(--serif);
 
     font-size: 15px;
-
     font-weight: 500;
-
 }
 
-
 .event-info {
-
     margin-top: 4px;
 
     font-size: 12px;
 
-    color:
-            rgba(41, 35, 30, 0.48);
-
+    color: rgba(41, 35, 30, .48);
 }
 
-
 .event-detail {
-
     display: inline-block;
 
     margin-top: 9px;
 
     font-size: 12px;
 
-    color:
-            #a26b46;
-
+    color: #a26b46;
 }
-
 
 .no-event {
-
     font-size: 13px;
 
-    color:
-            rgba(41, 35, 30, 0.42);
-
+    color: rgba(41, 35, 30, .42);
 }
 
 
-
-/* =========================================================
+/* ======================================================
    BACK TO TOP
-========================================================= */
+====================================================== */
 
 .back-to-top {
-
     position: fixed;
 
     right: 48px;
-
     bottom: 42px;
 
     z-index: 80;
 
     width: 50px;
-
     height: 50px;
 
-    border:
-            1px solid rgba(41, 35, 30, 0.13);
-
+    border: 1px solid rgba(41, 35, 30, .13);
     border-radius: 50%;
 
-    background:
-            rgba(248, 244, 239, 0.94);
+    background: rgba(248, 244, 239, .94);
 
-    color:
-            rgba(41, 35, 30, 0.46);
+    color: rgba(41, 35, 30, .46);
 
     font-size: 18px;
 
     cursor: pointer;
 
     opacity: 0;
-
     visibility: hidden;
 
-    transform:
-            translateY(8px);
+    transform: translateY(8px);
 
     transition:
-            0.3s ease;
-
+            opacity .3s ease,
+            visibility .3s ease,
+            transform .3s ease;
 }
-
 
 .back-to-top.show {
-
     opacity: 1;
-
     visibility: visible;
 
-    transform:
-            translateY(0);
-
-}
-
-
-
-/* =========================================================
-   SMALL DESKTOP
-========================================================= */
-
-@media (max-width: 1200px) {
-
-    .feature-section {
-
-        width:
-                calc(100% - 50px);
-
-    }
-
-
-    .type-title {
-
-        font-size: 32px;
-
-    }
-
-
-    .background-kanji {
-
-        font-size: 108px;
-
-    }
-
-
-    .type-item {
-
-        width: 330px;
-
-    }
-
+    transform: translateY(0);
 }
