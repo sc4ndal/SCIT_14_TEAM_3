@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class Scit143Application {
-11111
+
 	public static void main(String[] args) {
 		SpringApplication.run(Scit143Application.class, args);
 	}
