@@ -1,0 +1,912 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500&display=swap');
+
+:root {
+    /* ===== 피그마 원안 기준 시맨틱 컬러 토큰 (스타일가이드 2026-08-26 확정분 반영) ===== */
+    --bg: #f8f4ef;          /* background */
+    --paper: #fdfaf6;       /* card */
+    --secondary: #efe9e1;   /* secondary (아직 미사용, 토큰만 등록) */
+    --muted-bg: #ede7de;    /* muted — 배경 용도. 기존 --muted(텍스트 반투명용)와 이름이 겹쳐서 분리함 */
+    --text: #27211b;        /* foreground */
+    --destructive: #c0392b; /* destructive — 현재 home.css엔 에러 상태 없어 미사용, 추후 대비 등록 */
+
+    --brown: #9b6845;  /* accent */
+    --green: #5c7a62;  /* accent-green (찾아보기 섹션) */
+    --blue: #6b7a9e;   /* accent-blue (준비하기 섹션) */
+    --gold: #8a6e3c;   /* accent-gold (체험하기 섹션) */
+
+    --color-sunday: #b43c3c;
+    --color-saturday: #3c64b4;
+
+    /* 텍스트 opacity 4단계 (확정). 기존 rgba(39,33,27,X) 개별 값들은
+       당장 전체 교체 대상 아님(가이드 문서 방침) — 신규 작성 시 이 토큰 사용 권장 */
+    --text-primary: rgba(39, 33, 27, .90);
+    --text-secondary: rgba(39, 33, 27, .60);
+    --text-tertiary: rgba(39, 33, 27, .45);
+    --text-muted: rgba(39, 33, 27, .30);
+
+    --line: rgba(39, 33, 27, 0.09);
+
+    /* 폰트: 가이드 지정값은 Outfit(본문)+Lora(제목)이지만 둘 다 한글 글리프가 없어서
+       그대로 적용하면 한글 텍스트가 전부 시스템 폴백 폰트로 깨집니다.
+       가이드 문서에도 "최종 폰트 결정 필요" 항목으로 남아있어 이번 색상 정리 범위에서는 보류. */
+    --serif: "Noto Serif KR", Batang, serif;
+    --sans: "Noto Sans KR", sans-serif;
+
+    --feature-height: 720px;
+    --feature-expanded-height: 810px;
+    --radius-calendar: 16px; /* 캘린더 카드/이벤트 패널 전용 (가이드 2xl16) */
+
+    --motion: 0.55s cubic-bezier(.22,.61,.36,1);
+}
+
+
+/* ======================================================
+   BASE
+====================================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button {
+    font: inherit;
+}
+
+img {
+    display: block;
+}
+
+
+/* ======================================================
+   HEADER
+   -> common.css로 옮김 (모든 페이지가 fragments/common-includes.html을
+      같이 쓰는데 스타일이 여기 home.css에만 있어서 다른 페이지 헤더가
+      안 꾸며진 채로 떴었음. .userEntity-* 클래스명도 실제 마크업에 맞게
+      거기서 같이 고침)
+====================================================== */
+
+
+
+/* ======================================================
+   HERO
+====================================================== */
+
+.hero {
+    padding-top: 74px;
+}
+
+.hero-inner {
+    width: min(1360px, calc(100% - 140px));
+
+    margin: 0 auto;
+
+    padding-top: 160px;
+    padding-bottom: 118px;
+
+    text-align: center;
+}
+
+.hero h1 {
+    margin: 0;
+
+    font-family: var(--serif);
+    font-size: 42px;
+    font-weight: 500;
+
+    line-height: 1.25;
+    letter-spacing: -.045em;
+}
+
+.hero p {
+    margin: 32px 0 0;
+
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 2;
+
+    color: rgba(39, 33, 27, .48);
+}
+
+.hero-decoration {
+    margin-top: 42px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+
+    color: rgba(155, 104, 69, .42);
+}
+
+.hero-decoration span {
+    width: 48px;
+    height: 1px;
+
+    background: rgba(39, 33, 27, .10);
+}
+
+.hero-symbol {
+    font-size: 12px;
+}
+
+
+/* ======================================================
+   FEATURE SET
+====================================================== */
+
+.feature-section {
+    width: min(1440px, calc(100% - 110px));
+
+    margin: 0 auto;
+
+    transition: height var(--motion);
+}
+
+.feature-section-second {
+    margin-top: 92px;
+}
+
+.feature-set {
+    display: grid;
+
+    min-height: var(--feature-height);
+
+    transition:
+            min-height var(--motion),
+            grid-template-columns var(--motion);
+}
+
+
+/* 첫 번째 세트 */
+
+.feature-set-first {
+    grid-template-columns: 38% 62%;
+}
+
+
+/* 두 번째 세트 */
+
+.feature-set-second {
+    grid-template-columns: 62% 38%;
+}
+
+
+/* hover 확장 */
+
+.feature-section.is-expanded .feature-set {
+    min-height: var(--feature-expanded-height);
+}
+
+
+/* SET 1 이미지가 조금 더 영역 차지 */
+
+.feature-section.is-expanded .feature-set-first {
+    grid-template-columns: 35% 65%;
+}
+
+
+/* SET 2 이미지가 조금 더 영역 차지 */
+
+.feature-section.is-expanded .feature-set-second {
+    grid-template-columns: 65% 35%;
+}
+
+
+/* ======================================================
+   PHOTO
+====================================================== */
+
+.feature-photo {
+    position: relative;
+
+    height: var(--feature-height);
+
+    overflow: hidden;
+
+    transition:
+            height var(--motion),
+            transform var(--motion);
+}
+
+.feature-section.is-expanded .feature-photo {
+    height: var(--feature-expanded-height);
+}
+
+
+/* 이미지 자체 확대 */
+
+.feature-photo img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    transform: scale(1);
+
+    transition:
+            transform .8s cubic-bezier(.22,.61,.36,1),
+            filter .6s ease;
+}
+
+.feature-section.is-expanded .feature-photo img {
+    transform: scale(1.065);
+}
+
+
+/* 사진과 배경 경계 */
+
+.photo-gradient {
+    position: absolute;
+
+    top: 0;
+    bottom: 0;
+
+    width: 180px;
+
+    z-index: 2;
+
+    pointer-events: none;
+}
+
+.gradient-from-left {
+    left: 0;
+
+    background:
+            linear-gradient(
+                    to right,
+                    var(--bg) 0%,
+                    rgba(248,244,239,.84) 15%,
+                    rgba(248,244,239,.45) 46%,
+                    transparent 100%
+            );
+}
+
+.gradient-from-right {
+    right: 0;
+
+    background:
+            linear-gradient(
+                    to left,
+                    var(--bg) 0%,
+                    rgba(248,244,239,.84) 15%,
+                    rgba(248,244,239,.45) 46%,
+                    transparent 100%
+            );
+}
+
+
+/* ======================================================
+   TYPOGRAPHY CANVAS
+====================================================== */
+
+.type-canvas {
+    position: relative;
+
+    height: var(--feature-height);
+
+    transition: height var(--motion);
+}
+
+.feature-section.is-expanded .type-canvas {
+    height: var(--feature-expanded-height);
+}
+
+
+/* ======================================================
+   TYPE ITEMS
+====================================================== */
+
+.type-item {
+    position: absolute;
+
+    width: 390px;
+
+    transition:
+            top var(--motion),
+            bottom var(--motion),
+            transform var(--motion),
+            opacity .4s ease;
+}
+
+
+/* SET 1 */
+
+.type-item-learn {
+    top: 68px;
+    left: 22px;
+}
+
+.type-item-find {
+    top: 402px;
+    left: 100px;
+}
+
+
+/*
+   알아보기 확장 시
+   찾아보기 전체 블록이 아래로 이동
+*/
+
+.feature-section.active-first .type-item-find {
+    top: 500px;
+}
+
+
+/* SET 2 */
+
+.type-item-prepare {
+    top: 72px;
+    right: 48px;
+}
+
+.type-item-experience {
+    top: 405px;
+    right: 5px;
+}
+
+
+/*
+   준비하기 확장 시
+   체험하기가 아래로 이동
+*/
+
+.feature-section.active-first .type-item-experience {
+    top: 502px;
+}
+
+
+/*
+   두 번째 항목을 hover하는 경우에는
+   첫 번째 항목의 위치는 그대로 두고
+   전체 세트 높이만 확장
+*/
+
+
+/* ======================================================
+   LABEL + KANJI
+====================================================== */
+
+.type-label {
+    position: relative;
+
+    z-index: 5;
+
+    display: block;
+
+    margin-bottom: 18px;
+
+    font-size: 13px;
+    letter-spacing: .015em;
+
+    color: rgba(39, 33, 27, .42);
+}
+
+.background-kanji {
+    position: absolute;
+
+    left: -12px;
+    top: 18px;
+
+    z-index: 0;
+
+    font-family: var(--serif);
+
+    font-size: 126px;
+    font-weight: 400;
+
+    line-height: .9;
+
+    user-select: none;
+    pointer-events: none;
+}
+
+.kanji-learn {
+    color: rgba(155, 104, 69, .105);
+}
+
+.kanji-find {
+    color: rgba(92, 122, 98, .105);
+}
+
+.kanji-prepare {
+    color: rgba(107, 122, 158, .105);
+}
+
+.kanji-experience {
+    color: rgba(138, 110, 60, .105);
+}
+
+
+/* ======================================================
+   TITLE
+====================================================== */
+
+h2.type-title {
+    position: relative;
+
+    z-index: 3;
+
+    margin: 62px 0 0;
+
+    width: max-content;
+
+    font-family: var(--serif);
+
+    font-size: 38px;
+    font-weight: 500;
+
+    line-height: 1.42;
+    letter-spacing: -.045em;
+
+    cursor: pointer;
+
+    outline: none;
+
+    transition:
+            transform .35s ease,
+            color .25s ease;
+}
+
+h2.type-title:hover {
+    transform: translateX(4px);
+}
+
+
+/* ======================================================
+   SUB MENU
+====================================================== */
+
+.sub-menu {
+    position: relative;
+
+    z-index: 5;
+
+    margin-top: 30px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 19px;
+
+    max-height: 0;
+
+    opacity: 0;
+
+    overflow: hidden;
+
+    transform: translateY(-10px);
+
+    transition:
+            max-height .55s cubic-bezier(.22,.61,.36,1),
+            opacity .35s ease,
+            transform .45s cubic-bezier(.22,.61,.36,1);
+}
+
+.type-item.is-active .sub-menu {
+    max-height: 250px;
+
+    opacity: 1;
+
+    transform: translateY(0);
+}
+
+.sub-menu a {
+    width: max-content;
+
+    font-family: var(--serif);
+
+    font-size: 17px;
+
+    color: rgba(39, 33, 27, .55);
+
+    opacity: 0;
+
+    transform: translateY(8px);
+
+    transition:
+            color .2s ease,
+            transform .35s ease,
+            opacity .35s ease;
+}
+
+.type-item.is-active .sub-menu a {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.type-item.is-active .sub-menu a:nth-child(1) {
+    transition-delay: .06s;
+}
+
+.type-item.is-active .sub-menu a:nth-child(2) {
+    transition-delay: .12s;
+}
+
+.type-item.is-active .sub-menu a:nth-child(3) {
+    transition-delay: .18s;
+}
+
+.type-item.is-active .sub-menu a:nth-child(4) {
+    transition-delay: .24s;
+}
+
+
+/* Figma의 계단식 느낌 */
+
+.sub-menu a:nth-child(2) {
+    margin-left: 35px;
+}
+
+.sub-menu a:nth-child(3) {
+    margin-left: 14px;
+}
+
+.sub-menu a:nth-child(4) {
+    margin-left: 48px;
+}
+
+.sub-menu a:hover {
+    color: var(--brown);
+
+    transform: translateX(3px);
+}
+
+
+/* ======================================================
+   SECTION DIVIDER
+====================================================== */
+
+.section-divider {
+    width: min(1320px, calc(100% - 150px));
+    height: 1px;
+
+    margin: 115px auto 0;
+
+    background: var(--line);
+}
+
+
+/* ======================================================
+   SCROLL FADE
+====================================================== */
+
+.fade-section {
+    opacity: 0;
+
+    transform: translateY(30px);
+
+    transition:
+            opacity .8s ease,
+            transform .8s ease;
+}
+
+.fade-section.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+/* ======================================================
+   CALENDAR
+====================================================== */
+
+.calendar-section {
+    padding: 80px 0 130px;
+}
+
+.calendar-inner {
+    width: min(1320px, calc(100% - 150px));
+
+    margin: 0 auto;
+}
+
+.calendar-section-title {
+    margin: 0 0 42px;
+
+    font-family: var(--serif);
+
+    font-size: 30px;
+    font-weight: 500;
+
+    letter-spacing: -.035em;
+}
+
+.calendar-layout {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        320px;
+
+    gap: 22px;
+
+    align-items: start;
+}
+
+.calendar-card {
+    overflow: hidden;
+
+    border: 1px solid rgba(39, 33, 27, .09);
+    border-radius: var(--radius-calendar);
+
+    background: rgba(253, 250, 246, .72);
+}
+
+.calendar-top {
+    height: 94px;
+
+    padding: 0 34px;
+
+    display: grid;
+
+    grid-template-columns:
+        40px 1fr 40px;
+
+    align-items: center;
+}
+
+.calendar-top strong {
+    text-align: center;
+
+    font-family: var(--serif);
+
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.month-button {
+    width: 38px;
+    height: 38px;
+
+    padding: 0;
+
+    border: none;
+
+    background: transparent;
+
+    color: rgba(39, 33, 27, .45);
+
+    font-size: 25px;
+
+    cursor: pointer;
+}
+
+.week-row {
+    display: grid;
+
+    grid-template-columns:
+        repeat(7, 1fr);
+
+    height: 55px;
+
+    align-items: center;
+
+    text-align: center;
+
+    border-bottom: 1px solid rgba(39, 33, 27, .08);
+
+    font-size: 12px;
+
+    color: rgba(39, 33, 27, .40);
+}
+
+.sunday {
+    color: var(--color-sunday);
+}
+
+.saturday {
+    color: var(--color-saturday);
+}
+
+.calendar-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(7, 1fr);
+}
+
+.calendar-day {
+    position: relative;
+
+    height: 126px;
+
+    padding: 19px;
+
+    border: none;
+
+    border-right: 1px solid rgba(39, 33, 27, .07);
+    border-bottom: 1px solid rgba(39, 33, 27, .07);
+
+    background: rgba(253, 250, 246, .74);
+
+    text-align: center;
+
+    cursor: pointer;
+
+    color: rgba(39, 33, 27, .80);
+
+    transition: background-color .2s ease;
+}
+
+.calendar-day:nth-child(7n) {
+    border-right: none;
+}
+
+.calendar-day.empty {
+    cursor: default;
+}
+
+.calendar-day.selected {
+    background: #e6ddd5;
+}
+
+.calendar-day:not(.empty):not(.selected):hover {
+    background: var(--muted-bg);
+}
+
+.day-number {
+    font-size: 13px;
+}
+
+.calendar-day.sunday .day-number {
+    color: var(--color-sunday);
+}
+
+.calendar-day.saturday .day-number {
+    color: var(--color-saturday);
+}
+
+.day-event-dot {
+    position: absolute;
+
+    left: 50%;
+    bottom: 17px;
+
+    width: 4px;
+    height: 4px;
+
+    border-radius: 50%;
+
+    background: var(--brown);
+}
+
+
+/* ======================================================
+   EVENT PANEL
+====================================================== */
+
+.event-panel {
+    min-height: 250px;
+
+    padding: 28px 27px;
+
+    border: 1px solid rgba(39, 33, 27, .09);
+    border-radius: var(--radius-calendar);
+
+    background: rgba(253, 250, 246, .72);
+}
+
+.event-date {
+    margin-bottom: 24px;
+
+    font-size: 13px;
+
+    color: rgba(39, 33, 27, .58);
+}
+
+.event-item {
+    position: relative;
+
+    padding-left: 18px;
+}
+
+.event-item + .event-item {
+    margin-top: 27px;
+}
+
+.event-item::before {
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    top: 1px;
+    bottom: 0;
+
+    width: 2px;
+
+    background: rgba(155, 104, 69, .72);
+}
+
+.event-title {
+    margin: 0 0 8px;
+
+    font-family: var(--serif);
+
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.event-info {
+    margin-top: 4px;
+
+    font-size: 12px;
+
+    color: rgba(39, 33, 27, .48);
+}
+
+.event-detail {
+    display: inline-block;
+
+    margin-top: 9px;
+
+    font-size: 12px;
+
+    color: var(--brown);
+}
+
+.no-event {
+    font-size: 13px;
+
+    color: rgba(39, 33, 27, .42);
+}
+
+
+/* ======================================================
+   BACK TO TOP
+====================================================== */
+
+.back-to-top {
+    position: fixed;
+
+    right: 48px;
+    bottom: 42px;
+
+    z-index: 80;
+
+    width: 50px;
+    height: 50px;
+
+    border: 1px solid rgba(39, 33, 27, .13);
+    border-radius: 50%;
+
+    background: rgba(248, 244, 239, .94);
+
+    color: rgba(39, 33, 27, .46);
+
+    font-size: 18px;
+
+    cursor: pointer;
+
+    opacity: 0;
+    visibility: hidden;
+
+    transform: translateY(8px);
+
+    transition:
+            opacity .3s ease,
+            visibility .3s ease,
+            transform .3s ease;
+}
+
+.back-to-top.show {
+    opacity: 1;
+    visibility: visible;
+
+    transform: translateY(0);
+}

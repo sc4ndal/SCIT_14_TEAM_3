@@ -15,8 +15,8 @@
 
 | 항목 | 결정 내용 |
 |---|---|
-| 관리자/일반 회원 구분 | `user.role` 컬럼(`ENUM('USER','ADMIN')`)으로 구분. 로그인 후 이 값으로 관리자 권한 여부를 판단합니다. |
-| 목탁 개인 카운트 초기화 | `user.moktak_count`(오늘 친 횟수) + `user.moktak_count_date`(기준 날짜)를 함께 저장. 목탁을 두드릴 때 `moktak_count_date`가 오늘과 다르면 애플리케이션에서 `moktak_count`를 0으로 초기화한 뒤 1을 더합니다(지연 초기화 방식, 별도 배치/스케줄러 불필요). |
+| 관리자/일반 회원 구분 | `userEntity.role` 컬럼(`ENUM('USER','ADMIN')`)으로 구분. 로그인 후 이 값으로 관리자 권한 여부를 판단합니다. |
+| 목탁 개인 카운트 초기화 | `userEntity.moktak_count`(오늘 친 횟수) + `userEntity.moktak_count_date`(기준 날짜)를 함께 저장. 목탁을 두드릴 때 `moktak_count_date`가 오늘과 다르면 애플리케이션에서 `moktak_count`를 0으로 초기화한 뒤 1을 더합니다(지연 초기화 방식, 별도 배치/스케줄러 불필요). |
 | 목탁 전체 카운트 | `moktak` 테이블에 `total_count` 컬럼으로 관리. 사이트 전체에서 딱 1개의 행만 사용하며, 두드릴 때마다 +1 됩니다. |
 | 사찰 정보 | 주소·좌표·설명 등 상세 정보는 지도 API에서 그때그때 조회하고, DB에는 템플스테이 프로그램과 연결하기 위한 최소 정보(이름, API 장소 ID)만 저장합니다. |
 | 문의 + 예약 통합 | `temple_stay_inquiry`와 `temple_stay_reservation`을 `temple_stay_reservation` 하나로 합쳤습니다. `status` 값으로 문의부터 예약 완료까지의 흐름을 관리합니다. |

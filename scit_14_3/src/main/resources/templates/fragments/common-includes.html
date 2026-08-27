@@ -1,0 +1,156 @@
+<!--
+    <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+    모든 html에 삽입
+
+-->
+
+<div class="site-header" id="siteHeader" th:fragment="commonIncludes">
+    <div class="header-inner">
+
+        <a class="brand" href="/">
+
+            <span class="brand-circle">
+                禪
+            </span>
+
+            <span class="brand-name">
+                佛선자
+            </span>
+
+        </a>
+
+
+        <div class="header-right">
+
+            <div class="language-area">
+
+
+                <button class="language-button active"
+                        data-lang="ko"
+                        type="button">
+                    한국어
+                </button>
+
+                <span>·</span>
+
+                <button class="language-button"
+                        data-lang="ja"
+                        type="button">
+                    日本語
+                </button>
+
+                <span>·</span>
+
+                <button class="language-button"
+                        data-lang="en"
+                        type="button">
+                    English
+                </button>
+
+            </div>
+
+
+            <span class="header-divider"></span>
+
+
+            <nav class="member-menu">
+
+                <!-- ============================
+                            미로그인 상태
+                ================================= -->
+                <div class="guest-menu"
+                     sec:authorize="isAnonymous()">
+
+                    <a th:href="@{/signupSelect}">
+                        회원가입
+                    </a>
+
+                    <a th:href="@{/login}">
+                        로그인
+                    </a>
+                </div>
+
+                <!-- ============================
+                            로그인 상태
+                ================================= -->
+                <div class="userEntity-menu"
+                     sec:authorize="isAuthenticated()">
+
+                    <!-- 아이콘 + 닉네임 + 로그아웃 (한 줄) -->
+                    <div class="userEntity-identity">
+
+                        <!-- 프로필 아이콘은 컬럼 추가 부담으로 빼기로 결정 (2026-08-26) -->
+
+                        <!-- 일반회원은 법명, 사찰계정은 사찰명 (AppUserDetails.getNickname()) -->
+                        <span class="userEntity-nickname"
+                              th:text="${#authentication.principal.nickname}">
+                            닉네임명
+                        </span>
+
+                        <span class="identity-divider"></span>
+
+                        <!-- 로그아웃 -->
+                        <form th:action="@{/logout}"
+                              method="post"
+                              class="logout-form">
+
+                            <button type="submit"
+                                    class="logout-button">
+                                로그아웃
+                            </button>
+                        </form>
+
+                    </div>
+
+
+                    <!-- 마이페이지 트리거 + dropdown
+                         userEntity-identity 줄 바로 아래에 오버레이로 표시됨 -->
+                    <div class="mypage-menu">
+                        <a th:href="@{/mypage}"
+                           class="mypage-title">
+                            마이페이지
+
+                            <svg class="mypage-caret" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </a>
+
+                        <div class="mypage-dropdown">
+
+                            <a th:href="@{/mypage/edit}">
+                                회원정보수정
+                            </a>
+                            <a th:href="@{/mypage/reservations}">
+                                예약목록
+                            </a>
+                            <a th:href="@{/mypage/reviews}">
+                                내가 쓴 리뷰
+                            </a>
+                            <a th:href="@{/mypage/favorites/temples}">
+                                관심 사찰
+                            </a>
+                            <a th:href="@{/mypage/favorites/events}">
+                                관심 행사
+                            </a>
+                            <a th:href="@{/mypage/favorites/quotes}">
+                                저장한 불교 한마디
+                            </a>
+                            <a th:href="@{/mypage/favorites/foods}">
+                                관심 사찰음식
+                            </a>
+                            <a th:href="@{/mypage/favorites/reviews}">
+                                좋아요한 리뷰
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </nav>
+
+        </div>
+
+    </div>
+</div>
