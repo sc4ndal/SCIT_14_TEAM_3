@@ -11,24 +11,24 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "temple_stay_program")
+@Table(name = "TEMPLE_STAY_PROGRAM")
 public class TempleStayProgramEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "program_id")
 	private Long programId;
 	
-	@Column(name = "temple_id")
+	@Column(name = "temple_id", nullable = false)
 	private Long templeId;
 	
-	@Column(name = "title", length = 100)
+	@Column(name = "title", length = 100, nullable = false)
 	private String title;
 	
 	public enum ProgramType {
 		당일형, 체험형, 휴식형
 	}
 	@Enumerated(EnumType.STRING)
-	@Column(name = "program_type")
+	@Column(name = "program_type", nullable = false)
 	private ProgramType programType;
 	
 	@Column(name = "description", columnDefinition = "TEXT")
@@ -46,20 +46,20 @@ public class TempleStayProgramEntity {
 	@Column(name = "precautions", columnDefinition = "TEXT")
 	private String precautions;
 	
-	@Column(name = "price")
+	@Column(name = "price", nullable = false)
 	private int price;
 	
-	@Column(name = "duration", length = 20)
+	@Column(name = "duration", length = 20, nullable = false)
 	private String duration;
 	
 	@Builder.Default
-	@Column(name = "max_participant")
+	@Column(name = "max_participant", nullable = false)
 	private int maxParticipant = 20;
 	
 	@Builder.Default
-	@Column(name = "support_english")
+	@Column(name = "support_english", nullable = false)
 	private boolean supportEnglish = false;
 	
-	@Column(name = "created_at", insertable = false, updatable = false)
+	@Column(name = "created_at", insertable = false, updatable = false, nullable = false)
 	private LocalDateTime createdAt;
 }

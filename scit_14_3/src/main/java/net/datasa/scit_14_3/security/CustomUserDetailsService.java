@@ -37,7 +37,9 @@ public class CustomUserDetailsService implements UserDetailsService {
                     temple.getLoginId(),
                     temple.getPassword(),
                     List.of(new SimpleGrantedAuthority("ROLE_TEMPLE")),
-                    temple.getTempleId()
+                    temple.getTempleId(),
+                    temple.getName(),
+                    null // 폼로그인이라 카카오 토큰 없음
             );
         }
 
@@ -48,7 +50,9 @@ public class CustomUserDetailsService implements UserDetailsService {
                 user.getLoginId(),
                 user.getPassword(),
                 List.of(new SimpleGrantedAuthority(roleName)),
-                null
+                null,
+                user.getNickname(),
+                null // 폼로그인이라 카카오 토큰 없음
         );
     }
 }
