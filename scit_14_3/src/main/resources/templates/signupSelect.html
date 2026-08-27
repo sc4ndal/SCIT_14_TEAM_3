@@ -6,27 +6,29 @@
 	<title>회원가입 · 사찰 커뮤니티</title>
 	<link rel="stylesheet" th:href="@{/css/common.css}">
 	<link rel="stylesheet" th:href="@{/css/signupSelect.css}">
+	<script th:src="@{/js/common.js}" defer></script>
+	<script th:src="@{/js/signupSelect.js}" defer></script>
 
 </head>
 <body>
+<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
 <div class="card">
 	<div class="beam">
 		<span></span><span></span><span></span><span></span><span></span>
 		<span></span><span></span><span></span><span></span><span></span>
 		<span></span><span></span><span></span><span></span><span></span>
 	</div>
-	<div th:replace="~{fragments/language-fragment :: languageBar}"></div>
 	<div class="header">
-		<h1>회원가입</h1>
-		<p>원하시는 방법으로 가입을 진행해주세요</p>
+		<h1 data-i18n="title">회원가입</h1>
+		<p data-i18n="subtitle">원하시는 방법으로 가입을 진행해주세요</p>
 	</div>
-	
+
 	<div class="method-list">
-		<a class="method-btn email" th:href="@{/signup?mode=local}">이메일로 가입하기</a>
-		<a class="method-btn kakao" th:href="@{/signup?mode=kakao}">카카오로 가입하기</a>
-		
+		<a class="method-btn email" th:href="@{/signup?mode=local}" data-i18n="emailBtn">이메일로 가입하기</a>
+		<a class="method-btn kakao" th:href="@{/signup?mode=kakao}" data-i18n="kakaoBtn">카카오로 가입하기</a>
+
 		<!--        <div class="divider">다른 방법 (준비 중)</div>-->
-		
+
 		<!--        <span class="method-btn naver disabled" aria-disabled="true">-->
 		<!--      네이버로 가입하기 <span class="soon-tag">준비중</span>-->
 		<!--    </span>-->
@@ -34,9 +36,8 @@
 		<!--      구글로 가입하기 <span class="soon-tag">준비중</span>-->
 		<!--    </span>-->
 	</div>
-	
-	<p class="footer-note">이미 계정이 있으신가요? <a href="#">로그인</a></p>
-</div>
 
+	<p class="footer-note"><span data-i18n="footerNoteText">이미 계정이 있으신가요?</span> <a href="#" data-i18n="footerNoteLoginLink">로그인</a></p>
+</div>
 </body>
 </html>

@@ -243,4 +243,7 @@ button.submit{
     cursor:pointer;
 }
 button.submit:hover{background:var(--wood);}
+.swal-btn-fixed{
+    min-width: 90px;
+}
 #kakaoSection{display:none;}
