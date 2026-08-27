@@ -33,10 +33,13 @@ public class WebSecurityConfig {
 			"/js/**",
 			"/images/**",
 			"/login/**",           // /login, /login/kakao, /login/kakao/callback 전부 포함
-			"/signupSelect",
+			"/signupSelect/**",
 			"/signup/**",          // /signup, /signup/local, /signup/kakao-additional 전부 포함
 			"/temples/**",
-			"/templestayprograms/**"
+			"/templestayprograms/**",
+			"/templestayreservations/**",
+			"/reservationparticipants/**",
+			"/payments/**"
 	);
 	
 	@Bean
