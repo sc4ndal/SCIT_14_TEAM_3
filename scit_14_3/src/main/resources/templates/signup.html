@@ -29,6 +29,9 @@
 		<p class="req-note"><span class="req">*</span> <span data-i18n="requiredNote">표시는 필수 입력 항목입니다</span></p>
 	</div>
 
+	<!-- ===== [추가] 회원가입 실패 시 에러 메시지 (UserController의 flash attribute) ===== -->
+	<p class="check-result" style="color:#c0392b; text-align:center;" th:if="${signupError}" th:text="${signupError}"></p>
+	
 	<form onsubmit="return false;">
 
 		<!-- ===== 인증 방식 섹션 ===== -->
@@ -78,6 +81,9 @@
 				<span class="check-result" id="nicknameResult"></span>
 				<p class="hint locked" data-i18n="lockedHint">가입 후 수정할 수 없습니다</p>
 			</div>
+			
+			<!-- 국적 구분은 DB에 저장되지 않음 - name 필드를 한글/여권영문 중
+			     어떤 형식으로 검증할지 전환하는 용도로만 사용 (onNationalityChange()) -->
 
 			<div class="field">
 				<label><span data-i18n="nationalityLabel">국적 구분</span></label>
@@ -95,13 +101,7 @@
 			</div>
 
 			<div class="field">
-				<label for="birth"><span data-i18n="birthLabel">생년월일</span><span class="req">*</span></label>
-				<input type="date" id="birth" name="birth_date" onchange="validateBirthDate()" onblur="validateBirthDate()">
-				<span class="check-result" id="birthResult"></span>
-			</div>
-
-			<div class="field">
-				<label for="emailLocal"><span data-i18n="emailLabel">이메일</span><span class="req">*</span></label>
+				<label for="emailLocal"><span data-i18n>이메일</span><span class="req">*</span></label>
 				<div class="email-row">
 					<input type="text" id="emailLocal" class="email-local" data-i18n-placeholder="emailLocalPlaceholder" placeholder="이메일 아이디" oninput="updateFullEmail(); resetEmailFlow();">
 					<span class="at-sign">@</span>
@@ -144,14 +144,17 @@
 		</fieldset>
 
 		<!-- 화면에 노출되지 않는 값들
-             주의: mode에 따른 login_type/kakao_id는 더 이상 JS(setMode)가 채우지 않습니다.
-             서버가 th:value로 직접 확정해야 합니다 (응답 요약 참고). -->
-		<input type="hidden" id="loginType" name="login_type" th:value="${mode == 'kakao' ? 'KAKAO' : 'LOCAL'}" value="LOCAL">
-		<input type="hidden" id="kakaoId" name="kakao_id" value="">
-		<input type="hidden" id="emailVerified" name="email_verified" value="false">
-		<input type="hidden" name="preferred_language" id="preferredLanguageField" value="ko">
-		<input type="hidden" name="role" value="USER">
-
+			 주의: mode에 따른 login_type/kakao_id는 더 이상 JS(setMode)가 채우지 않습니다.
+			 서버가 th:value로 직접 확정해야 합니다 (응답 요약 참고). -->
+		<input id="loginType" name="login_type" th:value="${mode == 'kakao' ? 'KAKAO' : 'LOCAL'}" type="hidden"
+		       value="LOCAL">
+		<!-- [변경] 화면 표시/디버그 참고용으로만 채움. 서버(UserController)는 이 값을 신뢰하지 않고
+		     세션의 pendingKakaoId만 사용해서 실제 가입을 처리함 (hidden 필드 조작 방지) -->
+		<input id="kakaoId" name="kakao_id" th:value="${mode == 'kakao'} ? ${kakaoId} : null" type="hidden" value="">
+		<input id="emailVerified" name="email_verified" type="hidden" value="false">
+		<input id="preferredLanguageField" name="preferred_language" type="hidden" value="ko">
+		<input name="role" type="hidden" value="USER">
+		
 		<label class="terms-checkbox">
 			<input type="checkbox" id="agreeTerms">
 			<span><span class="req-tag" data-i18n="termsRequired">[필수]</span><span data-i18n="termsText">서비스 이용약관 및 개인정보 처리방침에 동의합니다</span></span>
@@ -171,5 +174,54 @@
 		</div>
 	</form>
 </div>
+
+<!-- ===== [추가] 카카오 이메일 프리필 =====
+     signup.js의 기존 함수(updateFullEmail/resetEmailFlow 등)는 그대로 두고,
+     페이지 로드 시 한 번만 이메일 입력칸/도메인 select를 채워주는 역할만 합니다.
+     카카오가 이미 검증한 이메일이라고 보고 인증 절차(메일발송/인증번호)는 건너뜁니다.
+     주의: 사용자가 이 이메일을 직접 수정하면 기존 resetEmailFlow()가 인증상태를 다시
+     초기화할 텐데, 그 경우 인증 UI를 다시 보여줄지는 signup.js 쪽에서 같이 봐야 합니다. -->
+<script th:if="${mode == 'kakao'}" th:inline="javascript">
+/*<![CDATA[*/
+(function () {
+    var kakaoEmail = /*[[${kakaoEmail}]]*/ null;
+    if (!kakaoEmail) return;
+
+    var atIndex = kakaoEmail.indexOf('@');
+    if (atIndex === -1) return;
+    var localPart = kakaoEmail.substring(0, atIndex);
+    var domainPart = kakaoEmail.substring(atIndex + 1);
+
+    document.getElementById('emailLocal').value = localPart;
+
+    var domainSelect = document.getElementById('emailDomainSelect');
+    var matched = false;
+    for (var i = 0; i < domainSelect.options.length; i++) {
+        if (domainSelect.options[i].value === domainPart) {
+            domainSelect.value = domainPart;
+            matched = true;
+            break;
+        }
+    }
+    if (!matched) {
+        domainSelect.value = 'custom';
+        var customInput = document.getElementById('emailDomainCustom');
+        if (customInput) {
+            customInput.style.display = '';
+            customInput.value = domainPart;
+        }
+    }
+
+    document.getElementById('email').value = kakaoEmail;
+    document.getElementById('emailVerified').value = 'true';
+
+    var verifySection = document.getElementById('verifySection');
+    if (verifySection) verifySection.style.display = 'none';
+    var sendMailBtn = document.getElementById('sendMailBtn');
+    if (sendMailBtn) sendMailBtn.style.display = 'none';
+})();
+/*]]>*/
+</script>
+
 </body>
 </html>
