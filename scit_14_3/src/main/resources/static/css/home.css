@@ -1,22 +1,40 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500&display=swap');
 
 :root {
-    --bg: #f8f4ef;
-    --paper: #fbf8f4;
-    --text: #29231e;
-    --muted: rgba(41, 35, 30, 0.48);
-    --line: rgba(41, 35, 30, 0.09);
+    /* ===== 피그마 원안 기준 시맨틱 컬러 토큰 (스타일가이드 2026-08-26 확정분 반영) ===== */
+    --bg: #f8f4ef;          /* background */
+    --paper: #fdfaf6;       /* card */
+    --secondary: #efe9e1;   /* secondary (아직 미사용, 토큰만 등록) */
+    --muted-bg: #ede7de;    /* muted — 배경 용도. 기존 --muted(텍스트 반투명용)와 이름이 겹쳐서 분리함 */
+    --text: #27211b;        /* foreground */
+    --destructive: #c0392b; /* destructive — 현재 home.css엔 에러 상태 없어 미사용, 추후 대비 등록 */
 
-    --brown: #9b6845;
-    --green: #657e6a;
-    --blue: #7c89a5;
-    --gold: #98784c;
+    --brown: #9b6845;  /* accent */
+    --green: #5c7a62;  /* accent-green (찾아보기 섹션) */
+    --blue: #6b7a9e;   /* accent-blue (준비하기 섹션) */
+    --gold: #8a6e3c;   /* accent-gold (체험하기 섹션) */
 
+    --color-sunday: #b43c3c;
+    --color-saturday: #3c64b4;
+
+    /* 텍스트 opacity 4단계 (확정). 기존 rgba(39,33,27,X) 개별 값들은
+       당장 전체 교체 대상 아님(가이드 문서 방침) — 신규 작성 시 이 토큰 사용 권장 */
+    --text-primary: rgba(39, 33, 27, .90);
+    --text-secondary: rgba(39, 33, 27, .60);
+    --text-tertiary: rgba(39, 33, 27, .45);
+    --text-muted: rgba(39, 33, 27, .30);
+
+    --line: rgba(39, 33, 27, 0.09);
+
+    /* 폰트: 가이드 지정값은 Outfit(본문)+Lora(제목)이지만 둘 다 한글 글리프가 없어서
+       그대로 적용하면 한글 텍스트가 전부 시스템 폴백 폰트로 깨집니다.
+       가이드 문서에도 "최종 폰트 결정 필요" 항목으로 남아있어 이번 색상 정리 범위에서는 보류. */
     --serif: "Noto Serif KR", Batang, serif;
     --sans: "Noto Sans KR", sans-serif;
 
     --feature-height: 720px;
     --feature-expanded-height: 810px;
+    --radius-calendar: 16px; /* 캘린더 카드/이벤트 패널 전용 (가이드 2xl16) */
 
     --motion: 0.55s cubic-bezier(.22,.61,.36,1);
 }
@@ -77,7 +95,7 @@ img {
 }
 
 .site-header.scrolled {
-    border-bottom-color: rgba(41, 35, 30, .08);
+    border-bottom-color: rgba(39, 33, 27, .08);
     box-shadow: 0 2px 14px rgba(30, 22, 16, .025);
 }
 
@@ -102,7 +120,7 @@ img {
     width: 32px;
     height: 32px;
 
-    border: 1px solid rgba(41, 35, 30, .17);
+    border: 1px solid rgba(39, 33, 27, .17);
     border-radius: 50%;
 
     display: flex;
@@ -112,7 +130,7 @@ img {
     font-family: var(--serif);
     font-size: 11px;
 
-    color: rgba(41, 35, 30, .50);
+    color: rgba(39, 33, 27, .50);
 }
 
 .brand-name {
@@ -134,7 +152,7 @@ img {
 }
 
 .language-area span {
-    color: rgba(41, 35, 30, .18);
+    color: rgba(39, 33, 27, .18);
 }
 
 .language-button {
@@ -143,21 +161,21 @@ img {
 
     background: transparent;
 
-    color: rgba(41, 35, 30, .34);
+    color: rgba(39, 33, 27, .34);
     font-size: 12px;
 
     cursor: pointer;
 }
 
 .language-button.active {
-    color: rgba(41, 35, 30, .73);
+    color: rgba(39, 33, 27, .73);
 }
 
 .header-divider {
     width: 1px;
     height: 13px;
 
-    background: rgba(41, 35, 30, .12);
+    background: rgba(39, 33, 27, .12);
 }
 
 /* 수정 -------------------------------------------------*/
@@ -168,26 +186,51 @@ img {
 
 /* 로그인 / 미로그인 공통 */
 
-.guest-menu,
-.user-menu {
+.guest-menu {
     display: flex;
     align-items: center;
     gap: 26px;
 }
 
+/* 로그인 상태: 아이덴티티 줄(아이콘+닉네임+로그아웃) 기준점.
+   마이페이지 트리거/드롭다운이 이 아래에 오버레이로 붙는다 */
+.user-menu {
+    position: relative;
+}
+
+.user-identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-nickname {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(39, 33, 27, .75);
+    white-space: nowrap;
+}
+
+.identity-divider {
+    width: 1px;
+    height: 13px;
+
+    background: rgba(39, 33, 27, .12);
+}
+
 .member-menu a,
 .logout-button {
     font-size: 12px;
-    color: rgba(41, 35, 30, .42);
+    color: rgba(39, 33, 27, .42);
     transition: color 0.2s ease;
 }
 
 .member-menu a:hover,
 .logout-button:hover {
-    color: rgba(41, 35, 30, 0.85);
+    color: rgba(39, 33, 27, 0.85);
 }
 
-.user-menu form {
+.logout-form {
     margin: 0;
 }
 
@@ -200,37 +243,48 @@ img {
     cursor: pointer;
 }
 
-/* 프로필 */
+/* 프로필 아이콘은 컬럼 추가 부담으로 빼기로 결정 (2026-08-26) — .profile-button/.profile-icon 삭제 */
 
-.profile-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.profile-icon {
-    width: 28px;
-    height: 28px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 50%;
-    border: 1px solid rgba(41, 35, 30, 0.15);
-
-    font-size: 13px;
-}
-
-/* 마이페이지 dropdown */
+/* 마이페이지 트리거 + dropdown
+   user-identity 줄 바로 아래에 오버레이로 뜬다 (헤더 높이에 영향 안 줌) */
 
 .mypage-menu {
-    position: relative;
+    position: absolute;
+
+    top: 100%;
+    right: 0;
+
+    padding-top: 8px;
 }
 
 .mypage-title {
-    display: block;
-    padding: 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+
+    width: max-content;
+    margin-left: auto;
+
+    padding: 8px 14px;
+
+    background: var(--paper);
+    border: 1px solid rgba(39, 33, 27, 0.10);
+    border-radius: 6px;
+
+    font-size: 12px;
+    color: rgba(39, 33, 27, .70);
+}
+
+.mypage-caret {
+    width: 9px;
+    height: 9px;
+    flex: none;
+
+    transition: transform .15s ease;
+}
+
+.mypage-menu:hover .mypage-caret {
+    transform: rotate(180deg);
 }
 
 .mypage-dropdown {
@@ -239,15 +293,16 @@ img {
     top: calc(100% - 4px);
     right: 0;
 
-    width: 130px;
-    padding: 12px 0;
+    width: max-content;
+    min-width: 150px;
+    padding: 8px 0;
 
-    background: #fbf8f4;
+    background: var(--paper);
 
-    border: 1px solid rgba(41, 35, 30, 0.08);
+    border: 1px solid rgba(39, 33, 27, 0.08);
 
     box-shadow:
-            0 8px 24px rgba(41, 35, 30, 0.06);
+            0 8px 24px rgba(39, 33, 27, 0.06);
 
     opacity: 0;
     visibility: hidden;
@@ -273,7 +328,7 @@ img {
 }
 
 .mypage-dropdown a:hover {
-    background: rgba(41, 35, 30, 0.035);
+    background: rgba(39, 33, 27, 0.035);
 }
 /* -------------------------------------------
 
@@ -318,7 +373,7 @@ img {
     font-size: 15px;
     line-height: 2;
 
-    color: rgba(41, 35, 30, .48);
+    color: rgba(39, 33, 27, .48);
 }
 
 .hero-decoration {
@@ -336,7 +391,7 @@ img {
     width: 48px;
     height: 1px;
 
-    background: rgba(41, 35, 30, .10);
+    background: rgba(39, 33, 27, .10);
 }
 
 .hero-symbol {
@@ -592,7 +647,7 @@ img {
     font-size: 13px;
     letter-spacing: .015em;
 
-    color: rgba(41, 35, 30, .42);
+    color: rgba(39, 33, 27, .42);
 }
 
 .background-kanji {
@@ -619,15 +674,15 @@ img {
 }
 
 .kanji-find {
-    color: rgba(101, 126, 106, .105);
+    color: rgba(92, 122, 98, .105);
 }
 
 .kanji-prepare {
-    color: rgba(124, 137, 165, .105);
+    color: rgba(107, 122, 158, .105);
 }
 
 .kanji-experience {
-    color: rgba(152, 120, 76, .105);
+    color: rgba(138, 110, 60, .105);
 }
 
 
@@ -710,7 +765,7 @@ h2.type-title:hover {
 
     font-size: 17px;
 
-    color: rgba(41, 35, 30, .55);
+    color: rgba(39, 33, 27, .55);
 
     opacity: 0;
 
@@ -839,10 +894,10 @@ h2.type-title:hover {
 .calendar-card {
     overflow: hidden;
 
-    border: 1px solid rgba(41, 35, 30, .09);
-    border-radius: 17px;
+    border: 1px solid rgba(39, 33, 27, .09);
+    border-radius: var(--radius-calendar);
 
-    background: rgba(251, 248, 244, .72);
+    background: rgba(253, 250, 246, .72);
 }
 
 .calendar-top {
@@ -877,7 +932,7 @@ h2.type-title:hover {
 
     background: transparent;
 
-    color: rgba(41, 35, 30, .45);
+    color: rgba(39, 33, 27, .45);
 
     font-size: 25px;
 
@@ -896,19 +951,19 @@ h2.type-title:hover {
 
     text-align: center;
 
-    border-bottom: 1px solid rgba(41, 35, 30, .08);
+    border-bottom: 1px solid rgba(39, 33, 27, .08);
 
     font-size: 12px;
 
-    color: rgba(41, 35, 30, .40);
+    color: rgba(39, 33, 27, .40);
 }
 
 .sunday {
-    color: #ca706b;
+    color: var(--color-sunday);
 }
 
 .saturday {
-    color: #7189b3;
+    color: var(--color-saturday);
 }
 
 .calendar-grid {
@@ -927,16 +982,18 @@ h2.type-title:hover {
 
     border: none;
 
-    border-right: 1px solid rgba(41, 35, 30, .07);
-    border-bottom: 1px solid rgba(41, 35, 30, .07);
+    border-right: 1px solid rgba(39, 33, 27, .07);
+    border-bottom: 1px solid rgba(39, 33, 27, .07);
 
-    background: rgba(251, 248, 244, .74);
+    background: rgba(253, 250, 246, .74);
 
     text-align: center;
 
     cursor: pointer;
 
-    color: rgba(41, 35, 30, .80);
+    color: rgba(39, 33, 27, .80);
+
+    transition: background-color .2s ease;
 }
 
 .calendar-day:nth-child(7n) {
@@ -951,16 +1008,20 @@ h2.type-title:hover {
     background: #e6ddd5;
 }
 
+.calendar-day:not(.empty):not(.selected):hover {
+    background: var(--muted-bg);
+}
+
 .day-number {
     font-size: 13px;
 }
 
 .calendar-day.sunday .day-number {
-    color: #cc706a;
+    color: var(--color-sunday);
 }
 
 .calendar-day.saturday .day-number {
-    color: #7188b5;
+    color: var(--color-saturday);
 }
 
 .day-event-dot {
@@ -974,7 +1035,7 @@ h2.type-title:hover {
 
     border-radius: 50%;
 
-    background: #9b6845;
+    background: var(--brown);
 }
 
 
@@ -987,10 +1048,10 @@ h2.type-title:hover {
 
     padding: 28px 27px;
 
-    border: 1px solid rgba(41, 35, 30, .09);
-    border-radius: 17px;
+    border: 1px solid rgba(39, 33, 27, .09);
+    border-radius: var(--radius-calendar);
 
-    background: rgba(251, 248, 244, .72);
+    background: rgba(253, 250, 246, .72);
 }
 
 .event-date {
@@ -998,7 +1059,7 @@ h2.type-title:hover {
 
     font-size: 13px;
 
-    color: rgba(41, 35, 30, .58);
+    color: rgba(39, 33, 27, .58);
 }
 
 .event-item {
@@ -1022,7 +1083,7 @@ h2.type-title:hover {
 
     width: 2px;
 
-    background: rgba(174, 112, 71, .72);
+    background: rgba(155, 104, 69, .72);
 }
 
 .event-title {
@@ -1039,7 +1100,7 @@ h2.type-title:hover {
 
     font-size: 12px;
 
-    color: rgba(41, 35, 30, .48);
+    color: rgba(39, 33, 27, .48);
 }
 
 .event-detail {
@@ -1049,13 +1110,13 @@ h2.type-title:hover {
 
     font-size: 12px;
 
-    color: #a26b46;
+    color: var(--brown);
 }
 
 .no-event {
     font-size: 13px;
 
-    color: rgba(41, 35, 30, .42);
+    color: rgba(39, 33, 27, .42);
 }
 
 
@@ -1074,12 +1135,12 @@ h2.type-title:hover {
     width: 50px;
     height: 50px;
 
-    border: 1px solid rgba(41, 35, 30, .13);
+    border: 1px solid rgba(39, 33, 27, .13);
     border-radius: 50%;
 
     background: rgba(248, 244, 239, .94);
 
-    color: rgba(41, 35, 30, .46);
+    color: rgba(39, 33, 27, .46);
 
     font-size: 18px;
 

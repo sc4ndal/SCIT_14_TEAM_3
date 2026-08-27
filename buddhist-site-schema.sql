@@ -19,13 +19,13 @@ DROP TABLE IF EXISTS buddhism_info;
 DROP TABLE IF EXISTS daily_quote;
 DROP TABLE IF EXISTS temple_food_recommendation;
 DROP TABLE IF EXISTS temple;
-DROP TABLE IF EXISTS user;
+DROP TABLE IF EXISTS userEntity;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
 
 -- ------------------------------------------------------------
--- 1. user (회원)
+-- 1. userEntity (회원)
 --    - role 컬럼으로 관리자/일반 회원을 구분합니다.
 --    - moktak_count / moktak_count_date 조합으로 "오늘 목탁 친 횟수"를
 --      관리합니다. 목탁을 두드릴 때 moktak_count_date가 오늘과 다르면
@@ -34,7 +34,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 --    - status/withdrawn_at이 없으므로 탈퇴 처리는 행을 실제로
 --      DELETE 하는 방식으로 구현해야 합니다.
 -- ------------------------------------------------------------
-CREATE TABLE user (
+CREATE TABLE userEntity (
     user_id            BIGINT UNSIGNED AUTO_INCREMENT COMMENT '회원 고유 번호',
     email              VARCHAR(100)  NOT NULL COMMENT '로그인 이메일',
     password           VARCHAR(255)  NOT NULL COMMENT '암호화된 비밀번호(해시값)',
@@ -105,7 +105,7 @@ CREATE TABLE temple_stay_reservation (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '최초 신청일시',
     PRIMARY KEY (reservation_id),
     CONSTRAINT fk_reservation_user FOREIGN KEY (user_id)
-        REFERENCES user (user_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+        REFERENCES userEntity (user_id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_reservation_program FOREIGN KEY (program_id)
         REFERENCES temple_stay_program (program_id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT chk_reservation_dates CHECK (
@@ -142,7 +142,7 @@ CREATE TABLE temple_stay_review (
     CONSTRAINT fk_review_reservation FOREIGN KEY (reservation_id)
         REFERENCES temple_stay_reservation (reservation_id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_review_user FOREIGN KEY (user_id)
-        REFERENCES user (user_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+        REFERENCES userEntity (user_id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT chk_review_rating CHECK (rating BETWEEN 1 AND 5),
     CONSTRAINT chk_review_image_urls_type CHECK (
         image_urls IS NULL OR JSON_TYPE(image_urls) = 'ARRAY'
@@ -169,7 +169,7 @@ CREATE TABLE buddhism_info (
 -- 7. moktak (목탁)
 --    - 실시간 방송이 아니라 사이트 전체에 딱 1개 행만 사용하는
 --      "전체 누적 타격 횟수" 카운터 테이블입니다.
---    - 개인별 카운트는 user.moktak_count에서 관리합니다.
+--    - 개인별 카운트는 userEntity.moktak_count에서 관리합니다.
 -- ------------------------------------------------------------
 CREATE TABLE moktak (
     moktak_id    BIGINT UNSIGNED AUTO_INCREMENT COMMENT '목탁 고유 번호(전체 1행만 사용)',
@@ -217,7 +217,7 @@ CREATE TABLE favorite_temple (
     PRIMARY KEY (favorite_id),
     UNIQUE KEY uk_favorite_user_temple (user_id, temple_id),
     CONSTRAINT fk_favorite_user FOREIGN KEY (user_id)
-        REFERENCES user (user_id) ON DELETE CASCADE ON UPDATE CASCADE,
+        REFERENCES userEntity (user_id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_favorite_temple FOREIGN KEY (temple_id)
         REFERENCES temple (temple_id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_favorite_user (user_id),
