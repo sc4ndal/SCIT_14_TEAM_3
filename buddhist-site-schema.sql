@@ -154,14 +154,20 @@ CREATE TABLE temple_stay_review (
 -- ------------------------------------------------------------
 -- 6. buddhism_info (불교 정보 게시글)
 --    - 관리자만 작성하므로 작성자 식별(author_id)은 두지 않습니다.
+--    - category는 '용어', '예절가이드' 같은 대분류만 담습니다.
+--      "불교 용어" 페이지 안의 8개 소분류(기본교리/수행법/경계·상태/인물/
+--      장소/의식/신앙/경전)는 DB에 두지 않고, 용어 개수가 고정적이라
+--      애플리케이션에서 제목 기준 정적 매핑(TermCategory)으로 그룹핑합니다.
 -- ------------------------------------------------------------
 CREATE TABLE buddhism_info (
     post_id      BIGINT UNSIGNED AUTO_INCREMENT COMMENT '게시글 고유 번호',
+    category     VARCHAR(30) NOT NULL DEFAULT '용어' COMMENT '대분류(용어/예절가이드 등)',
     title        VARCHAR(150) NOT NULL COMMENT '제목',
     content      TEXT NOT NULL COMMENT '본문',
     view_count   INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '조회수',
     created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '작성일시',
-    PRIMARY KEY (post_id)
+    PRIMARY KEY (post_id),
+    INDEX idx_buddhism_info_category (category)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='불교 정보 게시글(관리자 작성)';
 
 

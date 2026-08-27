@@ -24,6 +24,8 @@ public class WebSecurityConfig {
 			"/",
 			"/login",
 			"/css/**",
+			"/images/**",
+			"/info/**",		// 알아보기(불교란?/불교 용어)는 비로그인도 열람 가능
 			"/member/join",
 			"/product/list"
 	);
