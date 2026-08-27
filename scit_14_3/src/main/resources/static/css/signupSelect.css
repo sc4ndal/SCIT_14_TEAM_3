@@ -18,7 +18,8 @@ body{
     color:var(--ink);
     display:flex;
     justify-content:center;
-    padding:64px 16px;
+    /* 상단 74px은 common.css의 고정(position:fixed) 헤더 높이만큼 띄우는 여백 */
+    padding:138px 16px 64px;
 }
 .card{
     width:100%;

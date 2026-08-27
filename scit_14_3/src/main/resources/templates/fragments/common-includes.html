@@ -81,10 +81,9 @@
 
                         <!-- 프로필 아이콘은 컬럼 추가 부담으로 빼기로 결정 (2026-08-26) -->
 
-                        <!-- 닉네임
-                             TODO: 실제 인증 principal 필드에 맞게 th:text 연결
-                             예) th:text="${#authentication.principal.nickname}" -->
-                        <span class="userEntity-nickname">
+                        <!-- 일반회원은 법명, 사찰계정은 사찰명 (AppUserDetails.getNickname()) -->
+                        <span class="userEntity-nickname"
+                              th:text="${#authentication.principal.nickname}">
                             닉네임명
                         </span>
 

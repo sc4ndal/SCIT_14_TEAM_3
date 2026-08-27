@@ -1,4 +1,4 @@
-package net.datasa.scit_14_3.controller.UserController;
+package net.datasa.scit_14_3.controller.user;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -7,11 +7,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.KakaoAdditionalRequestDto;
 import net.datasa.scit_14_3.domain.dto.LocalSignupRequestDto;
+import net.datasa.scit_14_3.domain.dto.UserResponseDto;
 import net.datasa.scit_14_3.domain.dto.kakao.KakaoTokenResponse;
 import net.datasa.scit_14_3.domain.dto.kakao.KakaoUserInfoResponse;
-import net.datasa.scit_14_3.domain.entity.UserEntity;
-import net.datasa.scit_14_3.repository.UserRepository;
 import net.datasa.scit_14_3.security.SessionLoginService;
+import net.datasa.scit_14_3.service.EmailVerificationService;
 import net.datasa.scit_14_3.service.KakaoOAuthService;
 import net.datasa.scit_14_3.service.UserService;
 import org.springframework.stereotype.Controller;
@@ -19,15 +19,18 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.Map;
+import java.util.Optional;
+
 @Slf4j
 @Controller
 @RequiredArgsConstructor
 public class UserController {
 
-	private final UserRepository userRepository;
 	private final UserService userService;
 	private final KakaoOAuthService kakaoOAuthService;
 	private final SessionLoginService sessionLoginService;
+	private final EmailVerificationService emailVerificationService;
 
 	private static final String PENDING_KAKAO_ID = "pendingKakaoId";
 	private static final String PENDING_KAKAO_EMAIL = "pendingKakaoEmail";
@@ -64,17 +67,64 @@ public class UserController {
 		return "signup";
 	}
 
+	// ================= 중복확인 (아이디/닉네임/이메일) =================
+	// user 테이블 기준으로 그대로 조회. signup.js의 checkDuplicate()/checkEmailDuplicate()가 호출함.
+
+	@GetMapping("/api/check/login-id")
+	@ResponseBody
+	public Map<String, Boolean> checkLoginId(@RequestParam String value) {
+		return Map.of("available", userService.isLoginIdAvailable(value));
+	}
+
+	@GetMapping("/api/check/nickname")
+	@ResponseBody
+	public Map<String, Boolean> checkNickname(@RequestParam String value) {
+		return Map.of("available", userService.isNicknameAvailable(value));
+	}
+
+	@GetMapping("/api/check/email")
+	@ResponseBody
+	public Map<String, Boolean> checkEmail(@RequestParam String value) {
+		return Map.of("available", userService.isEmailAvailable(value));
+	}
+
+	// ================= 이메일 인증 (회원가입용) =================
+	// signup.js의 sendVerificationMail()/confirmCode()가 호출함. 코드/인증완료 상태는 세션에만 둠.
+
+	@PostMapping("/api/email/send-verification")
+	@ResponseBody
+	public Map<String, Boolean> sendEmailVerification(@RequestBody Map<String, String> body, HttpSession session) {
+		emailVerificationService.sendVerificationCode(body.get("email"), session);
+		return Map.of("sent", true);
+	}
+
+	@PostMapping("/api/email/verify-code")
+	@ResponseBody
+	public Map<String, Boolean> verifyEmailCode(@RequestBody Map<String, String> body, HttpSession session) {
+		boolean verified = emailVerificationService.verifyCode(body.get("email"), body.get("code"), session);
+		return Map.of("verified", verified);
+	}
+
 	// ================= 로컬 회원가입 =================
 
 	@PostMapping("/signup/local")
 	public String localSignup(@ModelAttribute LocalSignupRequestDto request,
 							   RedirectAttributes redirectAttributes,
+							   HttpSession session,
 							   HttpServletRequest httpRequest,
 							   HttpServletResponse httpResponse) {
+		// email_verified hidden 필드는 화면 표시용일 뿐 안 믿음 - 세션에 실제로 인증된 이메일인지 직접 확인.
+		// 이메일 자체는 registerLocal()에서도 선택 입력으로 취급하므로, 입력했을 때만 인증을 강제한다.
+		String email = request.getEmail();
+		if (email != null && !email.isBlank() && !emailVerificationService.isVerified(email, session)) {
+			redirectAttributes.addFlashAttribute("signupError", "이메일 인증을 완료해주세요.");
+			return "redirect:/signup?mode=local";
+		}
+
 		try {
-			UserEntity user = userService.registerLocal(request);
+			UserResponseDto user = userService.registerLocal(request);
 			sessionLoginService.loginAs(user, httpRequest, httpResponse);
-			return "redirect:/";
+			return "redirect:/?signup=success";
 		} catch (IllegalStateException e) {
 			log.info("로컬 회원가입 실패: {}", e.getMessage());
 			redirectAttributes.addFlashAttribute("signupError", e.getMessage());
@@ -84,14 +134,18 @@ public class UserController {
 
 	// ================= 카카오 로그인 =================
 
+	/** intent=signup(회원가입 버튼) / login(로그인 버튼) - 콜백에서 계정 존재 여부와
+	    같이 봐서 "가입 버튼인데 이미 회원" / "로그인 버튼인데 미가입" 케이스를 갈라내는 데 씀. */
 	@GetMapping("/login/kakao")
-	public String kakaoRedirect() {
-		return "redirect:" + kakaoOAuthService.buildAuthorizeUrl();
+	public String kakaoRedirect(@RequestParam(required = false, defaultValue = "login") String intent) {
+		return "redirect:" + kakaoOAuthService.buildAuthorizeUrl(intent);
 	}
 
 	@GetMapping("/login/kakao/callback")
 	public String kakaoCallback(@RequestParam String code,
+								 @RequestParam(required = false, defaultValue = "login") String state,
 								 HttpSession session,
+								 RedirectAttributes redirectAttributes,
 								 HttpServletRequest request,
 								 HttpServletResponse response) {
 
@@ -99,15 +153,35 @@ public class UserController {
 		KakaoUserInfoResponse kakaoUser = kakaoOAuthService.getUserInfo(token.getAccessToken());
 
 		String loginId = "kakao_" + kakaoUser.getId();
+		boolean intentIsSignup = "signup".equals(state);
 
-		return userRepository.findById(loginId)
+		// 로그아웃할 때 이 토큰으로 카카오 REST API 로그아웃을 호출함(브라우저 화면 안 거치고
+		// 서버 대 서버로 바로 처리됨) - 그래야 다음 로그인 때 카카오가 다시 인증을 물어봄.
+		session.setAttribute(KakaoOAuthService.ACCESS_TOKEN_SESSION_KEY, token.getAccessToken());
+
+		Optional<UserResponseDto> existing = userService.findByLoginId(loginId);
+
+		if (existing.isPresent() && intentIsSignup) {
+			// "카카오로 가입하기"를 눌렀는데 이미 가입된 계정 -> 그냥 로그인시켜버리지 않고
+			// 로그인 페이지로 안내만 함 (가입 버튼 눌렀는데 조용히 로그인되면 헷갈림)
+			redirectAttributes.addFlashAttribute("loginNotice", "이미 가입된 카카오 계정입니다. 로그인해주세요.");
+			return "redirect:/login";
+		}
+
+		if (existing.isEmpty() && !intentIsSignup) {
+			// "카카오로 로그인"을 눌렀는데 가입된 계정이 없음 -> 가입 페이지로 안내
+			redirectAttributes.addFlashAttribute("signupNotice", "가입된 계정이 없습니다. 먼저 회원가입을 진행해주세요.");
+			return "redirect:/signupSelect";
+		}
+
+		return existing
 				.map(user -> {
-					// 이미 가입된 카카오 회원 -> 바로 로그인
-					sessionLoginService.loginAs(user, request, response);
+					// 이미 가입된 카카오 회원(그리고 로그인 의도) -> 바로 로그인
+					sessionLoginService.loginAs(user, token.getAccessToken(), request, response);
 					return "redirect:/";
 				})
 				.orElseGet(() -> {
-					// 처음 로그인하는 카카오 계정 -> 세션에 카카오 회원번호/이메일/닉네임을
+					// 처음 로그인하는 카카오 계정(그리고 가입 의도) -> 세션에 카카오 회원번호/이메일/닉네임을
 					// 임시 저장하고 추가 정보 입력 화면(signup.html, mode=kakao)으로 이동.
 					session.setAttribute(PENDING_KAKAO_ID, kakaoUser.getId());
 					if (kakaoUser.getKakaoAccount() != null) {
@@ -137,12 +211,13 @@ public class UserController {
 		}
 
 		try {
-			UserEntity user = userService.registerKakao((Long) pendingKakaoId, request);
+			UserResponseDto user = userService.registerKakao((Long) pendingKakaoId, request);
+			String kakaoAccessToken = (String) session.getAttribute(KakaoOAuthService.ACCESS_TOKEN_SESSION_KEY);
 			session.removeAttribute(PENDING_KAKAO_ID);
 			session.removeAttribute(PENDING_KAKAO_EMAIL);
 			session.removeAttribute(PENDING_KAKAO_NICKNAME);
-			sessionLoginService.loginAs(user, httpRequest, httpResponse);
-			return "redirect:/";
+			sessionLoginService.loginAs(user, kakaoAccessToken, httpRequest, httpResponse);
+			return "redirect:/?signup=success";
 		} catch (IllegalStateException e) {
 			log.info("카카오 추가정보 가입 실패: {}", e.getMessage());
 			redirectAttributes.addFlashAttribute("signupError", e.getMessage());

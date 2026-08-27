@@ -42,3 +42,6 @@ out/
 
 ### kakao REST API ###
 application.yml
+
+### 로컬 전용 설정 (메일 계정 등 커밋하면 안 되는 값) ###
+application-local.properties
