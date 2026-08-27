@@ -22,7 +22,10 @@ public class KakaoOAuthService {
 	
 	@Value("${kakao.redirect-uri}")
 	private String redirectUri;
-	
+
+	/** 카카오 액세스 토큰을 세션에 담아둘 때 쓰는 키. 로그아웃 시 이 토큰으로 REST API 로그아웃 호출함. */
+	public static final String ACCESS_TOKEN_SESSION_KEY = "kakaoAccessToken";
+
 	// 카카오 디벨로퍼스 > 앱 > 플랫폼 키 > REST API 키 > 클라이언트 시크릿이 "사용함"으로
 	// 켜져 있을 때만 필요. application.yml에 kakao.client-secret 자체를 안 넣으면 빈
 	// 문자열로 들어오고, 아래에서 비어있으면 요청에서 자동으로 빠짐(꺼둔 경우 안 써도 됨).
@@ -32,16 +35,32 @@ public class KakaoOAuthService {
 	private final RestTemplate restTemplate = new RestTemplate();
 	private final JsonMapper jsonMapper = new JsonMapper();
 	
-	/** /login/kakao 에서 이 URL로 리다이렉트 */
-	public String buildAuthorizeUrl() {
+	/** /login/kakao 에서 이 URL로 리다이렉트. state는 카카오가 콜백 때 그대로 돌려주므로,
+	    "가입 버튼으로 왔는지 로그인 버튼으로 왔는지"(intent)를 왕복시키는 용도로 씀. */
+	public String buildAuthorizeUrl(String state) {
 		return UriComponentsBuilder.fromUriString("https://kauth.kakao.com/oauth/authorize")
 				.queryParam("client_id", clientId)
 				.queryParam("redirect_uri", redirectUri)
 				.queryParam("response_type", "code")
+				.queryParam("state", state)
 				.build()
 				.toUriString();
 	}
 	
+	/** 카카오 REST API 로그아웃. 브라우저 리다이렉트/확인화면 없이 서버 대 서버로 바로 처리됨 -
+	    이 토큰으로 다음번 로그인 때는 카카오 쪽에서 다시 인증(QR/비번)을 물어보게 됨.
+	    실패해도(토큰 만료 등) 예외를 밖으로 던지지 않음 - 우리 쪽 로그아웃까지 막히면 안 되므로. */
+	public void logout(String accessToken) {
+		HttpHeaders headers = new HttpHeaders();
+		headers.setBearerAuth(accessToken);
+		HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+		try {
+			restTemplate.postForEntity("https://kapi.kakao.com/v1/user/logout", requestEntity, String.class);
+		} catch (Exception e) {
+			// 무시 - 카카오 쪽 로그아웃 실패해도 우리 사이트 로그아웃은 정상 진행돼야 함
+		}
+	}
+
 	/** 인가 코드(code) -> 액세스 토큰 교환 */
 	public KakaoTokenResponse getAccessToken(String code) {
 		HttpHeaders headers = new HttpHeaders();

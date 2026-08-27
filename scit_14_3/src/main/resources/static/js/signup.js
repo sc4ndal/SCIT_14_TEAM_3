@@ -33,7 +33,11 @@ const TRANSLATIONS = {
         dupCheckTaken: "이미 사용 중인 값입니다", dupCheckError: "확인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요",
         mailSendError: "메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요",
         cancelConfirmTitle: "정말 취소하시겠어요?", cancelConfirmText: "입력하신 정보는 삭제됩니다.",
-        cancelConfirmYes: "네", cancelConfirmNo: "아니요"
+        cancelConfirmYes: "네", cancelConfirmNo: "아니요",
+        agreeTermsRequiredMsg: "필수 약관에 동의해주세요",
+        loginIdCheckRequiredMsg: "아이디 중복확인을 완료해주세요",
+        nicknameCheckRequiredMsg: "법명(닉네임) 중복확인을 완료해주세요",
+        emailVerifyRequiredMsg: "이메일 인증을 완료해주세요"
     },
     ja: {
         titleLocal: "一般会員登録", titleKakao: "Kakaoで会員登録",
@@ -65,7 +69,11 @@ const TRANSLATIONS = {
         dupCheckTaken: "既に使用されている値です", dupCheckError: "確認中にエラーが発生しました。しばらくしてから再度お試しください",
         mailSendError: "メールの送信に失敗しました。しばらくしてから再度お試しください",
         cancelConfirmTitle: "本当にキャンセルしますか？", cancelConfirmText: "入力した情報は削除されます。",
-        cancelConfirmYes: "はい", cancelConfirmNo: "いいえ"
+        cancelConfirmYes: "はい", cancelConfirmNo: "いいえ",
+        agreeTermsRequiredMsg: "必須約款に同意してください",
+        loginIdCheckRequiredMsg: "IDの重複確認を完了してください",
+        nicknameCheckRequiredMsg: "法名（ニックネーム）の重複確認を完了してください",
+        emailVerifyRequiredMsg: "メール認証を完了してください"
     },
     en: {
         titleLocal: "Sign Up with Email", titleKakao: "Sign Up with Kakao",
@@ -97,7 +105,11 @@ const TRANSLATIONS = {
         dupCheckTaken: "This value is already taken", dupCheckError: "Something went wrong. Please try again shortly",
         mailSendError: "Failed to send the email. Please try again shortly",
         cancelConfirmTitle: "Are you sure you want to cancel?", cancelConfirmText: "Your entered information will be deleted.",
-        cancelConfirmYes: "Yes", cancelConfirmNo: "No"
+        cancelConfirmYes: "Yes", cancelConfirmNo: "No",
+        agreeTermsRequiredMsg: "Please agree to the required terms",
+        loginIdCheckRequiredMsg: "Please complete the ID duplicate check",
+        nicknameCheckRequiredMsg: "Please complete the nickname duplicate check",
+        emailVerifyRequiredMsg: "Please complete email verification"
     }
 };
 
@@ -152,16 +164,27 @@ function validateLoginId(){
     return true;
 }
 
+// 아이디/닉네임 중복확인 통과 여부. 회원가입 제출을 막는 기준이라, 값이 조금이라도
+// 바뀌면(clearResult) 바로 false로 되돌려야 함 - 안 그러면 값 바꾼 뒤 재확인 안 하고 제출 가능해짐.
+const dupState = { loginId: false, nickname: false };
+
 function checkLoginId(){
     if(!validateLoginId()) return;
-    checkDuplicate('/api/check/login-id', 'loginId', 'loginIdResult');
+    checkDuplicate('/api/check/login-id', 'loginId', 'loginIdResult', 'loginId');
 }
 
-// 아이디/법명/이름 공통: 입력값이 비면 해당 결과 메시지도 같이 지움
+// 이름: 입력값이 비면 해당 결과 메시지도 같이 지움 (중복확인 대상이 아니라 포맷 오류만 표시하는 필드)
 function clearResultIfEmpty(inputId, resultId){
     if(document.getElementById(inputId).value === ''){
         setResult(document.getElementById(resultId), '', null);
     }
+}
+
+// 아이디/닉네임: 중복확인 결과가 붙는 필드라, 1글자라도 수정하면(비우지 않아도) 이전 확인 결과를 지움
+function clearResult(resultId){
+    setResult(document.getElementById(resultId), '', null);
+    const key = resultId.replace('Result', '');
+    if(key in dupState) dupState[key] = false;
 }
 
 /* ===== 법명(닉네임) 1차 유효성 검사 =====
@@ -183,25 +206,7 @@ function validateNickname(){
 
 function checkNickname(){
     if(!validateNickname()) return;
-    checkDuplicate('/api/check/nickname', 'nickname', 'nicknameResult');
-}
-
-/* ===== 생년월일 ===== */
-function validateBirthDate(){
-    const value = document.getElementById('birth').value;
-    const resultEl = document.getElementById('birthResult');
-    if(value === ''){ setResult(resultEl, '', null); return false; }
-
-    const inputDate = new Date(value + 'T00:00:00');
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if(inputDate.getTime() > today.getTime()){
-        setResult(resultEl, msg('birthDateFutureMsg'), 'fail');
-        return false;
-    }
-    setResult(resultEl, '', null);
-    return true;
+    checkDuplicate('/api/check/nickname', 'nickname', 'nicknameResult', 'nickname');
 }
 
 /* ===== 비밀번호 유효성 검사 (대/소문자·숫자·특수문자 4종류 + 8~20자) ===== */
@@ -282,20 +287,26 @@ function validateName(){
 }
 
 /* ===== 중복확인 (실제 서버 조회) =====
-   endpoint는 예시 경로입니다. 실제 컨트롤러 매핑에 맞게 수정하세요.
-   기대 응답 형식: { "available": true|false } */
-async function checkDuplicate(endpoint, fieldId, resultId){
+   기대 응답 형식: { "available": true|false }
+   stateKey가 있으면(dupState에 있는 키) 결과에 맞춰 dupState도 같이 갱신 - 제출 전 게이트에서 씀. */
+async function checkDuplicate(endpoint, fieldId, resultId, stateKey){
     const value = document.getElementById(fieldId).value.trim();
     const resultEl = document.getElementById(resultId);
 
-    if(!value){ setResult(resultEl, msg('dupCheckFillFirst'), 'fail'); return; }
+    if(!value){
+        setResult(resultEl, msg('dupCheckFillFirst'), 'fail');
+        if(stateKey in dupState) dupState[stateKey] = false;
+        return;
+    }
 
     try{
         const res = await fetch(`${endpoint}?value=${encodeURIComponent(value)}`);
         if(!res.ok) throw new Error('서버 응답 오류: ' + res.status);
         const data = await res.json();
         setResult(resultEl, data.available ? msg('dupCheckOk') : msg('dupCheckTaken'), data.available ? 'ok' : 'fail');
+        if(stateKey in dupState) dupState[stateKey] = !!data.available;
     } catch(err){
+        if(stateKey in dupState) dupState[stateKey] = false;
         console.error('중복확인 요청 실패:', err);
         setResult(resultEl, msg('dupCheckError'), 'fail');
     }
@@ -470,9 +481,36 @@ function onMarketingConsentChange(checked){
 }
 
 /* ===== 초기 상태 동기화 ===== */
-document.getElementById('birth').max = new Date().toISOString().split('T')[0];
 onLanguageChange('ko'); // data-i18n 텍스트/placeholder, nameHint, sendMailBtn 라벨까지 한 번에 확정
 // (첫 로드 시 active 표시는 HTML에 이미 class="language-button active"로 박혀있어 별도 처리 불필요)
+
+/* ===== 제출 =====
+   서버(UserService)도 아이디/닉네임/이메일 중복과 이메일 인증 여부를 다시 검증하지만
+   (signupError로 되돌아옴), 여기서는 그 전에 미리 막아서 사용자가 안내 없이 서버 왕복만
+   당하는 일이 없게 한다. 순서: 닉네임 중복확인 -> (로컬만) 아이디 중복확인, 비번 확인 일치,
+   이메일 인증 -> 약관 동의. 하나라도 안 됐으면 그 사유만 alert로 띄우고 제출을 막는다. */
+function findSubmitBlockReason(){
+    if(!dupState.nickname) return msg('nicknameCheckRequiredMsg');
+
+    const isLocal = document.getElementById('loginType').value === 'LOCAL';
+    if(isLocal){
+        if(!dupState.loginId) return msg('loginIdCheckRequiredMsg');
+        if(!validatePasswordMatch()) return msg('passwordMismatchMsg');
+        if(document.getElementById('emailVerified').value !== 'true') return msg('emailVerifyRequiredMsg');
+    }
+
+    if(!document.getElementById('agreeTerms').checked) return msg('agreeTermsRequiredMsg');
+
+    return null;
+}
+
+document.querySelector('form').addEventListener('submit', function(e){
+    const blockReason = findSubmitBlockReason();
+    if(blockReason){
+        e.preventDefault();
+        Swal.fire({ icon: 'warning', text: blockReason });
+    }
+});
 
 /* ===== 취소 버튼: 입력 중이던 내용이 있으면 확인창 (더티플래그) ===== */
 let formIsDirty = false;

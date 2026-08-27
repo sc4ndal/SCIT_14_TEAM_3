@@ -3,11 +3,14 @@ package net.datasa.scit_14_3.service;
 import lombok.RequiredArgsConstructor;
 import net.datasa.scit_14_3.domain.dto.KakaoAdditionalRequestDto;
 import net.datasa.scit_14_3.domain.dto.LocalSignupRequestDto;
+import net.datasa.scit_14_3.domain.dto.UserResponseDto;
 import net.datasa.scit_14_3.domain.entity.UserEntity;
 import net.datasa.scit_14_3.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -16,8 +19,26 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    // ================= 중복확인 (아이디/닉네임/이메일) =================
+
+    public boolean isLoginIdAvailable(String loginId) {
+        return !userRepository.existsById(loginId);
+    }
+
+    public boolean isNicknameAvailable(String nickname) {
+        return !userRepository.existsByNickname(nickname);
+    }
+
+    public boolean isEmailAvailable(String email) {
+        return !userRepository.existsByEmail(email);
+    }
+
+    public Optional<UserResponseDto> findByLoginId(String loginId) {
+        return userRepository.findById(loginId).map(this::toResponseDto);
+    }
+
     @Transactional
-    public UserEntity registerLocal(LocalSignupRequestDto dto) {
+    public UserResponseDto registerLocal(LocalSignupRequestDto dto) {
         String loginId = dto.getLoginId();
 
         // DB의 CHECK 제약(로그인 시 첫 글자로 USER/TEMPLE, kakao_ 접두사를 구분)과
@@ -46,11 +67,11 @@ public class UserService {
         user.setRole(UserEntity.Role.USER);
         user.setLoginType(UserEntity.LoginType.LOCAL);
 
-        return userRepository.save(user);
+        return toResponseDto(userRepository.save(user));
     }
 
     @Transactional
-    public UserEntity registerKakao(Long kakaoId, KakaoAdditionalRequestDto dto) {
+    public UserResponseDto registerKakao(Long kakaoId, KakaoAdditionalRequestDto dto) {
         String loginId = "kakao_" + kakaoId;
 
         if (userRepository.existsById(loginId)) {
@@ -72,7 +93,20 @@ public class UserService {
         user.setRole(UserEntity.Role.USER);
         user.setLoginType(UserEntity.LoginType.KAKAO);
 
-        return userRepository.save(user);
+        return toResponseDto(userRepository.save(user));
+    }
+
+    private UserResponseDto toResponseDto(UserEntity user) {
+        return UserResponseDto.builder()
+                .loginId(user.getLoginId())
+                .password(user.getPassword())
+                .nickname(user.getNickname())
+                .name(user.getName())
+                .phone(user.getPhone())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .loginType(user.getLoginType())
+                .build();
     }
 
     private void validateNickname(String nickname) {

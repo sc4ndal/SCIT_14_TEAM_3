@@ -1,5 +1,264 @@
 /* common.css */
 
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500&display=swap');
+
+/* ===== 헤더 (site-header) =====
+   fragments/common-includes.html이 모든 페이지에 삽입되는데, 이 스타일이 원래
+   home.css에만 있어서 signup/signupSelect/login 등 다른 페이지에서는 헤더가
+   그냥 스타일 없이(꾸미기 전 기본 HTML 모습으로) 떴었음. 모든 페이지가 공유하는
+   fragment이니 스타일도 common.css로 옮겨서 어디서든 똑같이 보이게 함. */
+
+.site-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+
+    z-index: 100;
+
+    background: rgba(248, 244, 239, 0.97);
+
+    border-bottom: 1px solid transparent;
+
+    transition:
+            border-color .3s ease,
+            box-shadow .3s ease;
+}
+
+.site-header.scrolled {
+    border-bottom-color: rgba(39, 33, 27, .08);
+    box-shadow: 0 2px 14px rgba(30, 22, 16, .025);
+}
+
+.header-inner {
+    width: min(1440px, calc(100% - 100px));
+    height: 74px;
+
+    margin: 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-circle {
+    width: 32px;
+    height: 32px;
+
+    border: 1px solid rgba(39, 33, 27, .17);
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-family: "Noto Serif KR", Batang, serif;
+    font-size: 11px;
+
+    color: rgba(39, 33, 27, .50);
+}
+
+.brand-name {
+    font-family: "Noto Serif KR", Batang, serif;
+    font-size: 17px;
+    font-weight: 500;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+}
+
+.language-area {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.language-area span {
+    color: rgba(39, 33, 27, .18);
+}
+
+.language-button {
+    border: 0;
+    padding: 0;
+
+    background: transparent;
+
+    color: rgba(39, 33, 27, .34);
+    font-size: 12px;
+
+    cursor: pointer;
+    font-family: "Noto Sans KR", sans-serif;
+}
+
+.language-button.active {
+    color: rgba(39, 33, 27, .73);
+}
+
+.header-divider {
+    width: 1px;
+    height: 13px;
+
+    background: rgba(39, 33, 27, .12);
+}
+
+.member-menu {
+    display: flex;
+    gap: 27px;
+}
+
+/* 로그인 / 미로그인 공통 */
+
+.guest-menu {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+}
+
+/* 로그인 상태: 아이덴티티 줄(아이콘+닉네임+로그아웃) 기준점.
+   마이페이지 트리거/드롭다운이 이 아래에 오버레이로 붙는다.
+   클래스명은 common-includes.html의 실제 마크업(userEntity-*)에 맞춤. */
+.userEntity-menu {
+    position: relative;
+}
+
+.userEntity-identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.userEntity-nickname {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(39, 33, 27, .75);
+    white-space: nowrap;
+}
+
+.identity-divider {
+    width: 1px;
+    height: 13px;
+
+    background: rgba(39, 33, 27, .12);
+}
+
+.member-menu a,
+.logout-button {
+    font-size: 12px;
+    color: rgba(39, 33, 27, .42);
+    transition: color 0.2s ease;
+}
+
+.member-menu a:hover,
+.logout-button:hover {
+    color: rgba(39, 33, 27, 0.85);
+}
+
+.logout-form {
+    margin: 0;
+}
+
+.logout-button {
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+/* 마이페이지 트리거 + dropdown
+   userEntity-identity 줄 바로 아래에 오버레이로 뜬다 (헤더 높이에 영향 안 줌) */
+
+.mypage-menu {
+    position: absolute;
+
+    top: 100%;
+    right: 0;
+
+    padding-top: 8px;
+}
+
+.mypage-title {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+
+    width: max-content;
+    margin-left: auto;
+
+    padding: 8px 14px;
+
+    background: #fdfaf6;
+    border: 1px solid rgba(39, 33, 27, 0.10);
+    border-radius: 6px;
+
+    font-size: 12px;
+    color: rgba(39, 33, 27, .70);
+}
+
+.mypage-caret {
+    width: 9px;
+    height: 9px;
+    flex: none;
+
+    transition: transform .15s ease;
+}
+
+.mypage-menu:hover .mypage-caret {
+    transform: rotate(180deg);
+}
+
+.mypage-dropdown {
+    position: absolute;
+
+    top: calc(100% - 4px);
+    right: 0;
+
+    width: max-content;
+    min-width: 150px;
+    padding: 8px 0;
+
+    background: #fdfaf6;
+
+    border: 1px solid rgba(39, 33, 27, 0.08);
+
+    box-shadow:
+            0 8px 24px rgba(39, 33, 27, 0.06);
+
+    opacity: 0;
+    visibility: hidden;
+
+    transform: translateY(-5px);
+
+    transition:
+            opacity 0.2s ease,
+            visibility 0.2s ease,
+            transform 0.2s ease;
+}
+
+.mypage-menu:hover .mypage-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.mypage-dropdown a {
+    display: block;
+    padding: 9px 16px;
+    white-space: nowrap;
+}
+
+.mypage-dropdown a:hover {
+    background: rgba(39, 33, 27, 0.035);
+}
+
 /* ===== 언어선택 바 ===== */
 .lang-bar{
     display:flex;justify-content:flex-end;align-items:center;gap:8px;

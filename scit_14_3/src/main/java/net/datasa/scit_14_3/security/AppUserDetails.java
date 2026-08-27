@@ -19,18 +19,30 @@ public class AppUserDetails implements UserDetails {
     private final String password;
     private final Collection<? extends GrantedAuthority> authorities;
     private final Long templeId; // 사찰 계정 로그인일 때만 값 존재, 그 외엔 null
+    private final String nickname; // 헤더에 표시할 이름 - 일반회원은 법명, 사찰계정은 사찰명
+    private final String kakaoAccessToken; // 카카오 로그인일 때만 값 존재 - 로그아웃 시 카카오 REST API 로그아웃 호출용
 
     public AppUserDetails(String loginId, String password,
                            Collection<? extends GrantedAuthority> authorities,
-                           Long templeId) {
+                           Long templeId, String nickname, String kakaoAccessToken) {
         this.loginId = loginId;
         this.password = password;
         this.authorities = authorities;
         this.templeId = templeId;
+        this.nickname = nickname;
+        this.kakaoAccessToken = kakaoAccessToken;
     }
 
     public Long getTempleId() {
         return templeId;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public String getKakaoAccessToken() {
+        return kakaoAccessToken;
     }
 
     public boolean isTempleAccount() {

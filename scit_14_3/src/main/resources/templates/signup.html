@@ -7,6 +7,7 @@
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 	<link rel="stylesheet" th:href="@{/css/signup.css}">
+	<link rel="stylesheet" th:href="@{/css/common.css}">
 	<script src="/js/common.js" defer></script>
 	<script src="/js/signup.js" defer></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -32,7 +33,7 @@
 	<!-- ===== [추가] 회원가입 실패 시 에러 메시지 (UserController의 flash attribute) ===== -->
 	<p class="check-result" style="color:#c0392b; text-align:center;" th:if="${signupError}" th:text="${signupError}"></p>
 	
-	<form onsubmit="return false;">
+	<form th:action="${mode == 'kakao'} ? @{/signup/kakao-additional} : @{/signup/local}" method="post">
 
 		<!-- ===== 인증 방식 섹션 ===== -->
 		<fieldset th:if="${mode == 'local' or mode == null}" id="localSection">
@@ -41,7 +42,7 @@
 			<div class="field">
 				<label for="loginId"><span data-i18n="loginIdLabel">아이디</span><span class="req">*</span></label>
 				<div class="field-inline">
-					<input type="text" id="loginId" name="login_id" minlength="6" maxlength="20" data-i18n-placeholder="loginIdPlaceholder" placeholder="영문/숫자 6~20자" onblur="validateLoginId()" oninput="clearResultIfEmpty('loginId','loginIdResult')">
+					<input type="text" id="loginId" name="loginId" minlength="6" maxlength="20" data-i18n-placeholder="loginIdPlaceholder" placeholder="영문/숫자 6~20자" onblur="validateLoginId()" oninput="clearResult('loginIdResult')">
 					<button type="button" class="btn-check" data-i18n="btnCheck" onclick="checkLoginId()">중복확인</button>
 				</div>
 				<span class="check-result" id="loginIdResult"></span>
@@ -75,7 +76,7 @@
 			<div class="field">
 				<label for="nickname"><span data-i18n="nicknameLabel">법명 (닉네임)</span><span class="req">*</span></label>
 				<div class="field-inline">
-					<input type="text" id="nickname" name="nickname" maxlength="10" onblur="validateNickname()" oninput="clearResultIfEmpty('nickname','nicknameResult')">
+					<input type="text" id="nickname" name="nickname" maxlength="10" onblur="validateNickname()" oninput="clearResult('nicknameResult')">
 					<button type="button" class="btn-check" data-i18n="btnCheck" onclick="checkNickname()">중복확인</button>
 				</div>
 				<span class="check-result" id="nicknameResult"></span>

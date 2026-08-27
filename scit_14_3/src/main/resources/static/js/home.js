@@ -1,6 +1,29 @@
 document.addEventListener("DOMContentLoaded", () => {
 
     /* =====================================================
+       회원가입 완료 알림
+       UserController가 가입 성공 시 "/?signup=success"로 리다이렉트함.
+       새로고침해도 다시 뜨지 않게 알림 후 쿼리스트링을 지운다.
+    ===================================================== */
+
+    const signupParams = new URLSearchParams(window.location.search);
+
+    if (signupParams.get("signup") === "success") {
+        alert("회원가입 완료!");
+
+        signupParams.delete("signup");
+
+        const remaining = signupParams.toString();
+
+        window.history.replaceState(
+            {},
+            "",
+            window.location.pathname + (remaining ? "?" + remaining : "")
+        );
+    }
+
+
+    /* =====================================================
        HEADER + TOP BUTTON
     ===================================================== */
 
