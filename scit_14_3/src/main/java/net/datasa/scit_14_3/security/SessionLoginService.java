@@ -3,7 +3,7 @@ package net.datasa.scit_14_3.security;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import net.datasa.scit_14_3.domain.entity.UserEntity;
+import net.datasa.scit_14_3.domain.dto.UserResponseDto;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -24,12 +24,21 @@ public class SessionLoginService {
 
     private final SecurityContextRepository securityContextRepository;
 
-    public void loginAs(UserEntity user, HttpServletRequest request, HttpServletResponse response) {
+    public void loginAs(UserResponseDto user, HttpServletRequest request, HttpServletResponse response) {
+        loginAs(user, null, request, response);
+    }
+
+    /** 카카오 로그인용. kakaoAccessToken을 principal에 실어두면, 나중에 로그아웃할 때
+        세션을 거치지 않고 Authentication에서 바로 꺼내 쓸 수 있음(세션 invalidate 순서에 안 걸림). */
+    public void loginAs(UserResponseDto user, String kakaoAccessToken,
+                         HttpServletRequest request, HttpServletResponse response) {
         AppUserDetails principal = new AppUserDetails(
                 user.getLoginId(),
                 user.getPassword(),
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())),
-                null // 사찰 계정이 아니므로 templeId 없음
+                null, // 사찰 계정이 아니므로 templeId 없음
+                user.getNickname(),
+                kakaoAccessToken
         );
 
         Authentication authentication =
