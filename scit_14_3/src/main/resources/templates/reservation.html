@@ -1,10 +1,350 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>템플스테이 예약</title>
+    <style>
+        /* 프로그램 카드 목록 */
+        #program-list {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+          gap: 16px;
+          margin-top: 12px;
+        }
+
+        .program-card {
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          padding: 16px;
+          cursor: pointer;
+        }
+
+        .program-card:hover {
+          border-color: #999;
+        }
+
+        /* 선택된 카드 강조 */
+        .program-card.picked {
+          border: 2px solid #2f6f4f;
+          background-color: #f2f8f5;
+        }
+
+        /* 예약 신청 달력 */
+        #reservation-calendar {
+          max-width: 320px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          padding: 12px;
+        }
+
+        .cal-head {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+        }
+
+        .cal-grid {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 4px;
+          text-align: center;
+        }
+
+        .cal-dow {
+          font-size: 12px;
+          color: #888;
+          padding: 4px 0;
+        }
+
+        .cal-day {
+          padding: 8px 0;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+
+        .cal-day:hover {
+          background-color: #f0f0f0;
+        }
+
+        .cal-day.disabled {
+          color: #ccc;
+          cursor: not-allowed;
+        }
+
+        .cal-day.empty {
+          visibility: hidden;
+        }
+
+        /* 선택된 날짜(시작일/종료일 포함 범위) */
+        .cal-day.selected {
+          background-color: #2f6f4f;
+          color: #fff;
+        }
+    </style>
 </head>
 <body>
-    <h1></h1>
+
+<header>
+    <h1>템플스테이 예약</h1>
+
+    <!-- 3단계 진행 표시 -->
+    <ol id="progress-steps">
+        <li id="step-indicator-1" class="active">01 프로그램 목록</li>
+        <li id="step-indicator-2">02 예약 신청</li>
+        <li id="step-indicator-3">03 신청 완료</li>
+    </ol>
+</header>
+
+<main>
+
+    <!-- ===================== STEP 1: 프로그램 목록 ===================== -->
+    <section id="step-1" data-step="1">
+        <h2>프로그램 목록</h2>
+
+        <!-- 필터 영역 -->
+        <form id="filter-form">
+            <div class="filter-item">
+                <label for="filter-region">지역</label>
+                <select id="filter-region" name="region">
+                    <option value="">전체</option>
+                    <!-- option: 부산광역시, 울산광역시, 경상남도 등 -->
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label for="filter-temple">사찰</label>
+                <select id="filter-temple" name="templeId">
+                    <option value="">전체</option>
+                    <!-- option: TEMPLE 목록 -->
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label for="filter-program-type">프로그램 유형</label>
+                <select id="filter-program-type" name="programType">
+                    <option value="">전체</option>
+                    <option value="당일형">당일형</option>
+                    <option value="체험형">체험형</option>
+                    <option value="휴식형">휴식형</option>
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label for="filter-headcount">인원</label>
+                <select id="filter-headcount" name="headcount">
+                    <option value="">전체</option>
+                    <!-- option: 1명, 2명, 3명 ... -->
+                </select>
+            </div>
+
+        </form>
+
+        <!-- 프로그램 카드 결과 목록 -->
+        <div id="program-list">
+
+            <!-- 프로그램 카드 (반복되는 구조, 예시 1개) -->
+            <!-- 카드 자체를 클릭하면 선택됨(선택된 카드는 picked 클래스가 붙음), 상세보기 버튼만 예외 -->
+            <article class="program-card" data-program-id="">
+                <span class="program-type-badge"><!-- 당일형/체험형/휴식형 --></span>
+                <h3 class="program-title"><!-- 프로그램 title --></h3>
+                <p class="program-temple-region"><!-- 사찰명 · 지역 --></p>
+                <div class="program-price">
+                    <span class="price-adult"><!-- 성인 가격 --></span>
+                    <span class="price-minor"><!-- 미성년 가격 (있다면) --></span>
+                </div>
+                <button type="button" class="program-detail-btn">상세보기</button>
+            </article>
+
+            <!-- 프로그램 카드가 여기에 반복 렌더링됨 -->
+
+        </div>
+
+        <!-- 목록에서 카드를 클릭해 선택해야 활성화되는 버튼 -->
+        <button type="button" id="go-to-reserve-btn" disabled>예약 신청</button>
+    </section>
+
+    <!-- ===================== STEP 1-상세: 프로그램 상세보기 (목록 안의 서브 화면) ===================== -->
+    <section id="step-1-detail" hidden>
+
+        <button type="button" id="detail-back-to-list-btn">목록으로</button>
+
+        <h2 class="detail-title"><!-- 프로그램 title --></h2>
+        <p class="detail-sub"><!-- 사찰명 · 지역 · 프로그램유형 --></p>
+
+        <div class="detail-grid">
+
+            <!-- 프로그램 설명 -->
+            <div class="d-block">
+                <h3>프로그램 소개</h3>
+                <p id="detail-description"><!-- TEMPLE_STAY_PROGRAM.description --></p>
+            </div>
+
+            <!-- 일정표 -->
+            <div class="d-block">
+                <h3>일정표</h3>
+                <div id="detail-schedule"><!-- TEMPLE_STAY_PROGRAM.schedule --></div>
+            </div>
+
+            <!-- 준비물 -->
+            <div class="d-block">
+                <h3>준비물</h3>
+                <ul id="detail-required-items"><!-- TEMPLE_STAY_PROGRAM.required_items --></ul>
+            </div>
+
+            <!-- 요금 안내 -->
+            <div class="d-block">
+                <h3>요금 안내</h3>
+                <table class="price-table">
+                    <tr><th>구분</th><th>가격</th></tr>
+                    <tr><td>1인</td><td id="detail-price"><!-- price --></td></tr>
+                </table>
+            </div>
+
+            <!-- 유의사항 -->
+            <div class="d-block">
+                <h3>유의사항</h3>
+                <p id="detail-precautions"><!-- TEMPLE_STAY_PROGRAM.precautions --></p>
+            </div>
+
+            <!-- 환불 규정 -->
+            <div class="d-block">
+                <h3>환불 규정</h3>
+                <p id="detail-refund-policy"><!-- TEMPLE_STAY_PROGRAM.refund_policy --></p>
+            </div>
+
+        </div>
+
+        <button type="button" id="detail-reserve-btn">예약 신청</button>
+    </section>
+
+    <!-- ===================== STEP 2: 예약 신청 ===================== -->
+    <section id="step-2" data-step="2" hidden>
+        <h2>예약 신청</h2>
+
+        <!-- 선택된 프로그램 요약 -->
+        <div id="selected-program-summary">
+            <p class="program-title"></p>
+            <p class="program-temple-region"></p>
+            <p class="program-price"></p>
+        </div>
+
+        <form id="reservation-form">
+
+            <!-- TEMPLE_STAY_RESERVATION 필드 -->
+            <input type="hidden" id="res-login-id" name="loginId">
+            <input type="hidden" id="res-program-id" name="programId">
+
+            <div class="form-item">
+                <label>희망 일정</label>
+                <!-- 날짜 하나 클릭하면: 당일형은 그날 하루만, 그 외(1박2일)는 다음날까지 자동으로 선택됨 -->
+                <div id="reservation-calendar">
+                    <div class="cal-head">
+                        <button type="button" id="cal-prev-month">‹</button>
+                        <span id="cal-month-label"></span>
+                        <button type="button" id="cal-next-month">›</button>
+                    </div>
+                    <div class="cal-grid" id="cal-grid"></div>
+                </div>
+                <p id="cal-selected-range">날짜를 선택해 주세요.</p>
+            </div>
+
+            <!-- 실제 제출되는 값은 이 두 hidden input에 저장됨 (달력에서 클릭하면 자동으로 채워짐) -->
+            <input type="hidden" id="res-start-date" name="startDate">
+            <input type="hidden" id="res-end-date" name="endDate">
+
+            <div class="form-item">
+                <label for="res-participant-count">참가 인원</label>
+                <input type="number" id="res-participant-count" name="participantCount" min="1">
+            </div>
+
+            <div class="form-item">
+                <label for="res-note">요청사항</label>
+                <textarea id="res-note" name="note"></textarea>
+            </div>
+
+            <!-- 참가자 명단 (RESERVATION_PARTICIPANT, participantCount에 맞춰 행 반복) -->
+            <fieldset id="participant-list">
+                <legend>참가자 정보</legend>
+
+                <!-- 참가자 행 (반복되는 구조, 예시 1개) -->
+                <div class="participant-row" data-index="0">
+                    <div class="form-item">
+                        <label for="participant-name-0">이름</label>
+                        <input type="text" id="participant-name-0" name="participants[0].name">
+                    </div>
+                    <div class="form-item">
+                        <label for="participant-gender-0">성별</label>
+                        <select id="participant-gender-0" name="participants[0].gender">
+                            <option value="남성">남성</option>
+                            <option value="여성">여성</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label for="participant-email-0">이메일</label>
+                        <input type="email" id="participant-email-0" name="participants[0].email">
+                    </div>
+                </div>
+                <!-- 참가자 행이 participantCount만큼 여기에 반복 렌더링됨 -->
+
+            </fieldset>
+
+            <!-- PAYMENT 관련 입력 -->
+            <fieldset id="payment-section">
+                <legend>결제 수단</legend>
+
+                <div class="form-item">
+                    <label for="payment-method">결제 방법</label>
+                    <select id="payment-method" name="paymentMethod">
+                        <option value="계좌이체">계좌이체</option>
+                        <option value="카카오페이">카카오페이</option>
+                    </select>
+                </div>
+
+                <!-- 계좌이체 선택 시 -->
+                <div class="form-item payment-field" data-method="계좌이체">
+                    <label for="payment-depositor-name">입금자명</label>
+                    <input type="text" id="payment-depositor-name" name="depositorName">
+                </div>
+
+                <!-- 카카오페이 선택 시 -->
+                <div class="form-item payment-field" data-method="카카오페이">
+                    <label for="payment-kakao-tid">카카오페이 결제 정보</label>
+                    <input type="text" id="payment-kakao-tid" name="kakaoTid" readonly>
+                </div>
+
+                <p id="payment-total-amount"><!-- 단가 x 인원 = 총 결제 금액 --></p>
+            </fieldset>
+
+            <button type="button" id="step2-back-btn">이전</button>
+            <button type="submit" id="step2-submit-btn">예약 및 결제 신청</button>
+
+        </form>
+    </section>
+
+    <!-- ===================== STEP 3: 신청 완료 ===================== -->
+    <section id="step-3" data-step="3" hidden>
+        <h2>신청 완료</h2>
+
+        <div id="reservation-result-summary">
+            <p id="result-reservation-id"><!-- 예약번호 --></p>
+            <p id="result-program-title"><!-- 프로그램명 --></p>
+            <p id="result-temple-name"><!-- 사찰명 --></p>
+            <p id="result-date-range"><!-- 시작일 ~ 종료일 --></p>
+            <p id="result-participant-count"><!-- 참가 인원 --></p>
+            <p id="result-total-amount"><!-- 총 결제 금액 --></p>
+            <p id="result-payment-method"><!-- 결제 수단 --></p>
+            <p id="result-status"><!-- 예약 상태: 예약대기 --></p>
+        </div>
+        <button type="button" id="step3-back-to-list-btn">목록으로</button>
+        <button type="button" id="go-to-my-reservations-btn">내 예약 확인하기</button>
+    </section>
+
+</main>
+
+<script src="/js/reservation.js"></script>
+
 </body>
 </html>

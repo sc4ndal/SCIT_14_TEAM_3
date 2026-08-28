@@ -5,9 +5,14 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.TempleDTO;
+import net.datasa.scit_14_3.domain.dto.TempleStayProgramDTO;
 import net.datasa.scit_14_3.domain.entity.TempleEntity;
+import net.datasa.scit_14_3.domain.entity.TempleStayProgramEntity;
 import net.datasa.scit_14_3.repository.TempleRepository;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -29,5 +34,25 @@ public class TempleService {
 				.isTemple(entity.isTemple())
 				.specialNotice(entity.getSpecialNotice())
 				.build();
+	}
+	
+	public List<TempleDTO> getAll() {
+		List<TempleDTO> dtoList = new ArrayList<>();
+		List<TempleEntity> list = tr.findAll();
+		
+		for(TempleEntity entity : list) {
+			TempleDTO dto = TempleDTO.builder()
+					.templeId(entity.getTempleId())
+					.name(entity.getName())
+					.apiPlaceId(entity.getApiPlaceId())
+					.region(entity.getRegion())
+					.locationType(entity.getLocationType())
+					.supportEnglish(entity.isSupportEnglish())
+					.isTemple(entity.isTemple())
+					.specialNotice(entity.getSpecialNotice())
+					.build();
+			dtoList.add(dto);
+		}
+		return dtoList;
 	}
 }

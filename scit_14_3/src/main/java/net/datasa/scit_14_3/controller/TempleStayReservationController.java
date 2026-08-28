@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class TempleStayReservationController {
 		private final TempleStayReservationService tsrs;
 		
-		@GetMapping("/{reservationId}")
+		@GetMapping("/{reservationId}") // 데이터 불러오기 테스트용
 		public TempleStayReservationDTO getTempleStayReservation(@PathVariable Long reservationId) {
 			return tsrs.getInfo(reservationId);
 		}
