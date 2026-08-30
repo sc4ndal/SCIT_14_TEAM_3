@@ -12,4 +12,9 @@ public class HomeController {
 	public String home() {
 		return "home";
 	}
+	
+	@GetMapping({"/templestayGuide"})
+	public String templestay() {
+		return "templestayGuide";
+	}
 }

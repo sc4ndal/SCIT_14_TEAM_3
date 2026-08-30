@@ -8,7 +8,7 @@
   - 아직 백엔드에 없는 API는 아래 API 객체에 주석으로 표시해뒀어.
     실제로 컨트롤러 만들면 그 URL로만 바꿔주면 됨.
 */
-
+ 
 // ------------------------- API 엔드포인트 -------------------------
 const API = {
   // TODO: 아직 findAll 안 만들었으니, 이거 만들면 실제 fetch로 교체
@@ -23,7 +23,7 @@ const API = {
   //   POST /payments  body: { reservationId, paymentMethod, depositorName, kakaoTid }
   createPayment: '/payments',
 };
-
+ 
 // ------------------------- 목데이터 (findAll 만들기 전까지 임시) -------------------------
 // 실제로는 GET /temples + GET /templestayprograms 응답을 합쳐서 아래와 같은 모양을 만들면 됨.
 // TempleStayProgramDTO 필드명(programId, templeId, title, programType, price, duration, maxParticipant,
@@ -60,7 +60,7 @@ const MOCK_PROGRAMS = [
     precautions: '식이 제한(알레르기 등)이 있으면 사전에 알려주세요.',
   },
 ];
-
+ 
 // ------------------------- state -------------------------
 const state = {
   step: 1,                    // 1: 목록/상세, 2: 예약신청, 3: 신청완료
@@ -72,7 +72,8 @@ const state = {
   startDate: '',
   endDate: '',
   participantCount: 1,
-  participants: [{ name: '', gender: '', email: '' }],
+  // participants[0] = 대표자(예약 신청자 본인, phone 포함), participants[1..] = 나머지 참가자
+  participants: [{ name: '', gender: '', email: '', phone: '' }],
   note: '',
   paymentMethod: '계좌이체',
   depositorName: '',
@@ -123,9 +124,12 @@ function goToStep(step) {
   document.querySelectorAll('main > section[data-step]').forEach(sec => {
     sec.hidden = Number(sec.dataset.step) !== step;
   });
+  document.getElementById('step-1-detail').hidden = true;   // 추가: 상세보기 화면은 항상 숨김 처리
   document.querySelectorAll('#progress-steps li').forEach((li, i) => {
     li.classList.toggle('active', i === step - 1);
   });
+
+  window.scrollTo(0, 0);   // 추가: 화면 맨 위로 스크롤 (단계 바뀌는 느낌 확실하게)
 
   // step 1로 돌아올 때는 항상 목록부터 보여줌 (상세보기는 초기화)
   if (step === 1) {
@@ -269,7 +273,7 @@ function selectProgram(programId) {
   state.startDate = '';
   state.endDate = '';
   state.participantCount = 1;
-  state.participants = [{ name: '', gender: '', email: '' }];
+  state.participants = [{ name: '', gender: '', email: '', phone: '' }];
 
   renderStep2();
   goToStep(2);
@@ -299,9 +303,19 @@ function renderStep2() {
   document.getElementById('cal-selected-range').textContent = '날짜를 선택해 주세요.';
   renderCalendar();
 
+  renderRepresentativeRow();
   renderParticipantRows();
   updatePaymentTotal();
   togglePaymentFields();
+}
+
+// 대표자(참가자[0])는 고정 위치의 정적 필드라 다시 그리지 않고 값만 채워 넣음
+function renderRepresentativeRow() {
+  const rep = state.participants[0] || { name: '', gender: '', email: '', phone: '' };
+  document.getElementById('participant-name-0').value = rep.name || '';
+  document.getElementById('participant-gender-0').value = rep.gender || '';
+  document.getElementById('participant-email-0').value = rep.email || '';
+  document.getElementById('participant-phone-0').value = rep.phone || '';
 }
 
 // ------------------------- 달력 -------------------------
@@ -399,17 +413,19 @@ document.getElementById('cal-next-month').addEventListener('click', () => {
 });
 
 function renderParticipantRows() {
-  // participantCount에 맞춰 participants 배열 길이 맞추기
+  // participantCount에 맞춰 participants 배열 길이 맞추기 (participants[0]은 대표자)
   while (state.participants.length < state.participantCount) {
-    state.participants.push({ name: '', gender: '', email: '' });
+    state.participants.push({ name: '', gender: '', email: '', phone: '' });
   }
   state.participants.length = state.participantCount;
 
   const container = document.getElementById('participant-list');
-  // legend는 남기고 행만 다시 그림
+  // legend/안내문구는 남기고 행만 다시 그림
   container.querySelectorAll('.participant-row').forEach(row => row.remove());
 
   state.participants.forEach((pt, i) => {
+    if (i === 0) return; // 대표자는 #representative-info에서 별도로 다룸
+
     const row = document.createElement('div');
     row.className = 'participant-row';
     row.dataset.index = i;
@@ -440,6 +456,17 @@ function renderParticipantRows() {
     });
   });
 }
+
+// 대표자 입력 필드는 #representative-info에 고정으로 존재하므로, 매 렌더마다 새로 만들지 않고
+// 페이지 로드 시 한 번만 리스너를 걸어둔다 (renderRepresentativeRow()가 값 채우는 역할을 담당).
+['name', 'gender', 'email', 'phone'].forEach((field) => {
+  document.getElementById(`participant-${field}-0`).addEventListener('input', (e) => {
+    if (!state.participants[0]) {
+      state.participants[0] = { name: '', gender: '', email: '', phone: '' };
+    }
+    state.participants[0][field] = e.target.value;
+  });
+});
 
 function updatePaymentTotal() {
   const p = state.selectedProgram;
@@ -500,7 +527,11 @@ async function submitReservation() {
     return;
   }
   if (state.participants.some(pt => !pt.name || !pt.gender || !pt.email)) {
-    alert('참가자 정보를 모두 입력해 주세요.');
+    alert('대표자와 참가자 정보를 모두 입력해 주세요.');
+    return;
+  }
+  if (!state.participants[0] || !state.participants[0].phone) {
+    alert('대표자 연락처를 입력해 주세요.');
     return;
   }
 
