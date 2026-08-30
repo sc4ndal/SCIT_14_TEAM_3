@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @Slf4j
 @RestController //이 메서드가 리턴하는 건 화면이 아니라 그냥 데이터다.
 //@Controller // 프론트 화면용
@@ -22,4 +24,10 @@ public class TempleStayProgramController {
 	public TempleStayProgramDTO getTemple(@PathVariable Long programId) {
 		return tsps.getInfo(programId);
 	}
+	
+	@GetMapping
+	public List<TempleStayProgramDTO> getTempleStayPrograms() {
+		return tsps.getAll();
+	}
+	
 }
