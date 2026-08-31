@@ -3,6 +3,7 @@ package net.datasa.scit_14_3.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Builder
@@ -30,7 +31,10 @@ public class TempleStayProgramEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(name = "program_type", nullable = false)
 	private ProgramType programType;
-	
+
+	@Column(name = "image_url", length = 255)
+	private String imageUrl;
+
 	@Column(name = "description", columnDefinition = "TEXT")
 	private String description;
 	
@@ -56,10 +60,17 @@ public class TempleStayProgramEntity {
 	@Column(name = "max_participant", nullable = false)
 	private int maxParticipant = 20;
 	
+	// 아래 세 컬럼은 DB 트리거가 소속 TEMPLE의 값으로 저장 시점에 덮어씀 (docs/buddhist-site-schema.sql 참고)
 	@Builder.Default
 	@Column(name = "support_english", nullable = false)
 	private boolean supportEnglish = false;
-	
+
+	@Column(name = "latitude", precision = 10, scale = 7, nullable = false)
+	private BigDecimal latitude;
+
+	@Column(name = "longitude", precision = 10, scale = 7, nullable = false)
+	private BigDecimal longitude;
+
 	@Column(name = "created_at", insertable = false, updatable = false, nullable = false)
 	private LocalDateTime createdAt;
 }
