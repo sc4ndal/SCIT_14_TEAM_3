@@ -46,7 +46,10 @@ public class WebSecurityConfig {
 			"/templestayprograms/**",
 			"/templestayreservations/**",
 			"/reservationparticipants/**",
-			"/payments/**"
+			"/payments/**",
+			"/reservation",
+			"/maptest",
+			"/templestayGuide"
 	);
 	
 	@Bean

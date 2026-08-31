@@ -5,9 +5,14 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.ReservationParticipantDTO;
+import net.datasa.scit_14_3.domain.dto.TempleStayReservationDTO;
 import net.datasa.scit_14_3.domain.entity.ReservationParticipantEntity;
+import net.datasa.scit_14_3.domain.entity.TempleStayReservationEntity;
 import net.datasa.scit_14_3.repository.ReservationParticipantRepository;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -26,5 +31,30 @@ public class ReservationParticipantService {
 				.gender(entity.getGender())
 				.email(entity.getEmail())
 				.build();
+	}
+	
+	public List<ReservationParticipantDTO> reserved(List<ReservationParticipantDTO> reservationParticipantDTO) {
+		List<ReservationParticipantDTO> dtoList = new ArrayList<>();
+		
+		for(ReservationParticipantDTO dto : reservationParticipantDTO) {
+				ReservationParticipantEntity entity = ReservationParticipantEntity.builder()
+						.reservationId(dto.getReservationId())
+						.name(dto.getName())
+						.gender(dto.getGender())
+						.email(dto.getEmail())
+						.build();
+		
+				
+		ReservationParticipantEntity saved = rpr.save(entity); // 저장! (여기서 participantId가 새로 생김) 이거 안 만들면 participantId를 알 수 없움
+		
+		dtoList.add(ReservationParticipantDTO.builder()
+				.participantId(saved.getParticipantId())
+				.reservationId(saved.getReservationId())	//사실 dto에서 꺼내나 saved에서 꺼내나 값이 완전히 똑같음
+				.name(dto.getName())
+				.gender(dto.getGender())
+				.email(dto.getEmail())
+				.build());
+	}
+		return dtoList;
 	}
 }

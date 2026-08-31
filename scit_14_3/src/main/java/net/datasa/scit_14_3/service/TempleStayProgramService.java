@@ -9,6 +9,9 @@ import net.datasa.scit_14_3.domain.entity.TempleStayProgramEntity;
 import net.datasa.scit_14_3.repository.TempleStayProgramRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Slf4j
 @Service
 @Transactional
@@ -35,5 +38,31 @@ public class TempleStayProgramService {
 				.supportEnglish(entity.isSupportEnglish())
 				.createdAt(entity.getCreatedAt())
 				.build();
+	}
+	
+	public List<TempleStayProgramDTO> getAll() {
+		List<TempleStayProgramDTO> dtoList = new ArrayList<>();
+		List<TempleStayProgramEntity> list = tspr.findAll();
+		
+		for(TempleStayProgramEntity entity : list) {
+			TempleStayProgramDTO dto = TempleStayProgramDTO.builder()
+					.programId(entity.getProgramId())
+					.templeId(entity.getTempleId())
+					.title(entity.getTitle())
+					.programType(entity.getProgramType())
+					.description(entity.getDescription())
+					.schedule(entity.getSchedule())
+					.requiredItems(entity.getRequiredItems())
+					.refundPolicy(entity.getRefundPolicy())
+					.precautions(entity.getPrecautions())
+					.price(entity.getPrice())
+					.duration(entity.getDuration())
+					.maxParticipant(entity.getMaxParticipant())
+					.supportEnglish(entity.isSupportEnglish())
+					.createdAt(entity.getCreatedAt())
+					.build();
+			dtoList.add(dto);
+		}
+		return dtoList;
 	}
 }
