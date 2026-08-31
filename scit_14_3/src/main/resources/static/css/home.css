@@ -1,37 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500&display=swap');
-
+/* 색상/폰트 토큰은 모든 페이지가 같이 불러오는 common.css로 옮김(2026-08-31) — 거기서 정의된
+   --bg/--text/--brown 등을 그대로 재사용함. 여기는 home.html 전용 값만 남김. */
 :root {
-    /* ===== 피그마 원안 기준 시맨틱 컬러 토큰 (스타일가이드 2026-08-26 확정분 반영) ===== */
-    --bg: #f8f4ef;          /* background */
-    --paper: #fdfaf6;       /* card */
-    --secondary: #efe9e1;   /* secondary (아직 미사용, 토큰만 등록) */
-    --muted-bg: #ede7de;    /* muted — 배경 용도. 기존 --muted(텍스트 반투명용)와 이름이 겹쳐서 분리함 */
-    --text: #27211b;        /* foreground */
-    --destructive: #c0392b; /* destructive — 현재 home.css엔 에러 상태 없어 미사용, 추후 대비 등록 */
-
-    --brown: #9b6845;  /* accent */
-    --green: #5c7a62;  /* accent-green (찾아보기 섹션) */
-    --blue: #6b7a9e;   /* accent-blue (준비하기 섹션) */
-    --gold: #8a6e3c;   /* accent-gold (체험하기 섹션) */
-
-    --color-sunday: #b43c3c;
-    --color-saturday: #3c64b4;
-
-    /* 텍스트 opacity 4단계 (확정). 기존 rgba(39,33,27,X) 개별 값들은
-       당장 전체 교체 대상 아님(가이드 문서 방침) — 신규 작성 시 이 토큰 사용 권장 */
-    --text-primary: rgba(39, 33, 27, .90);
-    --text-secondary: rgba(39, 33, 27, .60);
-    --text-tertiary: rgba(39, 33, 27, .45);
-    --text-muted: rgba(39, 33, 27, .30);
-
-    --line: rgba(39, 33, 27, 0.09);
-
-    /* 폰트: 가이드 지정값은 Outfit(본문)+Lora(제목)이지만 둘 다 한글 글리프가 없어서
-       그대로 적용하면 한글 텍스트가 전부 시스템 폴백 폰트로 깨집니다.
-       가이드 문서에도 "최종 폰트 결정 필요" 항목으로 남아있어 이번 색상 정리 범위에서는 보류. */
-    --serif: "Noto Serif KR", Batang, serif;
-    --sans: "Noto Sans KR", sans-serif;
-
     --feature-height: 720px;
     --feature-expanded-height: 810px;
     --radius-calendar: 16px; /* 캘린더 카드/이벤트 패널 전용 (가이드 2xl16) */
@@ -909,4 +878,48 @@ h2.type-title:hover {
     visibility: visible;
 
     transform: translateY(0);
+}
+
+
+/* ======================================================
+   FOOTER
+====================================================== */
+
+.home-footer {
+    padding: 48px 16px 64px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+
+    text-align: center;
+
+    background: var(--muted-bg);
+    border-top: 1px solid var(--line);
+}
+
+.home-footer p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.btn-inquiry {
+    padding: 12px 28px;
+
+    background: var(--brown);
+    color: #fff;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    border-radius: 6px;
+    text-decoration: none;
+
+    transition: filter .15s ease;
+}
+
+.btn-inquiry:hover {
+    filter: brightness(0.92);
 }

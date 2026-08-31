@@ -62,4 +62,18 @@ public class EmailVerificationService {
     public boolean isVerified(String email, HttpSession session) {
         return email != null && email.equals(session.getAttribute(VERIFIED_KEY));
     }
+
+    /** 사찰 등록 요청이 승인됐을 때, 새로 만든 임시 로그인ID/비밀번호를 요청자에게 보냄. */
+    public void sendTempleCredentials(String email, String loginId, String rawPassword) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("[사찰 커뮤니티] 사찰 계정 등록 완료 안내");
+        message.setText(
+                "사찰 계정이 등록되었습니다.\n" +
+                "아이디: " + loginId + "\n" +
+                "임시 비밀번호: " + rawPassword + "\n\n" +
+                "로그인 후 반드시 비밀번호를 변경해주세요."
+        );
+        mailSender.send(message);
+    }
 }

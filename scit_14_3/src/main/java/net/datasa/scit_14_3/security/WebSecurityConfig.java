@@ -42,14 +42,17 @@ public class WebSecurityConfig {
 			"/signup/**",          // /signup, /signup/local, /signup/kakao-additional 전부 포함
 			"/api/check/**",       // 아이디/닉네임/이메일 중복확인 (가입 전, 미로그인 상태에서 호출)
 			"/api/email/**",       // 이메일 인증코드 발송/확인 (가입 전, 미로그인 상태에서 호출)
+			"/api/location-type/**", // 사찰 등록 문의 폼(공개)의 장소 유형 AI 자동판별
 			"/temples/**",
 			"/templestayprograms/**",
 			"/templestayreservations/**",
 			"/reservationparticipants/**",
 			"/payments/**",
-			"/reservation",
-			"/maptest",
-			"/templestayGuide"
+			"/reservation/**",
+			"/maptest/**",
+			"/templestayGuide/**",
+			"/info/**",
+			"/temple-requests/**"    // 사찰 관계자가 회원가입 없이 남기는 등록 요청 (공개)
 	);
 	
 	@Bean
@@ -67,7 +70,15 @@ public class WebSecurityConfig {
 				
 				.formLogin(formLogin -> formLogin
 						.loginPage("/login")
-						.defaultSuccessUrl("/", true)
+						// 관리자가 임시 비밀번호로 발급한 사찰 계정은 로그인하자마자 비밀번호부터 바꾸게 함
+						.successHandler((request, response, authentication) -> {
+							String target = "/";
+							if (authentication.getPrincipal() instanceof AppUserDetails principal
+									&& principal.isMustChangePassword()) {
+								target = "/mypage/edit";
+							}
+							response.sendRedirect(request.getContextPath() + target);
+						})
 						.permitAll()
 				)
 				

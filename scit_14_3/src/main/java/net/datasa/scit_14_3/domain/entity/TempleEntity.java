@@ -37,13 +37,20 @@ public class TempleEntity {
 		@Column(name = "region", length = 20, nullable = false)
 		private String region;
 	
-		public enum LocationType {
-		바다, 산, 강, 도심
-		}
-		@Enumerated(EnumType.STRING)
-		@Column(name = "location_type", nullable = false)
-		private LocationType locationType;
-	
+		// 장소 유형은 하나만 고르는 게 아니라 중복 가능(바다+도심 등)이라 ENUM 한 컬럼 대신
+		// support_english와 같은 방식으로 유형별 boolean 컬럼을 둠(2026-08-31 변경)
+		@Column(name = "support_sea", nullable = false)
+		private boolean supportSea;
+
+		@Column(name = "support_mountain", nullable = false)
+		private boolean supportMountain;
+
+		@Column(name = "support_river", nullable = false)
+		private boolean supportRiver;
+
+		@Column(name = "support_urban", nullable = false)
+		private boolean supportUrban;
+
 		@Column(name = "support_english", nullable = false)
 		private boolean supportEnglish;
 		
@@ -59,4 +66,9 @@ public class TempleEntity {
 		
 		@Column(name = "password", length = 255, nullable = false)
 		private String password;
+
+		// 관리자가 임시 비밀번호를 발급해 등록한 계정은 true - 로그인 시 비밀번호 변경 페이지로 강제 이동됨
+		@Builder.Default
+		@Column(name = "must_change_password", nullable = false)
+		private boolean mustChangePassword = false;
 }

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>사찰 등록 요청 목록 · 사찰 커뮤니티</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" th:href="@{/css/signup.css}">
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+<body>
+
+<div class="card" style="max-width:760px;">
+	<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+
+	<div class="header">
+		<h1>사찰 등록 요청 목록</h1>
+		<p>사찰 관계자가 남긴 등록 문의를 검토하고 승인 처리합니다</p>
+	</div>
+
+	<p class="check-result" style="color:#2f6b5e; text-align:center;" th:if="${createSuccess}">
+		사찰이 등록되고 계정 정보가 이메일로 발송되었습니다.
+	</p>
+
+	<div style="padding:8px 32px 32px;">
+		<p th:if="${#lists.isEmpty(requests)}" style="text-align:center; color:var(--ink-soft); padding:24px 0;">
+			아직 들어온 요청이 없습니다.
+		</p>
+
+		<a th:each="r : ${requests}" th:href="@{/admin/temple-requests/{id}(id=${r.requestId})}"
+		   style="display:flex; align-items:center; justify-content:space-between; gap:12px;
+		          padding:14px 16px; margin-bottom:8px; border:1px solid var(--border); border-radius:6px;
+		          text-decoration:none; color:var(--ink);">
+			<span style="display:flex; flex-direction:column; gap:2px;">
+				<strong th:text="${r.name}">사찰명</strong>
+				<span style="font-size:12px; color:var(--ink-soft);" th:text="${r.region + ' · ' + r.contactEmail}">지역 · 이메일</span>
+			</span>
+			<span class="badge"
+			      th:classappend="${r.status.name() == '승인'} ? ' badge-approved' : ' badge-pending'"
+			      th:text="${r.status}">대기</span>
+		</a>
+	</div>
+</div>
+
+</body>
+</html>

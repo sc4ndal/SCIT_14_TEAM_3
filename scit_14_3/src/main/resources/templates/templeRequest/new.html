@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>사찰 등록 문의 · 사찰 커뮤니티</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" th:href="@{/css/signup.css}">
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+	<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=4d97c12d7e3e28e5dd08a2f00a58025d&libraries=services"></script>
+</head>
+<body>
+
+<div class="card">
+	<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+
+	<div class="header">
+		<h1>사찰 등록 문의</h1>
+		<p>사찰 관계자이신가요? 정보를 남겨주시면 검토 후 계정을 만들어드립니다</p>
+		<p class="req-note"><span class="req">*</span> 표시는 필수 입력 항목입니다</p>
+	</div>
+
+	<p class="check-result" style="color:#2f6b5e; text-align:center;" th:if="${submitSuccess}">
+		문의가 접수되었습니다. 검토 후 입력하신 이메일로 안내드리겠습니다.
+	</p>
+	<p class="check-result" style="color:var(--destructive); text-align:center;" th:if="${submitError}" th:text="${submitError}"></p>
+
+	<form th:action="@{/temple-requests}" method="post" enctype="multipart/form-data">
+
+		<fieldset>
+			<legend>사찰 정보</legend>
+
+			<div class="field">
+				<label for="name">사찰 이름<span class="req">*</span></label>
+				<input type="text" id="name" name="name" maxlength="100" required>
+			</div>
+
+			<div class="field">
+				<label for="imageFile">대표 이미지 <span class="optional-note">(선택)</span></label>
+				<input type="file" id="imageFile" name="imageFile" accept="image/*">
+				<img id="imagePreview" alt="" style="display:none;max-width:220px;margin-top:8px;border-radius:4px;border:1px solid var(--border);">
+			</div>
+
+			<div class="field">
+				<label for="address">주소<span class="req">*</span></label>
+				<div class="field-inline">
+					<input type="text" id="address" name="address" maxlength="255" style="flex:1;" required>
+					<button type="button" class="btn-check" id="openMapPicker">지도에서 선택</button>
+				</div>
+				<input type="text" id="addressDetail" maxlength="100" placeholder="상세주소 (동/호수 등, 선택)" style="margin-top:8px;">
+				<p class="hint">지도에서 위치를 고르면 이름/주소/지역/위도/경도가 자동으로 채워집니다</p>
+			</div>
+
+			<div class="field field-inline">
+				<div style="flex:1;">
+					<label for="latitude">위도<span class="req">*</span></label>
+					<input type="text" id="latitude" name="latitude" placeholder="예: 37.5665" required>
+				</div>
+				<div style="flex:1;">
+					<label for="longitude">경도<span class="req">*</span></label>
+					<input type="text" id="longitude" name="longitude" placeholder="예: 126.9780" required>
+				</div>
+			</div>
+
+			<div class="field">
+				<label for="region">지역(시/도)<span class="req">*</span></label>
+				<input type="text" id="region" name="region" maxlength="20" placeholder="예: 서울" required>
+			</div>
+
+			<div class="field">
+				<label>장소 유형<span class="req">*</span> <span class="optional-note">(중복 선택 가능)</span></label>
+				<div class="radio-group" id="locationTypeGroup">
+					<label><input type="checkbox" name="supportSea" value="true"> 바다</label>
+					<label><input type="checkbox" name="supportMountain" value="true"> 산</label>
+					<label><input type="checkbox" name="supportRiver" value="true"> 강</label>
+					<label><input type="checkbox" name="supportUrban" value="true"> 도심</label>
+				</div>
+				<button type="button" class="btn-check" id="autoDetectLocationType" style="margin-top:8px;">AI로 자동판별</button>
+				<span id="autoDetectStatus" class="hint"></span>
+				<p class="hint" id="locationTypeHint" style="display:none;color:var(--destructive);">최소 하나는 선택해주세요</p>
+			</div>
+
+			<div class="field">
+				<label class="terms-checkbox" style="margin-bottom:0;">
+					<input type="checkbox" id="supportEnglish" name="supportEnglish" value="true">
+					<span>영어 안내 지원 가능</span>
+				</label>
+				<!-- 체크 안 하면 아예 파라미터가 안 넘어가서 서버 boolean이 false로 바인딩됨 -->
+			</div>
+
+			<div class="field">
+				<label for="specialNotice">참고사항 <span class="optional-note">(선택)</span></label>
+				<textarea id="specialNotice" name="specialNotice" rows="4" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:14px;"></textarea>
+			</div>
+		</fieldset>
+
+		<fieldset>
+			<legend>연락처</legend>
+			<div class="field">
+				<label for="contactEmail">이메일<span class="req">*</span></label>
+				<div class="field-inline">
+					<input type="email" id="contactEmail" name="contactEmail" maxlength="100" placeholder="검토 결과와 계정 정보를 받으실 이메일" style="flex:1;" required>
+					<button type="button" class="btn-check" id="sendVerificationBtn">인증번호 발송</button>
+				</div>
+				<span class="check-result" id="emailVerifyStatus"></span>
+
+				<div class="verify-box" id="verifySection" style="display:none;">
+					<div class="field-inline">
+						<input type="text" id="verifyCode" maxlength="6" placeholder="이메일로 받은 인증번호 6자리">
+						<button type="button" class="btn-check" id="confirmCodeBtn">확인</button>
+					</div>
+					<div class="verify-meta">
+						<span class="timer" id="timerDisplay">05:00</span>
+					</div>
+					<span class="check-result" id="verifyResult"></span>
+				</div>
+			</div>
+		</fieldset>
+
+		<div class="form-actions">
+			<button class="submit" type="submit">문의하기</button>
+			<a th:href="@{/}" class="btn-cancel">취소</a>
+		</div>
+	</form>
+</div>
+
+<!-- 지도에서 위치 선택 모달 -->
+<div id="mapPickerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;padding:20px;">
+	<div style="background:var(--surface);width:100%;max-width:720px;border-radius:10px;box-shadow:0 20px 50px rgba(0,0,0,.25);overflow:hidden;">
+		<div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border);">
+			<h2 style="margin:0;font-family:'Noto Serif KR',serif;font-size:18px;">지도에서 위치 선택</h2>
+			<button type="button" id="mapPickerClose" aria-label="닫기"
+			        style="border:none;background:none;font-size:22px;line-height:1;cursor:pointer;color:var(--ink-soft);padding:4px;">&times;</button>
+		</div>
+
+		<div style="padding:20px 24px;">
+			<div style="display:flex;gap:8px;margin-bottom:12px;">
+				<input type="text" id="mapSearchKeyword" placeholder="사찰 이름이나 주소로 검색"
+				       style="flex:1;padding:11px 14px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:14px;">
+				<button type="button" class="btn-check" id="mapSearchBtn" style="padding:0 20px;">검색</button>
+			</div>
+			<div id="mapSearchResults" style="max-height:180px;overflow-y:auto;margin-bottom:12px;border-radius:6px;"></div>
+			<div id="pickerMap" style="width:100%;height:380px;border-radius:6px;border:1px solid var(--border);"></div>
+			<p class="hint" style="margin-top:10px;">지도를 직접 클릭해서 위치를 지정할 수도 있습니다(이 경우 이름은 직접 입력해야 합니다)</p>
+		</div>
+	</div>
+</div>
+
+<script>
+	// ===== 대표 이미지 로컬 미리보기 (실제 업로드는 폼 제출 시 서버에서 처리) =====
+	const imageFileInput = document.getElementById('imageFile');
+	const imagePreview = document.getElementById('imagePreview');
+	imageFileInput.addEventListener('change', () => {
+		const file = imageFileInput.files[0];
+		if (!file) return;
+		const reader = new FileReader();
+		reader.onload = () => {
+			imagePreview.src = reader.result;
+			imagePreview.style.display = 'block';
+		};
+		reader.readAsDataURL(file);
+	});
+
+	// ===== 이메일 인증 (스팸/사칭 방지 - 회원가입과 동일한 흐름) =====
+	const contactEmailInput = document.getElementById('contactEmail');
+	const sendVerificationBtn = document.getElementById('sendVerificationBtn');
+	const emailVerifyStatus = document.getElementById('emailVerifyStatus');
+	const verifySection = document.getElementById('verifySection');
+	const verifyCodeInput = document.getElementById('verifyCode');
+	const confirmCodeBtn = document.getElementById('confirmCodeBtn');
+	const verifyResult = document.getElementById('verifyResult');
+	const timerDisplay = document.getElementById('timerDisplay');
+
+	let verifiedEmail = null;
+	let timerInterval = null;
+
+	function resetEmailVerification() {
+		verifiedEmail = null;
+		verifySection.style.display = 'none';
+		emailVerifyStatus.textContent = '';
+		verifyResult.textContent = '';
+		if (timerInterval) clearInterval(timerInterval);
+	}
+	contactEmailInput.addEventListener('input', resetEmailVerification);
+
+	function startTimer() {
+		let secondsLeft = 300;
+		if (timerInterval) clearInterval(timerInterval);
+		timerInterval = setInterval(() => {
+			secondsLeft--;
+			const m = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+			const s = String(secondsLeft % 60).padStart(2, '0');
+			timerDisplay.textContent = m + ':' + s;
+			if (secondsLeft <= 0) {
+				clearInterval(timerInterval);
+				verifyResult.textContent = '인증 시간이 만료되었습니다. 다시 시도해주세요';
+				verifyCodeInput.disabled = true;
+			}
+		}, 1000);
+	}
+
+	sendVerificationBtn.addEventListener('click', async () => {
+		const email = contactEmailInput.value.trim();
+		if (!email) {
+			emailVerifyStatus.textContent = '이메일을 입력해주세요';
+			return;
+		}
+		sendVerificationBtn.disabled = true;
+		try {
+			await fetch('/api/email/send-verification', {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify({email: email})
+			});
+			verifySection.style.display = 'block';
+			verifyCodeInput.value = '';
+			verifyCodeInput.disabled = false;
+			emailVerifyStatus.textContent = '';
+			verifyResult.textContent = '입력하신 이메일로 인증번호를 발송했습니다';
+			timerDisplay.textContent = '05:00';
+			startTimer();
+		} catch (e) {
+			emailVerifyStatus.textContent = '인증메일 발송에 실패했습니다. 다시 시도해주세요';
+		} finally {
+			sendVerificationBtn.disabled = false;
+		}
+	});
+
+	confirmCodeBtn.addEventListener('click', async () => {
+		const email = contactEmailInput.value.trim();
+		const code = verifyCodeInput.value.trim();
+		try {
+			const res = await fetch('/api/email/verify-code', {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify({email: email, code: code})
+			});
+			const data = await res.json();
+			if (data.verified) {
+				verifiedEmail = email;
+				verifyResult.textContent = '인증이 완료되었습니다';
+				verifyCodeInput.disabled = true;
+				if (timerInterval) clearInterval(timerInterval);
+			} else {
+				verifyResult.textContent = '인증번호가 일치하지 않습니다';
+			}
+		} catch (e) {
+			verifyResult.textContent = '인증 확인 요청에 실패했습니다';
+		}
+	});
+
+	// ===== 상세주소 병합 (제출 직전에 주소+상세주소를 합쳐서 실제 전송값으로 씀) =====
+	const addressDetailInput = document.getElementById('addressDetail');
+	document.querySelector('form').addEventListener('submit', (e) => {
+		if (verifiedEmail !== contactEmailInput.value.trim()) {
+			e.preventDefault();
+			alert('이메일 인증을 완료해주세요.');
+			return;
+		}
+
+		const checked = document.querySelectorAll('#locationTypeGroup input:checked');
+		document.getElementById('locationTypeHint').style.display = checked.length === 0 ? 'block' : 'none';
+		if (checked.length === 0) {
+			e.preventDefault();
+			return;
+		}
+
+		const detail = addressDetailInput.value.trim();
+		if (detail) {
+			addressInput.value = addressInput.value.trim() + ' ' + detail;
+		}
+	});
+
+	// ===== 카카오 지도로 위치 선택 =====
+	const nameInput = document.getElementById('name');
+	const addressInput = document.getElementById('address');
+	const regionInput = document.getElementById('region');
+	const latInput = document.getElementById('latitude');
+	const lngInput = document.getElementById('longitude');
+
+	const mapModal = document.getElementById('mapPickerModal');
+	const mapSearchInput = document.getElementById('mapSearchKeyword');
+	const mapSearchBtn = document.getElementById('mapSearchBtn');
+	const mapSearchResults = document.getElementById('mapSearchResults');
+
+	let pickerMap, pickerMarker, placesService, geocoder;
+
+	function initPickerMap() {
+		if (pickerMap) return;
+		kakao.maps.load(function () {
+			pickerMap = new kakao.maps.Map(document.getElementById('pickerMap'), {
+				center: new kakao.maps.LatLng(36.5, 127.8),
+				level: 12
+			});
+			placesService = new kakao.maps.services.Places();
+			geocoder = new kakao.maps.services.Geocoder();
+
+			kakao.maps.event.addListener(pickerMap, 'click', function (mouseEvent) {
+				const latlng = mouseEvent.latLng;
+				setPickedLocation(latlng.getLat(), latlng.getLng());
+				geocoder.coord2Address(latlng.getLng(), latlng.getLat(), function (result, status) {
+					if (status === kakao.maps.services.Status.OK) {
+						addressInput.value = result[0].address.address_name;
+						regionInput.value = result[0].address.region_1depth_name;
+					}
+				});
+			});
+		});
+	}
+
+	function setPickedLocation(lat, lng) {
+		const position = new kakao.maps.LatLng(lat, lng);
+		if (pickerMarker) {
+			pickerMarker.setPosition(position);
+		} else {
+			pickerMarker = new kakao.maps.Marker({position: position, map: pickerMap});
+		}
+		pickerMap.setCenter(position);
+		latInput.value = lat.toFixed(7);
+		lngInput.value = lng.toFixed(7);
+	}
+
+	function openMapPicker() {
+		mapModal.style.display = 'flex';
+		initPickerMap();
+		setTimeout(() => { if (pickerMap) pickerMap.relayout(); }, 50);
+	}
+
+	function closeMapPicker() {
+		mapModal.style.display = 'none';
+	}
+
+	function runSearch() {
+		const keyword = mapSearchInput.value.trim();
+		if (!keyword || !placesService) return;
+		placesService.keywordSearch(keyword, function (data, status) {
+			mapSearchResults.innerHTML = '';
+			if (status !== kakao.maps.services.Status.OK) {
+				mapSearchResults.innerHTML = '<p class="hint">검색 결과가 없습니다.</p>';
+				return;
+			}
+			data.forEach(place => {
+				const item = document.createElement('div');
+				item.style.cssText = 'padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background-color .12s ease;';
+				item.addEventListener('mouseenter', () => item.style.backgroundColor = 'var(--cream)');
+				item.addEventListener('mouseleave', () => item.style.backgroundColor = '');
+				item.innerHTML = '<strong>' + place.place_name + '</strong><br><span class="hint">' + place.address_name + '</span>';
+				item.addEventListener('click', () => {
+					nameInput.value = place.place_name;
+					addressInput.value = place.road_address_name || place.address_name;
+					// Places 결과의 address_name은 "시/도 시군구 ..." 형식이라 첫 토큰이 지역(시/도)임
+					regionInput.value = place.address_name.split(' ')[0];
+					setPickedLocation(parseFloat(place.y), parseFloat(place.x));
+					closeMapPicker();
+				});
+				mapSearchResults.appendChild(item);
+			});
+		});
+	}
+
+	// ===== 장소 유형 AI 자동판별 (참고용 - 결과는 체크만 해두고 강제 아님) =====
+	const autoDetectBtn = document.getElementById('autoDetectLocationType');
+	const autoDetectStatus = document.getElementById('autoDetectStatus');
+
+	autoDetectBtn.addEventListener('click', async () => {
+		if (!nameInput.value.trim() || !addressInput.value.trim()) {
+			autoDetectStatus.textContent = '사찰 이름과 주소를 먼저 입력해주세요';
+			return;
+		}
+		autoDetectStatus.textContent = '판별 중...';
+		autoDetectBtn.disabled = true;
+		try {
+			const res = await fetch('/api/location-type/classify', {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify({name: nameInput.value.trim(), address: addressInput.value.trim()})
+			});
+			const result = await res.json();
+			document.querySelector('input[name=supportSea]').checked = !!result.sea;
+			document.querySelector('input[name=supportMountain]').checked = !!result.mountain;
+			document.querySelector('input[name=supportRiver]').checked = !!result.river;
+			document.querySelector('input[name=supportUrban]').checked = !!result.urban;
+			autoDetectStatus.textContent = '판별 완료 (필요하면 직접 수정하세요)';
+		} catch (e) {
+			autoDetectStatus.textContent = '판별에 실패했습니다. 직접 선택해주세요.';
+		} finally {
+			autoDetectBtn.disabled = false;
+		}
+	});
+
+	document.getElementById('openMapPicker').addEventListener('click', openMapPicker);
+	document.getElementById('mapPickerClose').addEventListener('click', closeMapPicker);
+	mapSearchBtn.addEventListener('click', runSearch);
+	mapSearchInput.addEventListener('keydown', (e) => {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			runSearch();
+		}
+	});
+</script>
+
+</body>
+</html>

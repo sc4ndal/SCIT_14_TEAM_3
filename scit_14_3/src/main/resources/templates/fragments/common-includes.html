@@ -115,7 +115,8 @@
                             </svg>
                         </a>
 
-                        <div class="mypage-dropdown">
+                        <!-- 일반회원/사찰계정: 기존 8개 그대로 -->
+                        <div class="mypage-dropdown" sec:authorize="!hasRole('ADMIN')">
 
                             <a th:href="@{/mypage/edit}">
                                 회원정보수정
@@ -140,6 +141,18 @@
                             </a>
                             <a th:href="@{/mypage/favorites/reviews}">
                                 좋아요한 리뷰
+                            </a>
+
+                        </div>
+
+                        <!-- 사이트 관리자: 예약/리뷰/관심 등 일반회원 전용 기능은 필요없어서 뺌 -->
+                        <div class="mypage-dropdown" sec:authorize="hasRole('ADMIN')">
+
+                            <a th:href="@{/mypage/edit}">
+                                회원정보수정
+                            </a>
+                            <a th:href="@{/admin/temple-requests}">
+                                사찰 등록 요청 목록
                             </a>
 
                         </div>
