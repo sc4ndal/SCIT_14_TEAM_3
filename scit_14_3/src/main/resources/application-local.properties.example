@@ -9,6 +9,11 @@
 # 카카오 REST API 키 - 팀원한테 값 받아서 채우기 (전체가 같은 값 써야 함)
 # kakao.client-id=CHANGE_ME
 
+# Cloudinary (이미지 업로드) - cloudinary.com 대시보드에서 Cloud name/API Key/API Secret 확인
+# cloudinary.cloud-name=CHANGE_ME
+# cloudinary.api-key=CHANGE_ME
+# cloudinary.api-secret=CHANGE_ME
+
 spring.mail.username=temp@gmail.com
 spring.mail.password=tempPassword
 kakao.client-id=temp
