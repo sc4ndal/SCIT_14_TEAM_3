@@ -18,6 +18,7 @@ public class TempleDTO {
 	private String imageUrl;
 	private BigDecimal latitude;
 	private BigDecimal longitude;
+	private String address;
 	private String region;
 	private TempleEntity.LocationType locationType;
 	private boolean supportEnglish;

@@ -31,6 +31,9 @@ public class TempleEntity {
 		@Column(name = "longitude", precision = 10, scale = 7, nullable = false)
 		private BigDecimal longitude;
 
+		@Column(name = "address", length = 255, nullable = false)
+		private String address;
+
 		@Column(name = "region", length = 20, nullable = false)
 		private String region;
 	
