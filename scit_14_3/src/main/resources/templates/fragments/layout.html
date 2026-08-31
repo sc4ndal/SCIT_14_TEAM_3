@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<!--
+	알아보기 화면들이 함께 쓰는 헤더/푸터 조각.
+	팀 공통 네비게이션이 확정되면 이 파일만 갈아끼우면 된다.
+-->
+<body>
+
+<header th:fragment="header" class="site-header">
+	<div class="site-header__inner">
+		<a class="site-header__logo" th:href="@{/}">산문(山門)</a>
+		<nav class="site-header__nav">
+			<a th:href="@{/info/intro}">불교란?</a>
+			<a th:href="@{/info/terms}">불교 용어</a>
+			<a th:href="@{/temples}">사찰 찾기</a>
+			<a th:href="@{/programs}">템플스테이</a>
+		</nav>
+	</div>
+</header>
+
+<footer th:fragment="footer" class="site-footer">
+	<p>SCIT 14기 3조 · 불교 종합 사이트</p>
+	<p class="site-footer__sub">이 페이지의 설명은 불교를 처음 접하는 분을 위해 쉽게 간추린 것입니다.</p>
+</footer>
+
+</body>
+</html>
