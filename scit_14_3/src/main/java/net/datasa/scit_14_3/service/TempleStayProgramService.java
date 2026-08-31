@@ -27,6 +27,7 @@ public class TempleStayProgramService {
 				.templeId(entity.getTempleId())
 				.title(entity.getTitle())
 				.programType(entity.getProgramType())
+				.imageUrl(entity.getImageUrl())
 				.description(entity.getDescription())
 				.schedule(entity.getSchedule())
 				.requiredItems(entity.getRequiredItems())
@@ -36,10 +37,12 @@ public class TempleStayProgramService {
 				.duration(entity.getDuration())
 				.maxParticipant(entity.getMaxParticipant())
 				.supportEnglish(entity.isSupportEnglish())
+				.latitude(entity.getLatitude())
+				.longitude(entity.getLongitude())
 				.createdAt(entity.getCreatedAt())
 				.build();
 	}
-	
+
 	public List<TempleStayProgramDTO> getAll() {
 		List<TempleStayProgramDTO> dtoList = new ArrayList<>();
 		List<TempleStayProgramEntity> list = tspr.findAll();
@@ -50,6 +53,7 @@ public class TempleStayProgramService {
 					.templeId(entity.getTempleId())
 					.title(entity.getTitle())
 					.programType(entity.getProgramType())
+					.imageUrl(entity.getImageUrl())
 					.description(entity.getDescription())
 					.schedule(entity.getSchedule())
 					.requiredItems(entity.getRequiredItems())
@@ -59,6 +63,8 @@ public class TempleStayProgramService {
 					.duration(entity.getDuration())
 					.maxParticipant(entity.getMaxParticipant())
 					.supportEnglish(entity.isSupportEnglish())
+					.latitude(entity.getLatitude())
+					.longitude(entity.getLongitude())
 					.createdAt(entity.getCreatedAt())
 					.build();
 			dtoList.add(dto);

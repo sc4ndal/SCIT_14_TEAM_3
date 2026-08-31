@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import net.datasa.scit_14_3.domain.entity.TempleEntity;
 
+import java.math.BigDecimal;
+
 @Builder
 @Data
 @NoArgsConstructor
@@ -13,7 +15,9 @@ import net.datasa.scit_14_3.domain.entity.TempleEntity;
 public class TempleDTO {
 	private Long templeId;
 	private String name;
-	private String apiPlaceId;
+	private String imageUrl;
+	private BigDecimal latitude;
+	private BigDecimal longitude;
 	private String region;
 	private TempleEntity.LocationType locationType;
 	private boolean supportEnglish;
