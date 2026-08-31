@@ -13,18 +13,10 @@
 <body>
 <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
 <div class="card">
-    <div class="beam">
-       <span></span><span></span><span></span><span></span><span></span>
-       <span></span><span></span><span></span><span></span><span></span>
-       <span></span><span></span><span></span><span></span><span></span>
-    </div>
     <div class="header">
        <h1>회원가입</h1>
        <p>원하시는 방법으로 가입을 진행해주세요</p>
     </div>
-
-    <p style="color:#2f6b5e; text-align:center; margin:0 32px 16px; font-size:13px;"
-       th:if="${signupNotice}" th:text="${signupNotice}"></p>
 
     <div class="method-list">
        <a class="method-btn email" th:href="@{/signup?mode=local}">이메일로 가입하기</a>

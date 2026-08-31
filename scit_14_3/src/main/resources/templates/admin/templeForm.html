@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>사찰 등록 · 사찰 커뮤니티</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" th:href="@{/css/signup.css}">
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+<body>
+
+<div class="card">
+	<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+
+	<div class="header">
+		<h1>사찰 등록</h1>
+		<p th:if="${prefill != null}">요청 내용을 확인하고 필요하면 수정한 뒤 등록해주세요</p>
+		<p th:if="${prefill == null}">새 사찰 정보를 입력해주세요</p>
+		<p class="req-note"><span class="req">*</span> 표시는 필수 입력 항목입니다</p>
+	</div>
+
+	<!-- 로그인ID/비밀번호는 여기서 안 받음 - 등록 시 서버가 무작위로 만들어서 이메일로 보냄 -->
+	<form th:action="@{/admin/temples}" method="post" enctype="multipart/form-data">
+
+		<fieldset>
+			<legend>사찰 정보</legend>
+
+			<div class="field">
+				<label for="name">사찰 이름<span class="req">*</span></label>
+				<input type="text" id="name" name="name" maxlength="100"
+				       th:value="${prefill != null ? prefill.name : ''}" required>
+			</div>
+
+			<div class="field">
+				<label for="imageFile">대표 이미지 <span class="optional-note">(선택)</span></label>
+				<input type="file" id="imageFile" name="imageFile" accept="image/*">
+				<!-- 실제 Cloudinary 업로드는 이 폼을 제출할 때(등록 버튼) 서버에서 한 번에 처리함 -
+				     선택 즉시 올려버리면 등록을 취소해도 이미지만 Cloudinary에 남는 문제가 생김.
+				     기존 URL(요청에 이미 있던 값)은 새 파일을 안 고르면 그대로 유지됨. -->
+				<input type="hidden" name="imageUrl" th:value="${prefill != null ? prefill.imageUrl : ''}">
+				<img id="imagePreview" alt="" th:src="${prefill != null ? prefill.imageUrl : ''}"
+				     th:style="${prefill != null and prefill.imageUrl != null and !#strings.isEmpty(prefill.imageUrl)} ? 'display:block;max-width:220px;margin-top:8px;border-radius:4px;border:1px solid var(--border);' : 'display:none;max-width:220px;margin-top:8px;border-radius:4px;border:1px solid var(--border);'">
+			</div>
+
+			<div class="field">
+				<label for="address">주소<span class="req">*</span></label>
+				<input type="text" id="address" name="address" maxlength="255"
+				       th:value="${prefill != null ? prefill.address : ''}" required>
+			</div>
+
+			<div class="field field-inline">
+				<div style="flex:1;">
+					<label for="latitude">위도<span class="req">*</span></label>
+					<input type="text" id="latitude" name="latitude"
+					       th:value="${prefill != null ? prefill.latitude : ''}" required>
+				</div>
+				<div style="flex:1;">
+					<label for="longitude">경도<span class="req">*</span></label>
+					<input type="text" id="longitude" name="longitude"
+					       th:value="${prefill != null ? prefill.longitude : ''}" required>
+				</div>
+			</div>
+
+			<div class="field">
+				<label for="region">지역(시/도)<span class="req">*</span></label>
+				<input type="text" id="region" name="region" maxlength="20"
+				       th:value="${prefill != null ? prefill.region : ''}" required>
+			</div>
+
+			<div class="field">
+				<label>장소 유형<span class="req">*</span> <span class="optional-note">(중복 선택 가능)</span></label>
+				<div class="radio-group" id="locationTypeGroup">
+					<label><input type="checkbox" name="supportSea" value="true" th:checked="${prefill != null and prefill.supportSea}"> 바다</label>
+					<label><input type="checkbox" name="supportMountain" value="true" th:checked="${prefill != null and prefill.supportMountain}"> 산</label>
+					<label><input type="checkbox" name="supportRiver" value="true" th:checked="${prefill != null and prefill.supportRiver}"> 강</label>
+					<label><input type="checkbox" name="supportUrban" value="true" th:checked="${prefill != null and prefill.supportUrban}"> 도심</label>
+				</div>
+				<p class="hint" id="locationTypeHint" style="display:none;color:var(--destructive);">최소 하나는 선택해주세요</p>
+			</div>
+
+			<div class="field">
+				<label class="terms-checkbox" style="margin-bottom:0;">
+					<input type="checkbox" id="supportEnglish" name="supportEnglish" value="true"
+					       th:checked="${prefill != null and prefill.supportEnglish}">
+					<span>영어 안내 지원 가능</span>
+				</label>
+			</div>
+
+			<div class="field">
+				<label for="specialNotice">참고사항 <span class="optional-note">(선택)</span></label>
+				<textarea id="specialNotice" name="specialNotice" rows="4"
+				          style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:14px;"
+				          th:text="${prefill != null ? prefill.specialNotice : ''}"></textarea>
+			</div>
+		</fieldset>
+
+		<p class="hint" style="padding:0 32px;" th:if="${prefill != null}">
+			로그인 아이디/비밀번호는 등록과 동시에 자동으로 만들어져
+			<strong th:text="${prefill.contactEmail}"></strong>(으)로 발송됩니다.
+		</p>
+
+		<input type="hidden" name="fromRequest" th:if="${fromRequest != null}" th:value="${fromRequest}">
+
+		<div class="form-actions">
+			<button class="submit" type="submit">등록</button>
+			<a th:href="@{/admin/temple-requests}" class="btn-cancel">취소</a>
+		</div>
+	</form>
+</div>
+
+<script>
+	// Cloudinary 업로드는 서버(POST /admin/temples)에서 처리함 - 여기선 선택한 파일을
+	// 실제로 올리지 않고 브라우저 안에서만(FileReader) 미리보기를 띄움.
+	const imageFileInput = document.getElementById('imageFile');
+	const imagePreview = document.getElementById('imagePreview');
+
+	imageFileInput.addEventListener('change', () => {
+		const file = imageFileInput.files[0];
+		if (!file) return;
+
+		const reader = new FileReader();
+		reader.onload = () => {
+			imagePreview.src = reader.result;
+			imagePreview.style.display = 'block';
+		};
+		reader.readAsDataURL(file);
+	});
+
+	// 장소 유형 체크박스 최소 1개 검증
+	document.querySelector('form').addEventListener('submit', (e) => {
+		const checked = document.querySelectorAll('#locationTypeGroup input:checked');
+		document.getElementById('locationTypeHint').style.display = checked.length === 0 ? 'block' : 'none';
+		if (checked.length === 0) e.preventDefault();
+	});
+</script>
+
+</body>
+</html>

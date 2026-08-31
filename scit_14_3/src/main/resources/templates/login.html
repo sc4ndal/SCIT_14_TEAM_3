@@ -13,11 +13,6 @@
 <div class="card">
     <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
 
-    <div class="beam">
-        <span></span><span></span><span></span><span></span><span></span>
-        <span></span><span></span><span></span><span></span><span></span>
-    </div>
-
     <div class="header">
         <h1>로그인</h1>
         <p>아이디와 비밀번호를 입력해주세요</p>
@@ -60,8 +55,8 @@
         </div>
 
         <div class="form-actions">
-            <a class="btn-cancel" th:href="@{/}">취소</a>
             <button class="submit" type="submit">로그인</button>
+            <a class="btn-cancel" th:href="@{/}">취소</a>
         </div>
     </form>
 

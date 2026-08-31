@@ -181,11 +181,9 @@ public class UserController {
 			return "redirect:/login";
 		}
 
-		if (existing.isEmpty() && !intentIsSignup) {
-			// "카카오로 로그인"을 눌렀는데 가입된 계정이 없음 -> 가입 페이지로 안내
-			redirectAttributes.addFlashAttribute("signupNotice", "가입된 계정이 없습니다. 먼저 회원가입을 진행해주세요.");
-			return "redirect:/signupSelect";
-		}
+		// "카카오로 로그인"을 눌렀는데 가입된 계정이 없으면 -> signupSelect로 돌려보내지 않고,
+		// 이미 인증받은 이 카카오 정보 그대로 살려서 바로 아래 orElseGet(신규가입 플로우)으로 진행함.
+		// (다시 카카오 인증을 거치게 하는 건 불필요한 왕복이라 안 함)
 
 		return existing
 				.map(user -> {

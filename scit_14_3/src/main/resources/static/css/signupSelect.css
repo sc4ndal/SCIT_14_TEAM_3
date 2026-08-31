@@ -1,19 +1,20 @@
+/* 색상은 common.css 공식 토큰에 맞춤(스타일가이드 v1 · 2026-08-26) - signup.css와 동일 방식 */
 :root{
-    --cream:#f7efe3;
-    --surface:#fffaf2;
-    --ink:#3a2a1e;
-    --ink-soft:#7a6a58;
-    --wood:#8a5a34;
-    --wood-dark:#4a2f22;
+    --cream:var(--bg);
+    --surface:var(--paper);
+    --ink:var(--text);
+    --ink-soft:var(--text-secondary);
+    --wood:var(--brown);
+    --wood-dark:var(--text);
     --amber:#c98a2e;
-    --teal:#2f6b5e;
-    --red:#a13d3d;
-    --border:#e3d7c3;
+    --teal:var(--green);
+    --red:var(--destructive);
+    --border:rgba(39, 33, 27, .14);
 }
 *{box-sizing:border-box;}
 body{
     margin:0;
-    font-family:'Noto Sans KR', sans-serif;
+    font-family:var(--sans);
     background:var(--cream);
     color:var(--ink);
     display:flex;
@@ -29,18 +30,6 @@ body{
     border-radius:4px;
     overflow:hidden;
 }
-.beam{
-    height:14px;
-    background:var(--wood-dark);
-    display:flex;
-    align-items:center;
-    gap:18px;
-    padding:0 24px;
-}
-.beam span{width:6px;height:6px;flex:none;}
-.beam span:nth-child(3n+1){background:var(--teal);}
-.beam span:nth-child(3n+2){background:var(--amber);}
-.beam span:nth-child(3n){background:var(--red);}
 .header{padding:36px 32px 8px;text-align:center;}
 .header h1{
     font-family:'Noto Serif KR', serif;
