@@ -36,10 +36,21 @@ public class GeminiService {
     public Map<String, Boolean> classifyLocationTypes(String name, String address) {
         try {
             String prompt = """
-                    다음 장소가 '바다', '산', '강', '도심' 중 어디에 해당하는지 판단해줘(중복 가능, 여러 개 해당될 수 있음).
+                    다음 장소가 '바다', '산', '강', '도심' 각각에 해당하는지 하나씩 독립적으로 판단해줘.
+                    4개는 서로 배타적이지 않음 - 하나만 고르지 말고, 실제로 해당되는 건 전부 true로 표시해줘.
+                    (예: 도심 안에 있으면서 강도 가까우면 urban과 river 둘 다 true. 산속이면서 계곡물이 흐르면
+                    mountain과 river 둘 다 true. 여러 개 true인 경우가 오히려 흔함.)
+
                     장소 이름: %s
                     주소: %s
-                    반드시 아래 JSON 형식으로만 답해:
+
+                    각 항목 판단 기준:
+                    - sea: 해안가/바닷가 근처인가
+                    - mountain: 산속/산기슭에 있는가
+                    - river: 강/하천/계곡이 근처에 있는가
+                    - urban: 도심/시가지 안에 있는가
+
+                    반드시 아래 JSON 형식으로만 답해(설명 없이 JSON만):
                     {"sea": true or false, "mountain": true or false, "river": true or false, "urban": true or false}
                     """.formatted(name, address);
 
