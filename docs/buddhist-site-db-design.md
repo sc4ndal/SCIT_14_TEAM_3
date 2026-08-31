@@ -132,10 +132,12 @@
 ### 3-6. BUDDHISM_INFO (불교 정보 게시글)
 
 **설명**: 관리자만 작성하는 게시글이라 작성자 식별 컬럼은 두지 않았습니다.
+`category`에는 '용어', '예절가이드' 같은 **대분류만** 저장합니다. "불교 용어" 페이지 안에서 쓰는 8개 소분류(기본교리/수행법/경계·상태/인물/장소/의식/신앙/경전)는 DB 컬럼으로 두지 않고, 용어 개수가 고정적이라 애플리케이션(`TermCategory`)에서 제목 기준 정적 매핑으로 그룹핑합니다.
 
 | 컬럼명 | 데이터 타입 | 제약조건 | 설명 (기능/뜻) |
 |---|---|---|---|
 | post_id | BIGINT | PK, AUTO_INCREMENT | 게시글을 구분하는 고유 번호 |
+| category | VARCHAR(30) | NOT NULL, DEFAULT '용어' | 대분류. '용어', '예절가이드' 등 |
 | title | VARCHAR(150) | NOT NULL | 게시글 제목 |
 | content | TEXT | NOT NULL | 게시글 본문 |
 | view_count | INT | NOT NULL, DEFAULT 0 | 조회수 |
