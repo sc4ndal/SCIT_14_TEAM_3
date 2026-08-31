@@ -1,0 +1,9 @@
+<!-- 임시 일러스트: 합장한 두 손(절에서 만나는 이들). Figma 확정 후 교체 예정 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-hidden="true">
+	<rect width="400" height="300" fill="#f2ece2"/>
+	<circle cx="200" cy="150" r="100" fill="#4a6b52" opacity=".12"/>
+	<path d="M196 62c-16 10-30 34-30 66v78c0 14 10 24 30 24z" fill="#8c6239"/>
+	<path d="M204 62c16 10 30 34 30 66v78c0 14-10 24-30 24z" fill="#8c6239" opacity=".75"/>
+	<line x1="200" y1="62" x2="200" y2="230" stroke="#f2ece2" stroke-width="3"/>
+	<line x1="150" y1="248" x2="250" y2="248" stroke="#8c6239" stroke-width="4" stroke-linecap="round" opacity=".4"/>
+</svg>

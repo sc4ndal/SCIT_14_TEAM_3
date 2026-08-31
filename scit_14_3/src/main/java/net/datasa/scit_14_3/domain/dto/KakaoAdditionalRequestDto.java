@@ -1,5 +1,7 @@
 package net.datasa.scit_14_3.domain.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,6 +10,12 @@ import lombok.Setter;
 @Getter
 @Setter
 public class KakaoAdditionalRequestDto {
+    
+    @NotBlank(message = "닉네임을 입력해주세요.")
+    @Pattern(
+            regexp = "^[가-힣a-zA-Z\\u4E00-\\u9FFF0-9]{1,10}$",
+            message = "닉네임은 한글, 영문, 숫자를 사용하여 1~10자로 입력해주세요."
+    )
     private String nickname; // 법명
     private String name;     // 여권 영문 이름 형식
     private String phone;

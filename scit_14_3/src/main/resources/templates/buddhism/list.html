@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title th:text="(${category} ?: '불교 정보') + ' | 산문'">불교 정보 | 산문</title>
+	<link rel="stylesheet" th:href="@{/css/buddhism.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="terms">
+
+	<section class="terms-hero">
+		<h1 class="terms-hero__title" th:text="${category} ?: '불교 정보'">불교 정보</h1>
+		<p class="terms-hero__lead" th:if="${category != null}"
+		   th:text="'분류: ' + ${category}">분류</p>
+	</section>
+
+	<p class="terms-empty" th:if="${#lists.isEmpty(posts)}">
+		아직 등록된 글이 없습니다.
+	</p>
+
+	<div class="term-grid">
+		<article class="term-card" th:each="post : ${posts}">
+			<h3 class="term-card__title" th:text="${post.title}">제목</h3>
+			<p class="term-card__content" th:text="${post.content}">본문</p>
+		</article>
+	</div>
+
+	<p class="terms-back">
+		<a th:href="@{/info/intro}">← 불교란? 으로 돌아가기</a>
+	</p>
+
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+
+</body>
+</html>

@@ -9,7 +9,7 @@ import net.datasa.scit_14_3.domain.entity.UserEntity;
 @Builder
 public class UserResponseDto {
     private String loginId;
-    private String password;
+//    private String password;
     private String nickname;
     private String name;
     private String phone;
