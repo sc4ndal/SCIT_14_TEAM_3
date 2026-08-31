@@ -23,10 +23,10 @@ public class AppUserDetails implements UserDetails {
     private final String kakaoAccessToken; // 카카오 로그인일 때만 값 존재 - 로그아웃 시 카카오 REST API 로그아웃 호출용
 
     public AppUserDetails(String loginId, String password,
-                           Collection<? extends GrantedAuthority> authorities,
-                           Long templeId, String nickname, String kakaoAccessToken) {
+                          Collection<? extends GrantedAuthority> authorities,
+                          Long templeId, String nickname, String kakaoAccessToken) {
         this.loginId = loginId;
-        this.password = password;
+		this.password = password;
         this.authorities = authorities;
         this.templeId = templeId;
         this.nickname = nickname;

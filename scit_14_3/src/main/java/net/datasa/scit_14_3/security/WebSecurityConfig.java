@@ -37,6 +37,8 @@ public class WebSecurityConfig {
 			"/css/**",
 			"/js/**",
 			"/images/**",
+			"/error",
+			"/errorView/**",
 			"/login/**",           // /login, /login/kakao, /login/kakao/callback 전부 포함
 			"/signupSelect/**",
 			"/signup/**",          // /signup, /signup/local, /signup/kakao-additional 전부 포함
