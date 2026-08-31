@@ -56,6 +56,12 @@ public class WebSecurityConfig {
 			"/info/**",
 			"/temple-requests/**",    // 사찰 관계자가 회원가입 없이 남기는 등록 요청 (공개)
 			"/reservation",
+			"/api/temples",
+			"/api/templestayprograms/**",
+			"/maptemples",
+			"/maptemplestayviews/**",
+			"/templestayGuide",
+			"/findtemple",
 			"/maptest",
 			"/templestayGuide",
 			"/templestayprograms/**",

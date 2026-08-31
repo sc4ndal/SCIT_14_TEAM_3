@@ -1,0 +1,23 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>사찰 찾아보기</title>
+    <!-- 카카오맵 SDK -->
+    <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=4d97c12d7e3e28e5dd08a2f00a58025d&libraries=services"></script>
+    <style>
+        #map { width: 100%; height: 600px; }
+    </style>
+</head>
+<body>
+
+<h2>사찰 찾아보기</h2>
+<div id="map"></div>
+
+<!-- 공통 마커 함수(map-common.js) 먼저, 이 페이지 전용 로직(temple-list.js) 나중에 -->
+<script src="/js/mapCommon.js"></script>
+<script src="/js/templeList.js"></script>
+
+</body>
+</html>

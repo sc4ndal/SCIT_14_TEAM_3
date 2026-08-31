@@ -29,7 +29,9 @@ public class TempleStayProgramService {
 		
 		return TempleStayProgramDTO.builder()
 				.programId(entity.getProgramId())
-				.templeId(entity.getTempleId())
+				.templeId(entity.getTemple().getTempleId()) // 변경: entity.getTemple()로 한 번 거쳐서 ID 꺼냄
+				.templeName(entity.getTemple().getName())       // 조인된 사찰에서 바로 꺼냄
+				.templeAddress(entity.getTemple().getAddress()) // 조인된 사찰에서 바로 꺼냄
 				.title(entity.getTitle())
 				.programType(entity.getProgramType())
 				.imageUrl(entity.getImageUrl())
@@ -42,8 +44,8 @@ public class TempleStayProgramService {
 				.duration(entity.getDuration())
 				.maxParticipant(entity.getMaxParticipant())
 				.supportEnglish(entity.isSupportEnglish())
-				.latitude(entity.getLatitude())
-				.longitude(entity.getLongitude())
+				.latitude(entity.getTemple().getLatitude())
+				.longitude(entity.getTemple().getLongitude())
 				.createdAt(entity.getCreatedAt())
 				.build();
 	}
@@ -60,7 +62,9 @@ public class TempleStayProgramService {
 		for(TempleStayProgramEntity entity : list) {
 			TempleStayProgramDTO dto = TempleStayProgramDTO.builder()
 					.programId(entity.getProgramId())
-					.templeId(entity.getTempleId())
+					.templeId(entity.getTemple().getTempleId())
+					.templeName(entity.getTemple().getName())
+					.templeAddress(entity.getTemple().getAddress())
 					.title(entity.getTitle())
 					.programType(entity.getProgramType())
 					.imageUrl(entity.getImageUrl())
@@ -73,8 +77,8 @@ public class TempleStayProgramService {
 					.duration(entity.getDuration())
 					.maxParticipant(entity.getMaxParticipant())
 					.supportEnglish(entity.isSupportEnglish())
-					.latitude(entity.getLatitude())
-					.longitude(entity.getLongitude())
+					.latitude(entity.getTemple().getLatitude())
+					.longitude(entity.getTemple().getLongitude())
 					.createdAt(entity.getCreatedAt())
 					.build();
 			dtoList.add(dto);
