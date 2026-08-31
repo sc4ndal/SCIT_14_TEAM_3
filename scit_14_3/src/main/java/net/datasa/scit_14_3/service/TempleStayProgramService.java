@@ -19,6 +19,11 @@ import java.util.List;
 public class TempleStayProgramService {
 	private final TempleStayProgramRepository tspr;
 	
+	/**
+	 * 데이터 불러오기
+	 * @param programId
+	 * @return
+	 */
 	public TempleStayProgramDTO getInfo(Long programId) {
 		TempleStayProgramEntity entity = tspr.findById(programId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
 		
@@ -42,6 +47,11 @@ public class TempleStayProgramService {
 				.createdAt(entity.getCreatedAt())
 				.build();
 	}
+	
+	/**
+	 * 전제조회
+	 * @return
+	 */
 
 	public List<TempleStayProgramDTO> getAll() {
 		List<TempleStayProgramDTO> dtoList = new ArrayList<>();

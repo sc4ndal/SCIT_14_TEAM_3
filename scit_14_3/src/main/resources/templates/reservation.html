@@ -847,7 +847,7 @@
                     </div>
                     <div class="form-item">
                         <label for="participant-phone-0">연락처</label>
-                        <input type="tel" id="participant-phone-0" name="participants[0].phone" placeholder="010-0000-0000">
+                        <input type="tel" id="participant-phone-0" name="participants[0].phone" placeholder="예) 01012345678">
                     </div>
                 </div>
             </fieldset>
@@ -874,16 +874,17 @@
                 </div>
 
                 <!-- 계좌이체 선택 시 -->
+                <!-- TODO: 무통장입금(수동 대사) 방식일 때만 필요한 필드. PG 연동해서 계좌이체도 즉시결제로 처리한다면 제거 검토 -->
                 <div class="form-item payment-field" data-method="계좌이체">
                     <label for="payment-depositor-name">입금자명</label>
                     <input type="text" id="payment-depositor-name" name="depositorName">
                 </div>
 
                 <!-- 카카오페이 선택 시 -->
-                <div class="form-item payment-field" data-method="카카오페이">
-                    <label for="payment-kakao-tid">카카오페이 결제 정보</label>
-                    <input type="text" id="payment-kakao-tid" name="kakaoTid" readonly>
-                </div>
+<!--                <div class="form-item payment-field" data-method="카카오페이">-->
+<!--                    <label for="payment-kakao-tid">카카오페이 결제 정보</label>-->
+                    <input type="hidden" id="payment-kakao-tid" name="kakaoTid">
+<!--                </div>-->
 
                 <p id="payment-total-amount"><!-- 단가 x 인원 = 총 결제 금액 --></p>
             </fieldset>
