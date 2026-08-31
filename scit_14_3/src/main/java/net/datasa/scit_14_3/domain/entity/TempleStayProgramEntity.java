@@ -19,8 +19,9 @@ public class TempleStayProgramEntity {
 	@Column(name = "program_id")
 	private Long programId;
 	
-	@Column(name = "temple_id", nullable = false)
-	private Long templeId;
+	@ManyToOne
+	@JoinColumn(name = "temple_id", nullable = false)
+	private TempleEntity temple;
 	
 	@Column(name = "title", length = 100, nullable = false)
 	private String title;

@@ -48,8 +48,12 @@ public class WebSecurityConfig {
 			"/reservationparticipants/**",
 			"/payments/**",
 			"/reservation",
-			"/maptest",
-			"/templestayGuide"
+			"/api/temples",
+			"/api/templestayprograms/**",
+			"/maptemples",
+			"/maptemplestayviews/**",
+			"/templestayGuide",
+			"/findtemple"
 	);
 	
 	@Bean
