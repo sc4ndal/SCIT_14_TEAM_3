@@ -3,6 +3,7 @@ package net.datasa.scit_14_3.controller.user;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.KakaoAdditionalRequestDto;
@@ -10,17 +11,26 @@ import net.datasa.scit_14_3.domain.dto.LocalSignupRequestDto;
 import net.datasa.scit_14_3.domain.dto.UserResponseDto;
 import net.datasa.scit_14_3.domain.dto.kakao.KakaoTokenResponse;
 import net.datasa.scit_14_3.domain.dto.kakao.KakaoUserInfoResponse;
+import net.datasa.scit_14_3.exception.DuplicateFieldException;
 import net.datasa.scit_14_3.security.SessionLoginService;
 import net.datasa.scit_14_3.service.EmailVerificationService;
 import net.datasa.scit_14_3.service.KakaoOAuthService;
 import net.datasa.scit_14_3.service.UserService;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.validation.BindException;
 
+
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Controller
@@ -108,11 +118,14 @@ public class UserController {
 	// ================= 로컬 회원가입 =================
 
 	@PostMapping("/signup/local")
-	public String localSignup(@ModelAttribute LocalSignupRequestDto request,
-							   RedirectAttributes redirectAttributes,
-							   HttpSession session,
-							   HttpServletRequest httpRequest,
-							   HttpServletResponse httpResponse) {
+	public String localSignup(@Valid @ModelAttribute LocalSignupRequestDto request,
+	                          BindingResult bindingResult,
+	                          RedirectAttributes redirectAttributes,
+	                          HttpSession session,
+	                          HttpServletRequest httpRequest,
+	                          HttpServletResponse httpResponse,
+							  Model model) {
+		
 		// email_verified hidden 필드는 화면 표시용일 뿐 안 믿음 - 세션에 실제로 인증된 이메일인지 직접 확인.
 		// 이메일 자체는 registerLocal()에서도 선택 입력으로 취급하므로, 입력했을 때만 인증을 강제한다.
 		String email = request.getEmail();
@@ -125,7 +138,7 @@ public class UserController {
 			UserResponseDto user = userService.registerLocal(request);
 			sessionLoginService.loginAs(user, httpRequest, httpResponse);
 			return "redirect:/?signup=success";
-		} catch (IllegalStateException e) {
+		} catch (DuplicateFieldException e) {
 			log.info("로컬 회원가입 실패: {}", e.getMessage());
 			redirectAttributes.addFlashAttribute("signupError", e.getMessage());
 			return "redirect:/signup";
@@ -199,15 +212,26 @@ public class UserController {
 	}
 
 	@PostMapping("/signup/kakao-additional")
-	public String kakaoAdditionalSignup(@ModelAttribute KakaoAdditionalRequestDto request,
+	public String kakaoAdditionalSignup(@Valid @ModelAttribute KakaoAdditionalRequestDto request,
+	                                    BindingResult bindingResult,
 										 HttpSession session,
 										 RedirectAttributes redirectAttributes,
 										 HttpServletRequest httpRequest,
-										 HttpServletResponse httpResponse) {
+										 HttpServletResponse httpResponse,
+										Model model) throws BindException {
 		Object pendingKakaoId = session.getAttribute(PENDING_KAKAO_ID);
 		if (pendingKakaoId == null) {
 			redirectAttributes.addFlashAttribute("signupError", "카카오 인증 세션이 없습니다. 처음부터 다시 시도해주세요.");
 			return "redirect:/signupSelect";
+		}
+		
+		if (bindingResult.hasErrors()) {
+			// 검증 실패 → 카카오 인증 세션 폐기 후 공통 에러 처리에 위임
+			session.removeAttribute(PENDING_KAKAO_ID);
+			session.removeAttribute(PENDING_KAKAO_EMAIL);
+			session.removeAttribute(PENDING_KAKAO_NICKNAME);
+			session.removeAttribute(KakaoOAuthService.ACCESS_TOKEN_SESSION_KEY);
+			throw new BindException(bindingResult);   // → GlobalExceptionHandler.handleBind()
 		}
 
 		try {
@@ -218,7 +242,7 @@ public class UserController {
 			session.removeAttribute(PENDING_KAKAO_NICKNAME);
 			sessionLoginService.loginAs(user, kakaoAccessToken, httpRequest, httpResponse);
 			return "redirect:/?signup=success";
-		} catch (IllegalStateException e) {
+		} catch (DuplicateFieldException e) {
 			log.info("카카오 추가정보 가입 실패: {}", e.getMessage());
 			redirectAttributes.addFlashAttribute("signupError", e.getMessage());
 			return "redirect:/signup?mode=kakao";
