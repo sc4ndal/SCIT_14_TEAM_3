@@ -6,6 +6,7 @@
     <title>템플스테이 예약</title>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+    <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=4d97c12d7e3e28e5dd08a2f00a58025d&libraries=services"></script>
     <style>
         :root {
           --bg: #efe9dd;
@@ -740,7 +741,8 @@
                 <h3>프로그램 소개</h3>
                 <p id="detail-description"><!-- TEMPLE_STAY_PROGRAM.description --></p>
             </div>
-
+            <!-- 지도  -->
+            <div id="detail-map" style="width:100%; height:300px;"></div>
             <!-- 일정표 -->
             <div class="d-block">
                 <h3>일정표</h3>
@@ -916,7 +918,8 @@
     </section>
 
 </main>
-
+<script src="/js/mapCommon.js"></script>
+<script src="/js/templestayView.js"></script>
 <script src="/js/reservation.js"></script>
 
 </body>

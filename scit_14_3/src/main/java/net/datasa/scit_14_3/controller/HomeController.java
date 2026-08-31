@@ -13,8 +13,13 @@ public class HomeController {
 		return "home";
 	}
 	
-	@GetMapping({"/templestayGuide"})
+	@GetMapping("/templestayGuide")
 	public String templestay() {
 		return "templestayGuide";
+	}
+	
+	@GetMapping("/findtemple")
+	public String findtemple() {
+		return "findTemple";
 	}
 }

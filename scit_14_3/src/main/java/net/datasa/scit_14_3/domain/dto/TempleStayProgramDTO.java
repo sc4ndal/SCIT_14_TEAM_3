@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 public class TempleStayProgramDTO {
 	private Long programId;
 	private Long templeId;
+	private String templeName;     // 상세보기->추가
+	private String templeAddress;  // 상세보기->추가
 	private String title;
 	private TempleStayProgramEntity.ProgramType programType;
 	private String imageUrl;

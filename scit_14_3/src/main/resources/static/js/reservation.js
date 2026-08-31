@@ -227,6 +227,7 @@ function showProgramDetail(programId) {
   document.getElementById('step-1-detail').hidden = false;
 
   renderProgramDetail(program);
+  loadDetailMap(programId);     // 추가: 사찰 위치 지도 그리기
 }
 
 function renderProgramDetail(p) {
