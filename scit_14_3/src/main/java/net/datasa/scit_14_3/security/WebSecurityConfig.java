@@ -29,7 +29,8 @@ public class WebSecurityConfig {
 			"/signupSelect",
 			"/signup",
 			"/temples/**",
-			"/templestayprograms/**"
+			"/templestayprograms/**",
+			"/etiquette-simulation"
 	);
 
 	@Bean
