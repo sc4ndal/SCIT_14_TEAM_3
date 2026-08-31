@@ -27,7 +27,7 @@
 	</nav>
 
 	<p class="terms-empty" th:if="${#lists.isEmpty(groups)}">
-		등록된 용어가 없습니다. <code>buddhism-info-seed.sql</code>을 실행하면 용어가 채워집니다.
+		등록된 용어가 없습니다. <code>docs/buddhism-info-seed.sql</code>을 실행하면 용어가 채워집니다.
 	</p>
 
 	<section class="term-group" th:each="group : ${groups}"

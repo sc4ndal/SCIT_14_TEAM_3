@@ -37,6 +37,8 @@ public class WebSecurityConfig {
 			"/css/**",
 			"/js/**",
 			"/images/**",
+			"/error",
+			"/errorView/**",
 			"/login/**",           // /login, /login/kakao, /login/kakao/callback 전부 포함
 			"/signupSelect/**",
 			"/signup/**",          // /signup, /signup/local, /signup/kakao-additional 전부 포함
@@ -52,7 +54,12 @@ public class WebSecurityConfig {
 			"/maptest/**",
 			"/templestayGuide/**",
 			"/info/**",
-			"/temple-requests/**"    // 사찰 관계자가 회원가입 없이 남기는 등록 요청 (공개)
+			"/temple-requests/**",    // 사찰 관계자가 회원가입 없이 남기는 등록 요청 (공개)
+			"/reservation",
+			"/maptest",
+			"/templestayGuide",
+			"/templestayprograms/**",
+			"/etiquette-simulation"
 	);
 	
 	@Bean
