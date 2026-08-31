@@ -3,6 +3,7 @@ package net.datasa.scit_14_3.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Builder
@@ -11,26 +12,29 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "temple_stay_program")
+@Table(name = "TEMPLE_STAY_PROGRAM")
 public class TempleStayProgramEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "program_id")
 	private Long programId;
 	
-	@Column(name = "temple_id")
+	@Column(name = "temple_id", nullable = false)
 	private Long templeId;
 	
-	@Column(name = "title", length = 100)
+	@Column(name = "title", length = 100, nullable = false)
 	private String title;
 	
 	public enum ProgramType {
 		당일형, 체험형, 휴식형
 	}
 	@Enumerated(EnumType.STRING)
-	@Column(name = "program_type")
+	@Column(name = "program_type", nullable = false)
 	private ProgramType programType;
-	
+
+	@Column(name = "image_url", length = 255)
+	private String imageUrl;
+
 	@Column(name = "description", columnDefinition = "TEXT")
 	private String description;
 	
@@ -46,20 +50,27 @@ public class TempleStayProgramEntity {
 	@Column(name = "precautions", columnDefinition = "TEXT")
 	private String precautions;
 	
-	@Column(name = "price")
+	@Column(name = "price", nullable = false)
 	private int price;
 	
-	@Column(name = "duration", length = 20)
+	@Column(name = "duration", length = 20, nullable = false)
 	private String duration;
 	
 	@Builder.Default
-	@Column(name = "max_participant")
+	@Column(name = "max_participant", nullable = false)
 	private int maxParticipant = 20;
 	
+	// 아래 세 컬럼은 DB 트리거가 소속 TEMPLE의 값으로 저장 시점에 덮어씀 (docs/buddhist-site-schema.sql 참고)
 	@Builder.Default
-	@Column(name = "support_english")
+	@Column(name = "support_english", nullable = false)
 	private boolean supportEnglish = false;
-	
-	@Column(name = "created_at", insertable = false, updatable = false)
+
+	@Column(name = "latitude", precision = 10, scale = 7, nullable = false)
+	private BigDecimal latitude;
+
+	@Column(name = "longitude", precision = 10, scale = 7, nullable = false)
+	private BigDecimal longitude;
+
+	@Column(name = "created_at", insertable = false, updatable = false, nullable = false)
 	private LocalDateTime createdAt;
 }

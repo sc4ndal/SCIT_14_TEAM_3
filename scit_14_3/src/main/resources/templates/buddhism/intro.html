@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>불교란? | 산문</title>
+	<link rel="stylesheet" th:href="@{/css/buddhism.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="intro">
+
+	<!-- 페이지 도입부 -->
+	<section class="intro-hero">
+		<h1 class="intro-hero__title">불교란?</h1>
+		<p class="intro-hero__lead">불교를 처음 접하는 분들을 위한 간단한 안내</p>
+		<p class="intro-hero__scroll" aria-hidden="true">↓</p>
+	</section>
+
+	<!-- 로드맵: 일러스트와 설명을 좌우 번갈아 놓는 지그재그 구조 -->
+	<section class="roadmap" aria-label="불교 알아보기 7단계">
+
+		<article class="roadmap-step"
+				 th:each="step : ${steps}"
+				 th:classappend="${step.isImageLeft()} ? 'roadmap-step--image-left' : 'roadmap-step--image-right'">
+
+			<div class="roadmap-step__illust">
+				<img th:src="@{${step.image()}}" th:alt="${step.imageAlt()}">
+			</div>
+
+			<div class="roadmap-step__rail" aria-hidden="true">
+				<span class="roadmap-step__dot" th:text="${#numbers.formatInteger(step.step(), 2)}">01</span>
+			</div>
+
+			<div class="roadmap-step__body">
+				<p class="roadmap-step__no" th:text="'STEP ' + ${#numbers.formatInteger(step.step(), 2)}">STEP 01</p>
+				<h2 class="roadmap-step__title" th:text="${step.title()}">단계 제목</h2>
+				<p class="roadmap-step__subtitle" th:text="${step.subtitle()}">한 줄 요약</p>
+				<p class="roadmap-step__line" th:each="line : ${step.lines()}" th:text="${line}">설명</p>
+			</div>
+		</article>
+
+		<!-- 마지막 단계는 템플스테이로 이어주는 자리라 넓은 영역으로 따로 배치 -->
+		<article class="roadmap-final">
+			<div class="roadmap-step__rail roadmap-step__rail--last" aria-hidden="true">
+				<span class="roadmap-step__dot" th:text="${#numbers.formatInteger(finalStep.step(), 2)}">07</span>
+			</div>
+
+			<div class="roadmap-final__inner">
+				<img class="roadmap-final__illust" th:src="@{${finalStep.image()}}" th:alt="${finalStep.imageAlt()}">
+				<div class="roadmap-final__body">
+					<p class="roadmap-step__no" th:text="'STEP ' + ${#numbers.formatInteger(finalStep.step(), 2)}">STEP 07</p>
+					<h2 class="roadmap-step__title" th:text="${finalStep.title()}">그래서 템플스테이에서는</h2>
+					<p class="roadmap-step__subtitle" th:text="${finalStep.subtitle()}">한 줄 요약</p>
+					<p class="roadmap-step__line" th:each="line : ${finalStep.lines()}" th:text="${line}">설명</p>
+				</div>
+			</div>
+
+			<!-- 처음 가는 사람의 부담을 덜어주는 체크리스트 -->
+			<div class="checklist">
+				<div class="checklist__col checklist__col--do">
+					<h3>절에 처음 가면 할 수 있는 것</h3>
+					<ul>
+						<li th:each="item : ${canDo}" th:text="${item}">항목</li>
+					</ul>
+				</div>
+				<div class="checklist__col checklist__col--skip">
+					<h3>안 해도 되는 것</h3>
+					<ul>
+						<li th:each="item : ${needNot}" th:text="${item}">항목</li>
+					</ul>
+				</div>
+			</div>
+		</article>
+	</section>
+
+	<!-- 자세한 예절은 사찰 예절 가이드와 겹치므로 여기서는 초압축 버전만 둔다 -->
+	<section class="faq" aria-label="자주 묻는 질문">
+		<h2 class="faq__title">이런 게 궁금하셨죠?</h2>
+
+		<details class="faq__item" th:each="faq : ${faqs}">
+			<summary th:text="${faq.question()}">질문</summary>
+			<p th:text="${faq.answer()}">답변</p>
+		</details>
+
+		<p class="faq__more">
+			<a th:href="@{/info(category='예절가이드')}">더 자세한 예절은 사찰 예절 가이드에서 →</a>
+		</p>
+	</section>
+
+	<!-- 알아보기에서 다른 대분류로 흩어지는 회유 동선 -->
+	<section class="next-cards" aria-label="다음으로 볼 페이지">
+		<h2 class="next-cards__title">다음으로 무엇을 볼까요?</h2>
+		<div class="next-cards__grid">
+			<a class="next-card" th:each="card : ${nextCards}" th:href="@{${card.href()}}">
+				<h3 th:text="${card.title()}">카드 제목</h3>
+				<p th:text="${card.description()}">카드 설명</p>
+				<span class="next-card__arrow" aria-hidden="true">→</span>
+			</a>
+		</div>
+	</section>
+
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+
+</body>
+</html>

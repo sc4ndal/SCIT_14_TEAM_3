@@ -1,0 +1,19 @@
+# 이 파일을 복사해서 application-local.properties 로 이름 바꾸고 실제 값 채우세요.
+# application-local.properties는 .gitignore에 등록돼있어서 git에 안 올라갑니다.
+#
+# 메일 발송 계정 (구글 계정 -> 2단계 인증 켜기 -> 앱 비밀번호 발급)
+# 로그인 비밀번호 아니고 앱 비밀번호(16자리)를 넣어야 함
+# spring.mail.username=CHANGE_ME@gmail.com
+# spring.mail.password=CHANGE_ME_APP_PASSWORD
+
+# 카카오 REST API 키 - 팀원한테 값 받아서 채우기 (전체가 같은 값 써야 함)
+# kakao.client-id=CHANGE_ME
+
+# Cloudinary (이미지 업로드) - cloudinary.com 대시보드에서 Cloud name/API Key/API Secret 확인
+# cloudinary.cloud-name=CHANGE_ME
+# cloudinary.api-key=CHANGE_ME
+# cloudinary.api-secret=CHANGE_ME
+
+spring.mail.username=temp@gmail.com
+spring.mail.password=tempPassword
+kakao.client-id=temp

@@ -1,6 +1,7 @@
 <!--
     <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
-    대부분은 이것만
+    모든 html에 삽입
+
 -->
 
 <div class="site-header" id="siteHeader" th:fragment="commonIncludes">
@@ -72,18 +73,17 @@
                 <!-- ============================
                             로그인 상태
                 ================================= -->
-                <div class="user-menu"
+                <div class="userEntity-menu"
                      sec:authorize="isAuthenticated()">
 
                     <!-- 아이콘 + 닉네임 + 로그아웃 (한 줄) -->
-                    <div class="user-identity">
+                    <div class="userEntity-identity">
 
                         <!-- 프로필 아이콘은 컬럼 추가 부담으로 빼기로 결정 (2026-08-26) -->
 
-                        <!-- 닉네임
-                             TODO: 실제 인증 principal 필드에 맞게 th:text 연결
-                             예) th:text="${#authentication.principal.nickname}" -->
-                        <span class="user-nickname">
+                        <!-- 일반회원은 법명, 사찰계정은 사찰명 (AppUserDetails.getNickname()) -->
+                        <span class="userEntity-nickname"
+                              th:text="${#authentication.principal.nickname}">
                             닉네임명
                         </span>
 
@@ -104,7 +104,7 @@
 
 
                     <!-- 마이페이지 트리거 + dropdown
-                         user-identity 줄 바로 아래에 오버레이로 표시됨 -->
+                         userEntity-identity 줄 바로 아래에 오버레이로 표시됨 -->
                     <div class="mypage-menu">
                         <a th:href="@{/mypage}"
                            class="mypage-title">
@@ -154,8 +154,3 @@
 
     </div>
 </div>
-<!--<div th:fragment="commonIncludes">-->
-<!--    <div th:replace="~{fragments/language-fragment :: languageBar}"></div>-->
-<!--    <div th:replace="~{fragments/auth-nav-fragment :: authNav}"></div>-->
-<!--    <script th:src="@{/js/common.js}"></script>-->
-<!--</div>-->

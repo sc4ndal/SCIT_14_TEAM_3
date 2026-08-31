@@ -5,10 +5,10 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/common.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/css/home.css}" type="text/css">
     <script defer src="/js/common.js"></script>
     <script defer th:src="@{/js/home.js}"></script>
-    <link rel="stylesheet" th:href="@{/css/home.css}" type="text/css">
     <title>佛선자</title>
 </head>
 
@@ -20,7 +20,6 @@
 <header>
     <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
 </header>
-
 
 <main>
 
@@ -254,7 +253,7 @@
 
                     <div class="sub-menu">
 
-                        <a href="#">
+                        <a th:href="@{/templestayGuide}">
                             템플스테이
                         </a>
 

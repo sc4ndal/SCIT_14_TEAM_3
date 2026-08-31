@@ -1,0 +1,11 @@
+<!-- 임시 일러스트: 보리수 아래에 앉은 사람. Figma 확정 후 교체 예정 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-hidden="true">
+	<rect width="400" height="300" fill="#f2ece2"/>
+	<circle cx="200" cy="110" r="78" fill="#4a6b52" opacity=".22"/>
+	<circle cx="152" cy="140" r="46" fill="#4a6b52" opacity=".22"/>
+	<circle cx="248" cy="140" r="46" fill="#4a6b52" opacity=".22"/>
+	<rect x="193" y="150" width="14" height="70" rx="5" fill="#8c6239" opacity=".55"/>
+	<circle cx="200" cy="212" r="17" fill="#8c6239"/>
+	<path d="M168 258c6-24 16-34 32-34s26 10 32 34z" fill="#8c6239"/>
+	<line x1="120" y1="262" x2="280" y2="262" stroke="#8c6239" stroke-width="3" stroke-linecap="round" opacity=".4"/>
+</svg>
