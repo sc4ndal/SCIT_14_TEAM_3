@@ -33,6 +33,11 @@ public class ReservationParticipantService {
 				.build();
 	}
 	
+	/**
+	 * 참가자 예약 생성
+	 * @param reservationParticipantDTO
+	 * @return
+	 */
 	public List<ReservationParticipantDTO> reserved(List<ReservationParticipantDTO> reservationParticipantDTO) {
 		List<ReservationParticipantDTO> dtoList = new ArrayList<>();
 		
