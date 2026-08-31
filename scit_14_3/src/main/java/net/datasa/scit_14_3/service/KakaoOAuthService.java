@@ -43,6 +43,9 @@ public class KakaoOAuthService {
 				.queryParam("redirect_uri", redirectUri)
 				.queryParam("response_type", "code")
 				.queryParam("state", state)
+				// 카카오 세션이 살아있어도 매번 로그인 화면을 강제로 띄움 - 실제 테스트로 동작 확인함.
+				// (카카오 공식 문서엔 안 나오는 파라미터인데 실제로 먹힘)
+				.queryParam("prompt", "login")
 				.build()
 				.toUriString();
 	}

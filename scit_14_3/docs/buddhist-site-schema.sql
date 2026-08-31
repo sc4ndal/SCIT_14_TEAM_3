@@ -2,7 +2,7 @@
 -- 부울경 (불교 종합 사이트) DB 스키마
 -- 팀명: 佛법을 선도하는 자들(불선자)
 -- 대상 DBMS: MySQL 8.0
--- 총 16개 테이블 / BUDDHISM_INFO만 다른 테이블과 연결 없는 독립 테이블
+-- 총 17개 테이블 / BUDDHISM_INFO만 다른 테이블과 연결 없는 독립 테이블
 --
 -- 이번 정리에서 반영된 결정사항
 --   1) TEMPLE_STAY_PROGRAM.program_type은 당일형/체험형/휴식형 3종 유지(변경 없음)
@@ -20,6 +20,10 @@
 --      상속받던 컬럼도 api_place_id -> latitude/longitude로 같이 바뀜(support_english와 동일한 방식).
 --   6) TEMPLE에 대표 이미지 컬럼(image_url) 추가.
 --   7) TEMPLE에 주소 컬럼(address) 추가.
+--   8) TEMPLE_REGISTRATION_REQUEST(사찰 등록 요청) 테이블 추가 - 사찰 관계자가 회원가입
+--      없이 홈 화면 "문의하기"로 제출하는 요청을 담는 별도 테이블. TEMPLE과 완전히 분리되어
+--      있고(승인해도 이 행이 TEMPLE로 "승격"되지 않음), 관리자가 승인하면 별도로 새 TEMPLE
+--      행을 생성한다. contact_email은 이 테이블에만 있고 TEMPLE에는 저장되지 않는다.
 -- =====================================================================
 
 SET NAMES utf8mb4;
@@ -30,6 +34,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ---------------------------------------------------------------------
 DROP TRIGGER IF EXISTS trg_program_inherit_before_insert;
 DROP TRIGGER IF EXISTS trg_program_inherit_before_update;
+DROP TABLE IF EXISTS TEMPLE_REGISTRATION_REQUEST;
 DROP TABLE IF EXISTS FAVORITE_FOOD;
 DROP TABLE IF EXISTS TEMPLE_FOOD_RECOMMENDATION;
 DROP TABLE IF EXISTS FAVORITE_QUOTE;
@@ -87,12 +92,17 @@ CREATE TABLE TEMPLE (
     longitude         DECIMAL(10,7) NOT NULL COMMENT '경도',
     address           VARCHAR(255) NOT NULL COMMENT '주소',
     region            VARCHAR(20)  NOT NULL COMMENT '지역(시/도) 필터',
-    location_type     ENUM('바다','산','강','도심') NOT NULL COMMENT '장소 필터',
+    -- 장소 유형은 중복 가능(바다+도심 등)해서 ENUM 한 컬럼 대신 유형별 boolean으로 둠 (2026-08-31 변경)
+    support_sea       BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '바다 인근 여부',
+    support_mountain  BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '산 인근 여부',
+    support_river     BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '강 인근 여부',
+    support_urban     BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '도심 인근 여부',
     support_english   BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '영어 지원 여부',
     is_temple         BOOLEAN      NOT NULL DEFAULT TRUE COMMENT '실제 사찰 건물 여부',
     special_notice    TEXT         NULL COMMENT '사찰별 개별 주의사항',
     login_id          VARCHAR(30)  NOT NULL COMMENT '사찰 관리자 계정 아이디 (@ 시작 고정)',
     password          VARCHAR(255) NOT NULL COMMENT '사찰 관리자 계정 비밀번호(암호화)',
+    must_change_password BOOLEAN  NOT NULL DEFAULT FALSE COMMENT '관리자가 임시 비밀번호를 발급했으면 TRUE - 로그인 시 비밀번호 변경 페이지로 강제 이동',
     PRIMARY KEY (temple_id),
     UNIQUE KEY uq_temple_login_id (login_id),
     CONSTRAINT chk_temple_login_id_at
@@ -394,3 +404,34 @@ CREATE TABLE FAVORITE_FOOD (
     CONSTRAINT fk_favfood_recommendation
         FOREIGN KEY (recommendation_id) REFERENCES TEMPLE_FOOD_RECOMMENDATION(recommendation_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='관심 사찰음식 즐겨찾기';
+
+-- =====================================================================
+-- 17. TEMPLE_REGISTRATION_REQUEST (사찰 등록 요청)
+--     - 사찰 관계자가 회원가입 없이 남기는 요청. TEMPLE과 분리되어 있고, 관리자가
+--       승인하면 이 행이 아니라 완전히 새로운 TEMPLE 행이 생성된다(승격 아님).
+--     - login_id/password/is_temple은 관리자 승인 시 시스템이 생성하는 값이라
+--       여기 없다.
+-- =====================================================================
+CREATE TABLE TEMPLE_REGISTRATION_REQUEST (
+    request_id         BIGINT       NOT NULL AUTO_INCREMENT COMMENT '요청 고유 번호',
+    name                VARCHAR(100) NOT NULL COMMENT '사찰 이름',
+    image_url           VARCHAR(255) NULL COMMENT '사찰 대표 이미지 경로',
+    latitude            DECIMAL(10,7) NOT NULL COMMENT '위도',
+    longitude           DECIMAL(10,7) NOT NULL COMMENT '경도',
+    address             VARCHAR(255) NOT NULL COMMENT '주소',
+    region              VARCHAR(20)  NOT NULL COMMENT '지역(시/도) 필터',
+    -- TEMPLE과 동일한 이유(중복 선택)로 boolean 4개 (2026-08-31 변경)
+    support_sea         BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '바다 인근 여부',
+    support_mountain    BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '산 인근 여부',
+    support_river       BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '강 인근 여부',
+    support_urban       BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '도심 인근 여부',
+    support_english     BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '영어 지원 여부',
+    special_notice      TEXT         NULL COMMENT '사찰별 개별 주의사항',
+    contact_email       VARCHAR(100) NOT NULL COMMENT '요청자 연락 이메일 - 승인 시 계정정보 발송 대상 (TEMPLE엔 저장 안 됨)',
+    status              ENUM('대기','승인') NOT NULL DEFAULT '대기' COMMENT '처리 상태',
+    approved_temple_id  BIGINT       NULL COMMENT '승인 후 생성된 TEMPLE 행 추적용(승격이 아니라 별도 생성)',
+    created_at          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '요청 등록일시',
+    PRIMARY KEY (request_id),
+    CONSTRAINT fk_templereq_approved_temple
+        FOREIGN KEY (approved_temple_id) REFERENCES TEMPLE(temple_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='사찰 관계자가 제출한 사찰 등록 요청(관리자 승인 대기열)';

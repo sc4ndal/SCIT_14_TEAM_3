@@ -2,6 +2,38 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500&display=swap');
 
+:root {
+    /* ===== 피그마 원안 기준 시맨틱 컬러 토큰 (스타일가이드 v1 · 2026-08-26) =====
+       모든 페이지가 공통으로 불러오는 common.css에 두고, 다른 css는 여기 값을 재사용함. */
+    --bg: #f8f4ef;          /* background */
+    --paper: #fdfaf6;       /* card */
+    --secondary: #efe9e1;   /* secondary */
+    --muted-bg: #ede7de;    /* muted — 배경 용도. 텍스트 반투명용 --text-muted와 이름이 겹쳐서 분리함 */
+    --text: #27211b;        /* foreground */
+    --destructive: #c0392b; /* destructive */
+
+    --brown: #9b6845;  /* accent */
+    --green: #5c7a62;  /* accent-green (찾아보기 섹션) */
+    --blue: #6b7a9e;   /* accent-blue (준비하기 섹션) */
+    --gold: #8a6e3c;   /* accent-gold (체험하기 섹션) */
+
+    --color-sunday: #b43c3c;
+    --color-saturday: #3c64b4;
+
+    /* 텍스트 opacity 4단계 (확정) */
+    --text-primary: rgba(39, 33, 27, .90);
+    --text-secondary: rgba(39, 33, 27, .60);
+    --text-tertiary: rgba(39, 33, 27, .45);
+    --text-muted: rgba(39, 33, 27, .30);
+
+    --line: rgba(39, 33, 27, 0.09);
+
+    /* 폰트: 가이드 지정값은 Outfit(본문)+Lora(제목)이지만 둘 다 한글 글리프가 없어서
+       그대로 적용하면 한글 텍스트가 전부 시스템 폴백 폰트로 깨짐. 최종 폰트 결정 전까지 보류. */
+    --serif: "Noto Serif KR", Batang, serif;
+    --sans: "Noto Sans KR", sans-serif;
+}
+
 /* ===== 헤더 (site-header) =====
    fragments/common-includes.html이 모든 페이지에 삽입되는데, 이 스타일이 원래
    home.css에만 있어서 signup/signupSelect/login 등 다른 페이지에서는 헤더가
@@ -324,3 +356,9 @@
     background:none;border:none;font-family:inherit;cursor:pointer;
 }
 .dropdown-item:hover{background:#f7efe3;color:#4a2f22;}
+
+/* ===== 사찰 등록 요청 상태 배지 =====
+   .badge 기본 스타일(signup.css)은 teal 배경 하나뿐이라, 대기/승인 구분용 색만
+   여기서 덧붙임. admin 페이지도 signup.css를 같이 불러오니 .badge 자체는 재사용. */
+.badge-pending{background:#c98a2e;}
+.badge-approved{background:#2f6b5e;}

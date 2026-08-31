@@ -17,12 +17,6 @@
 <div class="card">
 	<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
 
-	<div class="beam">
-		<span></span><span></span><span></span><span></span><span></span>
-		<span></span><span></span><span></span><span></span><span></span>
-		<span></span><span></span><span></span><span></span><span></span>
-	</div>
-
 	<div class="header">
 		<h1 th:if="${mode == 'local' or mode == null}" data-i18n="titleLocal">일반 회원가입</h1>
 		<h1 th:if="${mode == 'kakao'}" data-i18n="titleKakao">카카오로 회원가입</h1>

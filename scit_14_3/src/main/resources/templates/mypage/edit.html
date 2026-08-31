@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>회원정보수정 · 사찰 커뮤니티</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" th:href="@{/css/signup.css}">
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+<body>
+
+<div class="card">
+	<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+
+	<div class="header">
+		<h1>회원정보수정</h1>
+	</div>
+
+	<div th:if="${isTempleAccount}">
+
+		<p class="check-result" style="color:#2f6b5e; text-align:center;" th:if="${passwordChangeSuccess}">
+			비밀번호가 변경되었습니다.
+		</p>
+		<p class="check-result" style="color:#b3402f; text-align:center;" th:if="${passwordChangeError}" th:text="${passwordChangeError}">
+		</p>
+		<p class="check-result" style="color:#c98a2e; text-align:center;" sec:authorize="hasRole('TEMPLE')" th:if="${#authentication.principal.mustChangePassword}">
+			관리자가 발급한 임시 비밀번호입니다. 계속 사용하시려면 비밀번호를 변경해주세요.
+		</p>
+
+		<form th:action="@{/mypage/temple-password}" method="post">
+			<fieldset>
+				<legend>비밀번호 변경</legend>
+
+				<div class="field">
+					<label for="currentPassword">현재 비밀번호<span class="req">*</span></label>
+					<input type="password" id="currentPassword" name="currentPassword" required>
+				</div>
+
+				<div class="field">
+					<label for="newPassword">새 비밀번호<span class="req">*</span></label>
+					<input type="password" id="newPassword" name="newPassword" required>
+				</div>
+			</fieldset>
+
+			<div class="form-actions">
+				<button class="submit" type="submit">변경하기</button>
+				<a th:href="@{/}" class="btn-cancel">취소</a>
+			</div>
+		</form>
+
+	</div>
+
+	<div th:unless="${isTempleAccount}" style="padding:8px 32px 32px; text-align:center; color:var(--ink-soft);">
+		<p>회원정보수정 기능은 준비 중입니다.</p>
+	</div>
+
+</div>
+
+</body>
+</html>

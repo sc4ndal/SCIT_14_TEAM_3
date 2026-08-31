@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>사찰 등록 요청 상세 · 사찰 커뮤니티</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" th:href="@{/css/signup.css}">
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+<body>
+
+<div class="card">
+	<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+
+	<div class="header">
+		<h1 th:text="${request.name}">사찰명</h1>
+		<span class="badge"
+		      th:classappend="${request.status.name() == '승인'} ? ' badge-approved' : ' badge-pending'"
+		      th:text="${request.status}">대기</span>
+	</div>
+
+	<div style="padding:8px 32px 0;">
+		<div class="field"><label>주소</label><p th:text="${request.address}"></p></div>
+		<div class="field field-inline">
+			<div style="flex:1;"><label>위도</label><p th:text="${request.latitude}"></p></div>
+			<div style="flex:1;"><label>경도</label><p th:text="${request.longitude}"></p></div>
+		</div>
+		<div class="field"><label>지역</label><p th:text="${request.region}"></p></div>
+		<div class="field">
+			<label>장소 유형</label>
+			<p th:with="types=${(request.supportSea ? '바다 ' : '') + (request.supportMountain ? '산 ' : '') + (request.supportRiver ? '강 ' : '') + (request.supportUrban ? '도심' : '')}"
+			   th:text="${#strings.trim(types) != '' ? types : '없음'}"></p>
+		</div>
+		<div class="field"><label>영어 안내</label><p th:text="${request.supportEnglish} ? '가능' : '불가'"></p></div>
+		<div class="field" th:if="${request.imageUrl != null and !#strings.isEmpty(request.imageUrl)}">
+			<label>대표 이미지</label><p th:text="${request.imageUrl}"></p>
+		</div>
+		<div class="field" th:if="${request.specialNotice != null and !#strings.isEmpty(request.specialNotice)}">
+			<label>참고사항</label><p th:text="${request.specialNotice}"></p>
+		</div>
+		<div class="field"><label>연락 이메일</label><p th:text="${request.contactEmail}"></p></div>
+	</div>
+
+	<div class="form-actions" style="padding:16px 32px 32px;">
+		<form th:if="${request.status.name() == '대기'}" th:action="@{/admin/temples/new(fromRequest=${request.requestId})}" method="get" style="flex:2; margin:0;">
+			<button type="submit" class="submit" style="width:100%;">등록</button>
+		</form>
+		<p th:if="${request.status.name() != '대기'}" style="flex:2; text-align:center; color:var(--ink-soft); margin:0;">
+			이미 승인된 요청입니다.
+		</p>
+		<a th:href="@{/admin/temple-requests}" class="btn-cancel" style="flex:1;">목록으로</a>
+	</div>
+</div>
+
+</body>
+</html>
