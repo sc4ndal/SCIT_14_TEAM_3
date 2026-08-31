@@ -19,6 +19,7 @@
 --      (지도 API 장소 ID보다 좌표가 더 정확하다는 판단). TEMPLE_STAY_PROGRAM이 트리거로
 --      상속받던 컬럼도 api_place_id -> latitude/longitude로 같이 바뀜(support_english와 동일한 방식).
 --   6) TEMPLE에 대표 이미지 컬럼(image_url) 추가.
+--   7) TEMPLE에 주소 컬럼(address) 추가.
 -- =====================================================================
 
 SET NAMES utf8mb4;
@@ -84,6 +85,7 @@ CREATE TABLE TEMPLE (
     -- 위도(latitude) 범위 -90~90, 경도(longitude) 범위 -180~180, 소수점 7자리(약 1cm 오차) 기준.
     latitude          DECIMAL(10,7) NOT NULL COMMENT '위도',
     longitude         DECIMAL(10,7) NOT NULL COMMENT '경도',
+    address           VARCHAR(255) NOT NULL COMMENT '주소',
     region            VARCHAR(20)  NOT NULL COMMENT '지역(시/도) 필터',
     location_type     ENUM('바다','산','강','도심') NOT NULL COMMENT '장소 필터',
     support_english   BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '영어 지원 여부',
