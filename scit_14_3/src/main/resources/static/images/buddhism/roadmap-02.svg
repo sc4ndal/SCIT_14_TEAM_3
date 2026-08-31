@@ -1,0 +1,20 @@
+<!-- 임시 일러스트: 여덟 갈래 법륜(팔정도). Figma 확정 후 교체 예정 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-hidden="true">
+	<rect width="400" height="300" fill="#f2ece2"/>
+	<g transform="translate(200 150)" stroke="#8c6239" fill="none" stroke-width="6" stroke-linecap="round">
+		<circle r="92"/>
+		<circle r="26" fill="#8c6239" stroke="none"/>
+		<g>
+			<line y1="-88" y2="-30"/>
+			<line y1="88" y2="30"/>
+			<line x1="-88" x2="-30"/>
+			<line x1="88" x2="30"/>
+		</g>
+		<g transform="rotate(45)">
+			<line y1="-88" y2="-30"/>
+			<line y1="88" y2="30"/>
+			<line x1="-88" x2="-30"/>
+			<line x1="88" x2="30"/>
+		</g>
+	</g>
+</svg>

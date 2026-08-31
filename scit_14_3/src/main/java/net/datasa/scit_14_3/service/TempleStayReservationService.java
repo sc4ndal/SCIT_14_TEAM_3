@@ -34,6 +34,11 @@ public class TempleStayReservationService {
 				.build();
 	}
 	
+	/**
+	 * 템플스테이 프로그램 예약 생성
+	 * @param dto
+	 * @return
+	 */
 	public TempleStayReservationDTO reserved(TempleStayReservationDTO dto) {
 		
 		TempleStayReservationEntity entity = TempleStayReservationEntity

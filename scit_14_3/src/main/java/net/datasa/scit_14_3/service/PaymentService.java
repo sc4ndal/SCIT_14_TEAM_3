@@ -5,7 +5,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.PaymentDTO;
+import net.datasa.scit_14_3.domain.dto.TempleStayReservationDTO;
 import net.datasa.scit_14_3.domain.entity.PaymentEntity;
+import net.datasa.scit_14_3.domain.entity.TempleStayReservationEntity;
 import net.datasa.scit_14_3.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
 
@@ -30,4 +32,33 @@ public class PaymentService {
 				.createdAt(entity.getCreatedAt())
 				.build();
 	}
-}
+	
+	/**
+	 * 결제 생성
+	 * @param dto
+	 * @return
+	 */
+	public PaymentDTO reserved(PaymentDTO dto) {
+			
+			PaymentEntity entity = PaymentEntity.builder()
+					.reservationId(dto.getReservationId())
+					.paymentMethod(dto.getPaymentMethod())
+					.amount(dto.getAmount())
+					.status(PaymentEntity.Status.완료)
+					.depositorName(dto.getDepositorName())
+					.kakaoTid(dto.getKakaoTid())
+					.build();
+			
+			PaymentEntity saved = pr.save(entity);
+			
+			return PaymentDTO.builder()
+					.paymentId(saved.getPaymentId())
+					.reservationId(dto.getReservationId())
+					.paymentMethod(dto.getPaymentMethod())
+					.amount(dto.getAmount())
+					.status(PaymentEntity.Status.완료)   // 실제 Enum에 있는 값으로
+					.depositorName(dto.getDepositorName())
+					.kakaoTid(dto.getKakaoTid())
+					.build();
+		}
+	}

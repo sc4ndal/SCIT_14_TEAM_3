@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>불교 용어 | 산문</title>
+	<link rel="stylesheet" th:href="@{/css/buddhism.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="terms">
+
+	<section class="terms-hero">
+		<h1 class="terms-hero__title">불교 용어</h1>
+		<p class="terms-hero__lead">절에서, 경전에서 마주치는 말들을 한자리에 모았습니다</p>
+	</section>
+
+	<!-- 소분류는 DB 컬럼이 아니라 제목 기준 정적 매핑(TermCategory)으로 묶은 결과 -->
+	<nav class="term-tabs" aria-label="용어 분류">
+		<button type="button" class="term-tab is-active" data-target="all">전체</button>
+		<button type="button" class="term-tab"
+				th:each="group : ${groups}"
+				th:data-target="${group.code()}"
+				th:text="${group.label()} + ' ' + ${group.size()}">분류</button>
+	</nav>
+
+	<p class="terms-empty" th:if="${#lists.isEmpty(groups)}">
+		등록된 용어가 없습니다. <code>buddhism-info-seed.sql</code>을 실행하면 용어가 채워집니다.
+	</p>
+
+	<section class="term-group" th:each="group : ${groups}"
+			 th:id="${group.code()}"
+			 th:data-group="${group.code()}">
+
+		<header class="term-group__head">
+			<h2 th:text="${group.label()}">분류명</h2>
+			<p th:text="${group.description()}">분류 설명</p>
+		</header>
+
+		<div class="term-grid">
+			<article class="term-card" th:each="term : ${group.terms()}">
+				<h3 class="term-card__title">
+					<span th:text="${term.title()}">용어</span>
+					<!-- 난이도 배지는 경전 카테고리에만 붙는다 -->
+					<span class="term-card__badge"
+						  th:if="${term.hasDifficulty()}"
+						  th:text="${term.difficulty()}"
+						  th:title="'읽기 난이도 ' + ${term.difficulty()}">⭐</span>
+				</h3>
+				<p class="term-card__content" th:text="${term.content()}">용어 설명</p>
+			</article>
+		</div>
+	</section>
+
+	<p class="terms-back">
+		<a th:href="@{/info/intro}">← 불교가 처음이시라면 "불교란?"부터 보세요</a>
+	</p>
+
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+
+<script>
+	// 탭을 누르면 해당 소분류만 남기고 나머지 그룹을 숨긴다.
+	document.querySelectorAll('.term-tab').forEach(function (tab) {
+		tab.addEventListener('click', function () {
+			var target = tab.dataset.target;
+
+			document.querySelectorAll('.term-tab').forEach(function (other) {
+				other.classList.toggle('is-active', other === tab);
+			});
+
+			document.querySelectorAll('.term-group').forEach(function (group) {
+				var visible = (target === 'all') || (group.dataset.group === target);
+				group.hidden = !visible;
+			});
+		});
+	});
+</script>
+
+</body>
+</html>

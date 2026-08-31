@@ -1,0 +1,9 @@
+<!-- 임시 일러스트: 가부좌를 튼 사람(명상). Figma 확정 후 교체 예정 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-hidden="true">
+	<rect width="400" height="300" fill="#f2ece2"/>
+	<circle cx="200" cy="150" r="104" fill="#8c6239" opacity=".1"/>
+	<circle cx="200" cy="96" r="24" fill="#8c6239"/>
+	<path d="M156 200c0-38 20-62 44-62s44 24 44 62z" fill="#8c6239"/>
+	<path d="M132 208c14-14 34-20 68-20s54 6 68 20c-14 16-38 24-68 24s-54-8-68-24z" fill="#8c6239" opacity=".7"/>
+	<path d="M170 186c10 8 20 12 30 12s20-4 30-12" fill="none" stroke="#f2ece2" stroke-width="4" stroke-linecap="round"/>
+</svg>
