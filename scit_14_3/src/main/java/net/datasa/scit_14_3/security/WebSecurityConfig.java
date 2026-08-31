@@ -49,7 +49,7 @@ public class WebSecurityConfig {
 			"/payments/**",
 			"/reservation",
 			"/maptest",
-			"/templestayGuide"
+			"/templestayGuide",
 			"/templestayprograms/**",
 			"/etiquette-simulation"
 	);
