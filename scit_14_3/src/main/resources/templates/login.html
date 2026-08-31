@@ -30,6 +30,23 @@
     <p style="color:#2f6b5e; text-align:center; margin:16px 32px 0; font-size:13px;"
        th:if="${loginNotice}" th:text="${loginNotice}"></p>
 
+    <div style="padding:24px 32px 0;">
+        <a th:href="@{/login/kakao(intent='login')}"
+           style="display:flex;align-items:center;justify-content:center;gap:8px;
+                  width:100%;padding:14px 0;box-sizing:border-box;
+                  background:#FEE500;color:#191600;
+                  font-size:15px;font-weight:700;border-radius:6px;
+                  text-decoration:none;">
+            카카오로 3초만에 로그인
+        </a>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin:20px 32px 4px;color:var(--ink-soft);font-size:11px;">
+        <span style="flex:1;height:1px;background:var(--border);"></span>
+        또는 아이디로 로그인
+        <span style="flex:1;height:1px;background:var(--border);"></span>
+    </div>
+
     <form th:action="@{/login}" method="post">
 
         <div class="field">
@@ -49,8 +66,7 @@
     </form>
 
     <p class="footer-note" style="text-align:center;font-size:13px;color:var(--ink-soft);padding:0 32px 28px;">
-        <a th:href="@{/login/kakao(intent='login')}" style="color:var(--wood-dark);font-weight:700;text-decoration:none;">카카오로 로그인</a>
-        · 계정이 없으신가요?
+        계정이 없으신가요?
         <a th:href="@{/signupSelect}" style="color:var(--wood-dark);font-weight:700;text-decoration:none;">회원가입</a>
     </p>
 

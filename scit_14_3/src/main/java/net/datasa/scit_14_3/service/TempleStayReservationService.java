@@ -33,4 +33,37 @@ public class TempleStayReservationService {
 				.createdAt(entity.getCreatedAt())
 				.build();
 	}
-}
+	
+	/**
+	 * 템플스테이 프로그램 예약 생성
+	 * @param dto
+	 * @return
+	 */
+	public TempleStayReservationDTO reserved(TempleStayReservationDTO dto) {
+		
+		TempleStayReservationEntity entity = TempleStayReservationEntity
+				.builder()
+				.loginId(dto.getLoginId())
+				.programId(dto.getProgramId())
+				.startDate(dto.getStartDate())
+				.endDate(dto.getEndDate())
+				.participantCount(dto.getParticipantCount())
+				.note(dto.getNote())
+				.status(TempleStayReservationEntity.Status.예약대기)
+				.build();
+		
+		TempleStayReservationEntity saved = tsrr.save(entity);
+		
+		return TempleStayReservationDTO.builder()
+				.reservationId(saved.getReservationId())
+				.loginId(saved.getLoginId())
+				.programId(saved.getProgramId())
+				.startDate(saved.getStartDate())
+				.endDate(saved.getEndDate())
+				.participantCount(saved.getParticipantCount())
+				.note(saved.getNote())
+				.status(saved.getStatus())
+				.build();
+	}
+	}
+

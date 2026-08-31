@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import net.datasa.scit_14_3.domain.entity.TempleStayProgramEntity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Builder
@@ -17,6 +18,7 @@ public class TempleStayProgramDTO {
 	private Long templeId;
 	private String title;
 	private TempleStayProgramEntity.ProgramType programType;
+	private String imageUrl;
 	private String description;
 	private String schedule;
 	private String requiredItems;
@@ -28,5 +30,7 @@ public class TempleStayProgramDTO {
 	private int maxParticipant = 20;
 	@Builder.Default
 	private boolean supportEnglish = false;
+	private BigDecimal latitude;
+	private BigDecimal longitude;
 	private LocalDateTime createdAt;
 }

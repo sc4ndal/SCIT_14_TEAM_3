@@ -15,8 +15,11 @@
 --      경계를 다루는 애플리케이션 로직 실수를 원천 차단하기 위함.
 --      (참고: 원래 설계서에도 이미 start_date/end_date가 별도 컬럼으로 있었음 - 그대로 유지)
 --   4) TEMPLE_STAY_PROGRAM에 대표 이미지 컬럼(image_url) 추가.
---   5) TEMPLE_STAY_PROGRAM.api_place_id 추가 - support_english와 동일한 방식으로
---      트리거를 통해 소속 TEMPLE.api_place_id 값을 그대로 상속받음(직접 입력해도 덮어써짐).
+--   5) TEMPLE.api_place_id 제거, 대신 latitude/longitude(위도/경도)로 위치를 받음
+--      (지도 API 장소 ID보다 좌표가 더 정확하다는 판단). TEMPLE_STAY_PROGRAM이 트리거로
+--      상속받던 컬럼도 api_place_id -> latitude/longitude로 같이 바뀜(support_english와 동일한 방식).
+--   6) TEMPLE에 대표 이미지 컬럼(image_url) 추가.
+--   7) TEMPLE에 주소 컬럼(address) 추가.
 -- =====================================================================
 
 SET NAMES utf8mb4;
@@ -77,7 +80,12 @@ CREATE TABLE USER (
 CREATE TABLE TEMPLE (
     temple_id        BIGINT       NOT NULL AUTO_INCREMENT COMMENT '사찰 고유 번호',
     name              VARCHAR(100) NOT NULL COMMENT '사찰 이름',
-    api_place_id      VARCHAR(100) NOT NULL COMMENT '지도 API 장소 ID (카카오 로컬 API 검색 결과의 id)',
+    image_url         VARCHAR(255) NULL COMMENT '사찰 대표 이미지 경로',
+    -- 지도 API 장소 ID(api_place_id) 대신 좌표를 직접 저장 - 장소 ID보다 정확함.
+    -- 위도(latitude) 범위 -90~90, 경도(longitude) 범위 -180~180, 소수점 7자리(약 1cm 오차) 기준.
+    latitude          DECIMAL(10,7) NOT NULL COMMENT '위도',
+    longitude         DECIMAL(10,7) NOT NULL COMMENT '경도',
+    address           VARCHAR(255) NOT NULL COMMENT '주소',
     region            VARCHAR(20)  NOT NULL COMMENT '지역(시/도) 필터',
     location_type     ENUM('바다','산','강','도심') NOT NULL COMMENT '장소 필터',
     support_english   BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '영어 지원 여부',
@@ -86,7 +94,6 @@ CREATE TABLE TEMPLE (
     login_id          VARCHAR(30)  NOT NULL COMMENT '사찰 관리자 계정 아이디 (@ 시작 고정)',
     password          VARCHAR(255) NOT NULL COMMENT '사찰 관리자 계정 비밀번호(암호화)',
     PRIMARY KEY (temple_id),
-    UNIQUE KEY uq_temple_api_place_id (api_place_id),
     UNIQUE KEY uq_temple_login_id (login_id),
     CONSTRAINT chk_temple_login_id_at
         CHECK (login_id LIKE '@%')
@@ -110,12 +117,13 @@ CREATE TABLE TEMPLE_STAY_PROGRAM (
     price             INT          NOT NULL COMMENT '참가 비용(원, 1인 기준)',
     duration          VARCHAR(20)  NOT NULL COMMENT '진행 기간 표기(예: 당일, 1박 2일)',
     max_participant   INT          NOT NULL DEFAULT 20 COMMENT '최대 인원 (전 프로그램 공통 20명 고정)',
-    -- 아래 두 컬럼은 관리자가 직접 입력해도 저장 시점에 트리거가 소속 TEMPLE의 값으로 덮어씀
+    -- 아래 컬럼들은 관리자가 직접 입력해도 저장 시점에 트리거가 소속 TEMPLE의 값으로 덮어씀
     -- (trg_program_inherit_before_insert / _before_update 참고).
     -- 한국어는 항상 기본 지원이라 별도 컬럼 없음. 외국어는 영어만 지원 대상이라
     -- support_japanese는 만들지 않음.
     support_english   BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '영어 진행 여부. 트리거로 소속 TEMPLE.support_english 상속',
-    api_place_id      VARCHAR(100) NOT NULL COMMENT '지도 API 장소 ID. 트리거로 소속 TEMPLE.api_place_id 상속',
+    latitude          DECIMAL(10,7) NOT NULL COMMENT '위도. 트리거로 소속 TEMPLE.latitude 상속',
+    longitude         DECIMAL(10,7) NOT NULL COMMENT '경도. 트리거로 소속 TEMPLE.longitude 상속',
     created_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
     PRIMARY KEY (program_id),
     CONSTRAINT fk_program_temple
@@ -125,7 +133,7 @@ CREATE TABLE TEMPLE_STAY_PROGRAM (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='템플스테이 프로그램 (한국어는 기본 지원, 외국어는 영어만 지원)';
 
 -- ---------------------------------------------------------------------
--- TEMPLE_STAY_PROGRAM.support_english / api_place_id를 소속 사찰(TEMPLE)의
+-- TEMPLE_STAY_PROGRAM.support_english / latitude / longitude를 소속 사찰(TEMPLE)의
 -- 현재 값과 항상 동일하게 유지하는 트리거. 프로그램 등록/수정 시 관리자가 이 값들을
 -- 직접 입력하더라도, 저장되는 순간 사찰의 현재 값으로 덮어써진다.
 -- (주의: TEMPLE 쪽 값이 "나중에" 바뀌어도 이미 등록된 프로그램들에는 자동으로
@@ -138,11 +146,13 @@ BEFORE INSERT ON TEMPLE_STAY_PROGRAM
 FOR EACH ROW
 BEGIN
     DECLARE v_support_english BOOLEAN;
-    DECLARE v_api_place_id VARCHAR(100);
-    SELECT support_english, api_place_id INTO v_support_english, v_api_place_id
+    DECLARE v_latitude DECIMAL(10,7);
+    DECLARE v_longitude DECIMAL(10,7);
+    SELECT support_english, latitude, longitude INTO v_support_english, v_latitude, v_longitude
       FROM TEMPLE WHERE temple_id = NEW.temple_id;
     SET NEW.support_english = v_support_english;
-    SET NEW.api_place_id = v_api_place_id;
+    SET NEW.latitude = v_latitude;
+    SET NEW.longitude = v_longitude;
 END$$
 
 CREATE TRIGGER trg_program_inherit_before_update
@@ -150,11 +160,13 @@ BEFORE UPDATE ON TEMPLE_STAY_PROGRAM
 FOR EACH ROW
 BEGIN
     DECLARE v_support_english BOOLEAN;
-    DECLARE v_api_place_id VARCHAR(100);
-    SELECT support_english, api_place_id INTO v_support_english, v_api_place_id
+    DECLARE v_latitude DECIMAL(10,7);
+    DECLARE v_longitude DECIMAL(10,7);
+    SELECT support_english, latitude, longitude INTO v_support_english, v_latitude, v_longitude
       FROM TEMPLE WHERE temple_id = NEW.temple_id;
     SET NEW.support_english = v_support_english;
-    SET NEW.api_place_id = v_api_place_id;
+    SET NEW.latitude = v_latitude;
+    SET NEW.longitude = v_longitude;
 END$$
 
 DELIMITER ;
