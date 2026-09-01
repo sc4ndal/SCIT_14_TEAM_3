@@ -124,9 +124,9 @@ public class UserController {
 							  Model model) {
 		
 		// email_verified hidden 필드는 화면 표시용일 뿐 안 믿음 - 세션에 실제로 인증된 이메일인지 직접 확인.
-		// 이메일 자체는 registerLocal()에서도 선택 입력으로 취급하므로, 입력했을 때만 인증을 강제한다.
+		// 이메일은 필수 입력으로 취급함.
 		String email = request.getEmail();
-		if (email != null && !email.isBlank() && !emailVerificationService.isVerified(email, session)) {
+		if (email == null || email.isBlank() || !emailVerificationService.isVerified(email, session)) {
 			redirectAttributes.addFlashAttribute("signupError", "이메일 인증을 완료해주세요.");
 			return "redirect:/signup?mode=local";
 		}
@@ -227,6 +227,14 @@ public class UserController {
 			session.removeAttribute(PENDING_KAKAO_NICKNAME);
 			session.removeAttribute(KakaoOAuthService.ACCESS_TOKEN_SESSION_KEY);
 			throw new BindException(bindingResult);   // → GlobalExceptionHandler.handleBind()
+		}
+
+		// 로컬 회원가입과 동일하게 이메일을 필수로 요구함 - 클라이언트가 보낸 값은 안 믿고
+		// 세션에 실제로 인증된 이메일인지 서버가 직접 확인 (카카오 세션은 유지해서 같은 폼에서 재시도 가능)
+		String email = request.getEmail();
+		if (email == null || email.isBlank() || !emailVerificationService.isVerified(email, session)) {
+			redirectAttributes.addFlashAttribute("signupError", "이메일 인증을 완료해주세요.");
+			return "redirect:/signup?mode=kakao";
 		}
 
 		try {

@@ -81,42 +81,19 @@
 
                         <!-- 프로필 아이콘은 컬럼 추가 부담으로 빼기로 결정 (2026-08-26) -->
 
-                        <!-- 일반회원은 법명, 사찰계정은 사찰명 (AppUserDetails.getNickname()) -->
-                        <span class="userEntity-nickname"
-                              th:text="${#authentication.principal.nickname}">
-                            닉네임명
-                        </span>
+                        <!-- 닉네임에 마우스 올리면 마이페이지 드롭다운이 바로 아래로 뜸(별도 트리거 행 없앰) -->
+                        <div class="mypage-menu">
+                            <!-- 일반회원은 법명, 사찰계정은 사찰명 (AppUserDetails.getNickname()) -->
+                            <span class="userEntity-nickname"
+                                  th:text="${#authentication.principal.nickname}">
+                                닉네임명
+                            </span>
+                            <!-- 사찰 등록 요청 대기 알림 - 드롭다운 열지 않아도 바로 보이도록 닉네임 우측상단에 표시 -->
+                            <span class="notice-dot nickname-dot" sec:authorize="hasRole('ADMIN')"
+                                  th:if="${pendingTempleRequestCount > 0}"></span>
 
-                        <span class="identity-divider"></span>
-
-                        <!-- 로그아웃 -->
-                        <form th:action="@{/logout}"
-                              method="post"
-                              class="logout-form">
-
-                            <button type="submit"
-                                    class="logout-button">
-                                로그아웃
-                            </button>
-                        </form>
-
-                    </div>
-
-
-                    <!-- 마이페이지 트리거 + dropdown
-                         userEntity-identity 줄 바로 아래에 오버레이로 표시됨 -->
-                    <div class="mypage-menu">
-                        <a th:href="@{/mypage}"
-                           class="mypage-title">
-                            마이페이지
-
-                            <svg class="mypage-caret" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </a>
-
-                        <!-- 일반회원/사찰계정: 기존 8개 그대로 -->
-                        <div class="mypage-dropdown" sec:authorize="!hasRole('ADMIN')">
+                            <!-- 일반회원/사찰계정: 기존 8개 그대로 -->
+                            <div class="mypage-dropdown" sec:authorize="!hasRole('ADMIN')">
 
                             <a th:href="@{/mypage/edit}">
                                 회원정보수정
@@ -143,19 +120,34 @@
                                 좋아요한 리뷰
                             </a>
 
+                            </div>
+
+                            <!-- 사이트 관리자: 예약/리뷰/관심 등 일반회원 전용 기능은 필요없어서 뺌 -->
+                            <div class="mypage-dropdown" sec:authorize="hasRole('ADMIN')">
+
+                                <a th:href="@{/admin/manage}">
+                                    관리
+                                </a>
+                                <a th:href="@{/admin/temple-requests}" class="notice-link">
+                                    사찰 등록 요청 목록
+                                    <span class="notice-dot" th:if="${pendingTempleRequestCount > 0}"></span>
+                                </a>
+
+                            </div>
                         </div>
 
-                        <!-- 사이트 관리자: 예약/리뷰/관심 등 일반회원 전용 기능은 필요없어서 뺌 -->
-                        <div class="mypage-dropdown" sec:authorize="hasRole('ADMIN')">
+                        <span class="identity-divider"></span>
 
-                            <a th:href="@{/mypage/edit}">
-                                회원정보수정
-                            </a>
-                            <a th:href="@{/admin/temple-requests}">
-                                사찰 등록 요청 목록
-                            </a>
+                        <!-- 로그아웃 -->
+                        <form th:action="@{/logout}"
+                              method="post"
+                              class="logout-form">
 
-                        </div>
+                            <button type="submit"
+                                    class="logout-button">
+                                로그아웃
+                            </button>
+                        </form>
 
                     </div>
 

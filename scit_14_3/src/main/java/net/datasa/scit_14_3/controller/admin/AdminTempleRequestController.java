@@ -3,14 +3,12 @@ package net.datasa.scit_14_3.controller.admin;
 import lombok.RequiredArgsConstructor;
 import net.datasa.scit_14_3.domain.dto.TempleDTO;
 import net.datasa.scit_14_3.domain.dto.TempleRegistrationRequestDto;
-import net.datasa.scit_14_3.service.CloudinaryService;
 import net.datasa.scit_14_3.service.EmailVerificationService;
 import net.datasa.scit_14_3.service.TempleRegistrationRequestService;
 import net.datasa.scit_14_3.service.TempleService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.SecureRandom;
@@ -27,14 +25,13 @@ public class AdminTempleRequestController {
 	private final TempleRegistrationRequestService requestService;
 	private final TempleService templeService;
 	private final EmailVerificationService emailVerificationService;
-	private final CloudinaryService cloudinaryService;
 
 	private static final String ID_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
 	private static final SecureRandom RANDOM = new SecureRandom();
 
 	@GetMapping("/admin/temple-requests")
 	public String list(Model model) {
-		model.addAttribute("requests", requestService.getAll());
+		model.addAttribute("requests", requestService.getPending());
 		return "admin/templeRequestList";
 	}
 
@@ -44,37 +41,32 @@ public class AdminTempleRequestController {
 		return "admin/templeRequestDetail";
 	}
 
-	@GetMapping("/admin/temples/new")
-	public String newTempleForm(@RequestParam(required = false) Long fromRequest, Model model) {
-		if (fromRequest != null) {
-			model.addAttribute("prefill", requestService.getInfo(fromRequest));
-			model.addAttribute("fromRequest", fromRequest);
-		}
-		return "admin/templeForm";
-	}
+	/** 상세보기의 "등록" 버튼 - 요청 내용 그대로 바로 사찰 생성 + 계정정보 이메일 발송까지 한 번에 처리. */
+	@PostMapping("/admin/temple-requests/{requestId}/approve")
+	public String approve(@PathVariable Long requestId, RedirectAttributes redirectAttributes) {
+		TempleRegistrationRequestDto request = requestService.getInfo(requestId);
 
-	@PostMapping("/admin/temples")
-	public String createTemple(@ModelAttribute TempleDTO dto,
-								@RequestParam(required = false) MultipartFile imageFile,
-								@RequestParam(required = false) Long fromRequest,
-								RedirectAttributes redirectAttributes) {
-		// 파일을 새로 골랐을 때만 여기서 Cloudinary에 올림 - 폼 작성 중간에 선택 즉시 올려버리면
-		// 등록을 취소해도 이미지만 Cloudinary에 남는 문제가 있어서, 실제 등록이 확정되는
-		// 이 시점(제출)에만 업로드함. 안 고르면 hidden imageUrl(요청에 있던 기존 값)을 그대로 씀.
-		if (imageFile != null && !imageFile.isEmpty()) {
-			dto.setImageUrl(cloudinaryService.upload(imageFile));
-		}
+		TempleDTO dto = TempleDTO.builder()
+				.name(request.getName())
+				.imageUrl(request.getImageUrl())
+				.address(request.getAddress())
+				.latitude(request.getLatitude())
+				.longitude(request.getLongitude())
+				.region(request.getRegion())
+				.supportSea(request.isSupportSea())
+				.supportMountain(request.isSupportMountain())
+				.supportRiver(request.isSupportRiver())
+				.supportUrban(request.isSupportUrban())
+				.supportEnglish(request.isSupportEnglish())
+				.specialNotice(request.getSpecialNotice())
+				.build();
 
 		String loginId = randomLoginId();
 		String rawPassword = randomPassword();
-
 		TempleDTO saved = templeService.register(dto, loginId, rawPassword);
 
-		if (fromRequest != null) {
-			TempleRegistrationRequestDto request = requestService.getInfo(fromRequest);
-			emailVerificationService.sendTempleCredentials(request.getContactEmail(), loginId, rawPassword);
-			requestService.markApproved(fromRequest, saved.getTempleId());
-		}
+		emailVerificationService.sendTempleCredentials(request.getContactEmail(), loginId, rawPassword);
+		requestService.markApproved(requestId, saved.getTempleId());
 
 		redirectAttributes.addFlashAttribute("createSuccess", true);
 		return "redirect:/admin/temple-requests";

@@ -496,8 +496,10 @@ function findSubmitBlockReason(){
     if(isLocal){
         if(!dupState.loginId) return msg('loginIdCheckRequiredMsg');
         if(!validatePasswordMatch()) return msg('passwordMismatchMsg');
-        if(document.getElementById('emailVerified').value !== 'true') return msg('emailVerifyRequiredMsg');
     }
+    // 카카오 가입도 로컬과 동일하게 이메일 인증을 필수로 함 (카카오 계정에 동의된 이메일이 있으면
+    // 아래 kakaoSection 프리필 스크립트가 자동으로 채우고 인증 처리해줌)
+    if(document.getElementById('emailVerified').value !== 'true') return msg('emailVerifyRequiredMsg');
 
     if(!document.getElementById('agreeTerms').checked) return msg('agreeTermsRequiredMsg');
 
