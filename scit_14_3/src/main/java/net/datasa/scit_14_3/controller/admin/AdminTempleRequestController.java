@@ -1,11 +1,11 @@
 package net.datasa.scit_14_3.controller.admin;
 
 import lombok.RequiredArgsConstructor;
-import net.datasa.scit_14_3.domain.dto.TempleDTO;
-import net.datasa.scit_14_3.domain.dto.TempleRegistrationRequestDto;
-import net.datasa.scit_14_3.service.EmailVerificationService;
-import net.datasa.scit_14_3.service.TempleRegistrationRequestService;
-import net.datasa.scit_14_3.service.TempleService;
+import net.datasa.scit_14_3.domain.dto.temple.TempleDTO;
+import net.datasa.scit_14_3.domain.dto.templeRequest.TempleRegistrationRequestDto;
+import net.datasa.scit_14_3.service.user.EmailVerificationService;
+import net.datasa.scit_14_3.service.temple.TempleRegistrationRequestService;
+import net.datasa.scit_14_3.service.temple.TempleService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;

@@ -6,19 +6,17 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.datasa.scit_14_3.domain.dto.KakaoAdditionalRequestDto;
-import net.datasa.scit_14_3.domain.dto.LocalSignupRequestDto;
-import net.datasa.scit_14_3.domain.dto.UserResponseDto;
+import net.datasa.scit_14_3.domain.dto.user.KakaoAdditionalRequestDto;
+import net.datasa.scit_14_3.domain.dto.user.LocalSignupRequestDto;
+import net.datasa.scit_14_3.domain.dto.user.UserResponseDto;
 import net.datasa.scit_14_3.domain.dto.kakao.KakaoTokenResponse;
 import net.datasa.scit_14_3.domain.dto.kakao.KakaoUserInfoResponse;
 import net.datasa.scit_14_3.exception.DuplicateFieldException;
-import net.datasa.scit_14_3.security.AppUserDetails;
 import net.datasa.scit_14_3.security.SessionLoginService;
-import net.datasa.scit_14_3.service.EmailVerificationService;
-import net.datasa.scit_14_3.service.KakaoOAuthService;
-import net.datasa.scit_14_3.service.UserService;
+import net.datasa.scit_14_3.service.user.EmailVerificationService;
+import net.datasa.scit_14_3.service.user.KakaoOAuthService;
+import net.datasa.scit_14_3.service.user.UserService;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindException;
@@ -45,12 +43,12 @@ public class UserController {
 
 	@GetMapping("/login")
 	public String login() {
-		return "login";
+		return "auth/login";
 	}
 
 	@GetMapping("/signupSelect")
 	public String signupSelect() {
-		return "signupSelect";
+		return "auth/signupSelect";
 	}
 
 	@GetMapping("/signup")
@@ -71,7 +69,7 @@ public class UserController {
 			model.addAttribute("kakaoNickname", session.getAttribute(PENDING_KAKAO_NICKNAME));
 		}
 
-		return "signup";
+		return "auth/signup";
 	}
 
 	// ================= 중복확인 (아이디/닉네임/이메일) =================
@@ -257,21 +255,12 @@ public class UserController {
 	@PreAuthorize(("hasRole('USER')"))
 	@GetMapping("/mypage")
 	public String mypage(Model model) {
-		
-		return "mypaeg/mypage";
+
+		return "mypage/mypage";
 	}
-	
-	@GetMapping("/mypage/edit")
-	public String edit(@AuthenticationPrincipal AppUserDetails principal, Model model) {
-		
-		model.addAttribute("user",
-				userService.findByLoginId(principal.getUsername())
-						.orElseThrow(() -> new IllegalStateException("인증 사용자를 DB에서 찾을 수 없습니다.")));
-		model.addAttribute("isTempleAccount", principal.isTempleAccount());
-		
-		return "mypage/edit";
-	}
-	
+
+	// /mypage/edit은 MypageController가 담당함 (중복 매핑이라 여기서는 뺌)
+
 	// ===== 마이페이지 허브(/mypage) 카드에서 연결되는 하위 페이지들 =====
 	// 지금은 화면 껍데기만 있는 상태. 실제 데이터 바인딩은 각 기능 담당이 채운다.
 	
@@ -297,7 +286,7 @@ public class UserController {
 	
 	@GetMapping("/mypage/favorites/quotes")
 	public String favoriteQuotes() {
-		return "mypage/favorites/qotes";
+		return "mypage/favorites/quotes";
 	}
 	
 	@GetMapping("/mypage/favorites/foods")

@@ -3,7 +3,7 @@ package net.datasa.scit_14_3.security;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import net.datasa.scit_14_3.domain.dto.UserResponseDto;
+import net.datasa.scit_14_3.domain.dto.user.UserResponseDto;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

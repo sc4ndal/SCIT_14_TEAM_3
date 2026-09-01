@@ -53,18 +53,6 @@ body{
 }
 .lang-opt.active{color:#fff;background:var(--wood-dark);font-weight:700;}
 .lang-opt:hover:not(.active){color:var(--wood-dark);}
-.lang-sep{color:var(--border);font-size:12px;}
-.mode-label{
-    display:inline-block;
-    margin:20px 32px 20px;
-    padding:5px 14px;
-    background:#efe6d3;
-    color:var(--wood-dark);
-    font-size:12px;
-    font-weight:700;
-    border-radius:20px;
-    letter-spacing:.02em;
-}
 
 /* 원래 form{...} 전역 선택자였는데, admin 페이지의 작은 인라인 삭제/승인 폼까지 이 패딩을
    먹어서 버튼이 부풀어버리는 문제가 있었음 - 카드 본문을 감싸는 "메인 폼"에만 적용되도록 스코프함 */
@@ -190,7 +178,6 @@ input:focus,select:focus{outline:none;border-color:var(--wood);}
     align-items:center;
     justify-content:space-between;
 }
-.kakao-box .id-val{font-family:monospace;font-weight:700;color:var(--wood-dark);}
 .badge{
     font-size:11px;
     background:var(--teal);
