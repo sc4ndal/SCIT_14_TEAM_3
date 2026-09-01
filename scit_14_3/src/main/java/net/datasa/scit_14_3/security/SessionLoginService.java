@@ -40,7 +40,7 @@ public class SessionLoginService {
                 null, // 사찰 계정이 아니므로 templeId 없음
                 user.getNickname(),
                 kakaoAccessToken,
-                false // 사찰 계정이 아니므로 비밀번호 강제변경 대상 아님
+                false// 사찰 계정이 아니므로 비밀번호 강제변경 대상 아님
         );
 
         Authentication authentication =

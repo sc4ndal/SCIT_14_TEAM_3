@@ -34,6 +34,7 @@ public class WebSecurityConfig {
 	// 로그인 없이 접근 가능한 경로
 	private static final List<String> PUBLIC_URLS = List.of(
 			"/",
+			"/favicon.ico",
 			"/css/**",
 			"/js/**",
 			"/images/**",

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <link rel="stylesheet" th:href="@{/css/common.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/css/mypage.css}" type="text/css">
+    <script defer src="/js/common.js"></script>
+    <title>마이페이지 · 佛선자</title>
+</head>
+
+<body>
+
+<!-- =====================================================
+     HEADER  (fragments/common-includes :: commonIncludes)
+===================================================== -->
+<header>
+    <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+</header>
+
+
+<main class="mypage-main">
+
+    <div class="mypage-inner">
+
+        <!-- =========================================
+             HERO
+        ========================================= -->
+        <section class="mypage-hero">
+
+            <span class="eyebrow">
+                <span></span>
+                MY PAGE
+                <span></span>
+            </span>
+
+            <h1>
+                <span class="nickname" sec:authorize="isAuthenticated()"
+                      th:text="${#authentication.principal.nickname}">닉네임</span>님,
+                오늘도 평안하시길
+            </h1>
+
+            <p>
+                내가 저장하고 남긴 것들을 한자리에서 돌아봅니다.
+            </p>
+
+        </section>
+
+
+        <div class="mypage-divider"></div>
+
+
+        <!-- =========================================
+             CARD GRID
+             헤더 드롭다운(fragments/common-includes.html)의
+             일반회원 메뉴 8개와 같은 경로로 연결
+        ========================================= -->
+        <section class="mypage-grid">
+
+            <a class="mypage-card" th:href="@{/mypage/edit}">
+                <span class="card-kanji" aria-hidden="true">名</span>
+                <span class="card-title">회원정보수정</span>
+                <span class="card-desc">법명과 연락처 등 내 정보를 확인하고 수정합니다.</span>
+                <span class="card-arrow">바로가기 →</span>
+            </a>
+
+            <a class="mypage-card" th:href="@{/mypage/reservations}">
+                <span class="card-kanji" aria-hidden="true">約</span>
+                <span class="card-title">예약목록</span>
+                <span class="card-desc">신청한 템플스테이 예약 내역을 확인합니다.</span>
+                <span class="card-arrow">바로가기 →</span>
+            </a>
+
+            <a class="mypage-card" th:href="@{/mypage/reviews}">
+                <span class="card-kanji" aria-hidden="true">筆</span>
+                <span class="card-title">내가 쓴 리뷰</span>
+                <span class="card-desc">사찰과 프로그램에 남긴 후기를 모아봅니다.</span>
+                <span class="card-arrow">바로가기 →</span>
+            </a>
+
+            <a class="mypage-card" th:href="@{/mypage/favorites/temples}">
+                <span class="card-kanji" aria-hidden="true">寺</span>
+                <span class="card-title">관심 사찰</span>
+                <span class="card-desc">저장해 둔 사찰을 다시 찾아봅니다.</span>
+                <span class="card-arrow">바로가기 →</span>
+            </a>
+
+            <a class="mypage-card" th:href="@{/mypage/favorites/events}">
+                <span class="card-kanji" aria-hidden="true">燈</span>
+                <span class="card-title">관심 행사</span>
+                <span class="card-desc">관심 등록한 행사와 법회 일정입니다.</span>
+                <span class="card-arrow">바로가기 →</span>
+            </a>
+
+            <a class="mypage-card" th:href="@{/mypage/favorites/quotes}">
+                <span class="card-kanji" aria-hidden="true">言</span>
+                <span class="card-title">저장한 불교 한마디</span>
+                <span class="card-desc">마음에 담아둔 불교 한마디 모음입니다.</span>
+                <span class="card-arrow">바로가기 →</span>
+            </a>
+
+            <a class="mypage-card" th:href="@{/mypage/favorites/foods}">
+                <span class="card-kanji" aria-hidden="true">食</span>
+                <span class="card-title">관심 사찰음식</span>
+                <span class="card-desc">저장한 사찰음식을 한눈에 모아봅니다.</span>
+                <span class="card-arrow">바로가기 →</span>
+            </a>
+
+            <a class="mypage-card" th:href="@{/mypage/favorites/reviews}">
+                <span class="card-kanji" aria-hidden="true">心</span>
+                <span class="card-title">좋아요한 리뷰</span>
+                <span class="card-desc">공감을 눌러 둔 다른 사람의 후기입니다.</span>
+                <span class="card-arrow">바로가기 →</span>
+            </a>
+
+        </section>
+
+    </div>
+
+</main>
+
+
+<!-- =====================================================
+     FOOTER  (fragments/layout :: footer)
+===================================================== -->
+<div th:replace="~{fragments/layout :: footer}"></div>
+
+
+</body>
+</html>

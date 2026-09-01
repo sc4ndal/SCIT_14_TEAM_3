@@ -1,0 +1,314 @@
+/* ======================================================
+   mypage.css — 마이페이지(/mypage) 전용
+   ------------------------------------------------------
+   색상/폰트 토큰은 common.css(:root)에서 정의된 --bg/--text/--serif/
+   --brown 등을 그대로 재사용한다. 헤더(.site-header) 스타일도 common.css에
+   이미 있으므로 여기서는 마이페이지 본문과 layout::footer 조각만 꾸민다.
+   분위기는 home.css를 참고 — 따뜻한 종이색 배경, 세리프 제목, 얇은 라인,
+   낮은 채도의 갈색 포인트, 큼직한 한자 워터마크.
+====================================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+
+    background: var(--bg);
+    color: var(--text);
+
+    font-family: var(--sans);
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+
+/* ======================================================
+   LAYOUT
+====================================================== */
+
+.mypage-main {
+    /* 고정 헤더(.site-header, height 74px) 아래로 본문을 내림 */
+    padding-top: 74px;
+}
+
+.mypage-inner {
+    width: min(1120px, calc(100% - 140px));
+
+    margin: 0 auto;
+
+    padding-top: 96px;
+    padding-bottom: 120px;
+}
+
+
+/* ======================================================
+   HERO
+====================================================== */
+
+.mypage-hero {
+    text-align: center;
+}
+
+.mypage-hero .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+
+    font-size: 13px;
+    letter-spacing: .04em;
+
+    color: var(--text-tertiary);
+}
+
+.mypage-hero .eyebrow span {
+    width: 40px;
+    height: 1px;
+
+    background: rgba(39, 33, 27, .10);
+}
+
+.mypage-hero h1 {
+    margin: 26px 0 0;
+
+    font-family: var(--serif);
+    font-size: 36px;
+    font-weight: 500;
+
+    line-height: 1.3;
+    letter-spacing: -.045em;
+}
+
+.mypage-hero h1 .nickname {
+    color: var(--brown);
+}
+
+.mypage-hero p {
+    margin: 20px 0 0;
+
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 2;
+
+    color: var(--text-tertiary);
+}
+
+
+/* ======================================================
+   DIVIDER
+====================================================== */
+
+.mypage-divider {
+    width: 100%;
+    height: 1px;
+
+    margin: 70px 0 54px;
+
+    background: var(--line);
+}
+
+
+/* ======================================================
+   CARD GRID
+====================================================== */
+
+.mypage-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+}
+
+.mypage-card {
+    position: relative;
+
+    display: flex;
+    flex-direction: column;
+
+    min-height: 190px;
+
+    padding: 28px 26px 24px;
+
+    overflow: hidden;
+
+    border: 1px solid var(--line);
+    border-radius: 16px;
+
+    background: rgba(253, 250, 246, .72);
+
+    transition:
+            transform .35s cubic-bezier(.22,.61,.36,1),
+            border-color .3s ease,
+            box-shadow .35s ease;
+
+    /* 로드 시 순차 등장 */
+    opacity: 0;
+    transform: translateY(16px);
+    animation: mypage-card-in .6s cubic-bezier(.22,.61,.36,1) forwards;
+}
+
+.mypage-card:nth-child(1) { animation-delay: .04s; }
+.mypage-card:nth-child(2) { animation-delay: .09s; }
+.mypage-card:nth-child(3) { animation-delay: .14s; }
+.mypage-card:nth-child(4) { animation-delay: .19s; }
+.mypage-card:nth-child(5) { animation-delay: .24s; }
+.mypage-card:nth-child(6) { animation-delay: .29s; }
+.mypage-card:nth-child(7) { animation-delay: .34s; }
+.mypage-card:nth-child(8) { animation-delay: .39s; }
+
+@keyframes mypage-card-in {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.mypage-card:hover {
+    transform: translateY(-4px);
+
+    border-color: rgba(39, 33, 27, .18);
+    box-shadow: 0 14px 34px rgba(30, 22, 16, .06);
+}
+
+.mypage-card .card-kanji {
+    position: absolute;
+
+    right: -6px;
+    bottom: -26px;
+
+    font-family: var(--serif);
+    font-size: 110px;
+    font-weight: 400;
+    line-height: .9;
+
+    user-select: none;
+    pointer-events: none;
+}
+
+.mypage-card:nth-child(4n+1) .card-kanji { color: rgba(155, 104, 69, .10); }
+.mypage-card:nth-child(4n+2) .card-kanji { color: rgba(92, 122, 98, .10); }
+.mypage-card:nth-child(4n+3) .card-kanji { color: rgba(107, 122, 158, .10); }
+.mypage-card:nth-child(4n)   .card-kanji { color: rgba(138, 110, 60, .10); }
+
+.mypage-card .card-title {
+    position: relative;
+    z-index: 1;
+
+    font-family: var(--serif);
+    font-size: 19px;
+    font-weight: 500;
+    letter-spacing: -.03em;
+}
+
+.mypage-card .card-desc {
+    position: relative;
+    z-index: 1;
+
+    margin-top: 10px;
+
+    font-size: 12.5px;
+    line-height: 1.75;
+
+    color: var(--text-tertiary);
+}
+
+.mypage-card .card-arrow {
+    position: relative;
+    z-index: 1;
+
+    margin-top: auto;
+    padding-top: 18px;
+
+    font-size: 13px;
+
+    color: var(--brown);
+
+    opacity: 0;
+    transform: translateX(-4px);
+
+    transition:
+            opacity .25s ease,
+            transform .25s ease;
+}
+
+.mypage-card:hover .card-arrow {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+
+/* ======================================================
+   FOOTER (fragments/layout :: footer — .site-footer)
+====================================================== */
+
+.site-footer {
+    margin-top: 0;
+
+    padding: 46px 24px 64px;
+
+    text-align: center;
+
+    background: var(--muted-bg);
+    border-top: 1px solid var(--line);
+
+    color: var(--text-secondary);
+
+    font-size: 14px;
+}
+
+.site-footer p {
+    margin: 4px 0;
+}
+
+.site-footer__sub {
+    font-size: 13px;
+    opacity: .82;
+}
+
+
+/* ======================================================
+   RESPONSIVE
+====================================================== */
+
+@media (max-width: 980px) {
+    .mypage-inner {
+        width: calc(100% - 64px);
+    }
+
+    .mypage-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 560px) {
+    .mypage-inner {
+        width: calc(100% - 40px);
+
+        padding-top: 68px;
+    }
+
+    .mypage-hero h1 {
+        font-size: 28px;
+    }
+
+    .mypage-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mypage-card {
+        min-height: 0;
+    }
+}
+
+
+/* 모션 최소화 선호 사용자 */
+@media (prefers-reduced-motion: reduce) {
+    .mypage-card {
+        opacity: 1;
+        transform: none;
+        animation: none;
+    }
+}
