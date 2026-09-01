@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
+import static org.springframework.util.StringUtils.hasText;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -31,6 +33,11 @@ public class UserService {
     }
 
     public boolean isEmailAvailable(String email) {
+        // 빈 값으로 물어보면 existsByEmail(null)이 "email IS NULL"로 번역돼서
+        // 이메일 없이 가입한 회원 때문에 "사용 중"으로 잘못 답한다.
+        if (!hasText(email)) {
+            return true;
+        }
         return !userRepository.existsByEmail(email);
     }
 
@@ -76,13 +83,19 @@ public class UserService {
         if  (userRepository.existsById(dto.getLoginId())) {
             throw new DuplicateFieldException("이미 가입 완료된 아이디입니다.");
         }
-        if  (userRepository.existsById(dto.getNickname())) {
+        // 법명(nickname)은 PK(login_id)가 아니라 nickname 컬럼으로 검사해야 한다.
+        // existsById로 보면 다른 사람 아이디와 같은 법명만 걸리고, 정작 진짜 법명 중복은
+        // 그냥 통과해서 DB UNIQUE 제약에 걸려 500으로 떨어진다.
+        if  (userRepository.existsByNickname(dto.getNickname())) {
             throw new DuplicateFieldException("이미 가입 완료된 법명입니다.");
         }
-        if  (userRepository.existsByEmail(dto.getEmail())) {
+        // 이메일은 선택 입력이라 비어 있을 수 있다. 이때 existsByEmail(null)을 부르면
+        // Spring Data가 "email IS NULL"로 번역해서, 이메일 없이 가입한 회원이 한 명이라도
+        // 있으면 그 뒤로는 아무도 이메일 없이 가입할 수 없게 된다 - 값이 있을 때만 검사한다.
+        if  (hasText(dto.getEmail()) && userRepository.existsByEmail(dto.getEmail())) {
             throw new DuplicateFieldException("이미 가입 완료된 이메일입니다.");
         }
-        
+
         UserEntity user = new UserEntity();
         user.setLoginId(loginId);
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -112,10 +125,11 @@ public class UserService {
         if  (userRepository.existsById(loginId)) {
             throw new DuplicateFieldException("이미 가입 완료된 아이디입니다.");
         }
-        if  (userRepository.existsById(dto.getNickname())) {
+        // registerLocal과 같은 이유로 nickname 컬럼 기준, 이메일은 값이 있을 때만 검사한다.
+        if  (userRepository.existsByNickname(dto.getNickname())) {
             throw new DuplicateFieldException("이미 가입 완료된 법명입니다.");
         }
-        if  (userRepository.existsByEmail(dto.getEmail())) {
+        if  (hasText(dto.getEmail()) && userRepository.existsByEmail(dto.getEmail())) {
             throw new DuplicateFieldException("이미 가입 완료된 이메일입니다.");
         }
         UserEntity user = new UserEntity();

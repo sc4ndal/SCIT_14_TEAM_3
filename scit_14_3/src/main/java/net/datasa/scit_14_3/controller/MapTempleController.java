@@ -11,9 +11,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 @Controller
 @RequiredArgsConstructor
 public class MapTempleController {
+	// 사찰 목록 화면은 mapTempleList.html -> findTemple.html로 옮겨가면서 /findtemple이 담당하게 됐다.
+	// 예전 주소로 들어오는 링크가 깨지지 않도록 리다이렉트만 남긴다.
 	@GetMapping("/maptemples")
 	public String getMapTemple() {
-		return "mapTemple";
+		return "redirect:/findtemple";
 	}
 	@GetMapping("/maptemplestayviews/{programId}")
 	public String getMapTempleStayView(@PathVariable Long programId, Model model) {
