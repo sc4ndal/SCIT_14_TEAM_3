@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html xmlns:th="thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
     <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=4d97c12d7e3e28e5dd08a2f00a58025d&libraries=services"></script>
+    <link rel="stylesheet" href="/css/common.css">
     <style>
         :root {
           --bg: #efe9dd;
@@ -646,8 +648,13 @@
     </style>
 </head>
 <body>
-
+<div id="auth-info" style="display:none;"
+     sec:authorize="isAuthenticated()"
+     th:attr="data-login-id=${#authentication.principal.username}, data-nickname=${#authentication.principal.nickname}">
+</div>
 <header>
+    <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+
     <h1>템플스테이 예약</h1>
 
     <!-- 3단계 진행 표시 -->
@@ -823,7 +830,7 @@
 
             <div class="form-item">
                 <label for="res-note">요청사항</label>
-                <textarea id="res-note" name="note"></textarea>
+                <textarea id="res-note" name="note" placeholder="예) 채식 식단이 필요합니다 / 거동이 불편하여 1층 방을 희망합니다 / 반려동물 동반 문의 등 요청사항을 자유롭게 적어주세요"></textarea>
             </div>
 
             <!-- 대표자 정보 (예약 신청자 본인 = RESERVATION_PARTICIPANT의 첫 번째 행 + 연락처) -->
