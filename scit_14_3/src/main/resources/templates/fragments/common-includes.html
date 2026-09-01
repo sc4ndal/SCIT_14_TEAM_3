@@ -1,6 +1,7 @@
 <!--
     <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
-    모든 html에 삽입
+    모든 html에 삽입 - common.js도 이 안에 같이 들어있어서 페이지마다 따로 <script> 안 넣어도 됨
+    (언어 버튼/드롭다운 등은 common.js가 이 마크업을 대상으로 동작함)
 
 -->
 
@@ -129,7 +130,7 @@
                                     관리
                                 </a>
                                 <a th:href="@{/admin/temple-requests}" class="notice-link">
-                                    사찰 등록 요청 목록
+                                    <span>사찰 등록 요청 목록</span>
                                     <span class="notice-dot" th:if="${pendingTempleRequestCount > 0}"></span>
                                 </a>
 
@@ -158,4 +159,21 @@
         </div>
 
     </div>
+
+    <script defer src="/js/common.js"></script>
+</div>
+
+<!--
+    <div th:insert="~{fragments/common-includes :: languageOnly}"></div>
+    로고/로그인/회원가입 없이 언어 전환 버튼 + common.js만 필요한 페이지용
+    (예: EtiquetteSimulation처럼 전체화면 독립 UI라 사이트 헤더를 못 쓰는 곳).
+    th:insert로 써서 감싸는 요소에 위치 지정용 클래스를 따로 줄 수 있음.
+-->
+<div class="language-area" th:fragment="languageOnly">
+    <button class="language-button active" data-lang="ko" type="button">한국어</button>
+    <span>·</span>
+    <button class="language-button" data-lang="ja" type="button">日本語</button>
+    <span>·</span>
+    <button class="language-button" data-lang="en" type="button">English</button>
+    <script defer src="/js/common.js"></script>
 </div>

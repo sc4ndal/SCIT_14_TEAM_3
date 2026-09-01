@@ -1,7 +1,7 @@
 package net.datasa.scit_14_3.security;
 
 import lombok.RequiredArgsConstructor;
-import net.datasa.scit_14_3.service.KakaoOAuthService;
+import net.datasa.scit_14_3.service.user.KakaoOAuthService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -58,7 +58,6 @@ public class WebSecurityConfig {
 			"/reservation",
 			"/api/temples",
 			"/api/templestayprograms/**",
-			"/maptemples",
 			"/maptemplestayviews/**",
 			"/findtemple",
 			"/templestayGuide",

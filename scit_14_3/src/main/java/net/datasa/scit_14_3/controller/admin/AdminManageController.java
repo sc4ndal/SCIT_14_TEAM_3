@@ -1,11 +1,11 @@
 package net.datasa.scit_14_3.controller.admin;
 
 import lombok.RequiredArgsConstructor;
-import net.datasa.scit_14_3.domain.dto.TempleDTO;
-import net.datasa.scit_14_3.domain.entity.UserEntity;
-import net.datasa.scit_14_3.service.CloudinaryService;
-import net.datasa.scit_14_3.service.TempleService;
-import net.datasa.scit_14_3.service.UserService;
+import net.datasa.scit_14_3.domain.dto.temple.TempleDTO;
+import net.datasa.scit_14_3.domain.entity.user.UserEntity;
+import net.datasa.scit_14_3.service.integration.CloudinaryService;
+import net.datasa.scit_14_3.service.temple.TempleService;
+import net.datasa.scit_14_3.service.user.UserService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;

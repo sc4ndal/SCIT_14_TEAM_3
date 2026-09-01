@@ -6,13 +6,16 @@
 -->
 <body>
 
-<header th:fragment="header" class="site-header">
-	<div class="site-header__inner">
-		<a class="site-header__logo" th:href="@{/}">산문(山門)</a>
-		<nav class="site-header__nav">
+<!-- class를 site-header가 아니라 subnav로 둔 이유: commonIncludes(fragments/common-includes.html)의
+     루트 div도 site-header 클래스를 쓰는데, 이 헤더는 그 아래 얹혀서 같이 떠 있는 서브 내비게이션이라
+     이름이 겹치면 CSS(position:fixed vs sticky)가 서로 덮어써서 둘 다 깨짐. -->
+<header th:fragment="header" class="subnav">
+	<div class="subnav__inner">
+		<a class="subnav__logo" th:href="@{/}">산문(山門)</a>
+		<nav class="subnav__nav">
 			<a th:href="@{/info/intro}">불교란?</a>
 			<a th:href="@{/info/terms}">불교 용어</a>
-			<a th:href="@{/temples}">사찰 찾기</a>
+			<a th:href="@{/findtemple}">사찰 찾기</a>
 			<a th:href="@{/templestayGuide}">템플스테이</a>
 		</nav>
 	</div>
