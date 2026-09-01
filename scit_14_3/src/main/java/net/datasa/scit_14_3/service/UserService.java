@@ -7,10 +7,13 @@ import net.datasa.scit_14_3.domain.dto.UserResponseDto;
 import net.datasa.scit_14_3.domain.entity.UserEntity;
 import net.datasa.scit_14_3.exception.DuplicateFieldException;
 import net.datasa.scit_14_3.repository.UserRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityNotFoundException;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -36,6 +39,45 @@ public class UserService {
 
     public Optional<UserResponseDto> findByLoginId(String loginId) {
         return userRepository.findById(loginId).map(this::toResponseDto);
+    }
+
+    // ================= 사이트 관리자 - 회원관리 =================
+
+    /** 회원관리 목록 전용 - 사이트 관리자(ADMIN) 계정은 여기서 관리할 대상이 아니라서 뺌. */
+    public List<UserResponseDto> getAllRegularUsers() {
+        return userRepository.findAll().stream()
+                .filter(u -> u.getRole() == UserEntity.Role.USER)
+                .map(this::toResponseDto)
+                .toList();
+    }
+
+    /** 관리자가 회원 정보를 고칠 때 호출. 아이디(PK)/비밀번호/로그인방식은 여기서 건드리지 않음 -
+        닉네임(법명)은 일반회원 본인은 못 바꿔도 관리자는 바꿀 수 있게 허용함. */
+    @Transactional
+    public void updateAdmin(String loginId, String nickname, String name, String phone, String email, UserEntity.Role role) {
+        UserEntity user = userRepository.findById(loginId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 회원을 찾을 수 없습니다."));
+
+        if (!nickname.equals(user.getNickname()) && userRepository.existsByNickname(nickname)) {
+            throw new IllegalStateException("이미 사용 중인 법명입니다.");
+        }
+        if (email != null && !email.equals(user.getEmail()) && userRepository.existsByEmail(email)) {
+            throw new IllegalStateException("이미 사용 중인 이메일입니다.");
+        }
+
+        user.setNickname(nickname);
+        user.setName(name);
+        user.setPhone(phone);
+        user.setEmail(email);
+        user.setRole(role);
+    }
+
+    public void delete(String loginId) {
+        try {
+            userRepository.deleteById(loginId);
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalStateException("이 회원에게 연결된 예약/리뷰 등의 데이터가 있어 삭제할 수 없습니다.");
+        }
     }
     /////////////////
 //    private void validateLoginId(String loginId) {
@@ -76,7 +118,7 @@ public class UserService {
         if  (userRepository.existsById(dto.getLoginId())) {
             throw new DuplicateFieldException("이미 가입 완료된 아이디입니다.");
         }
-        if  (userRepository.existsById(dto.getNickname())) {
+        if  (userRepository.existsByNickname(dto.getNickname())) {
             throw new DuplicateFieldException("이미 가입 완료된 법명입니다.");
         }
         if  (userRepository.existsByEmail(dto.getEmail())) {
@@ -112,7 +154,7 @@ public class UserService {
         if  (userRepository.existsById(loginId)) {
             throw new DuplicateFieldException("이미 가입 완료된 아이디입니다.");
         }
-        if  (userRepository.existsById(dto.getNickname())) {
+        if  (userRepository.existsByNickname(dto.getNickname())) {
             throw new DuplicateFieldException("이미 가입 완료된 법명입니다.");
         }
         if  (userRepository.existsByEmail(dto.getEmail())) {

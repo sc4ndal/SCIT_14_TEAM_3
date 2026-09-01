@@ -9,6 +9,7 @@
     <link rel="stylesheet" th:href="@{/css/home.css}" type="text/css">
     <script defer src="/js/common.js"></script>
     <script defer th:src="@{/js/home.js}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <title>佛선자</title>
 </head>
 
@@ -418,6 +419,14 @@
 
 </button>
 
+
+<script th:if="${submitSuccess}">
+    Swal.fire({
+        icon: 'success',
+        title: '문의가 접수되었습니다',
+        text: '검토 후 입력하신 이메일로 안내드리겠습니다.'
+    });
+</script>
 
 </body>
 </html>

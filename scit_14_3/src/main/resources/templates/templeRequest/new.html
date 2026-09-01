@@ -21,12 +21,14 @@
 		<p class="req-note"><span class="req">*</span> 표시는 필수 입력 항목입니다</p>
 	</div>
 
-	<p class="check-result" style="color:#2f6b5e; text-align:center;" th:if="${submitSuccess}">
-		문의가 접수되었습니다. 검토 후 입력하신 이메일로 안내드리겠습니다.
-	</p>
 	<p class="check-result" style="color:var(--destructive); text-align:center;" th:if="${submitError}" th:text="${submitError}"></p>
 
-	<form th:action="@{/temple-requests}" method="post" enctype="multipart/form-data">
+	<form class="page-form" th:action="@{/temple-requests}" method="post" enctype="multipart/form-data">
+
+		<div style="padding:24px 32px 0;">
+			<button type="button" class="submit" id="openMapPicker" style="width:100%;">지도에서 사찰 검색</button>
+			<p class="hint" style="margin-top:6px;">먼저 검색해서 선택하면 이름/주소/지역/위도/경도가 자동으로 채워집니다</p>
+		</div>
 
 		<fieldset>
 			<legend>사찰 정보</legend>
@@ -34,22 +36,20 @@
 			<div class="field">
 				<label for="name">사찰 이름<span class="req">*</span></label>
 				<input type="text" id="name" name="name" maxlength="100" required>
+				<p class="hint" id="nameNotAllowedHint" style="display:none;color:var(--destructive);">템플스테이가 있는 사찰만 등록 가능합니다</p>
 			</div>
 
 			<div class="field">
 				<label for="imageFile">대표 이미지 <span class="optional-note">(선택)</span></label>
 				<input type="file" id="imageFile" name="imageFile" accept="image/*">
+				<p class="hint">최대 10MB까지 업로드 가능합니다</p>
 				<img id="imagePreview" alt="" style="display:none;max-width:220px;margin-top:8px;border-radius:4px;border:1px solid var(--border);">
 			</div>
 
 			<div class="field">
 				<label for="address">주소<span class="req">*</span></label>
-				<div class="field-inline">
-					<input type="text" id="address" name="address" maxlength="255" style="flex:1;" required>
-					<button type="button" class="btn-check" id="openMapPicker">지도에서 선택</button>
-				</div>
+				<input type="text" id="address" name="address" maxlength="255" required>
 				<input type="text" id="addressDetail" maxlength="100" placeholder="상세주소 (동/호수 등, 선택)" style="margin-top:8px;">
-				<p class="hint">지도에서 위치를 고르면 이름/주소/지역/위도/경도가 자동으로 채워집니다</p>
 			</div>
 
 			<div class="field field-inline">
@@ -98,11 +98,25 @@
 		<fieldset>
 			<legend>연락처</legend>
 			<div class="field">
-				<label for="contactEmail">이메일<span class="req">*</span></label>
-				<div class="field-inline">
-					<input type="email" id="contactEmail" name="contactEmail" maxlength="100" placeholder="검토 결과와 계정 정보를 받으실 이메일" style="flex:1;" required>
+				<label for="emailLocal">이메일<span class="req">*</span></label>
+				<div class="email-row">
+					<input type="text" id="emailLocal" class="email-local" placeholder="이메일 아이디">
+					<span class="at-sign">@</span>
+					<select id="emailDomainSelect">
+						<option value="naver.com">naver.com</option>
+						<option value="gmail.com">gmail.com</option>
+						<option value="daum.net">daum.net</option>
+						<option value="kakao.com">kakao.com</option>
+						<option value="nate.com">nate.com</option>
+						<option value="hanmail.net">hanmail.net</option>
+						<option value="outlook.com">outlook.com</option>
+						<option value="icloud.com">icloud.com</option>
+						<option value="custom">직접입력</option>
+					</select>
+					<input type="text" id="emailDomainCustom" class="domain-custom" style="display:none" placeholder="도메인 입력">
 					<button type="button" class="btn-check" id="sendVerificationBtn">인증번호 발송</button>
 				</div>
+				<input type="hidden" id="contactEmail" name="contactEmail" required>
 				<span class="check-result" id="emailVerifyStatus"></span>
 
 				<div class="verify-box" id="verifySection" style="display:none;">
@@ -147,6 +161,17 @@
 	</div>
 </div>
 
+<script th:inline="javascript">
+	// 템플스테이 허용 목록(서버와 동일한 소스) - "회암사"만 입력해도 "회암사(양주)"가 걸리도록 양방향 부분일치로 비교
+	const ALLOWED_TEMPLE_NAMES = /*[[${allowedTempleNames}]]*/ [];
+
+	function isAllowedTempleName(name) {
+		const trimmed = (name || '').trim();
+		if (!trimmed) return false;
+		return ALLOWED_TEMPLE_NAMES.some(n => n.includes(trimmed) || trimmed.includes(n));
+	}
+</script>
+
 <script>
 	// ===== 대표 이미지 로컬 미리보기 (실제 업로드는 폼 제출 시 서버에서 처리) =====
 	const imageFileInput = document.getElementById('imageFile');
@@ -163,7 +188,10 @@
 	});
 
 	// ===== 이메일 인증 (스팸/사칭 방지 - 회원가입과 동일한 흐름) =====
-	const contactEmailInput = document.getElementById('contactEmail');
+	const contactEmailInput = document.getElementById('contactEmail'); // hidden - 아이디+도메인 합쳐진 실제 제출값
+	const emailLocalInput = document.getElementById('emailLocal');
+	const emailDomainSelect = document.getElementById('emailDomainSelect');
+	const emailDomainCustom = document.getElementById('emailDomainCustom');
 	const sendVerificationBtn = document.getElementById('sendVerificationBtn');
 	const emailVerifyStatus = document.getElementById('emailVerifyStatus');
 	const verifySection = document.getElementById('verifySection');
@@ -182,7 +210,20 @@
 		verifyResult.textContent = '';
 		if (timerInterval) clearInterval(timerInterval);
 	}
-	contactEmailInput.addEventListener('input', resetEmailVerification);
+
+	function updateFullEmail() {
+		const local = emailLocalInput.value.trim();
+		const domain = emailDomainSelect.value === 'custom' ? emailDomainCustom.value.trim() : emailDomainSelect.value;
+		contactEmailInput.value = (local && domain) ? (local + '@' + domain) : '';
+	}
+
+	emailLocalInput.addEventListener('input', () => { updateFullEmail(); resetEmailVerification(); });
+	emailDomainCustom.addEventListener('input', () => { updateFullEmail(); resetEmailVerification(); });
+	emailDomainSelect.addEventListener('change', () => {
+		emailDomainCustom.style.display = emailDomainSelect.value === 'custom' ? 'inline-block' : 'none';
+		updateFullEmail();
+		resetEmailVerification();
+	});
 
 	function startTimer() {
 		let secondsLeft = 300;
@@ -252,10 +293,15 @@
 
 	// ===== 상세주소 병합 (제출 직전에 주소+상세주소를 합쳐서 실제 전송값으로 씀) =====
 	const addressDetailInput = document.getElementById('addressDetail');
-	document.querySelector('form').addEventListener('submit', (e) => {
+	document.querySelector('form[action="/temple-requests"]').addEventListener('submit', (e) => {
 		if (verifiedEmail !== contactEmailInput.value.trim()) {
 			e.preventDefault();
 			alert('이메일 인증을 완료해주세요.');
+			return;
+		}
+
+		if (!checkNameAllowed()) {
+			e.preventDefault();
 			return;
 		}
 
@@ -278,6 +324,14 @@
 	const regionInput = document.getElementById('region');
 	const latInput = document.getElementById('latitude');
 	const lngInput = document.getElementById('longitude');
+	const nameNotAllowedHint = document.getElementById('nameNotAllowedHint');
+
+	function checkNameAllowed() {
+		const allowed = nameInput.value.trim() === '' || isAllowedTempleName(nameInput.value);
+		nameNotAllowedHint.style.display = allowed ? 'none' : 'block';
+		return allowed;
+	}
+	nameInput.addEventListener('input', checkNameAllowed);
 
 	const mapModal = document.getElementById('mapPickerModal');
 	const mapSearchInput = document.getElementById('mapSearchKeyword');
@@ -319,6 +373,10 @@
 		pickerMap.setCenter(position);
 		latInput.value = lat.toFixed(7);
 		lngInput.value = lng.toFixed(7);
+
+		// 위치가 새로 바뀌면 이전 장소 기준으로 체크됐던 장소 유형은 더 이상 안 맞을 수 있어서 초기화함
+		document.querySelectorAll('#locationTypeGroup input').forEach(cb => cb.checked = false);
+		autoDetectStatus.textContent = '';
 	}
 
 	function openMapPicker() {
@@ -331,27 +389,48 @@
 		mapModal.style.display = 'none';
 	}
 
+	// 카카오 자체 키워드 검색("용" 한 글자만 쳐도 사찰 아닌 온갖 업체가 뒤섞여 나오고, 정작 "용문사"류는
+	// 카카오 순위에 안 걸려서 아예 안 뜨기도 함)에 기대지 않고, 우리 허용 목록에서 먼저 후보를 추린 뒤
+	// 그 정확한 이름으로 카카오에 각각 검색해서 좌표만 받아온다 - 목록에 있는 것만 뜨는 게 보장됨.
 	function runSearch() {
 		const keyword = mapSearchInput.value.trim();
 		if (!keyword || !placesService) return;
-		placesService.keywordSearch(keyword, function (data, status) {
+
+		const candidates = ALLOWED_TEMPLE_NAMES.filter(n => n.includes(keyword) || keyword.includes(n));
+		if (candidates.length === 0) {
+			mapSearchResults.innerHTML = '<p class="hint" style="color:var(--destructive);">템플스테이가 있는 사찰만 등록 가능합니다.</p>';
+			return;
+		}
+
+		mapSearchResults.innerHTML = '<p class="hint">검색 중...</p>';
+
+		Promise.all(candidates.map(name => new Promise(resolve => {
+			placesService.keywordSearch(name, (data, status) => {
+				resolve(status === kakao.maps.services.Status.OK && data.length > 0 ? {name, place: data[0]} : null);
+			});
+		}))).then(results => {
+			const found = results.filter(r => r !== null);
 			mapSearchResults.innerHTML = '';
-			if (status !== kakao.maps.services.Status.OK) {
-				mapSearchResults.innerHTML = '<p class="hint">검색 결과가 없습니다.</p>';
+			if (found.length === 0) {
+				mapSearchResults.innerHTML = '<p class="hint">위치를 찾지 못했습니다. 지도에서 직접 위치를 지정해주세요.</p>';
 				return;
 			}
-			data.forEach(place => {
+
+			found.forEach(({name, place}) => {
 				const item = document.createElement('div');
 				item.style.cssText = 'padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background-color .12s ease;';
 				item.addEventListener('mouseenter', () => item.style.backgroundColor = 'var(--cream)');
 				item.addEventListener('mouseleave', () => item.style.backgroundColor = '');
-				item.innerHTML = '<strong>' + place.place_name + '</strong><br><span class="hint">' + place.address_name + '</span>';
+				item.innerHTML = '<strong>' + name + '</strong><br><span class="hint">' + (place.road_address_name || place.address_name) + '</span>';
 				item.addEventListener('click', () => {
-					nameInput.value = place.place_name;
+					// 화면에 넣는 이름은 카카오 place_name이 아니라 우리 허용 목록의 정확한 표기(name) -
+					// 카카오 표기가 미묘하게 달라도("(남해)" 누락 등) 제출값이 항상 목록과 정확히 일치하게 함
+					nameInput.value = name;
 					addressInput.value = place.road_address_name || place.address_name;
 					// Places 결과의 address_name은 "시/도 시군구 ..." 형식이라 첫 토큰이 지역(시/도)임
 					regionInput.value = place.address_name.split(' ')[0];
 					setPickedLocation(parseFloat(place.y), parseFloat(place.x));
+					checkNameAllowed();
 					closeMapPicker();
 				});
 				mapSearchResults.appendChild(item);

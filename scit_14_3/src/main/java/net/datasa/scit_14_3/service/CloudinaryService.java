@@ -30,9 +30,12 @@ public class CloudinaryService {
         ));
     }
 
+    // 전부 이 폴더 안에 모아서 올림(Cloudinary 대시보드에서 관리하기 편하도록)
+    private static final String UPLOAD_FOLDER = "SCIT-14-3";
+
     public String upload(MultipartFile file) {
         try {
-            Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+            Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap("folder", UPLOAD_FOLDER));
             return (String) result.get("secure_url");
         } catch (IOException e) {
             throw new IllegalStateException("이미지 업로드 실패: " + e.getMessage(), e);

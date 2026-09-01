@@ -20,7 +20,7 @@ public class UserEntity {
     private String password; // BCrypt 해시. 카카오 회원은 null
 
     @Column(nullable = false, unique = true, length = 30)
-    private String nickname; // 법명, 가입 후 수정 불가(애플리케이션 레벨 규칙)
+    private String nickname; // 법명, 본인은 가입 후 수정 불가하지만 사이트 관리자는 회원관리에서 수정 가능(애플리케이션 레벨 규칙)
 
     @Column(nullable = false, length = 150)
     private String name; // 여권 영문 이름 형식(내국인은 별도 표기 규칙 - signup.js에서 처리)
@@ -28,6 +28,8 @@ public class UserEntity {
     @Column(length = 20)
     private String phone;
 
+    // 일반회원은 필수, ADMIN 계정은 예외(DB의 chk_user_email_required_unless_admin이 실제로 강제함)
+    // - @Column(nullable=false)는 role별 예외를 표현 못 해서 여기선 nullable=true로 둠
     @Column(unique = true, length = 100)
     private String email;
 

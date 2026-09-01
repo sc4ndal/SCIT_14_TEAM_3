@@ -37,18 +37,23 @@ public class GeminiService {
         try {
             String prompt = """
                     다음 장소가 '바다', '산', '강', '도심' 각각에 해당하는지 하나씩 독립적으로 판단해줘.
-                    4개는 서로 배타적이지 않음 - 하나만 고르지 말고, 실제로 해당되는 건 전부 true로 표시해줘.
-                    (예: 도심 안에 있으면서 강도 가까우면 urban과 river 둘 다 true. 산속이면서 계곡물이 흐르면
-                    mountain과 river 둘 다 true. 여러 개 true인 경우가 오히려 흔함.)
+                    4개는 서로 배타적이지 않고 여러 개가 동시에 해당될 수 있음 - 하지만 실제로 그 장소의
+                    특징으로 알려진 것만 true로 표시하고, 막연히 "한국이니까 이럴 것 같다"는 식의 일반화나
+                    추측으로 true를 늘리지는 마.
+
+                    참고 예시:
+                    - 해동용궁사(부산): 바닷가 절벽 바위산 위에 지어짐 -> sea=true, mountain=true, river=false, urban=false
+                    - 조계사(서울 종로 도심 한복판): 평지 도심 사찰, 산이나 강과 무관 -> sea=false, mountain=false, river=false, urban=true
+                    - 해인사(경남 합천 산속): 전형적인 산사 -> sea=false, mountain=true, river=false, urban=false
 
                     장소 이름: %s
                     주소: %s
 
-                    각 항목 판단 기준:
-                    - sea: 해안가/바닷가 근처인가
-                    - mountain: 산속/산기슭에 있는가
-                    - river: 강/하천/계곡이 근처에 있는가
-                    - urban: 도심/시가지 안에 있는가
+                    각 항목 판단 기준(그 장소의 실제 특징에 근거해서만 true):
+                    - sea: 바다/해안가에 실제로 인접해 있는가
+                    - mountain: 산속/산기슭/구릉지에 실제로 위치해 있는가 (도심 평지 사찰은 false)
+                    - river: 강/하천/계곡물이 그 장소의 특징으로 알려질 정도로 가까운가
+                    - urban: 도심/시가지 생활권 안에 있는가
 
                     반드시 아래 JSON 형식으로만 답해(설명 없이 JSON만):
                     {"sea": true or false, "mountain": true or false, "river": true or false, "urban": true or false}

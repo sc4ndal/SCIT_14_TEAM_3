@@ -30,7 +30,7 @@
 		<li th:each="msg : ${errorMessages}" th:text="${msg}"></li>
 	</ul>
 
-	<form th:action="${mode == 'kakao'} ? @{/signup/kakao-additional} : @{/signup/local}" method="post">
+	<form class="page-form" th:action="${mode == 'kakao'} ? @{/signup/kakao-additional} : @{/signup/local}" method="post">
 
 		<!-- ===== 인증 방식 섹션 ===== -->
 		<fieldset th:if="${mode == 'local' or mode == null}" id="localSection">

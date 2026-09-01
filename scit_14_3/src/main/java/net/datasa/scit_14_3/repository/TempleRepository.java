@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface TempleRepository extends JpaRepository<TempleEntity, Long> {
 	Optional<TempleEntity> findByLoginId(String loginId);
 	boolean existsByLoginId(String loginId);
+	boolean existsByName(String name);
 }

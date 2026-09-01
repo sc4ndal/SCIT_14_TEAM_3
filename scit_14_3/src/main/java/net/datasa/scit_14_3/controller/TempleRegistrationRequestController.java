@@ -6,7 +6,9 @@ import net.datasa.scit_14_3.domain.dto.TempleRegistrationRequestDto;
 import net.datasa.scit_14_3.service.CloudinaryService;
 import net.datasa.scit_14_3.service.EmailVerificationService;
 import net.datasa.scit_14_3.service.TempleRegistrationRequestService;
+import net.datasa.scit_14_3.service.TempleStayAllowList;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,9 +27,11 @@ public class TempleRegistrationRequestController {
 	private final TempleRegistrationRequestService requestService;
 	private final CloudinaryService cloudinaryService;
 	private final EmailVerificationService emailVerificationService;
+	private final TempleStayAllowList allowList;
 
 	@GetMapping("/new")
-	public String newForm() {
+	public String newForm(Model model) {
+		model.addAttribute("allowedTempleNames", allowList.all());
 		return "templeRequest/new";
 	}
 
@@ -43,14 +47,19 @@ public class TempleRegistrationRequestController {
 			return "redirect:/temple-requests/new";
 		}
 
-		// 관리자 사찰등록폼과 동일한 이유로 제출 시점에만 업로드함 - 선택 즉시 올려버리면
-		// 문의를 끝까지 안 넣어도 이미지만 Cloudinary에 남는 문제가 있음.
-		if (imageFile != null && !imageFile.isEmpty()) {
-			dto.setImageUrl(cloudinaryService.upload(imageFile));
+		try {
+			// 관리자 사찰등록폼과 동일한 이유로 제출 시점에만 업로드함 - 선택 즉시 올려버리면
+			// 문의를 끝까지 안 넣어도 이미지만 Cloudinary에 남는 문제가 있음.
+			if (imageFile != null && !imageFile.isEmpty()) {
+				dto.setImageUrl(cloudinaryService.upload(imageFile));
+			}
+			requestService.submit(dto);
+		} catch (IllegalStateException e) {
+			redirectAttributes.addFlashAttribute("submitError", e.getMessage());
+			return "redirect:/temple-requests/new";
 		}
 
-		requestService.submit(dto);
 		redirectAttributes.addFlashAttribute("submitSuccess", true);
-		return "redirect:/temple-requests/new";
+		return "redirect:/";
 	}
 }
