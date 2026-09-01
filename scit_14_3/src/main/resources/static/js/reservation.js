@@ -10,7 +10,12 @@
 */
  
 // ------------------------- API 엔드포인트 -------------------------
+  const authInfo = document.getElementById('auth-info');
+  const isLoggedIn = !!authInfo;
+  const currentLoginId = authInfo ? authInfo.dataset.loginId : null;
+
 const API = {
+  createParticipants: '/reservationparticipants',
   // TODO: 아직 findAll 안 만들었으니, 이거 만들면 실제 fetch로 교체
   //   GET /temples            -> TempleDTO 목록
   //   GET /templestayprograms -> TempleStayProgramDTO 목록
@@ -19,6 +24,7 @@ const API = {
   // TODO: 예약 생성 API 아직 안 만듦 (다음 작업 예정)
   //   POST /templestayreservations  body: ReservationCreateRequest
   createReservation: '/templestayreservations',
+
   // TODO: 결제 등록 API 아직 안 만듦
   //   POST /payments  body: { reservationId, paymentMethod, depositorName, kakaoTid }
   createPayment: '/payments',
@@ -68,7 +74,7 @@ const state = {
   filter: { region: '', templeId: '', programType: '', headcount: '' },
   checkedProgramId: null,     // 목록에서 체크박스로 체크해둔 programId
   selectedProgram: null,      // 선택된 program 객체
-  loginId: 'testuser01',      // TODO: 로그인 세션/토큰에서 가져오도록 교체
+  loginId: currentLoginId,      // TODO: 로그인 세션/토큰에서 가져오도록 교체
   startDate: '',
   endDate: '',
   participantCount: 1,
@@ -267,6 +273,12 @@ document.getElementById('detail-reserve-btn').addEventListener('click', (e) => {
 });
 
 function selectProgram(programId) {
+  if(!isLoggedIn) {
+  alert('로그인이 필요합니다.');
+  location.href = '/login';
+  return;
+  }
+
   const program = state.programs.find(p => p.programId === programId);
   if (!program) return;
 
@@ -544,46 +556,46 @@ async function submitReservation() {
     endDate: state.endDate,
     participantCount: state.participantCount,
     note: state.note,
-    participants: state.participants,
   };
 
   try {
     // TODO: 실제 POST /templestayreservations 만들어지면 아래 주석 해제
-    // const res = await fetch(API.createReservation, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(reservationPayload),
-    // });
-    // const reservation = await res.json();
+    const resRes = await fetch(API.createReservation, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(reservationPayload),
+    });
+    const reservation = await resRes.json();
 
-    // 백엔드가 아직 없어서 임시로 화면에서 바로 결과를 만들어봄 (실제 연결 시 위 fetch로 교체)
-    const reservation = {
-      reservationId: Math.floor(Math.random() * 1000),
-      status: '예약대기',
-      ...reservationPayload,
-    };
+    const participantPayload = state.participants.map(pt => ({
+    reservationId: reservation.reservationId,
+    name: pt.name,
+    gender: pt.gender,
+    email: pt.email,
+    }));
+    const partRes = await fetch(API.createParticipants,{
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(participantPayload),
+    });
+    const participants = await partRes.json();
 
     // PAYMENT 생성 요청
     const paymentPayload = {
       reservationId: reservation.reservationId,
       paymentMethod: state.paymentMethod,
+      amount: p.price * state.participantCount,
       depositorName: state.paymentMethod === '계좌이체' ? state.depositorName : null,
       kakaoTid: state.paymentMethod === '카카오페이' ? state.kakaoTid : null,
     };
 
-    // TODO: 실제 POST /payments 만들어지면 아래 주석 해제
-    // const payRes = await fetch(API.createPayment, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(paymentPayload),
-    // });
-    // const payment = await payRes.json();
+    const payRes = await fetch(API.createPayment, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json'},
+        body: JSON.stringify(paymentPayload),
+    });
 
-    const payment = {
-      amount: p.price * state.participantCount,
-      status: '대기',
-      ...paymentPayload,
-    };
+    const payment = await payRes.json();
 
     state.reservationResult = { reservation, payment, program: p };
     renderStep3();
@@ -593,7 +605,6 @@ async function submitReservation() {
     console.error(err);
   }
 }
-
 // ------------------------- STEP 3: 신청 완료 -------------------------
 function renderStep3() {
   const { reservation, payment, program } = state.reservationResult;

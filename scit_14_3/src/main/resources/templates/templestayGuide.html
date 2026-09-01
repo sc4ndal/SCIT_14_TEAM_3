@@ -482,8 +482,9 @@
 
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
-
+<link rel="stylesheet" href="/css/common.css">
 <header class="hero">
+  <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
   <span class="hero-eyebrow">TEMPLESTAY 101</span>
   <h1>예약 버튼을 누르기 전,<br><em>템플스테이</em>가 무엇인지부터</h1>
   <p>산사에서 하루, 스님의 일상을 잠시 빌려 사는 일. 처음이라도 낯설지 않도록, 필요한 것만 정리했습니다.</p>
@@ -655,7 +656,7 @@
       </div>
       <div class="step">
         <span class="step-n mono">3</span>
-        <div><h4>인원·정보 입력</h4><p>참가 인원과 참가자 정보를 입력합니다. 미성년자는 보호자 동의가 필요할 수 있습니다.</p></div>
+        <div><h4>인원·정보 입력</h4><p>참가 인원과 참가자 정보를 입력합니다.</p></div>
       </div>
       <div class="step">
         <span class="step-n mono">4</span>
@@ -696,18 +697,10 @@
     <div class="cta-box">
       <h2>이제 나에게 맞는 사찰을 찾아볼 차례</h2>
       <p>체험형인지 휴식형인지, 지역과 날짜만 정해지면 예약 신청은 금방입니다.</p>
-      <a class="btn" href="/login" onclick="return guardReservation(event)">
+      <a class="btn" th:href="@{/reservation}" onclick="return guardReservation(event)">
         예약 신청하러 가기
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h12M11 5l5 5-5 5"/></svg>
       </a>
-      <script>
-        // 미리보기용 데모입니다. 실제 서비스에서는 서버(스프링 시큐리티)가
-        // 로그인 여부를 판단해 아래와 같은 분기를 처리합니다.
-        function guardReservation(e) {
-          alert('로그인 후에 이용 가능합니다.');
-          return true; // /login 으로 이동
-        }
-      </script>
     </div>
     <p class="foot-note">본 페이지는 템플스테이 입문자를 위한 일반 안내이며, 실제 일정과 비용은 사찰과 회차에 따라 달라질 수 있습니다.</p>
   </section>
