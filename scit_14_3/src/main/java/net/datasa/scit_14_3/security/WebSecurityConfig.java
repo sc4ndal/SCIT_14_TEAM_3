@@ -34,6 +34,7 @@ public class WebSecurityConfig {
 	// 로그인 없이 접근 가능한 경로
 	private static final List<String> PUBLIC_URLS = List.of(
 			"/",
+			"/favicon.ico",
 			"/css/**",
 			"/js/**",
 			"/images/**",
@@ -52,7 +53,6 @@ public class WebSecurityConfig {
 			"/payments/**",
 			"/reservation/**",
 			"/maptest/**",
-			"/templestayGuide/**",
 			"/info/**",
 			"/temple-requests/**",    // 사찰 관계자가 회원가입 없이 남기는 등록 요청 (공개)
 			"/reservation",
@@ -60,9 +60,7 @@ public class WebSecurityConfig {
 			"/api/templestayprograms/**",
 			"/maptemples",
 			"/maptemplestayviews/**",
-			"/templestayGuide",
 			"/findtemple",
-			"/maptest",
 			"/templestayGuide",
 			"/templestayprograms/**",
 			"/etiquette-simulation"

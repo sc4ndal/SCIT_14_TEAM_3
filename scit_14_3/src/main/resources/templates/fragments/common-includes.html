@@ -76,7 +76,7 @@
                 <div class="userEntity-menu"
                      sec:authorize="isAuthenticated()">
 
-                    <!-- 아이콘 + 닉네임(마이페이지 드롭다운 겸용) + 로그아웃 (한 줄) -->
+                    <!-- 아이콘 + 닉네임 + 로그아웃 (한 줄) -->
                     <div class="userEntity-identity">
 
                         <!-- 프로필 아이콘은 컬럼 추가 부담으로 빼기로 결정 (2026-08-26) -->
@@ -95,30 +95,30 @@
                             <!-- 일반회원/사찰계정: 기존 8개 그대로 -->
                             <div class="mypage-dropdown" sec:authorize="!hasRole('ADMIN')">
 
-                                <a th:href="@{/mypage/edit}">
-                                    회원정보수정
-                                </a>
-                                <a th:href="@{/mypage/reservations}">
-                                    예약목록
-                                </a>
-                                <a th:href="@{/mypage/reviews}">
-                                    내가 쓴 리뷰
-                                </a>
-                                <a th:href="@{/mypage/favorites/temples}">
-                                    관심 사찰
-                                </a>
-                                <a th:href="@{/mypage/favorites/events}">
-                                    관심 행사
-                                </a>
-                                <a th:href="@{/mypage/favorites/quotes}">
-                                    저장한 불교 한마디
-                                </a>
-                                <a th:href="@{/mypage/favorites/foods}">
-                                    관심 사찰음식
-                                </a>
-                                <a th:href="@{/mypage/favorites/reviews}">
-                                    좋아요한 리뷰
-                                </a>
+                            <a th:href="@{/mypage/edit}">
+                                회원정보수정
+                            </a>
+                            <a th:href="@{/mypage/myReservations}">
+                                예약목록
+                            </a>
+                            <a th:href="@{/mypage/myReviews}">
+                                내가 쓴 리뷰
+                            </a>
+                            <a th:href="@{/mypage/favorites/temples}">
+                                관심 사찰
+                            </a>
+                            <a th:href="@{/mypage/favorites/events}">
+                                관심 행사
+                            </a>
+                            <a th:href="@{/mypage/favorites/quotes}">
+                                저장한 불교 한마디
+                            </a>
+                            <a th:href="@{/mypage/favorites/foods}">
+                                관심 사찰음식
+                            </a>
+                            <a th:href="@{/mypage/favorites/reviews}">
+                                좋아요한 리뷰
+                            </a>
 
                             </div>
 
