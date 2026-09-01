@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[테스트] 크롬 내장 번역 API 품질 확인 · 회원가입 화면</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --cream:#f7efe3; --surface:#fffaf2; --ink:#3a2a1e; --ink-soft:#7a6a58;
+            --wood:#8a5a34; --wood-dark:#4a2f22; --amber:#c98a2e; --teal:#2f6b5e;
+            --red:#a13d3d; --border:#e3d7c3;
+        }
+        *{box-sizing:border-box;}
+        body{margin:0;font-family:'Noto Sans KR',sans-serif;background:var(--cream);color:var(--ink);display:flex;justify-content:center;padding:32px 16px 80px;}
+        .card{width:100%;max-width:520px;background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+        .beam{height:14px;background:var(--wood-dark);display:flex;align-items:center;gap:18px;padding:0 24px;}
+        .beam span{width:6px;height:6px;flex:none;}
+        .beam span:nth-child(3n+1){background:var(--teal);}
+        .beam span:nth-child(3n+2){background:var(--amber);}
+        .beam span:nth-child(3n){background:var(--red);}
+
+        .test-banner{background:#fdf4de;border-bottom:1px solid var(--border);padding:14px 24px;font-size:12.5px;color:var(--wood-dark);line-height:1.5;}
+        .test-banner b{color:var(--red);}
+
+        .header{padding:24px 32px 8px;text-align:center;}
+        .header h1{font-family:'Noto Serif KR',serif;font-weight:700;font-size:22px;margin:0 0 6px;}
+        .header p{margin:0;font-size:13px;color:var(--ink-soft);}
+
+        .lang-bar{display:flex;justify-content:center;flex-wrap:wrap;align-items:center;gap:8px;padding:14px 20px 6px;}
+        .lang-opt{background:none;border:1px solid var(--border);font-family:inherit;font-size:13px;font-weight:500;color:var(--ink-soft);cursor:pointer;padding:6px 12px;border-radius:20px;}
+        .lang-opt.active{color:#fff;background:var(--wood-dark);border-color:var(--wood-dark);font-weight:700;}
+        .lang-opt:hover:not(.active){border-color:var(--wood-dark);color:var(--wood-dark);}
+
+        #translateStatus{text-align:center;font-size:12px;color:var(--ink-soft);padding:0 24px 12px;min-height:16px;}
+
+        .tabs{display:flex;margin:8px 32px 0;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+        .tab{flex:1;text-align:center;padding:11px 0;font-size:14px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--ink-soft);}
+        .tab.active{background:var(--wood);color:#fff;}
+        .tab:first-child{border-right:1px solid var(--border);}
+
+        form{padding:24px 32px 32px;}
+        fieldset{border:none;padding:0;margin:0 0 22px;}
+        legend{font-size:12px;font-weight:700;color:var(--wood);letter-spacing:.04em;margin-bottom:10px;text-transform:uppercase;}
+        .field{margin-bottom:14px;}
+        .field label{display:block;font-size:13px;font-weight:500;margin-bottom:5px;}
+        .req{color:var(--red);margin-left:2px;}
+        .field .hint{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+        .locked{color:var(--red);}
+        input[type=text],input[type=password],input[type=tel],input[type=date],select{
+            width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:4px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink);
+        }
+        .field-inline{display:flex;gap:8px;align-items:stretch;}
+        .field-inline input{flex:1;min-width:0;}
+        .btn-check{flex:none;white-space:nowrap;padding:0 14px;background:var(--surface);border:1px solid var(--wood);color:var(--wood-dark);border-radius:4px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;}
+        .email-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+        .email-row input.email-local{flex:1;min-width:110px;}
+        .at-sign{flex:none;color:var(--ink-soft);font-weight:700;}
+        .email-row select{flex:none;width:132px;padding:10px 8px;font-size:13px;}
+        .email-row input.domain-custom{flex:none;width:132px;}
+        .verify-box{margin-top:10px;padding:12px;background:#f6f1e6;border:1px solid var(--border);border-radius:6px;}
+        .verify-meta{display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
+        .timer{font-weight:700;color:var(--wood-dark);}
+        .radio-group{display:flex;gap:16px;padding-top:2px;}
+        .radio-group label{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:400;margin:0;}
+        .kakao-box{background:#fdf4de;border:1px dashed var(--amber);border-radius:6px;padding:14px 16px;font-size:13px;display:flex;align-items:center;justify-content:space-between;}
+        .badge{font-size:11px;background:var(--teal);color:#fff;padding:2px 8px;border-radius:10px;}
+        .terms-checkbox{display:flex;align-items:flex-start;gap:8px;font-size:13px;margin-bottom:16px;cursor:pointer;}
+        .terms-checkbox input{margin-top:2px;flex:none;}
+        .req-tag{color:var(--red);font-weight:700;margin-right:4px;}
+        .opt-tag{color:var(--teal);font-weight:700;margin-right:4px;}
+        .optional-note{font-weight:400;color:var(--ink-soft);}
+        .form-actions{display:flex;gap:10px;margin-top:2px;}
+        .btn-cancel{flex:1;padding:13px 0;background:var(--surface);color:var(--wood-dark);border:1px solid var(--wood-dark);border-radius:5px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;text-decoration:none;text-align:center;}
+        button.submit{flex:2;padding:13px 0;background:var(--wood-dark);color:#fff;border:none;border-radius:5px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;}
+        #kakaoSection{display:none;}
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="beam">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+    </div>
+
+    <div class="test-banner">
+        🧪 <b>테스트 페이지</b> — signup.html의 화면 내용을 그대로 복사했습니다. 자체 번역사전(TRANSLATIONS) 대신
+        <b>크롬 내장 Translator API</b>가 실시간으로 원문(한국어)을 번역합니다. 데스크톱 크롬 최신 버전에서만 동작하며,
+        처음 쓰는 언어는 모델을 다운로드하느라 시간이 걸릴 수 있습니다.
+    </div>
+
+    <div class="header">
+        <h1>회원가입</h1>
+        <p>사찰 커뮤니티 이용을 위한 정보를 입력해주세요</p>
+    </div>
+
+    <div class="lang-bar">
+        <button type="button" class="lang-opt active" data-lang="ko" onclick="translateTo('ko')">한국어</button>
+        <button type="button" class="lang-opt" data-lang="ja" onclick="translateTo('ja')">日本語</button>
+        <button type="button" class="lang-opt" data-lang="en" onclick="translateTo('en')">English</button>
+        <button type="button" class="lang-opt" data-lang="zh" onclick="translateTo('zh')">中文</button>
+    </div>
+    <div id="translateStatus"></div>
+
+    <div class="tabs">
+        <div class="tab active" id="tabLocal" data-i18n="tabLocal" onclick="setMode('LOCAL')">일반 회원가입</div>
+        <div class="tab" id="tabKakao" data-i18n="tabKakao" onclick="setMode('KAKAO')">카카오로 계속하기</div>
+    </div>
+
+    <form onsubmit="return false;">
+
+        <fieldset id="localSection">
+            <legend data-i18n="sectionLogin">로그인 정보</legend>
+            <div class="field">
+                <label for="loginId"><span data-i18n="loginIdLabel">아이디</span><span class="req">*</span></label>
+                <div class="field-inline">
+                    <input type="text" id="loginId" placeholder="영문/숫자 6~20자">
+                    <button type="button" class="btn-check" data-i18n="btnCheck">중복확인</button>
+                </div>
+            </div>
+            <div class="field">
+                <label for="pw"><span data-i18n="pwLabel">비밀번호</span><span class="req">*</span></label>
+                <input type="password" id="pw">
+                <p class="hint" data-i18n="passwordHint">영문 대/소문자·숫자·특수문자(!@#$%^&*()) 모두 포함, 8~20자</p>
+            </div>
+            <div class="field">
+                <label for="pwCheck"><span data-i18n="pwCheckLabel">비밀번호 확인</span><span class="req">*</span></label>
+                <input type="password" id="pwCheck">
+            </div>
+        </fieldset>
+
+        <fieldset id="kakaoSection">
+            <legend data-i18n="sectionLogin">로그인 정보</legend>
+            <div class="kakao-box">
+                <span data-i18n="kakaoDone">카카오 인증 완료</span>
+                <span class="badge" data-i18n="kakaoConnected">연결됨</span>
+            </div>
+            <div class="field" style="margin-top:10px">
+                <p class="hint" data-i18n="kakaoHintSimple">비밀번호 입력 없이 카카오 계정으로 로그인합니다.</p>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend data-i18n="sectionMember">회원 정보</legend>
+
+            <div class="field">
+                <label for="nickname"><span data-i18n="nicknameLabel">법명 (닉네임)</span><span class="req">*</span></label>
+                <div class="field-inline">
+                    <input type="text" id="nickname" maxlength="10">
+                    <button type="button" class="btn-check" data-i18n="btnCheck">중복확인</button>
+                </div>
+                <p class="hint locked" data-i18n="lockedHint">가입 후 수정할 수 없습니다</p>
+            </div>
+
+            <div class="field">
+                <label><span data-i18n="nationalityLabel">국적 구분</span></label>
+                <div class="radio-group">
+                    <label><input type="radio" name="nationality" checked> <span data-i18n="natKR">내국인</span></label>
+                    <label><input type="radio" name="nationality"> <span data-i18n="natForeign">외국인</span></label>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="name"><span data-i18n="nameLabel">이름</span><span class="req">*</span></label>
+                <input type="text" id="name" maxlength="5" placeholder="예: 싯다르타">
+                <p class="hint" data-i18n="nameHintKR">한글로만 입력 가능합니다 (공백 없이)</p>
+                <p class="hint locked" data-i18n="lockedHint">가입 후 수정할 수 없습니다</p>
+            </div>
+
+            <div class="field">
+                <label for="birth"><span data-i18n="birthLabel">생년월일</span><span class="req">*</span></label>
+                <input type="date" id="birth">
+            </div>
+
+            <div class="field">
+                <label for="emailLocal"><span data-i18n="emailLabel">이메일</span><span class="req">*</span></label>
+                <div class="email-row">
+                    <input type="text" id="emailLocal" class="email-local" placeholder="이메일 아이디">
+                    <span class="at-sign">@</span>
+                    <select id="emailDomainSelect">
+                        <option>naver.com</option><option>gmail.com</option><option>daum.net</option>
+                        <option>kakao.com</option><option>nate.com</option><option>hanmail.net</option>
+                        <option>outlook.com</option><option>icloud.com</option>
+                        <option data-i18n="domainCustomOption">직접입력</option>
+                    </select>
+                    <button type="button" class="btn-check" data-i18n="btnEmailCheck">중복조회</button>
+                </div>
+                <div class="verify-box">
+                    <div class="field-inline">
+                        <input type="text" placeholder="이메일로 받은 인증번호 6자리">
+                        <button type="button" class="btn-check" data-i18n="verifyBtnConfirm">확인</button>
+                    </div>
+                    <div class="verify-meta">
+                        <span class="hint" data-i18n="verifyCodeSentMsg">입력하신 이메일로 인증번호를 발송했습니다</span>
+                        <span class="timer">05:00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="phone"><span data-i18n="phoneLabel">연락처</span> <span class="optional-note" data-i18n="phoneOptional">(선택)</span></label>
+                <input type="tel" id="phone" placeholder="전화번호">
+            </div>
+        </fieldset>
+
+        <label class="terms-checkbox">
+            <input type="checkbox">
+            <span><span class="req-tag" data-i18n="termsRequired">[필수]</span><span data-i18n="termsText">서비스 이용약관 및 개인정보 처리방침에 동의합니다</span></span>
+        </label>
+        <label class="terms-checkbox">
+            <input type="checkbox">
+            <span><span class="opt-tag" data-i18n="marketingOptional">[선택]</span><span data-i18n="marketingText">이벤트·할인 등 광고성 정보를 이메일로 수신하는 것에 동의합니다</span></span>
+        </label>
+
+        <div class="form-actions">
+            <button class="submit" type="submit" data-i18n="submitBtn">가입 완료</button>
+            <a href="#" class="btn-cancel" data-i18n="cancelBtn">취소</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    /* ============================================================
+       크롬 내장 Translator API로 페이지 텍스트를 실시간 번역하는 실험용 스크립트.
+       기존 signup.js의 TRANSLATIONS 사전 방식과는 완전히 별개이며,
+       이 파일 밖(common.js 등)에는 영향을 주지 않습니다.
+    ============================================================ */
+    const SOURCE_LANG = 'ko';
+
+    // 원문(한국어) 스냅샷 — 어떤 언어에서 다른 언어로 바꾸든 항상 이 원문 기준으로 번역
+    function snapshotOriginalText(){
+        document.querySelectorAll('[data-i18n]').forEach(el=>{
+            el.setAttribute('data-original-text', el.textContent.trim());
+        });
+    }
+
+    function setStatus(msg, isError){
+        const el = document.getElementById('translateStatus');
+        el.textContent = msg || '';
+        el.style.color = isError ? '#a13d3d' : '#7a6a58';
+    }
+
+    function updateLangButtons(lang){
+        document.querySelectorAll('.lang-opt').forEach(btn=>{
+            btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+        });
+    }
+
+    async function translateTo(targetLang){
+        updateLangButtons(targetLang);
+
+        // 한국어(원문)로 되돌리는 경우 — API 호출 없이 즉시 복원
+        if(targetLang === SOURCE_LANG){
+            document.querySelectorAll('[data-i18n]').forEach(el=>{
+                el.textContent = el.getAttribute('data-original-text');
+            });
+            setStatus('');
+            return;
+        }
+
+        if(!('Translator' in self)){
+            setStatus('이 브라우저는 Translator API를 지원하지 않습니다. 데스크톱 크롬 최신 버전(138 이상)에서 열어주세요.', true);
+            return;
+        }
+
+        const targets = document.querySelectorAll('[data-i18n]');
+
+        try{
+            setStatus('번역 가능 여부 확인 중...');
+            const availability = await Translator.availability({
+                sourceLanguage: SOURCE_LANG,
+                targetLanguage: targetLang
+            });
+
+            if(availability === 'unavailable'){
+                setStatus(`이 언어쌍(ko → ${targetLang})은 이 브라우저에서 지원되지 않습니다.`, true);
+                return;
+            }
+
+            const translator = await Translator.create({
+                sourceLanguage: SOURCE_LANG,
+                targetLanguage: targetLang,
+                monitor(m){
+                    m.addEventListener('downloadprogress', (e)=>{
+                        setStatus(`번역 모델 다운로드 중... ${Math.round(e.loaded * 100)}%`);
+                    });
+                }
+            });
+
+            setStatus('번역 중...');
+            const startTime = performance.now();
+
+            for(const el of targets){
+                const original = el.getAttribute('data-original-text');
+                if(!original) continue;
+                el.textContent = await translator.translate(original);
+            }
+
+            const elapsedMs = Math.round(performance.now() - startTime);
+            setStatus(`번역 완료 — 텍스트 ${targets.length}개, ${elapsedMs}ms 소요`);
+
+        } catch(err){
+            console.error('번역 실패:', err);
+            setStatus('번역 중 오류가 발생했습니다: ' + err.message, true);
+        }
+    }
+
+    function setMode(mode){
+        const isKakao = mode === 'KAKAO';
+        document.getElementById('tabLocal').classList.toggle('active', !isKakao);
+        document.getElementById('tabKakao').classList.toggle('active', isKakao);
+        document.getElementById('localSection').style.display = isKakao ? 'none' : 'block';
+        document.getElementById('kakaoSection').style.display = isKakao ? 'block' : 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+        snapshotOriginalText();
+        const birthInput = document.getElementById('birth');
+        if(birthInput) birthInput.max = new Date().toISOString().split('T')[0];
+
+        if(!('Translator' in self)){
+            setStatus('⚠ 이 브라우저(또는 버전)는 Translator API를 지원하지 않습니다. 데스크톱 크롬 138 이상에서 열어주세요.', true);
+        }
+    });
+</script>
+
+</body>
+</html>

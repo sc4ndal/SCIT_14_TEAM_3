@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <link rel="stylesheet" th:href="@{/css/common.css}" type="text/css">
+    <script defer src="/js/common.js"></script>
+    <title>저장한 불교 한마디 · 佛선자</title>
+</head>
+
+<body>
+
+<header>
+    <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+</header>
+
+<main class="mypage-main">
+    <div class="mypage-inner">
+        <!-- 저장한 불교 한마디 내용 영역 -->
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+
+</body>
+</html>
