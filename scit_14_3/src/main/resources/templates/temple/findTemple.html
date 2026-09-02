@@ -28,6 +28,46 @@
         display: flex;
         gap: 6px;
         }
+        #temple-region-box {
+            position: absolute;
+            top: 56px;
+            left: 12px;
+            z-index: 10;
+            background: white;
+            padding: 8px 10px;
+            border-radius: 8px;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+            display: pointer;
+        }
+        #temple-options {
+            position: absolute;
+            top: 0;
+            left: 100%;
+            margin-left: 6px;
+            display: flex;
+            flex-direction: row;
+            gap: 6px;
+            background: white;
+            padding: 8px 10px;
+            border-radius: 8px;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+        }
+        #temple-filter-box {
+            position: absolute;
+            top: 98px;
+            left: 12px;
+            z-index:10;
+            background: white;
+            padding: 8px 10px;
+            border-radius: 8px;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+            display: flex;
+            gap: 6px;
+        }
+        #temple-filter-box button.active {
+        background: #3d5646;
+        color: white;
+        }
     </style>
 </head>
 <body>
@@ -44,7 +84,33 @@
 <input type="text" id="search-keyword" placeholder="검색어를 입력하세요">
 <button type="button" id="search-btn">검색</button>
 </div>
-
+    <div id="temple-region-box">지역으로 찾기</div>
+    <div id="region-options" hidden>
+        <button type="button" id="reg
+        ion-name-seoul">서울특별시</button>
+        <button type="button" id="region-name-busan">부산광역시</button>
+        <button type="button" id="region-name-deagu">대구광역시</button>
+        <button type="button" id="region-name-ulsan">울산광역시</button>
+        <button type="button" id="region-name-gwangju">광주광역시</button>
+        <button type="button" id="region-name-deajeon">대전광역시</button>
+        <button type="button" id="region-name-incheon">인천광역시</button>
+        <button type="button" id="region-name-kyeongkido">경기도</button>
+        <button type="button" id="region-name-kangwondo">강원특별자치도</button>
+        <button type="button" id="region-name-chungcheongnamdo">충청남도</button>
+        <button type="button" id="region-name-chungcheongbokdo">충청북도</button>
+        <button type="button" id="region-name-jeonranamdo">전라남도</button>
+        <button type="button" id="region-name-jeonrabokdo">전북특별자치도</button>
+        <button type="button" id="region-name-kyeongsangnamdo">경상남도</button>
+        <button type="button" id="region-name-kyeongsangbokdo">경상북도</button>
+        <button type="button" id="region-name-jejudo">제주도</button>
+    </div>
+<div id="temple-filter-box">
+    <button type="button" id="data-type-sea">바다</button>
+    <button type="button" id="data-type-mountain">산</button>
+    <button type="button" id="data-type-river">강</button>
+    <button type="button" id="data-type-urban">도심</button>
+    <button type="button" id="filter-support-english">영어 지원</button>
+</div>
 <div id="map"></div>
 </div>
 <!-- 공통 마커 함수(map-common.js) 먼저, 이 페이지 전용 로직(temple-list.js) 나중에 -->

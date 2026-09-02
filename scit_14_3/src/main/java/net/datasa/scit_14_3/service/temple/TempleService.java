@@ -47,6 +47,7 @@ public class TempleService {
 				.supportEnglish(dto.isSupportEnglish())
 				.isTemple(true)
 				.specialNotice(dto.getSpecialNotice())
+				.refundPolicy(dto.getRefundPolicy())
 				.loginId(loginId)
 				.password(passwordEncoder.encode(rawPassword))
 				.mustChangePassword(true) // 관리자가 임시 비밀번호를 발급했으므로 다음 로그인 때 변경을 강제함
@@ -89,9 +90,10 @@ public class TempleService {
 				.supportEnglish(entity.isSupportEnglish())
 				.isTemple(entity.isTemple())
 				.specialNotice(entity.getSpecialNotice())
+				.refundPolicy(entity.getRefundPolicy())
 				.build();
 	}
-	
+
 	public List<TempleDTO> getAll() {
 		List<TempleDTO> dtoList = new ArrayList<>();
 		List<TempleEntity> list = tr.findAll();
@@ -112,6 +114,7 @@ public class TempleService {
 					.supportEnglish(entity.isSupportEnglish())
 					.isTemple(entity.isTemple())
 					.specialNotice(entity.getSpecialNotice())
+					.refundPolicy(entity.getRefundPolicy())
 					.build();
 			dtoList.add(dto);
 		}
@@ -150,7 +153,30 @@ public class TempleService {
 		entity.setSupportRiver(dto.isSupportRiver());
 		entity.setSupportUrban(dto.isSupportUrban());
 		entity.setSupportEnglish(dto.isSupportEnglish());
-		entity.setSpecialNotice(dto.getSpecialNotice());
+		// specialNotice(유의사항)/refundPolicy는 여기서 안 건드림 - 사찰 계정 본인이
+		// updateOwnInfo()로 직접 관리(관리자 화면에 폼 자체가 없음, 문제 일으킬 값이 아니라서).
+	}
+
+	/** 사찰 계정 본인이 마이페이지(사찰정보수정)에서 직접 수정 가능한 값들만 - 이름/주소/위치/지역/
+	    장소유형처럼 잘못 넣으면 지도 등이 꼬이는 값은 빠져있음(그런 값은 등록 시 검증된 뒤로 고정,
+	    변경 필요하면 문의). 대표이미지/영어지원여부/환불규정/유의사항은 사찰 본인이 제일 잘 아는
+	    값이라 문제를 일으킬 여지가 없어서 자유롭게 수정 가능. specialNotice가 프로그램 상세의
+	    "유의사항"으로도 그대로 쓰임(별도 컬럼 안 둠). */
+	@Transactional
+	public void updateOwnInfo(Long templeId, String imageUrl, boolean supportEnglish, String refundPolicy, String specialNotice) {
+		TempleEntity entity = tr.findById(templeId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
+		entity.setImageUrl(imageUrl);
+		entity.setSupportEnglish(supportEnglish);
+		entity.setRefundPolicy(refundPolicy);
+		entity.setSpecialNotice(specialNotice);
+	}
+
+	/** 사찰 계정 본인이 등록된 대표 이미지를 삭제. Cloudinary에 올라간 실제 파일은 안 지움(새
+	    이미지로 교체할 때도 기존 파일 정리 안 하는 기존 방식과 동일 - DB 참조만 비움). */
+	@Transactional
+	public void removeImage(Long templeId) {
+		TempleEntity entity = tr.findById(templeId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
+		entity.setImageUrl(null);
 	}
 
 	/** 등록 취소/삭제. 이 사찰을 만들었던 과거 승인 요청 기록(TEMPLE_REGISTRATION_REQUEST)은
@@ -186,6 +212,7 @@ public class TempleService {
 				.supportEnglish(entity.isSupportEnglish())
 				.isTemple(entity.isTemple())
 				.specialNotice(entity.getSpecialNotice())
+				.refundPolicy(entity.getRefundPolicy())
 				.loginId(entity.getLoginId())
 				.mustChangePassword(entity.isMustChangePassword())
 				.build();

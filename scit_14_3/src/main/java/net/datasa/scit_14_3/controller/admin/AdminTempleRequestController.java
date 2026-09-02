@@ -59,6 +59,7 @@ public class AdminTempleRequestController {
 				.supportUrban(request.isSupportUrban())
 				.supportEnglish(request.isSupportEnglish())
 				.specialNotice(request.getSpecialNotice())
+				.refundPolicy(request.getRefundPolicy())
 				.build();
 
 		String loginId = randomLoginId();

@@ -5,6 +5,7 @@ import lombok.*;
 import net.datasa.scit_14_3.domain.entity.temple.TempleEntity;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Builder
@@ -34,7 +35,7 @@ public class TempleStayProgramEntity {
 	@Column(name = "program_type", nullable = false)
 	private ProgramType programType;
 
-	@Column(name = "image_url", length = 255)
+	@Column(name = "image_url", length = 255, nullable = false)
 	private String imageUrl;
 
 	@Column(name = "description", columnDefinition = "TEXT")
@@ -45,19 +46,21 @@ public class TempleStayProgramEntity {
 	
 	@Column(name = "required_items", columnDefinition = "TEXT")
 	private String requiredItems;
-	
-	@Column(name = "refund_policy", columnDefinition = "TEXT")
-	private String refundPolicy;
-	
-	@Column(name = "precautions", columnDefinition = "TEXT")
-	private String precautions;
-	
+	// 환불 규정/유의사항은 사찰 공통이라 여기 없음 - temple.getRefundPolicy()/getSpecialNotice() 참고.
+
 	@Column(name = "price", nullable = false)
 	private int price;
-	
+
 	@Column(name = "duration", length = 20, nullable = false)
 	private String duration;
-	
+
+	// duration(체류 기간)과 다른 개념: 이 프로그램을 언제부터 언제까지 모집/운영하는지의 기간.
+	@Column(name = "open_start_date", nullable = false)
+	private LocalDate openStartDate;
+
+	@Column(name = "open_end_date", nullable = false)
+	private LocalDate openEndDate;
+
 	@Builder.Default
 	@Column(name = "max_participant", nullable = false)
 	private int maxParticipant = 20;

@@ -48,25 +48,26 @@
 
 			<div class="field">
 				<label for="address">주소<span class="req">*</span></label>
-				<input type="text" id="address" name="address" maxlength="255" required>
+				<input type="text" id="address" name="address" maxlength="255" readonly placeholder="지도에서 검색/선택하면 자동으로 채워집니다" required>
 				<input type="text" id="addressDetail" maxlength="100" placeholder="상세주소 (동/호수 등, 선택)" style="margin-top:8px;">
 			</div>
 
 			<div class="field field-inline">
 				<div style="flex:1;">
 					<label for="latitude">위도<span class="req">*</span></label>
-					<input type="text" id="latitude" name="latitude" placeholder="예: 37.5665" required>
+					<input type="text" id="latitude" name="latitude" placeholder="지도에서 자동 입력" readonly required>
 				</div>
 				<div style="flex:1;">
 					<label for="longitude">경도<span class="req">*</span></label>
-					<input type="text" id="longitude" name="longitude" placeholder="예: 126.9780" required>
+					<input type="text" id="longitude" name="longitude" placeholder="지도에서 자동 입력" readonly required>
 				</div>
 			</div>
 
 			<div class="field">
 				<label for="region">지역(시/도)<span class="req">*</span></label>
-				<input type="text" id="region" name="region" maxlength="20" placeholder="예: 서울" required>
+				<input type="text" id="region" name="region" maxlength="20" placeholder="지도에서 자동 입력" readonly required>
 			</div>
+			<p class="hint">주소·위도·경도·지역은 직접 입력할 수 없습니다 - 위 "지도에서 사찰 검색"으로 정확한 값을 불러와주세요(엉뚱한 값이 들어가는 것을 막기 위함입니다)</p>
 
 			<div class="field">
 				<label>장소 유형<span class="req">*</span> <span class="optional-note">(중복 선택 가능)</span></label>
@@ -90,8 +91,14 @@
 			</div>
 
 			<div class="field">
-				<label for="specialNotice">참고사항 <span class="optional-note">(선택)</span></label>
+				<label for="specialNotice">사찰별 유의사항 <span class="optional-note">(선택)</span></label>
 				<textarea id="specialNotice" name="specialNotice" rows="4" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:14px;"></textarea>
+			</div>
+
+			<div class="field">
+				<label for="refundPolicy">환불 규정 <span class="optional-note">(선택)</span></label>
+				<textarea id="refundPolicy" name="refundPolicy" rows="4" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:14px;"></textarea>
+				<p class="hint">여기서 등록해두면 나중에 프로그램을 몇 개 만들어도 매번 다시 입력할 필요 없이 공통으로 적용됩니다. 승인 후에도 사찰정보수정에서 언제든 바꿀 수 있습니다.</p>
 			</div>
 		</fieldset>
 

@@ -47,6 +47,7 @@ public class TempleRegistrationRequestService {
 				.supportUrban(dto.isSupportUrban())
 				.supportEnglish(dto.isSupportEnglish())
 				.specialNotice(dto.getSpecialNotice())
+				.refundPolicy(dto.getRefundPolicy())
 				.contactEmail(dto.getContactEmail())
 				.build();
 
@@ -108,6 +109,7 @@ public class TempleRegistrationRequestService {
 				.supportUrban(entity.isSupportUrban())
 				.supportEnglish(entity.isSupportEnglish())
 				.specialNotice(entity.getSpecialNotice())
+				.refundPolicy(entity.getRefundPolicy())
 				.contactEmail(entity.getContactEmail())
 				.status(entity.getStatus())
 				.approvedTempleId(entity.getApprovedTempleId())

@@ -9,6 +9,10 @@ import net.datasa.scit_14_3.domain.entity.templestay.TempleStayReservationEntity
 import net.datasa.scit_14_3.repository.templestay.TempleStayReservationRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Slf4j
 @Service
@@ -63,6 +67,52 @@ public class TempleStayReservationService {
 				.participantCount(saved.getParticipantCount())
 				.note(saved.getNote())
 				.status(saved.getStatus())
+				.build();
+	}
+	
+	/**
+	 * 회원의 템플스테이 예약 목록
+	 * @param loginId
+	 * @return
+	 */
+	public List<TempleStayReservationDTO> findByMyReservation(String loginId) {
+		List<TempleStayReservationDTO> dtoList = new ArrayList<>();
+		List<TempleStayReservationEntity> list = tsrr.findByLoginId(loginId);
+		
+		for(TempleStayReservationEntity entity : list) {
+			TempleStayReservationDTO dto = TempleStayReservationDTO.builder()
+					.reservationId(entity.getReservationId())
+					.loginId(entity.getLoginId())
+					.programId(entity.getProgramId())
+					.startDate(entity.getStartDate())
+					.endDate(entity.getEndDate())
+					.participantCount(entity.getParticipantCount())
+					.note(entity.getNote())
+					.status(entity.getStatus())
+					.build();
+			dtoList.add(dto);
+		}
+		return dtoList;
+	}
+	public TempleStayReservationDTO canceledMyReservation(Long reservationId) {
+		TempleStayReservationEntity entity = tsrr.findById(reservationId).orElseThrow(() -> new EntityNotFoundException("해당되는 템플스테이 예약 번호가 존재하지 않습니다."));
+		
+		LocalDateTime checkIn = entity.getStartDate().atStartOfDay();
+		if (LocalDateTime.now().isAfter(checkIn.minusHours(24))) {
+			throw new IllegalStateException("체크인 24시간 전까지만 취소할 수 있습니다.");
+		}
+		
+		entity.setStatus(TempleStayReservationEntity.Status.취소);
+		
+		return TempleStayReservationDTO.builder()
+				.reservationId(entity.getReservationId())
+				.loginId(entity.getLoginId())
+				.programId(entity.getProgramId())
+				.startDate(entity.getStartDate())
+				.endDate(entity.getEndDate())
+				.participantCount(entity.getParticipantCount())
+				.note(entity.getNote())
+				.status(entity.getStatus())
 				.build();
 	}
 	}

@@ -57,6 +57,9 @@ public class TempleRegistrationRequestEntity {
 	@Column(name = "special_notice", columnDefinition = "TEXT")
 	private String specialNotice;
 
+	@Column(name = "refund_policy", columnDefinition = "TEXT")
+	private String refundPolicy;
+
 	@Column(name = "contact_email", length = 100, nullable = false)
 	private String contactEmail;
 
