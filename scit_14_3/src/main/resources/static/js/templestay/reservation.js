@@ -558,6 +558,21 @@ async function submitReservation() {
     note: state.note,
   };
 
+  const totalAmount = p.price * state.participantCount;
+  const dateLabel = state.startDate === state.endDate ? `${state.startDate} (당일)` : `${state.startDate} ~ ${state.endDate}`;
+
+  const confirmMessage =
+  `아래 내용으로 예약하시겠습니까?\n\n` +
+  `프로그램: ${p.title}\n` +
+  `사찰: ${p.templeName} (${p.region})\n` +
+  `기간: ${dateLabel}\n` +
+  `인원: ${state.participantCount}명\n` +
+  `결제 수단: ${state.paymentMethod}\n` +
+  `총 금액: ${totalAmount.toLocaleString()}원`;
+
+  const ok = confirm(confirmMessage);
+  if (!ok) return;
+
   try {
     // TODO: 실제 POST /templestayreservations 만들어지면 아래 주석 해제
     const resRes = await fetch(API.createReservation, {
@@ -621,7 +636,7 @@ function renderStep3() {
 
 document.getElementById('go-to-my-reservations-btn').addEventListener('click', () => {
   // TODO: 마이페이지/내 예약 목록 페이지로 이동
-  alert('내 예약 목록 페이지는 아직 없습니다.');
+     location.href = '/mypage/myreservations';
 });
 
 // ------------------------- 필터 -------------------------

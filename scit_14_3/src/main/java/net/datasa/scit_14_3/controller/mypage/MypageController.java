@@ -45,4 +45,10 @@ public class MypageController {
 		}
 		return "redirect:/mypage/edit";
 	}
+	@GetMapping("/mypage/myreservations")
+	public String myReservation() {
+		return "mypage/myReservations";
+	}
+	
+	
 }
