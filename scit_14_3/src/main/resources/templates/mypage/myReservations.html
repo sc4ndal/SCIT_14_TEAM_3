@@ -6,10 +6,198 @@
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <link rel="stylesheet" th:href="@{/css/common.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}" type="text/css">
     <title>예약목록 · 佛선자</title>
-</head>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500&display=swap');
 
+        :root {
+          --bg: #f8f4ef;
+          --paper: #fdfaf6;
+          --secondary: #efe9e1;
+          --muted-bg: #ede7de;
+          --text: #27211b;
+          --destructive: #c0392b;
+
+          --brown: #9b6845;
+          --green: #5c7a62;
+          --blue: #6b7a9e;
+          --gold: #8a6e3c;
+
+          --text-primary: rgba(39, 33, 27, .90);
+          --text-secondary: rgba(39, 33, 27, .60);
+          --text-tertiary: rgba(39, 33, 27, .45);
+          --text-muted: rgba(39, 33, 27, .30);
+
+          --line: rgba(39, 33, 27, 0.09);
+
+          --serif: "Noto Serif KR", Batang, serif;
+          --sans: "Noto Sans KR", sans-serif;
+        }
+
+        * { box-sizing: border-box; }
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+        .page-title {
+          margin: 0 0 20px;
+          font-family: var(--serif);
+          font-weight: 500;
+          font-size: 21px;
+          color: var(--text-primary);
+        }
+
+        #list-view h2 {
+          font-family: var(--serif);
+          font-weight: 500;
+          font-size: 15px;
+          margin: 4px 0 16px;
+          color: var(--text-secondary);
+        }
+
+        .reservation-card {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          background: var(--paper);
+          border: 1px solid var(--line);
+          border-radius: 8px;
+          padding: 18px 22px;
+          margin-bottom: 10px;
+          cursor: pointer;
+          transition: box-shadow 0.15s, border-color 0.15s;
+        }
+        .reservation-card:hover {
+          border-color: rgba(39, 33, 27, 0.18);
+          box-shadow: 0 4px 14px rgba(39, 33, 27, 0.05);
+        }
+        .reservation-card .info { flex: 1; min-width: 0; }
+        .reservation-card .info h3 {
+          margin: 0 0 5px;
+          font-family: var(--serif);
+          font-weight: 500;
+          font-size: 15.5px;
+          color: var(--text-primary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .reservation-card .info p {
+          margin: 0;
+          font-size: 12.5px;
+          color: var(--text-tertiary);
+        }
+        .reservation-card .meta { text-align: right; flex-shrink: 0; }
+        .reservation-card .meta .date {
+          font-size: 12.5px;
+          color: var(--text-secondary);
+          margin-bottom: 7px;
+        }
+
+        .status-badge {
+          display: inline-block;
+          padding: 3px 11px;
+          border-radius: 999px;
+          font-size: 11.5px;
+          font-weight: 600;
+          letter-spacing: .01em;
+        }
+        .status-예약대기 { background: rgba(138, 110, 60, .12); color: var(--gold); }
+        .status-예약확정 { background: rgba(92, 122, 98, .13); color: var(--green); }
+        .status-취소     { background: rgba(192, 57, 43, .10); color: var(--destructive); }
+        .status-이용완료 { background: var(--muted-bg); color: var(--text-tertiary); }
+
+        .empty-msg {
+          text-align: center;
+          color: var(--text-tertiary);
+          padding: 40px 0;
+          font-size: 13.5px;
+        }
+
+        #detail-view { display: none; }
+
+        .back-btn {
+          background: none;
+          border: none;
+          color: var(--text-secondary);
+          font-size: 13px;
+          font-family: var(--sans);
+          cursor: pointer;
+          padding: 4px 0;
+          margin-bottom: 18px;
+        }
+        .back-btn:hover { color: var(--text-primary); }
+
+        .detail-card {
+          background: var(--paper);
+          border: 1px solid var(--line);
+          border-radius: 10px;
+          overflow: hidden;
+        }
+        .detail-hero { background: var(--secondary); padding: 26px 24px; }
+        .detail-hero .status-badge { margin-bottom: 12px; }
+        .detail-hero h2 {
+          margin: 0 0 6px;
+          font-family: var(--serif);
+          font-weight: 500;
+          font-size: 19px;
+          color: var(--text-primary);
+        }
+        .detail-hero p { margin: 0; font-size: 12.5px; color: var(--text-secondary); }
+        .detail-section { padding: 20px 24px; border-top: 1px solid var(--line); }
+        .detail-section h4 {
+          margin: 0 0 12px;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: .02em;
+          color: var(--text-tertiary);
+        }
+        .detail-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 7px 0;
+          font-size: 13.5px;
+          border-bottom: 1px solid var(--line);
+        }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-row span:first-child { color: var(--text-secondary); }
+        .detail-row span:last-child { color: var(--text-primary); font-weight: 500; }
+
+        .cancel-area { padding: 20px 24px 28px; }
+        .cancel-btn {
+          width: 100%;
+          padding: 13px;
+          background: var(--paper);
+          border: 1px solid var(--destructive);
+          color: var(--destructive);
+          border-radius: 6px;
+          font-family: var(--sans);
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .cancel-btn:hover { background: rgba(192, 57, 43, .06); }
+        .cancel-btn:disabled {
+          border-color: var(--line);
+          color: var(--text-muted);
+          cursor: not-allowed;
+          background: var(--muted-bg);
+        }
+        .cancel-note {
+          font-size: 11.5px;
+          color: var(--text-tertiary);
+          text-align: center;
+          margin-top: 8px;
+        }
+    </style>
+</head>
 <body>
+
+<div id="auth-info" style="display:none;"
+     sec:authorize="isAuthenticated()"
+     th:attr="data-login-id=${#authentication.principal.username}, data-nickname=${#authentication.principal.nickname}">
+</div>
 
 <header>
     <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
@@ -17,11 +205,51 @@
 
 <main class="mypage-main">
     <div class="mypage-inner">
-        <!-- 예약목록 내용 영역 -->
+        <h1 class="page-title">내 예약 목록</h1>
+
+        <!-- ===================== 목록 화면 ===================== -->
+        <section id="list-view">
+            <h2>예약 내역 (<span id="count-label">0</span>건)</h2>
+            <div id="reservation-list"></div>
+        </section>
+
+        <!-- ===================== 상세 화면 ===================== -->
+        <section id="detail-view">
+            <button class="back-btn" id="back-to-list-btn">&larr; 목록으로</button>
+
+            <div class="detail-card">
+                <div class="detail-hero">
+                    <span class="status-badge" id="detail-status-badge"></span>
+                    <h2 id="detail-title"></h2>
+                    <p id="detail-temple-region"></p>
+                </div>
+
+                <div class="detail-section">
+                    <h4>프로그램 정보</h4>
+                    <div class="detail-row"><span>일정</span><span id="detail-duration"></span></div>
+                    <div class="detail-row"><span>1인 가격</span><span id="detail-price"></span></div>
+                    <div class="detail-row"><span>설명</span><span id="detail-description"></span></div>
+                </div>
+
+                <div class="detail-section">
+                    <h4>내 예약 정보</h4>
+                    <div class="detail-row"><span>예약 번호</span><span id="detail-reservation-id"></span></div>
+                    <div class="detail-row"><span>이용 날짜</span><span id="detail-date-range"></span></div>
+                    <div class="detail-row"><span>참가 인원</span><span id="detail-participant-count"></span></div>
+                    <div class="detail-row"><span>결제 금액</span><span id="detail-amount"></span></div>
+                    <div class="detail-row"><span>결제 수단</span><span id="detail-payment-method"></span></div>
+                </div>
+
+                <div class="cancel-area">
+                    <button class="cancel-btn" id="cancel-btn">예약 취소</button>
+                    <p class="cancel-note" id="cancel-note"></p>
+                </div>
+            </div>
+        </section>
     </div>
 </main>
 
-<div th:replace="~{fragments/layout :: footer}"></div>
-
+<!--<div th:replace="~{fragments/layout :: footer}"></div>-->
+<script src="/js/mypage/myReservation.js"></script>
 </body>
 </html>

@@ -61,4 +61,17 @@ public class PaymentService {
 					.kakaoTid(dto.getKakaoTid())
 					.build();
 		}
+		public PaymentDTO findByReservationId(Long reservationId){
+			PaymentEntity entity = pr.findByReservationId(reservationId).orElseThrow(()-> new EntityNotFoundException("해당된 예약 정보가 없습니다."));
+			
+			return PaymentDTO.builder()
+					.paymentId(entity.getPaymentId())
+					.reservationId(entity.getReservationId())
+					.paymentMethod(entity.getPaymentMethod())
+					.amount(entity.getAmount())
+					.status(entity.getStatus())
+					.depositorName(entity.getDepositorName())
+					.kakaoTid(entity.getKakaoTid())
+					.build();
+		}
 	}

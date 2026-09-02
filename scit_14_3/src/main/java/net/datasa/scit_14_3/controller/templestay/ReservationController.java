@@ -58,4 +58,22 @@ public class ReservationController {
 	public PaymentDTO payment(@RequestBody PaymentDTO paymentDTO) {
 		return ps.reserved(paymentDTO);
 	}
+	
+	@GetMapping("/templestayreservations")
+	@ResponseBody
+	public List<TempleStayReservationDTO> getTempleStayReservation(@RequestParam String loginId) {
+		return tsrs.findByMyReservation(loginId);
+	}
+	
+	@GetMapping("/payments/reservation/{reservationId}")
+	@ResponseBody
+	public PaymentDTO getPaymentByReservations(@PathVariable Long reservationId) {
+		return ps.findByReservationId(reservationId);
+	}
+	
+	@PatchMapping("/templestayreservations/{reservationId}/cancel")
+	@ResponseBody
+	public TempleStayReservationDTO canceledReservation(@PathVariable Long reservationId) {
+		return tsrs.canceledMyReservation(reservationId);
+	}
 }
