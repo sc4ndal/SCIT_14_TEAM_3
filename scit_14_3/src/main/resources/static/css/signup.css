@@ -53,20 +53,10 @@ body{
 }
 .lang-opt.active{color:#fff;background:var(--wood-dark);font-weight:700;}
 .lang-opt:hover:not(.active){color:var(--wood-dark);}
-.lang-sep{color:var(--border);font-size:12px;}
-.mode-label{
-    display:inline-block;
-    margin:20px 32px 20px;
-    padding:5px 14px;
-    background:#efe6d3;
-    color:var(--wood-dark);
-    font-size:12px;
-    font-weight:700;
-    border-radius:20px;
-    letter-spacing:.02em;
-}
 
-form{padding:24px 32px 32px;}
+/* 원래 form{...} 전역 선택자였는데, admin 페이지의 작은 인라인 삭제/승인 폼까지 이 패딩을
+   먹어서 버튼이 부풀어버리는 문제가 있었음 - 카드 본문을 감싸는 "메인 폼"에만 적용되도록 스코프함 */
+.page-form{padding:24px 32px 32px;}
 fieldset{border:none;padding:0;margin:0 0 22px;}
 legend{
     font-size:12px;
@@ -188,7 +178,6 @@ input:focus,select:focus{outline:none;border-color:var(--wood);}
     align-items:center;
     justify-content:space-between;
 }
-.kakao-box .id-val{font-family:monospace;font-weight:700;color:var(--wood-dark);}
 .badge{
     font-size:11px;
     background:var(--teal);
@@ -224,19 +213,23 @@ input:focus,select:focus{outline:none;border-color:var(--wood);}
     text-align:center;
 }
 .btn-cancel:hover{background:#f1ece1;}
-button.submit{
+.submit{
+    display:inline-block;
     flex:2;
     padding:13px 0;
     background:var(--wood-dark);
     color:#fff;
-    border:none;
+    /* border:none이면 .btn-cancel(1px solid 테두리)보다 2px 낮아져서 나란히 놓였을 때 높이가 안 맞음 */
+    border:1px solid transparent;
     border-radius:5px;
     font-size:15px;
     font-weight:700;
     font-family:inherit;
     cursor:pointer;
+    text-decoration:none;
+    box-sizing:border-box;
 }
-button.submit:hover{background:var(--wood);}
+.submit:hover{background:var(--wood);}
 .swal-btn-fixed{
     min-width: 90px;
 }

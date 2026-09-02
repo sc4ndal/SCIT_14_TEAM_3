@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <link rel="stylesheet" th:href="@{/css/common.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/css/home/home.css}" type="text/css">
+    <script defer th:src="@{/js/home/home.i18n.js}"></script>
+    <script defer th:src="@{/js/home/home.js}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>佛선자</title>
+</head>
+
+<body>
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
+<header>
+    <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+</header>
+
+<main>
+
+
+    <!-- =====================================================
+         HERO
+    ===================================================== -->
+    <section class="hero">
+
+        <div class="hero-inner">
+
+            <h1 data-i18n="heroTitle">
+                처음 만나는 불교, 어렵지 않게
+            </h1>
+
+            <p>
+                <span data-i18n="heroDescLine1">불교와 사찰 문화를 처음 접하는 사람도 쉽게 알아보고, 찾고,</span><br>
+                <span data-i18n="heroDescLine2">준비하고, 직접 체험할 수 있는 공간입니다.</span>
+            </p>
+
+
+            <div class="hero-decoration">
+
+                <span></span>
+
+                <div class="hero-symbol">
+                    ✥
+                </div>
+
+                <span></span>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         FEATURE SET 01
+         알아보기 → 찾아보기
+    ===================================================== -->
+
+    <section class="feature-section fade-section"
+             id="featureSetOne">
+
+        <div class="feature-set feature-set-first">
+
+
+            <!-- =========================
+                 TYPOGRAPHY CANVAS
+            ========================== -->
+            <div class="type-canvas type-canvas-left">
+
+
+                <!-- 알아보기 -->
+                <article class="type-item type-item-learn">
+
+                    <span class="type-label" data-i18n="typeLabelLearn">
+                        알아보기
+                    </span>
+
+                    <span class="background-kanji kanji-learn">
+                        知
+                    </span>
+
+                    <h2 class="type-title"
+                        tabindex="0">
+                        <span data-i18n="learnTitleLine1">불교를 처음</span><br>
+                        <span data-i18n="learnTitleLine2">접하시나요?</span>
+                    </h2>
+
+
+                    <div class="sub-menu">
+
+                        <a href="/info/intro" data-i18n="learnLink1">
+                            불교란?
+                        </a>
+
+                        <a href="/info/terms" data-i18n="learnLink2">
+                            불교 용어
+                        </a>
+
+                        <a href="#" data-i18n="learnLink3">
+                            사찰 음식
+                        </a>
+
+                        <a href="#" data-i18n="learnLink4">
+                            오늘의 불교 한마디
+                        </a>
+
+                    </div>
+
+                </article>
+
+
+                <!-- 찾아보기 -->
+                <article class="type-item type-item-find">
+
+                    <span class="type-label" data-i18n="typeLabelFind">
+                        찾아보기
+                    </span>
+
+                    <span class="background-kanji kanji-find">
+                        尋
+                    </span>
+
+                    <h2 class="type-title"
+                        tabindex="0">
+                        <span data-i18n="findTitleLine1">어떤 사찰을</span><br>
+                        <span data-i18n="findTitleLine2">찾고 계신가요?</span>
+                    </h2>
+
+
+                    <div class="sub-menu">
+
+                        <a th:href="@{/findtemple}" data-i18n="findLink1">
+                            사찰 찾아보기
+                        </a>
+
+                        <a href="#" data-i18n="findLink2">
+                            불교 행사
+                        </a>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+
+            <!-- =========================
+                 IMAGE
+            ========================== -->
+            <div class="feature-photo feature-photo-right">
+
+                <img
+                        alt="한국 사찰"
+                        src="https://images.unsplash.com/photo-1448523183439-d2ac62aca997?w=1400&h=1000&fit=crop&auto=format">
+
+                <div class="photo-gradient gradient-from-left"></div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         FEATURE SET 02
+         준비하기 → 체험하기
+    ===================================================== -->
+
+    <section class="feature-section feature-section-second fade-section"
+             id="featureSetTwo">
+
+        <div class="feature-set feature-set-second">
+
+
+            <!-- =========================
+                 IMAGE
+            ========================== -->
+            <div class="feature-photo feature-photo-left">
+
+                <img
+                        alt="숲속 사찰 길"
+                        src="https://images.unsplash.com/photo-1771321732667-881c52f78bbf?w=1400&h=1000&fit=crop&auto=format">
+
+                <div class="photo-gradient gradient-from-right"></div>
+
+            </div>
+
+
+            <!-- =========================
+                 TYPOGRAPHY CANVAS
+            ========================== -->
+            <div class="type-canvas type-canvas-right">
+
+
+                <!-- 준비하기 -->
+                <article class="type-item type-item-prepare">
+
+                    <span class="type-label" data-i18n="typeLabelPrepare">
+                        준비하기
+                    </span>
+
+                    <span class="background-kanji kanji-prepare">
+                        備
+                    </span>
+
+                    <h2 class="type-title"
+                        tabindex="0">
+                        <span data-i18n="prepareTitleLine1">처음 가는 사찰,</span><br>
+                        <span data-i18n="prepareTitleLine2">어렵지 않게.</span>
+                    </h2>
+
+
+                    <div class="sub-menu">
+
+                        <a th:href="@{/info(category='예절가이드')}" data-i18n="prepareLink1">
+                            사찰 예절 가이드
+                        </a>
+
+                        <a th:href="@{/etiquette-simulation}" data-i18n="prepareLink2">
+                            첫 방문 시뮬레이션
+                        </a>
+
+                    </div>
+
+                </article>
+
+
+                <!-- 체험하기 -->
+                <article class="type-item type-item-experience">
+
+                    <span class="type-label" data-i18n="typeLabelExperience">
+                        체험하기
+                    </span>
+
+                    <span class="background-kanji kanji-experience">
+                        行
+                    </span>
+
+                    <h2 class="type-title"
+                        tabindex="0">
+                        <span data-i18n="experienceTitleLine1">직접 불교 문화를</span><br>
+                        <span data-i18n="experienceTitleLine2">경험해보세요.</span>
+                    </h2>
+
+
+                    <div class="sub-menu">
+
+                        <a th:href="@{/templestayGuide}" data-i18n="experienceLink1">
+                            템플스테이
+                        </a>
+
+                        <a href="#" data-i18n="experienceLink2">
+                            온라인 목탁회
+                        </a>
+
+                        <a href="#" data-i18n="experienceLink3">
+                            체험 후기
+                        </a>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         DIVIDER
+    ===================================================== -->
+    <div class="section-divider"></div>
+
+
+    <!-- =====================================================
+         MONTHLY CALENDAR
+    ===================================================== -->
+
+    <section class="calendar-section fade-section"
+             id="calendarSection">
+
+        <div class="calendar-inner">
+
+
+            <h2 class="calendar-section-title" data-i18n="calendarSectionTitle">
+                월간 불교 행사
+            </h2>
+
+
+            <div class="calendar-layout">
+
+
+                <!-- =========================
+                     CALENDAR
+                ========================== -->
+                <div class="calendar-card">
+
+
+                    <div class="calendar-top">
+
+                        <button aria-label="이전 달"
+                                data-i18n-aria="prevMonth"
+                                class="month-button"
+                                id="prevMonth"
+                                type="button">
+                            ‹
+                        </button>
+
+
+                        <strong id="calendarMonthTitle">
+                            2026년 8월
+                        </strong>
+
+
+                        <button aria-label="다음 달"
+                                data-i18n-aria="nextMonth"
+                                class="month-button"
+                                id="nextMonth"
+                                type="button">
+                            ›
+                        </button>
+
+                    </div>
+
+
+                    <div class="week-row">
+
+                        <span class="sunday" data-i18n="weekdaySun">
+                            일
+                        </span>
+
+                        <span data-i18n="weekdayMon">
+                            월
+                        </span>
+
+                        <span data-i18n="weekdayTue">
+                            화
+                        </span>
+
+                        <span data-i18n="weekdayWed">
+                            수
+                        </span>
+
+                        <span data-i18n="weekdayThu">
+                            목
+                        </span>
+
+                        <span data-i18n="weekdayFri">
+                            금
+                        </span>
+
+                        <span class="saturday" data-i18n="weekdaySat">
+                            토
+                        </span>
+
+                    </div>
+
+
+                    <div class="calendar-grid"
+                         id="calendarGrid">
+                    </div>
+
+                </div>
+
+
+                <!-- =========================
+                     EVENT DETAILS
+                ========================== -->
+                <aside class="event-panel"
+                       id="eventPanel">
+
+                </aside>
+
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+</main>
+
+
+<!-- =====================================================
+     FOOTER
+===================================================== -->
+
+<footer class="home-footer">
+
+    <p data-i18n="footerText">사찰 관계자이신가요?</p>
+
+    <a class="btn-inquiry" th:href="@{/temple-requests/new}" data-i18n="footerBtn">
+        문의하기
+    </a>
+
+</footer>
+
+
+<!-- =====================================================
+     BACK TO TOP
+===================================================== -->
+
+<button aria-label="페이지 위로 이동"
+        data-i18n-aria="backToTop"
+        class="back-to-top"
+        id="backToTop"
+        type="button">
+
+    ↑
+
+</button>
+
+
+<script th:if="${submitSuccess}">
+    Swal.fire({
+        icon: 'success',
+        title: '문의가 접수되었습니다',
+        text: '검토 후 입력하신 이메일로 안내드리겠습니다.'
+    });
+</script>
+
+</body>
+</html>

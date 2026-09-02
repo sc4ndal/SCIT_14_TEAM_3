@@ -1,0 +1,708 @@
+
+<title>템플스테이 첫걸음</title>
+<style>
+  :root {
+    --bg: #efe9dd;
+    --bg-raised: #f7f3ea;
+    --ink: #2a2620;
+    --ink-soft: #5b5346;
+    --ink-faint: #8b8272;
+    --line: #d9d0bd;
+    --line-soft: #e4dccb;
+    --pine: #3d5646;
+    --pine-deep: #2b3e33;
+    --pine-tint: #e2e8e0;
+    --gold: #a9822f;
+    --gold-tint: #f1e6c8;
+    --red: #96432f;
+    --red-tint: #f0ded6;
+    --blue: #3c5a72;
+    --blue-tint: #dfe6ea;
+    --shadow: 0 1px 2px rgba(42,38,32,0.06), 0 8px 24px -12px rgba(42,38,32,0.18);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #211d18;
+      --bg-raised: #2a251e;
+      --ink: #eee7d8;
+      --ink-soft: #bcb199;
+      --ink-faint: #8b8272;
+      --line: #3d372c;
+      --line-soft: #332e25;
+      --pine: #8fae9b;
+      --pine-deep: #b7cbbe;
+      --pine-tint: #29352e;
+      --gold: #d8b866;
+      --gold-tint: #362d1c;
+      --red: #d8917d;
+      --red-tint: #3a241f;
+      --blue: #8fb2c9;
+      --blue-tint: #263038;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #211d18;
+    --bg-raised: #2a251e;
+    --ink: #eee7d8;
+    --ink-soft: #bcb199;
+    --ink-faint: #8b8272;
+    --line: #3d372c;
+    --line-soft: #332e25;
+    --pine: #8fae9b;
+    --pine-deep: #b7cbbe;
+    --pine-tint: #29352e;
+    --gold: #d8b866;
+    --gold-tint: #362d1c;
+    --red: #d8917d;
+    --red-tint: #3a241f;
+    --blue: #8fb2c9;
+    --blue-tint: #263038;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Noto Sans KR", "Malgun Gothic", sans-serif;
+    line-height: 1.7;
+    font-size: 16px;
+  }
+
+  h1, h2, h3 {
+    font-family: "Noto Serif KR", "Batang", serif;
+    color: var(--ink);
+    text-wrap: balance;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .mono {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 24px 96px;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    padding: 88px 24px 64px;
+    text-align: center;
+    border-bottom: 1px solid var(--line);
+    background:
+      radial-gradient(60% 50% at 50% 0%, var(--pine-tint), transparent 70%);
+  }
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--pine);
+    font-weight: 600;
+    margin-bottom: 22px;
+  }
+  .hero-eyebrow::before,
+  .hero-eyebrow::after {
+    content: "";
+    width: 20px;
+    height: 1px;
+    background: var(--pine);
+    opacity: 0.5;
+  }
+  .hero h1 {
+    font-size: clamp(34px, 5.6vw, 50px);
+    line-height: 1.25;
+    max-width: 620px;
+    margin: 0 auto;
+  }
+  .hero h1 em {
+    font-style: normal;
+    color: var(--pine);
+  }
+  .hero p {
+    margin: 22px auto 0;
+    max-width: 480px;
+    color: var(--ink-soft);
+    font-size: 17px;
+  }
+
+  /* ---------- Sections ---------- */
+  section {
+    padding: 64px 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  section:last-of-type { border-bottom: none; }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .section-num {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    color: var(--gold);
+    font-weight: 600;
+    border: 1px solid var(--line);
+    background: var(--bg-raised);
+    border-radius: 100px;
+    padding: 3px 10px;
+    flex: none;
+  }
+  .section-head h2 {
+    font-size: 25px;
+  }
+  .section-intro {
+    color: var(--ink-soft);
+    max-width: 62ch;
+    margin: 0 0 28px;
+  }
+
+  /* ---------- Definition callout ---------- */
+  .definition {
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 28px 30px;
+    box-shadow: var(--shadow);
+  }
+  .definition p { margin: 0; color: var(--ink-soft); }
+  .definition p + p { margin-top: 12px; }
+  .definition strong { color: var(--ink); font-weight: 700; }
+
+  /* ---------- Type comparison ---------- */
+  .compare {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 720px) {
+    .compare { grid-template-columns: 1fr; }
+  }
+  .compare-card {
+    --card-accent: var(--pine);
+    --card-tint: var(--pine-tint);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--card-accent);
+    border-radius: 10px 10px 14px 14px;
+    padding: 24px;
+    background: var(--bg-raised);
+  }
+  .compare-card.type-experience {
+    --card-accent: var(--pine);
+    --card-tint: var(--pine-tint);
+  }
+  .compare-card.type-rest {
+    --card-accent: var(--blue);
+    --card-tint: var(--blue-tint);
+  }
+  .compare-card.type-day {
+    --card-accent: var(--gold);
+    --card-tint: var(--gold-tint);
+  }
+  .compare-card h3 {
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+  .compare-card .tag {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--card-accent);
+    background: var(--card-tint);
+    border-radius: 100px;
+    padding: 3px 10px;
+    margin-bottom: 10px;
+  }
+  .compare-card p {
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    margin: 0 0 14px;
+  }
+  .compare-card ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .compare-card li {
+    font-size: 14px;
+    color: var(--ink);
+    display: flex;
+    gap: 8px;
+  }
+  .compare-card li::before {
+    content: "·";
+    color: var(--card-accent);
+    font-weight: 700;
+  }
+
+  /* ---------- Timeline ---------- */
+  .day-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 32px 0 12px;
+  }
+  .day-label:first-child { margin-top: 0; }
+
+  .timeline {
+    position: relative;
+    padding-left: 26px;
+  }
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: 5px;
+    top: 6px;
+    bottom: 6px;
+    width: 1px;
+    background: var(--line);
+  }
+  .t-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 74px 1fr;
+    gap: 14px;
+    padding: 9px 0;
+    align-items: baseline;
+  }
+  .t-row::before {
+    content: "";
+    position: absolute;
+    left: -25px;
+    top: 15px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--pine);
+  }
+  .t-time {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13.5px;
+    color: var(--pine);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .t-desc { font-size: 15px; }
+  .t-desc .sub { color: var(--ink-faint); font-size: 13px; display: block; margin-top: 2px; }
+
+  /* ---------- Checklist ---------- */
+  .check-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+  @media (max-width: 560px) {
+    .check-grid { grid-template-columns: 1fr; }
+  }
+  .check-grid h3 {
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    margin-bottom: 12px;
+    color: var(--ink);
+  }
+  .check-grid ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .check-grid li {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .check-grid li::before {
+    content: "";
+    flex: none;
+    width: 15px;
+    height: 15px;
+    margin-top: 3px;
+    border-radius: 4px;
+    border: 1.5px solid var(--pine);
+  }
+  .avoid li::before {
+    border-color: var(--red);
+    border-radius: 50%;
+  }
+
+  /* ---------- Reservation steps ---------- */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--bg-raised);
+  }
+  .step {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 16px;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .step:last-child { border-bottom: none; }
+  .step-n {
+    font-family: "IBM Plex Mono", monospace;
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .step h4 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 3px;
+  }
+  .step p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+
+  /* ---------- FAQ ---------- */
+  details {
+    border-bottom: 1px solid var(--line-soft);
+    padding: 16px 0;
+  }
+  details:first-of-type { border-top: 1px solid var(--line-soft); }
+  summary {
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 15.5px;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after {
+    content: "+";
+    font-family: "IBM Plex Mono", monospace;
+    color: var(--pine);
+    font-size: 18px;
+    flex: none;
+    transition: transform 0.2s ease;
+  }
+  details[open] summary::after { transform: rotate(45deg); }
+  details p {
+    margin: 12px 0 0;
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    max-width: 62ch;
+  }
+  summary:focus-visible {
+    outline: 2px solid var(--pine);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    details[open] summary::after { transition: none; }
+  }
+
+  /* ---------- CTA footer ---------- */
+  .cta {
+    text-align: center;
+    padding-top: 8px;
+  }
+  .cta-box {
+    background: var(--pine-deep);
+    color: var(--bg-raised);
+    border-radius: 16px;
+    padding: 40px 32px;
+  }
+  :root:not([data-theme="light"]) .cta-box,
+  :root[data-theme="dark"] .cta-box {
+    background: var(--pine-tint);
+    color: var(--ink);
+    border: 1px solid var(--line);
+  }
+  .cta-box h2 {
+    color: inherit;
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+  .cta-box p {
+    color: inherit;
+    opacity: 0.82;
+    margin: 0 auto 22px;
+    max-width: 46ch;
+    font-size: 14.5px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--gold);
+    color: var(--pine-deep);
+    font-weight: 700;
+    font-size: 15px;
+    text-decoration: none;
+    padding: 13px 26px;
+    border-radius: 100px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: var(--shadow);
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:focus-visible { outline: 2px solid var(--bg-raised); outline-offset: 3px; }
+  .btn svg { width: 15px; height: 15px; flex: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .btn { transition: none; }
+  }
+  .foot-note {
+    text-align: center;
+    color: var(--ink-faint);
+    font-size: 12.5px;
+    margin-top: 28px;
+  }
+</style>
+
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="/css/common.css">
+<header class="hero">
+  <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+  <span class="hero-eyebrow">TEMPLESTAY 101</span>
+  <h1>예약 버튼을 누르기 전,<br><em>템플스테이</em>가 무엇인지부터</h1>
+  <p>산사에서 하루, 스님의 일상을 잠시 빌려 사는 일. 처음이라도 낯설지 않도록, 필요한 것만 정리했습니다.</p>
+</header>
+
+<div class="wrap">
+
+  <section id="what">
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <h2>템플스테이란?</h2>
+    </div>
+    <div class="definition">
+      <p><strong>템플스테이(Templestay)</strong>는 사찰에 머물며 스님과 수행자의 일상 — 예불, 참선, 공양(식사), 울력(청소·울력 노동) — 을 함께 체험하는 한국 전통문화 프로그램입니다. 2002년 한·일 월드컵을 계기로 시작되어, 지금은 전국 약 130여 개 사찰에서 연간 수십만 명이 참여하는 대표적인 문화 체험으로 자리 잡았습니다.</p>
+      <p>종교와 무관하게 누구나 신청할 수 있습니다. 도심의 소음에서 벗어나 자연 속에서 하루이틀 자신을 돌아보는 시간에 가깝고, 참가 목적에 따라 크게 두 가지 유형으로 나뉩니다.</p>
+    </div>
+  </section>
+
+  <section id="types">
+    <div class="section-head">
+      <span class="section-num">02</span>
+      <h2>세 가지 유형, 뭐가 다를까</h2>
+    </div>
+    <p class="section-intro">신청 화면에서 가장 먼저 마주치는 선택지입니다. 시간과 목적에 따라 고르면 됩니다.</p>
+    <div class="compare">
+      <div class="compare-card type-experience">
+        <span class="tag">체험형 · EXPERIENCE</span>
+        <h3>불교 문화를 배우고 싶다면</h3>
+        <p>사찰 예절, 108배, 발우공양, 다도, 연등 만들기 등 짜인 프로그램을 따라가며 스님의 하루를 그대로 체험합니다. 처음 온 사람, 외국인, 단체 참가자에게 잘 맞습니다.</p>
+        <ul>
+          <li>1박 2일, 주로 주말·공휴일 운영</li>
+          <li>1박 2일 기준 약 6~7만원대</li>
+          <li>스님과의 대화(차담) 포함</li>
+        </ul>
+      </div>
+      <div class="compare-card type-rest">
+        <span class="tag">휴식형 · REST</span>
+        <h3>그저 쉬고 싶다면</h3>
+        <p>새벽·저녁 예불과 공양 시간 외에는 정해진 일정이 없습니다. 산책, 명상, 독서 등 자유 시간 위주로, 조용히 혼자만의 시간을 원하는 사람에게 적합합니다.</p>
+        <ul>
+          <li>1박 2일, 주로 평일 운영</li>
+          <li>1박 2일 기준 약 5만원대</li>
+          <li>개인 정비 시간 위주</li>
+        </ul>
+      </div>
+      <div class="compare-card type-day">
+        <span class="tag">당일형 · DAY VISIT</span>
+        <h3>시간이 많지 않다면</h3>
+        <p>숙박 없이 2~3시간만 머물며 사찰음식 만들기, 염주 만들기, 차담 같은 짧은 체험 하나만 골라 참여합니다. 일정이 빠듯한 여행자나 외국인 단기 방문객에게 추천합니다.</p>
+        <ul>
+          <li>당일, 2~3시간 내외</li>
+          <li>일부 사찰만 제한적으로 운영</li>
+          <li>숙박·새벽예불 없이 체험만</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="schedule">
+    <div class="section-head">
+      <span class="section-num">03</span>
+      <h2>1박 2일 일정 예시</h2>
+    </div>
+    <p class="section-intro">체험형 기준의 대표적인 흐름입니다. 사찰마다 순서와 시간은 조금씩 다르니 참고용으로 봐주세요.</p>
+
+    <div class="day-label">첫째 날</div>
+    <div class="timeline">
+      <div class="t-row">
+        <span class="t-time mono">14:00</span>
+        <span class="t-desc">사찰 도착 및 접수<span class="sub">숙소 배정, 생활한복(체험복)으로 환복</span></span>
+      </div>
+      <div class="t-row">
+        <span class="t-time mono">15:00</span>
+        <span class="t-desc">오리엔테이션 &amp; 사찰 예절 안내<span class="sub">합장, 절하는 법, 도량(경내) 걷는 법</span></span>
+      </div>
+      <div class="t-row">
+        <span class="t-time mono">16:00</span>
+        <span class="t-desc">사찰 탐방 · 다도 체험</span>
+      </div>
+      <div class="t-row">
+        <span class="t-time mono">17:30</span>
+        <span class="t-desc">저녁 공양<span class="sub">발우공양 — 음식을 남기지 않는 전통 식사법</span></span>
+      </div>
+      <div class="t-row">
+        <span class="t-time mono">18:30</span>
+        <span class="t-desc">저녁 예불 &amp; 타종 체험</span>
+      </div>
+      <div class="t-row">
+        <span class="t-time mono">20:00</span>
+        <span class="t-desc">참선(명상) 또는 스님과의 차담</span>
+      </div>
+      <div class="t-row">
+        <span class="t-time mono">21:00</span>
+        <span class="t-desc">취침<span class="sub">이르게 잠자리에 듭니다</span></span>
+      </div>
+    </div>
+
+    <div class="day-label">둘째 날</div>
+    <div class="timeline">
+      <div class="t-row">
+        <span class="t-time mono">04:00</span>
+        <span class="t-desc">기상</span>
+      </div>
+      <div class="t-row">
+        <span class="t-time mono">04:30</span>
+        <span class="t-desc">새벽 예불<span class="sub">이 여정에서 가장 인상적이라는 평이 많은 시간</span></span>
+      </div>
+      <div class="t-row">
+        <span class="t-time mono">05:30</span>
+        <span class="t-desc">108배 또는 새벽 참선</span>
+      </div>
+      <div class="t-row">
+        <span class="t-time mono">06:30</span>
+        <span class="t-desc">아침 공양</span>
+      </div>
+      <div class="t-row">
+        <span class="t-time mono">08:00</span>
+        <span class="t-desc">울력(경내 청소) 또는 자유 시간</span>
+      </div>
+      <div class="t-row">
+        <span class="t-time mono">10:00</span>
+        <span class="t-desc">퇴소 및 소감 나누기</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="prepare">
+    <div class="section-head">
+      <span class="section-num">04</span>
+      <h2>준비물과 지켜야 할 것</h2>
+    </div>
+    <p class="section-intro">체험복은 대부분 사찰에서 제공하지만, 개인 물품은 직접 챙겨야 합니다.</p>
+    <div class="check-grid">
+      <div>
+        <h3>챙기면 좋은 것</h3>
+        <ul>
+          <li>세면도구, 개인 수건</li>
+          <li>편한 실내화 또는 슬리퍼</li>
+          <li>얇은 겉옷 (산사는 저녁에 쌀쌀합니다)</li>
+          <li>상비약, 개인 필기구</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="color: var(--red);">유의할 점</h3>
+        <ul class="avoid">
+          <li>노출이 많거나 몸에 붙는 옷은 피하기</li>
+          <li>경내에서는 금연·금주</li>
+          <li>큰소리 통화, 촬영 금지 구역 유의</li>
+          <li>공양 시간엔 음식 남기지 않기</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="reserve">
+    <div class="section-head">
+      <span class="section-num">05</span>
+      <h2>예약은 이렇게 진행돼요</h2>
+    </div>
+    <p class="section-intro">한국불교문화사업단이 운영하는 공식 사이트(templestay.com)를 기준으로 한 흐름입니다.</p>
+    <div class="steps">
+      <div class="step">
+        <span class="step-n mono">1</span>
+        <div><h4>지역·유형으로 검색</h4><p>원하는 지역, 날짜, 체험형/휴식형 여부를 선택해 사찰과 프로그램을 찾습니다.</p></div>
+      </div>
+      <div class="step">
+        <span class="step-n mono">2</span>
+        <div><h4>프로그램 선택</h4><p>사찰별 소개, 일정표, 후기를 확인하고 원하는 회차를 고릅니다.</p></div>
+      </div>
+      <div class="step">
+        <span class="step-n mono">3</span>
+        <div><h4>인원·정보 입력</h4><p>참가 인원과 참가자 정보를 입력합니다.</p></div>
+      </div>
+      <div class="step">
+        <span class="step-n mono">4</span>
+        <div><h4>결제 및 예약 확정</h4><p>결제를 마치면 예약이 확정되며, 사찰별 안내 문자나 이메일을 받게 됩니다.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="section-head">
+      <span class="section-num">06</span>
+      <h2>자주 묻는 질문</h2>
+    </div>
+
+    <details open>
+      <summary>불교 신자가 아니어도 참가할 수 있나요?</summary>
+      <p>네, 종교와 무관하게 누구나 신청할 수 있습니다. 예불이나 참선 등은 체험 목적으로 참여하는 것이며, 특정 종교를 강요하지 않습니다.</p>
+    </details>
+    <details>
+      <summary>외국인도 참가할 수 있나요? 영어 안내가 있나요?</summary>
+      <p>가능합니다. 일부 사찰은 영어·중국어·일본어 안내 프로그램을 운영하며, 공식 사이트에서 외국어 지원 여부를 필터로 확인할 수 있습니다. 짧게 경험하고 싶다면 반나절 정도의 '당일형' 프로그램도 있습니다.</p>
+    </details>
+    <details>
+      <summary>운동을 잘 못해도 108배를 할 수 있을까요?</summary>
+      <p>체력에 맞춰 자신의 속도로 진행하면 됩니다. 힘들면 언제든 앉아서 쉬어도 괜찮습니다. 무리하지 않는 것이 원칙입니다.</p>
+    </details>
+    <details>
+      <summary>혼자 가도 괜찮나요?</summary>
+      <p>혼자 참가하는 분들이 오히려 많습니다. 휴식형은 특히 나 홀로 여행객에게 인기가 많습니다.</p>
+    </details>
+    <details>
+      <summary>예약은 며칠 전에 해야 하나요?</summary>
+      <p>인기 사찰·주말 일정은 몇 주 전에 마감되기도 합니다. 날짜가 정해졌다면 최소 2~3주 전 예약을 권장합니다.</p>
+    </details>
+  </section>
+
+  <section class="cta" style="border-bottom: none;">
+    <div class="cta-box">
+      <h2>이제 나에게 맞는 사찰을 찾아볼 차례</h2>
+      <p>체험형인지 휴식형인지, 지역과 날짜만 정해지면 예약 신청은 금방입니다.</p>
+      <a class="btn" th:href="@{/reservation}" onclick="return guardReservation(event)">
+        예약 신청하러 가기
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h12M11 5l5 5-5 5"/></svg>
+      </a>
+    </div>
+    <p class="foot-note">본 페이지는 템플스테이 입문자를 위한 일반 안내이며, 실제 일정과 비용은 사찰과 회차에 따라 달라질 수 있습니다.</p>
+  </section>
+
+</div>

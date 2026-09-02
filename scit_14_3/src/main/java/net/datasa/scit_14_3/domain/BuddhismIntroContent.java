@@ -1,8 +1,8 @@
 package net.datasa.scit_14_3.domain;
 
-import net.datasa.scit_14_3.domain.dto.FaqItemDTO;
-import net.datasa.scit_14_3.domain.dto.NextCardDTO;
-import net.datasa.scit_14_3.domain.dto.RoadmapStepDTO;
+import net.datasa.scit_14_3.domain.dto.buddhism.FaqItemDTO;
+import net.datasa.scit_14_3.domain.dto.buddhism.NextCardDTO;
+import net.datasa.scit_14_3.domain.dto.buddhism.RoadmapStepDTO;
 
 import java.util.List;
 

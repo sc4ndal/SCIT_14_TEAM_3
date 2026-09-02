@@ -1,0 +1,31 @@
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>템플스테이 상세보기</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <!-- 카카오맵 SDK -->
+    <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=4d97c12d7e3e28e5dd08a2f00a58025d&libraries=services"></script>
+    <style>
+        /* 헤더(.site-header)가 position:fixed, 높이 74px라서 그만큼 밀어줌 */
+        body { padding-top: 74px; }
+        #map { width: 100%; height: 400px; }
+    </style>
+</head>
+<!-- data-program-id 속성에 컨트롤러가 넘겨준 programId를 심어둠 -> JS에서 이 값을 읽어서 API 호출 -->
+<body th:data-program-id="${programId}">
+
+<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+
+<h2>템플스테이 상세보기</h2>
+
+<div id="program-info">
+    <!-- 필요하면 여기에 제목/설명/가격 등 다른 정보도 같이 표시 -->
+</div>
+
+<div id="map"></div>
+
+<script src="/js/mapCommon.js"></script>
+<script src="/js/templestay/templestayView.js"></script>
+
+</body>
+</html>

@@ -60,10 +60,10 @@ SET FOREIGN_KEY_CHECKS = 1;
 CREATE TABLE USER (
     login_id     VARCHAR(30)  NOT NULL COMMENT '로그인 아이디 (변경 불가, @ 시작 불가)',
     password     VARCHAR(255) NULL     COMMENT '비밀번호 (카카오 회원은 NULL)',
-    nickname     VARCHAR(30)  NOT NULL COMMENT '법명 (수정 불가)',
+    nickname     VARCHAR(30)  NOT NULL COMMENT '법명 (본인은 수정 불가, 관리자는 회원관리에서 수정 가능)',
     name         VARCHAR(150) NOT NULL COMMENT '실명 (여권 영문 이름 형식)',
     phone        VARCHAR(20)  NULL     COMMENT '연락처',
-    email        VARCHAR(100) NULL     COMMENT '이메일 (선택)',
+    email        VARCHAR(100) NULL     COMMENT '이메일 (일반회원은 필수, 사이트 관리자 계정은 불필요해서 NULL 허용)',
     role         ENUM('USER','ADMIN') NOT NULL DEFAULT 'USER' COMMENT '일반/사이트 관리자',
     login_type   ENUM('LOCAL','KAKAO') NOT NULL DEFAULT 'LOCAL' COMMENT '가입 경로',
     PRIMARY KEY (login_id),
@@ -76,7 +76,11 @@ CREATE TABLE USER (
             (login_type = 'KAKAO' AND login_id LIKE 'kakao\_%')
             OR
             (login_type = 'LOCAL' AND login_id NOT LIKE 'kakao\_%')
-        )
+        ),
+    -- 일반회원(USER)은 이메일 필수, 사이트 관리자(ADMIN)는 예외 (관리자 계정은 회원가입 흐름을 안 거치고
+    -- 직접 INSERT로 만들어지므로 이메일 인증을 강제할 방법이 없음)
+    CONSTRAINT chk_user_email_required_unless_admin
+        CHECK (role = 'ADMIN' OR email IS NOT NULL)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='회원 정보(카카오 로그인 포함)';
 
 -- =====================================================================

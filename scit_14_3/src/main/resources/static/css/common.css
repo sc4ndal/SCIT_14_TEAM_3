@@ -135,6 +135,12 @@
     color: rgba(39, 33, 27, .73);
 }
 
+/* 번역 모델 다운로드/번역 중 - 눌렀는데 멈춘 것처럼 보이지 않도록 표시 */
+.language-button.i18n-loading {
+    cursor: wait;
+    opacity: .5;
+}
+
 .header-divider {
     width: 1px;
     height: 13px;
@@ -173,6 +179,7 @@
     font-weight: 500;
     color: rgba(39, 33, 27, .75);
     white-space: nowrap;
+    cursor: pointer;
 }
 
 .identity-divider {
@@ -205,46 +212,15 @@
     cursor: pointer;
 }
 
-/* 마이페이지 트리거 + dropdown
-   userEntity-identity 줄 바로 아래에 오버레이로 뜬다 (헤더 높이에 영향 안 줌) */
+/* 마이페이지 드롭다운 - 닉네임에 마우스를 올리면 바로 아래로 뜬다(별도 트리거 없음) */
 
 .mypage-menu {
-    position: absolute;
+    position: relative;
+    cursor: default;
 
-    top: 100%;
-    right: 0;
-
-    padding-top: 8px;
-}
-
-.mypage-title {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-
-    width: max-content;
-    margin-left: auto;
-
-    padding: 8px 14px;
-
-    background: #fdfaf6;
-    border: 1px solid rgba(39, 33, 27, 0.10);
-    border-radius: 6px;
-
-    font-size: 12px;
-    color: rgba(39, 33, 27, .70);
-}
-
-.mypage-caret {
-    width: 9px;
-    height: 9px;
-    flex: none;
-
-    transition: transform .15s ease;
-}
-
-.mypage-menu:hover .mypage-caret {
-    transform: rotate(180deg);
+    /* 닉네임과 드롭다운 사이 빈틈에서 마우스가 빠져나가 hover가 풀리는 걸 방지 */
+    padding-bottom: 8px;
+    margin-bottom: -8px;
 }
 
 .mypage-dropdown {
@@ -303,62 +279,80 @@
 }
 .lang-opt.active{color:#fff;background:#4a2f22;font-weight:700;}
 .lang-opt:hover:not(.active){color:#4a2f22;}
-.lang-sep{color:#e3d7c3;font-size:12px;}
-
-/* ===== 인증 드롭다운 ===== */
-.auth-nav-wrap{position:relative;display:inline-block;font-family:inherit;}
-.auth-trigger{
-    display:flex;align-items:center;gap:7px;
-    background:none;border:none;cursor:pointer;
-    font-family:inherit;font-size:13px;font-weight:500;color:#3a2a1e;
-    padding:6px 4px;
-}
-.auth-trigger:hover{color:#4a2f22;}
-.avatar-wrap{position:relative;width:26px;height:26px;flex:none;}
-.avatar-circle{
-    width:26px;height:26px;border-radius:50%;
-    background:#efe6d3;border:1px solid #e3d7c3;
-    display:flex;align-items:center;justify-content:center;
-}
-.avatar-circle svg{width:15px;height:15px;}
-.role-badge{
-    position:absolute;bottom:-2px;right:-2px;
-    width:13px;height:13px;border-radius:50%;
-    border:2px solid #f7efe3;
-    display:flex;align-items:center;justify-content:center;
-}
-.role-badge.admin{background:#c98a2e;}
-.role-badge.temple-admin{background:#2f6b5e;}
-.role-badge svg{width:8px;height:8px;}
-.auth-caret{width:10px;height:10px;flex:none;transition:transform .15s ease;}
-.auth-trigger[aria-expanded="true"] .auth-caret{transform:rotate(180deg);}
-.auth-dropdown-hitzone{
-    position:absolute;top:100%;right:0;padding-top:10px;display:none;z-index:20;
-}
-.auth-dropdown{
-    position:relative;min-width:150px;
-    background:#fffaf2;border:1px solid #e3d7c3;border-radius:8px;padding:6px 0;
-}
-.auth-dropdown::before{
-    content:"";position:absolute;top:-6px;right:18px;width:11px;height:11px;
-    background:#fffaf2;border-left:1px solid #e3d7c3;border-top:1px solid #e3d7c3;
-    transform:rotate(45deg);
-}
-.dropdown-role-label{
-    padding:6px 18px 8px;
-    font-size:11px;font-weight:700;color:#7a6a58;
-    border-bottom:1px solid #e3d7c3;margin-bottom:4px;
-}
-.dropdown-list{display:flex;flex-direction:column;}
-.dropdown-item{
-    display:block;width:100%;text-align:left;padding:10px 18px;
-    font-size:13.5px;font-weight:500;color:#3a2a1e;text-decoration:none;
-    background:none;border:none;font-family:inherit;cursor:pointer;
-}
-.dropdown-item:hover{background:#f7efe3;color:#4a2f22;}
 
 /* ===== 사찰 등록 요청 상태 배지 =====
    .badge 기본 스타일(signup.css)은 teal 배경 하나뿐이라, 대기/승인 구분용 색만
    여기서 덧붙임. admin 페이지도 signup.css를 같이 불러오니 .badge 자체는 재사용. */
 .badge-pending{background:#c98a2e;}
 .badge-approved{background:#2f6b5e;}
+
+/* ===== 관리자 탭(회원관리/사찰관리) ===== */
+.admin-tabs{
+    display:flex;gap:4px;padding:0 32px;
+    border-bottom:1px solid var(--border);
+}
+.admin-tab{
+    padding:12px 18px;font-size:14px;font-weight:600;
+    color:var(--text-secondary);text-decoration:none;
+    border-bottom:2px solid transparent;margin-bottom:-1px;
+}
+.admin-tab.active{color:var(--brown);border-bottom-color:var(--brown);}
+
+/* ===== 관리자 목록 테이블(회원관리/사찰관리/사찰 등록 요청) ===== */
+.admin-table-wrap{overflow-x:auto;padding:0 32px;}
+.admin-table{width:100%;border-collapse:collapse;font-size:13.5px;}
+.admin-table th,.admin-table td{
+    padding:12px 14px;text-align:left;
+    border-bottom:1px solid var(--line);white-space:nowrap;
+}
+.admin-table th{
+    background:var(--muted-bg);color:var(--text-secondary);
+    font-weight:700;font-size:12px;letter-spacing:.02em;
+}
+.admin-table tbody tr:hover{background:rgba(39,33,27,.02);}
+.admin-table td.wrap{white-space:normal;}
+.admin-table .row-actions{display:flex;gap:6px;align-items:center;}
+.admin-table .row-actions form{margin:0;display:inline-flex;}
+.admin-table .row-actions a,.admin-table .row-actions button{
+    display:inline-flex;align-items:center;justify-content:center;
+    box-sizing:border-box;height:28px;padding:0 12px;
+    font-size:12px;line-height:1;white-space:nowrap;border-radius:4px;
+    border:1px solid var(--brown);background:#fff;color:var(--brown);
+    text-decoration:none;cursor:pointer;font-family:inherit;
+}
+.admin-table .row-actions a:hover,.admin-table .row-actions button:hover{
+    background:var(--brown);color:#fff;
+}
+.admin-table .row-actions .danger{border-color:var(--destructive);color:var(--destructive);}
+.admin-table .row-actions .danger:hover{background:var(--destructive);color:#fff;}
+
+/* 장소 유형 배지 - 텍스트를 그냥 이어붙이면 안 읽혀서 유형별 색 알약으로 표시 */
+.type-pill-group{display:flex;gap:4px;flex-wrap:wrap;}
+.type-pill{
+    display:inline-block;padding:2px 9px;border-radius:10px;
+    font-size:11px;font-weight:700;color:#fff;white-space:nowrap;
+}
+.type-pill.sea{background:var(--blue);}
+.type-pill.mountain{background:var(--green);}
+.type-pill.river{background:var(--brown);}
+.type-pill.urban{background:var(--gold);}
+
+/* 사찰 등록 요청 대기 알림 점 (드롭다운 메뉴 항목 옆) */
+.notice-link{display:inline-flex;align-items:center;gap:6px;}
+.notice-dot{
+    display:inline-block;width:7px;height:7px;border-radius:50%;
+    background:var(--destructive);flex-shrink:0;
+}
+.nickname-dot{position:absolute;top:-2px;right:-9px;}
+
+/* 사찰 등록 요청 상세 - 키/값 테이블 */
+.detail-table{width:100%;border-collapse:collapse;font-size:13.5px;}
+.detail-table th,.detail-table td{
+    padding:12px 14px;text-align:left;vertical-align:top;
+    border-bottom:1px solid var(--line);
+}
+.detail-table th{
+    width:140px;background:var(--muted-bg);color:var(--text-secondary);
+    font-weight:700;font-size:12px;letter-spacing:.02em;white-space:nowrap;
+}
+.detail-table td{color:var(--text);}

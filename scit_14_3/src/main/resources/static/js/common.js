@@ -2,184 +2,194 @@
    common.js — 모든 페이지가 공유하는 fragment 스크립트
    ------------------------------------------------------------
    언어 버튼(.language-button) 클릭을 감지해서:
-     1) 어떤 버튼이 선택됐는지 active 표시만 이 파일이 직접 처리
-     2) 실제 번역(텍스트를 뭘로 바꿀지)은 절대 여기서 하지 않고,
-        각 페이지 스크립트가 정의하는 onLanguageChange(lang) 훅에 위임
+     1) 어떤 버튼이 선택됐는지 active 표시를 이 파일이 직접 처리
+     2) 페이지가 자기만의 onLanguageChange(lang)을 정의해뒀으면
+        그걸 우선 사용 (signup.js처럼 유효성 검사 메시지 등 페이지
+        로드 후 JS가 새로 그려 넣는 동적 문구가 많아서 사전(TRANSLATIONS)
+        방식이 필요한 경우), 없으면 defaultOnLanguageChange(lang)이 크롬 내장
+        Translator API로 페이지 전체 텍스트를 그 자리에서 번역함 -
+        대부분의 페이지는 아무것도 안 해도 자동으로 다국어가 됨.
 
-   이렇게 나눈 이유:
-   페이지마다 번역 방식이 다릅니다 — 어떤 페이지는 사전(TRANSLATIONS
-   객체)을 쓰고, 어떤 페이지는 크롬 Translator API를 씁니다. common.js는
-   "어떤 방식인지" 전혀 몰라야 하고, 그래야 페이지마다 방식이 달라도
-   이 파일을 안 건드리고 그대로 재사용할 수 있습니다.
+   ⚠️ 크롬 실험 기능이라 아래 플래그를 켜야 동작함(끄면 조용히
+   아무 일도 안 일어남 - 다른 기능엔 영향 없음):
+     chrome://flags/#translation-api
+     chrome://flags/#language-detection-api
+     chrome://flags/#optimization-guide-on-device-model
+   전부 Enabled로 바꾸고 크롬 재시작. 데스크톱 크롬 전용, 모바일/
+   타 브라우저 미지원. 최초 사용 시 번역 모델을 내려받느라 시간이
+   걸릴 수 있음(버튼에 반투명 로딩 표시로 안내함).
 
-   각 페이지는 반드시 자기 스크립트(signup.js 등)에서
-   onLanguageChange(lang) 함수를 정의해야 합니다. 안 정의하면 버튼은
-   눌리고 active 표시는 바뀌지만, 실제 텍스트는 안 바뀝니다(콘솔에
-   경고만 찍히고 에러는 안 남 — 다른 기능에 영향 없음).
+   defaultOnLanguageChange 동작 원리:
+   document.body 안의 모든 텍스트 노드를 TreeWalker로 순회해서
+   원문을 한 번 스냅샷해두고(i18nOriginalTextNodes), 언어가 바뀌면
+   Translator API로 번역 받아 각 텍스트 노드에 그대로 꽂아 넣음.
+   요소마다 data-i18n을 일일이 붙일 필요 없음. 번역 결과는 언어별로
+   캐시해서 재사용함.
 
-   ============================================================
-   ⬇⬇⬇ 새 페이지를 만드는 사람(또는 AI)이 읽어야 하는 부분 ⬇⬇⬇
-   ============================================================
+   달력 월 이동처럼 페이지가 자바스크립트로 나중에 새 텍스트를 그려
+   넣는 부분은 최초 스냅샷엔 없어서 그대로 두면 번역이 안 됨 -
+   MutationObserver로 새로 생기는 텍스트를 계속 감시해서 같은 방식으로
+   추가 번역함(startI18nObserver). 우리가 번역 결과를 넣느라 발생시키는
+   변경은 i18nMutating 플래그로 구분해서 무한루프를 막음.
+   ============================================================ */
 
-   ⚠️ 아래는 "이대로 복붙하면 완성"이 아니라, 두 방식이 각각 어떤
-   원리로 동작하는지 보여주는 최소 예시입니다. 목적은 "이 페이지엔
-   어떤 방식이 맞는지 고르고, 그 방식이 대략 어떻게 동작하는지
-   이해하는 것"입니다. 실제로 적용하려면 각 방식 아래에 있는
-   "실전 체크리스트"를 반드시 확인하세요 — 예시 코드만 옮겨 붙이면
-   빠진 부분 때문에 "버튼은 눌리는데 아무 반응이 없는" 상태가 됩니다.
+const I18N_SOURCE_LANG = 'ko';
+let i18nCurrentLang = 'ko';
+const i18nTranslationCache = {}; // i18nTranslationCache[lang][원문] = 번역문
+let i18nOriginalTextNodes = null; // [{node, text}] - 최초 1회만 스냅샷
+let i18nMutating = false; // 번역 결과를 우리가 쓰는 중인지(옵저버가 자기 자신을 보고 재귀하지 않도록)
+let i18nObserver = null;
+let i18nRetranslateTimer = null;
 
+// 기계번역이 부자연스럽거나 틀리게 나오는 문구는 여기 직접 지정함 - 있으면
+// Translator API를 아예 안 부르고 이 값을 그대로 씀(예: "로그인"이 일본어로
+// 번역기 태우면 "サインアップします"처럼 엉뚱하게 나옴 -> "ログイン"으로 고정).
+const I18N_MANUAL_OVERRIDES = {
+    '로그인': { ja: 'ログイン', en: 'Log In' },
+    '회원가입': { ja: '会員登録', en: 'Sign Up' },
+    '계정이 없으신가요?': { ja: 'アカウントをお持ちではありませんか？', en: "Don't have an account?" },
+    '이미 계정이 있으신가요?': { ja: 'すでにアカウントをお持ちですか？', en: 'Already have an account?' }
+};
 
-   [방식 A] 사전(TRANSLATIONS) 방식
-   -------------------------------------------------------------
-   동작 원리: 페이지가 가진 텍스트를 3개 언어로 미리 손으로 다 써서
-   객체(TRANSLATIONS)에 저장해두고, 언어가 바뀌면 그 객체에서 값을
-   꺼내 화면에 꽂아 넣습니다. API 호출 없음 — 100% 동기적으로 즉시 적용.
+// 번역하면 안 되는 영역(브랜드 로고, 언어 버튼 자기 자신, 사용자가 직접 입력한 값)
+function isI18nExcluded(el){
+    return !!el.closest('.brand, .language-area, .userEntity-nickname, script, style, noscript');
+}
 
-   언제 쓰나: 텍스트 양이 적당하고, 유효성 검사 메시지처럼 화면에
-   없다가 JS가 나중에 채워 넣는 동적 문구가 많을 때. (signup.js,
-   signupSelect.js가 이 방식 — 실제 완성 예시로 참고)
+function collectI18nTextNodes(){
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+        acceptNode(node){
+            if(!node.textContent.trim()) return NodeFilter.FILTER_REJECT;
+            if(!node.parentElement || isI18nExcluded(node.parentElement)) return NodeFilter.FILTER_REJECT;
+            return NodeFilter.FILTER_ACCEPT;
+        }
+    });
+    const nodes = [];
+    let n;
+    while((n = walker.nextNode())) nodes.push(n);
+    return nodes;
+}
 
-   최소 예시 (원리만 보여줌):
-   ---------------------------------------------------------------
-   const TRANSLATIONS = {
-     ko: { title: "예시 제목" },
-     ja: { title: "サンプルタイトル" },
-     en: { title: "Sample Title" }
-   };
+/** uniqueTexts 중 아직 캐시에 없는 것만 Translator API로 번역해서 lang의 캐시에 채워 넣음.
+    (수동 지정 문구는 API를 아예 안 부르고 바로 채움) */
+async function ensureTranslated(uniqueTexts, lang){
+    const cache = i18nTranslationCache[lang] || (i18nTranslationCache[lang] = {});
+    const toTranslate = uniqueTexts.filter(t => {
+        if(cache[t] !== undefined) return false;
+        const override = I18N_MANUAL_OVERRIDES[t] && I18N_MANUAL_OVERRIDES[t][lang];
+        if(override){ cache[t] = override; return false; }
+        return true;
+    });
+    if(toTranslate.length === 0) return;
 
-   let currentLang = 'ko';
+    const availability = await Translator.availability({ sourceLanguage: I18N_SOURCE_LANG, targetLanguage: lang });
+    if(availability === 'unavailable'){
+        console.warn('[common.js] ' + lang + ' 번역을 지원하지 않습니다.');
+        return;
+    }
+    const translator = await Translator.create({
+        sourceLanguage: I18N_SOURCE_LANG,
+        targetLanguage: lang,
+        monitor(m){
+            m.addEventListener('downloadprogress', e => {
+                console.info('[common.js] 번역 모델 다운로드 중... ' + Math.round(e.loaded * 100) + '%');
+            });
+        }
+    });
+    const translatedList = await Promise.all(toTranslate.map(t => translator.translate(t)));
+    toTranslate.forEach((t, i) => { cache[t] = translatedList[i]; });
+}
 
-   function onLanguageChange(lang){       // common.js가 클릭 시 불러줌
-     currentLang = lang;
-     const t = TRANSLATIONS[lang];
-     if(!t) return;
+function applyTranslatedText(entries, lang){
+    i18nMutating = true;
+    try {
+        entries.forEach(({node, text}) => {
+            const trimmed = text.trim();
+            if(!trimmed) return;
+            const translated = i18nTranslationCache[lang][trimmed];
+            if(translated === undefined) return;
+            // 원문의 앞뒤 공백/줄바꿈은 레이아웃에 영향 주니 그대로 보존
+            const leading = text.match(/^\s*/)[0];
+            const trailing = text.match(/\s*$/)[0];
+            node.textContent = leading + translated + trailing;
+        });
+    } finally {
+        i18nMutating = false;
+    }
+}
 
-     document.querySelectorAll('[data-i18n]').forEach(function(el){
-       const key = el.getAttribute('data-i18n');
-       if(t[key] !== undefined) el.textContent = t[key];
-     });
-     document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
-       const key = el.getAttribute('data-i18n-placeholder');
-       if(t[key] !== undefined) el.placeholder = t[key];
-     });
-   }
+/** 최초 스냅샷 이후에 새로 생긴 텍스트 노드(달력 월 이동 등)를 찾아서 같은 방식으로 번역함. */
+async function retranslateNewContent(lang){
+    if(!i18nOriginalTextNodes || lang === I18N_SOURCE_LANG) return;
+    const known = new Set(i18nOriginalTextNodes.map(o => o.node));
+    const freshNodes = collectI18nTextNodes().filter(n => !known.has(n));
+    if(freshNodes.length === 0) return;
 
-   onLanguageChange('ko');
-   ---------------------------------------------------------------
+    const entries = freshNodes.map(node => ({node, text: node.textContent}));
+    i18nOriginalTextNodes.push(...entries);
 
-   실전 체크리스트 (이것 없이는 안 돌아감):
-   □ HTML의 각 요소에 data-i18n="키이름" 을 직접 붙였는가
-     (키 이름 있는 값 필수 — 방식 B와 다름)
-   □ 위 TRANSLATIONS 예시엔 title 하나뿐 — 이 페이지의 모든 텍스트를
-     실제로 다 채워 넣었는가 (라벨, 버튼, hint, placeholder 전부)
-   □ "유효성 검사 실패 메시지"처럼 화면에 처음부터 있지 않고 JS가
-     나중에 만들어 넣는 문구는 이 스냅샷 방식으로 못 잡습니다 —
-     signup.js의 msg(key) 패턴처럼 별도 처리 필요
+    try {
+        const uniqueTexts = Array.from(new Set(entries.map(o => o.text.trim()).filter(Boolean)));
+        await ensureTranslated(uniqueTexts, lang);
+        applyTranslatedText(entries, lang);
+    } catch(e){
+        console.warn('[common.js] 새로 생긴 텍스트 번역 중 오류가 발생했습니다.', e);
+    }
+}
 
+function startI18nObserver(){
+    if(i18nObserver) return;
+    i18nObserver = new MutationObserver(function(){
+        if(i18nMutating || i18nCurrentLang === I18N_SOURCE_LANG) return;
+        // 달력 다시 그리기처럼 짧은 시간에 변경이 우르르 몰리는 걸 한 번으로 묶어서 처리
+        clearTimeout(i18nRetranslateTimer);
+        i18nRetranslateTimer = setTimeout(function(){ retranslateNewContent(i18nCurrentLang); }, 150);
+    });
+    i18nObserver.observe(document.body, { childList: true, characterData: true, subtree: true });
+}
 
-   [방식 B] 크롬 내장 Translator API 방식
-   -------------------------------------------------------------
-   동작 원리: 미리 번역문을 안 써두고, 화면의 한국어 원문을 그때그때
-   브라우저 내장 AI(Translator API)에 보내서 실시간으로 번역받습니다.
-   비동기(await 필요) — 첫 호출 시 모델 다운로드/번역에 시간이 걸릴 수
-   있고, 한 번 번역한 결과는 캐시해서 재사용합니다.
+async function defaultOnLanguageChange(lang, btn){
+    if(!i18nOriginalTextNodes){
+        i18nOriginalTextNodes = collectI18nTextNodes().map(node => ({node, text: node.textContent}));
+    }
 
-   언제 쓰나: 텍스트 양이 많고 대부분 정적 콘텐츠일 때(예: home.html).
-   손으로 3개 언어 다 쓰는 부담이 없는 대신, 아래 제약이 있습니다.
+    if(lang === I18N_SOURCE_LANG){
+        i18nCurrentLang = lang;
+        applyOriginalText();
+        return;
+    }
 
-   최소 예시 (원리만 보여줌 — placeholder까지 포함):
-   ---------------------------------------------------------------
-   const SOURCE_LANG = 'ko';
-   let currentLang = 'ko';
-   const translationCache = {}; // translationCache[lang][원문] = 번역문
+    if(!('Translator' in self)){
+        console.warn('[common.js] 이 브라우저는 Translator API를 지원하지 않습니다. chrome://flags에서 translation-api / language-detection-api / optimization-guide-on-device-model 를 켜고 재시작해보세요(데스크톱 크롬 전용).');
+        return;
+    }
 
-   function snapshotOriginalText(){
-     document.querySelectorAll('[data-i18n]').forEach(function(el){
-       el.setAttribute('data-original-text', el.textContent.trim());
-     });
-     document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
-       el.setAttribute('data-original-placeholder', el.placeholder);
-     });
-   }
+    // 최초 사용 시 번역 모델을 새로 내려받을 수 있어 시간이 걸림 - 버튼이 멈춘 것처럼
+    // 보이지 않도록 로딩 표시만 해두고, 실제 완료까지는 계속 기다림(강제 타임아웃으로
+    // 끊으면 다운로드 중이던 것도 같이 날아가서 오히려 더 오래 걸리게 됨).
+    if(btn) btn.classList.add('i18n-loading');
 
-   async function onLanguageChange(lang){   // common.js가 클릭 시 불러줌
-     if(lang === SOURCE_LANG){
-       currentLang = lang;
-       document.querySelectorAll('[data-i18n]').forEach(function(el){
-         el.textContent = el.getAttribute('data-original-text');
-       });
-       document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
-         el.placeholder = el.getAttribute('data-original-placeholder');
-       });
-       return;
-     }
+    try {
+        const uniqueTexts = Array.from(new Set(i18nOriginalTextNodes.map(o => o.text.trim()).filter(Boolean)));
+        await ensureTranslated(uniqueTexts, lang);
+        i18nCurrentLang = lang;
+        applyTranslatedText(i18nOriginalTextNodes, lang);
+        startI18nObserver();
+    } catch(e){
+        console.warn('[common.js] 번역 중 오류가 발생했습니다.', e);
+    } finally {
+        if(btn) btn.classList.remove('i18n-loading');
+    }
+}
 
-     if(!('Translator' in self)){
-       console.warn('이 브라우저는 Translator API를 지원하지 않습니다.');
-       return;
-     }
-
-     if(!translationCache[lang]){
-       const availability = await Translator.availability({ sourceLanguage: SOURCE_LANG, targetLanguage: lang });
-       if(availability === 'unavailable') return;
-
-       const translator = await Translator.create({ sourceLanguage: SOURCE_LANG, targetLanguage: lang });
-
-       const originals = new Set();
-       document.querySelectorAll('[data-i18n]').forEach(function(el){
-         const t = el.getAttribute('data-original-text');
-         if(t) originals.add(t);
-       });
-       document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
-         const t = el.getAttribute('data-original-placeholder');
-         if(t) originals.add(t);
-       });
-
-       const uniqueList = Array.from(originals);
-       const translatedList = await Promise.all(uniqueList.map(text => translator.translate(text)));
-       const cache = {};
-       uniqueList.forEach((original, i) => { cache[original] = translatedList[i]; });
-       translationCache[lang] = cache;
-     }
-
-     currentLang = lang;
-     document.querySelectorAll('[data-i18n]').forEach(function(el){
-       const original = el.getAttribute('data-original-text');
-       el.textContent = (translationCache[lang] && translationCache[lang][original]) || original;
-     });
-     document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
-       const original = el.getAttribute('data-original-placeholder');
-       el.placeholder = (translationCache[lang] && translationCache[lang][original]) || original;
-     });
-   }
-
-   snapshotOriginalText();
-   ---------------------------------------------------------------
-
-   실전 체크리스트 (이것 없이는 안 돌아가거나 반쯤만 동작함):
-   □ HTML의 각 요소에 data-i18n 을 값 없이(마커로만) 붙였는가
-     (키 이름 필요 없음 — 방식 A와 다름)
-   □ snapshotOriginalText()가 실행되는 시점에 그 요소들이 이미
-     DOM에 존재하는가 (스크립트를 <head>에 그냥 두면 실패함 —
-     defer 사용하거나 body 맨 아래 배치)
-   □ 데스크톱 크롬(138+) 전용, 모바일/타 브라우저에선 아예 동작 안 함
-     → 위 예시처럼 'Translator' in self 체크와 실패 시 안내가 필수
-   □ Translator.create()는 사용자의 최근 클릭 같은 상호작용이 있어야
-     동작함 — 페이지 로드 직후 자동 실행 시도하면 실패할 수 있음
-     (그래서 이 훅은 "언어 버튼 클릭"이라는 상호작용에 얹혀서 동작함)
-   □ JS가 나중에 내용을 바꿔 넣는 동적 영역(예: 캘린더 월 표시,
-     검색결과 목록)엔 이 "1회 스냅샷" 구조가 안 맞음 — 그 영역은
-     별도로 다국어 처리해야 함 (home.html의 #calendarMonthTitle
-     관련 주석 참고)
-   □ 위 예시엔 없지만 실제로는 try/catch로 네트워크 오류 등도
-     처리해야 사용자에게 "왜 안 되는지" 보여줄 수 있음
-   □ 더 완전한 형태(다운로드 진행률 표시 등)는 translate-api-test.html
-     참고
-
-   ============================================================
-   ⬆⬆⬆ 여기까지 ⬆⬆⬆
-   ============================================================
-============================================================ */
+function applyOriginalText(){
+    i18nMutating = true;
+    try {
+        i18nOriginalTextNodes.forEach(({node, text}) => { node.textContent = text; });
+    } finally {
+        i18nMutating = false;
+    }
+}
 
 document.querySelectorAll('.language-button').forEach(function(btn){
     btn.addEventListener('click', function(){
@@ -192,7 +202,7 @@ document.querySelectorAll('.language-button').forEach(function(btn){
         if(typeof onLanguageChange === 'function'){
             onLanguageChange(lang);
         } else {
-            console.warn('[common.js] onLanguageChange(lang)가 이 페이지에 정의되어 있지 않습니다. 언어 버튼을 눌러도 텍스트는 바뀌지 않습니다.');
+            defaultOnLanguageChange(lang, btn);
         }
     });
 });

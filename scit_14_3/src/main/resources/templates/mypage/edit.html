@@ -23,13 +23,13 @@
 		<p class="check-result" style="color:#2f6b5e; text-align:center;" th:if="${passwordChangeSuccess}">
 			비밀번호가 변경되었습니다.
 		</p>
-		<p class="check-result" style="color:#b3402f; text-align:center;" th:if="${passwordChangeError}" th:text="${passwordChangeError}">
+		<p class="check-result" id="passwordChangeError" style="color:#b3402f; text-align:center;" th:if="${passwordChangeError}" th:text="${passwordChangeError}">
 		</p>
 		<p class="check-result" style="color:#c98a2e; text-align:center;" sec:authorize="hasRole('TEMPLE')" th:if="${#authentication.principal.mustChangePassword}">
 			관리자가 발급한 임시 비밀번호입니다. 계속 사용하시려면 비밀번호를 변경해주세요.
 		</p>
 
-		<form th:action="@{/mypage/temple-password}" method="post">
+		<form class="page-form" th:action="@{/mypage/temple-password}" method="post">
 			<fieldset>
 				<legend>비밀번호 변경</legend>
 
@@ -42,6 +42,12 @@
 					<label for="newPassword">새 비밀번호<span class="req">*</span></label>
 					<input type="password" id="newPassword" name="newPassword" required>
 				</div>
+
+				<div class="field">
+					<label for="newPasswordConfirm">새 비밀번호 확인<span class="req">*</span></label>
+					<input type="password" id="newPasswordConfirm" required>
+					<p class="hint" id="newPasswordMismatch" style="display:none;color:var(--destructive);">비밀번호가 일치하지 않습니다</p>
+				</div>
 			</fieldset>
 
 			<div class="form-actions">
@@ -51,6 +57,35 @@
 		</form>
 
 	</div>
+
+	<script th:if="${isTempleAccount}">
+		const currentPasswordInput = document.getElementById('currentPassword');
+		const newPasswordInput = document.getElementById('newPassword');
+		const newPasswordConfirmInput = document.getElementById('newPasswordConfirm');
+		const mismatchHint = document.getElementById('newPasswordMismatch');
+		const passwordChangeErrorEl = document.getElementById('passwordChangeError');
+
+		function checkPasswordMatch() {
+			const mismatch = newPasswordConfirmInput.value.length > 0 && newPasswordInput.value !== newPasswordConfirmInput.value;
+			mismatchHint.style.display = mismatch ? 'block' : 'none';
+			return !mismatch;
+		}
+		newPasswordInput.addEventListener('input', checkPasswordMatch);
+		newPasswordConfirmInput.addEventListener('input', checkPasswordMatch);
+
+		// "현재 비밀번호가 일치하지 않습니다" 서버 에러는 다시 입력을 시작하면 바로 치워서 지저분하게 안 남게 함
+		if (currentPasswordInput && passwordChangeErrorEl) {
+			currentPasswordInput.addEventListener('input', () => {
+				passwordChangeErrorEl.style.display = 'none';
+			}, { once: true });
+		}
+
+		document.querySelector('form.page-form').addEventListener('submit', (e) => {
+			if (!checkPasswordMatch()) {
+				e.preventDefault();
+			}
+		});
+	</script>
 
 	<div th:unless="${isTempleAccount}" style="padding:8px 32px 32px; text-align:center; color:var(--ink-soft);">
 		<p>회원정보수정 기능은 준비 중입니다.</p>
