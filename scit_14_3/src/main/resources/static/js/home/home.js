@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
     /* =====================================================
        회원가입 완료 알림
@@ -431,63 +431,48 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentMonth = 7;
     let selectedDate = 15;
 
+    // 실제 등록된 템플스테이 프로그램(모집기간)과 불교 4대 명절로 채워짐 - loadCalendarEvents() 참고.
+    // 아직 TEMPLE_EVENT(사찰 행사) 기능이 없어서, 그때까지는 이 두 소스로 대신 채움.
+    const eventData = {};
 
-    const eventData = {
-
-        "2026-08-01": [
-            {
-                title: "초하루 법회",
-                location: "전국 사찰",
-                time: "10:00 시작"
-            }
-        ],
-
-        "2026-08-07": [
-            {
-                title: "칠석 기도",
-                location: "주요 사찰",
-                time: "09:00 시작"
-            }
-        ],
-
-        "2026-08-15": [
-            {
-                title: "백중 우란분절 법회",
-                location: "전국 사찰",
-                time: "10:00 시작"
-            },
-            {
-                title: "백중 야외 법요식",
-                location: "해인사 · 합천",
-                time: "17:00 시작"
-            }
-        ],
-
-        "2026-08-22": [
-            {
-                title: "주말 참선 프로그램",
-                location: "지역 사찰",
-                time: "14:00 시작"
-            }
-        ],
-
-        "2026-08-29": [
-            {
-                title: "사찰 문화 체험 행사",
-                location: "지역 사찰",
-                time: "13:00 시작"
-            }
-        ],
-
-        "2026-08-30": [
-            {
-                title: "일요 가족 법회",
-                location: "전국 사찰",
-                time: "10:30 시작"
-            }
-        ]
-
+    // 음력 기반이라 매년 날짜가 바뀜 - 부처님오신날은 법정공휴일이라 확인된 날짜지만,
+    // 출가절/성도절/열반절은 정확한 변환을 못 구해서 일단 빼둠(잘못된 날짜 표시 방지).
+    // 나중에 한국천문연구원 음양력변환 API 연동하면 매년 자동 계산 가능.
+    const BUDDHIST_HOLIDAYS = {
+        "2026-05-24": [{ title: "부처님오신날", location: "전국 사찰 (법정공휴일)", time: "" }]
     };
+
+    // 사찰이 실제로 등록한 템플스테이 프로그램을 모집기간(openStartDate~openEndDate) 동안
+    // 매일 달력에 표시함 - 사찰 필터 없이 전체를 그대로 가져옴.
+    async function loadCalendarEvents() {
+        Object.assign(eventData, BUDDHIST_HOLIDAYS);
+
+        try {
+            const res = await fetch("/templestayprograms");
+            if (!res.ok) throw new Error("프로그램 목록 조회 실패: " + res.status);
+            const programs = await res.json();
+
+            programs.forEach(p => {
+                if (!p.openStartDate || !p.openEndDate) return;
+
+                const cursor = new Date(p.openStartDate);
+                const end = new Date(p.openEndDate);
+
+                while (cursor <= end) {
+                    const key = makeKey(cursor.getFullYear(), cursor.getMonth(), cursor.getDate());
+                    if (!eventData[key]) eventData[key] = [];
+                    eventData[key].push({
+                        title: p.title,
+                        location: p.templeName || "",
+                        time: `모집기간 ${p.openStartDate} ~ ${p.openEndDate}`
+                    });
+                    cursor.setDate(cursor.getDate() + 1);
+                }
+            });
+        } catch (err) {
+            console.warn("템플스테이 프로그램을 달력에 불러오지 못했습니다.", err);
+        }
+    }
 
 
     function pad(number) {
@@ -925,6 +910,8 @@ document.addEventListener("DOMContentLoaded", () => {
         () => changeMonth(1)
     );
 
+
+    await loadCalendarEvents();
 
     renderCalendar();
 
