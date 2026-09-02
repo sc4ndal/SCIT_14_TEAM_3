@@ -1,13 +1,15 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>불교란? | 산문</title>
-	<link rel="stylesheet" th:href="@{/css/buddhism.css}">
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+	<link rel="stylesheet" th:href="@{/css/buddhism/buddhism.css}">
 </head>
 <body>
 
+<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
 <div th:replace="~{fragments/layout :: header}"></div>
 
 <main class="intro">

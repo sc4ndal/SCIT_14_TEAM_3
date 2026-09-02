@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사찰 예절 시뮬레이션</title>
+    <!-- 사이트 공용 헤더(로고/로그인/회원가입)는 16:9 몰입형 프레임과 안 맞아서 안 씀.
+         언어 전환만 필요해서 fragments/common-includes.html의 languageOnly 조각만 따로 가져다 씀
+         (common.js가 실려서 대사/선택지/엔딩 텍스트도 다른 페이지처럼 AI 번역 대상이 됨). -->
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/etiquette/EtiquetteSimulation.css}">
+</head>
+<body>
+
+<div id="game-root">
+
+    <div class="etiquette-language-widget" th:insert="~{fragments/common-includes :: languageOnly}"></div>
+
+    <!-- 타이틀 -->
+    <div class="screen active" id="screen-title">
+        <h1>사찰 예절 시뮬레이션</h1>
+        <p>「미(스님)연(애)시(뮬레이션)」<br>선택을 통해 첫 사찰 방문을 경험해보세요.</p>
+        <button class="btn btn-primary" id="btn-start">시작하기</button>
+        <button class="btn" id="btn-open-collection">엔딩 도감</button>
+        <a class="link-home" th:href="@{/}">메인으로 돌아가기</a>
+    </div>
+
+    <!-- 진행 화면 (스토리 / 선택지 공용) -->
+    <div class="screen" id="screen-scene">
+        <div id="bg-layer">
+            <span id="bg-label">BG</span>
+            <span id="dev-badge" title="개발자 패널 (또는 D 키)">⚙</span>
+        </div>
+        <div id="dialogue-dock">
+            <div id="text-box">
+                <div id="speaker"></div>
+                <div id="story-text"></div>
+                <div id="advance-hint">▶ 클릭해서 계속</div>
+            </div>
+            <div id="choice-layer"></div>
+        </div>
+    </div>
+
+    <!-- 엔딩 -->
+    <div class="screen" id="screen-ending">
+        <div id="ending-name"></div>
+        <div id="ending-title"></div>
+        <div id="ending-score"></div>
+        <div id="ending-desc"></div>
+        <button class="btn btn-primary" id="btn-goto-result">오늘의 참배 돌아보기</button>
+    </div>
+
+    <!-- 결과: 오늘의 참배 돌아보기 -->
+    <div class="screen" id="screen-result">
+        <div id="result-inner">
+            <div id="result-summary"></div>
+            <div class="result-section-title">✓ 잘 지킨 예절</div>
+            <div id="checklist"></div>
+            <div id="review-list"></div>
+            <div id="result-actions">
+                <button class="btn" id="btn-result-replay">다시 플레이하기</button>
+                <button class="btn" id="btn-result-title">처음 화면으로</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 엔딩 도감 -->
+    <div class="screen" id="screen-collection">
+        <div id="collection-inner">
+            <button class="btn" id="btn-close-collection" style="margin-bottom:14px;">← 뒤로</button>
+            <h1 style="font-size:18px;margin:0 0 4px;">엔딩 도감</h1>
+            <p style="font-size:13px;opacity:.6;margin:0;">아직 발견하지 못한 엔딩은 ???로 표시됩니다.</p>
+            <div id="collection-grid"></div>
+        </div>
+    </div>
+
+    <!-- 개발자 패널 (발표/시연용) -->
+    <div id="dev-panel">
+        <h3>DEV PANEL (시연용)</h3>
+        <button class="btn" data-force-hidden="1">다음에 히든씬 강제 발생 ON</button>
+        <button class="btn" data-force-hidden="0">히든씬 강제 발생 OFF (확률로 복귀)</button>
+        <h3>엔딩으로 바로 이동</h3>
+        <button class="btn" data-jump-ending="PERFECT">PERFECT END로 이동</button>
+        <button class="btn" data-jump-ending="NORMAL">NORMAL END로 이동</button>
+        <button class="btn" data-jump-ending="BAD">BAD END로 이동</button>
+        <button class="btn" data-jump-ending="ZEOLMANG">絶望 END로 이동</button>
+        <button class="btn" data-jump-ending="SECRET">SECRET END로 이동</button>
+        <h3></h3>
+        <button class="btn" id="dev-close">닫기</button>
+    </div>
+
+</div>
+
+<script th:src="@{/js/etiquette/EtiquetteSimulation.js}"></script>
+</body>
+</html>

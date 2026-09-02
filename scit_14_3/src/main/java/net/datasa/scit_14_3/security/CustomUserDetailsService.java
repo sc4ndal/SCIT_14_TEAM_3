@@ -1,10 +1,10 @@
 package net.datasa.scit_14_3.security;
 
 import lombok.RequiredArgsConstructor;
-import net.datasa.scit_14_3.domain.entity.TempleEntity;
-import net.datasa.scit_14_3.domain.entity.UserEntity;
-import net.datasa.scit_14_3.repository.TempleRepository;
-import net.datasa.scit_14_3.repository.UserRepository;
+import net.datasa.scit_14_3.domain.entity.temple.TempleEntity;
+import net.datasa.scit_14_3.domain.entity.user.UserEntity;
+import net.datasa.scit_14_3.repository.temple.TempleRepository;
+import net.datasa.scit_14_3.repository.user.UserRepository;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

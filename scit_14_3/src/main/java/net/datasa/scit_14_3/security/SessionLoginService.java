@@ -3,7 +3,7 @@ package net.datasa.scit_14_3.security;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import net.datasa.scit_14_3.domain.dto.UserResponseDto;
+import net.datasa.scit_14_3.domain.dto.user.UserResponseDto;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -40,7 +40,7 @@ public class SessionLoginService {
                 null, // 사찰 계정이 아니므로 templeId 없음
                 user.getNickname(),
                 kakaoAccessToken,
-                false // 사찰 계정이 아니므로 비밀번호 강제변경 대상 아님
+                false// 사찰 계정이 아니므로 비밀번호 강제변경 대상 아님
         );
 
         Authentication authentication =
