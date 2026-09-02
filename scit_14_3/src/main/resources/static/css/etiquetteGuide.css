@@ -23,14 +23,17 @@
     --radius-xl: 14px;
 }
 
+/* 공통 헤더/푸터(fragments/layout)를 함께 쓰므로 body는 세로로 쌓이게 두고,
+   가운데 정렬과 여백은 아래 #guide-root가 담당한다.
+   (body를 flex로 만들면 헤더/푸터가 본문과 가로로 나란히 놓인다.) */
 body {
     margin: 0;
+    /* 사이트 공용 헤더(commonIncludes, .site-header)가 position:fixed 74px라서
+       buddhism.css와 동일하게 그만큼 밀어준다. */
+    padding-top: 74px;
     font-family: "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
     background: var(--background);
     color: var(--foreground);
-    display: flex;
-    justify-content: center;
-    padding: 48px 24px 96px;
 }
 
 /* PC 웹 기준. 사이트 본문 컨테이너 폭(예: max-width 1200px)에 맞춰
@@ -38,6 +41,8 @@ body {
 #guide-root {
     width: 100%;
     max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 24px 96px;
 }
 
 .guide-header {
@@ -62,6 +67,15 @@ body {
     line-height: 1.7;
     color: var(--text-secondary);
     margin: 0;
+}
+
+/* BUDDHISM_INFO에 category='예절가이드' 행이 하나도 없을 때 */
+.guide-empty {
+    text-align: center;
+    font-size: 14.5px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    margin: 0 0 16px;
 }
 
 .category-card {
