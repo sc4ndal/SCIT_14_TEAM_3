@@ -58,9 +58,15 @@ public class TempleEntity {
 		@Column(name = "is_temple", nullable = false)
 		private boolean isTemple = true;
 	
+		// 사찰별 개별 유의사항 - 이 사찰이 등록하는 모든 프로그램의 "유의사항"으로도 그대로 쓰임
+		// (프로그램마다 따로 안 받음, TempleStayProgramEntity 조회 시 여기서 조인해서 보여줌).
 		@Column(name = "special_notice", columnDefinition = "TEXT")
 		private String specialNotice;
-		
+
+		// 환불 규정도 같은 이유로 프로그램별이 아니라 여기 있음 - 등록 폼에서 관리.
+		@Column(name = "refund_policy", columnDefinition = "TEXT")
+		private String refundPolicy;
+
 		@Column(name = "login_id", length = 30, unique = true, nullable = false)
 		private String loginId;
 		

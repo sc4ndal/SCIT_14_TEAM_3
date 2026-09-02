@@ -27,6 +27,7 @@ public class TempleRegistrationRequestDto {
 	private boolean supportUrban;
 	private boolean supportEnglish;
 	private String specialNotice;
+	private String refundPolicy;
 	private String contactEmail;
 	private TempleRegistrationRequestEntity.Status status;
 	private Long approvedTempleId;

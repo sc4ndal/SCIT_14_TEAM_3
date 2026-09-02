@@ -33,7 +33,8 @@ const API = {
 // ------------------------- 목데이터 (findAll 만들기 전까지 임시) -------------------------
 // 실제로는 GET /temples + GET /templestayprograms 응답을 합쳐서 아래와 같은 모양을 만들면 됨.
 // TempleStayProgramDTO 필드명(programId, templeId, title, programType, price, duration, maxParticipant,
-// description, schedule, requiredItems, refundPolicy, precautions) 그대로 사용.
+// description, schedule, requiredItems, templeRefundPolicy, templePrecautions) 그대로 사용 -
+// 환불규정/주의사항은 프로그램이 아니라 사찰(TEMPLE) 공통값이라 이름이 temple로 시작함.
 const MOCK_PROGRAMS = [
   {
     programId: 1, templeId: 1, templeName: '국제선센터', region: '부산광역시',
@@ -42,8 +43,8 @@ const MOCK_PROGRAMS = [
     description: '새벽 예불과 108배로 하루를 시작하며 마음을 정돈하는 1박 2일 프로그램입니다.',
     schedule: '1일차 15:00 입소 및 오리엔테이션\n1일차 18:00 저녁 발우공양\n1일차 19:30 저녁 예불\n2일차 04:30 새벽 예불·108배\n2일차 09:00 아침 공양 후 퇴소',
     requiredItems: '개인 세면도구, 편한 활동복, 양말(법당 착석용), 상비약(필요시)',
-    refundPolicy: '입소 7일 전까지 전액 환불, 3일 전까지 50% 환불, 이후 환불 불가.',
-    precautions: '문신 노출이 심한 복장은 삼가 주세요. 음주 후 입소는 제한될 수 있습니다.',
+    templeRefundPolicy: '입소 7일 전까지 전액 환불, 3일 전까지 50% 환불, 이후 환불 불가.',
+    templePrecautions: '문신 노출이 심한 복장은 삼가 주세요. 음주 후 입소는 제한될 수 있습니다.',
   },
   {
     programId: 2, templeId: 1, templeName: '국제선센터', region: '부산광역시',
@@ -52,8 +53,8 @@ const MOCK_PROGRAMS = [
     description: '숲길을 걸으며 진행하는 당일 명상 체험 프로그램입니다.',
     schedule: '10:00 입소 및 다도 안내\n10:30 숲길 걷기 명상\n12:00 점심 발우공양\n13:30 차담 및 마무리',
     requiredItems: '걷기 편한 신발, 개인 물병',
-    refundPolicy: '입소 3일 전까지 전액 환불, 이후 환불 불가.',
-    precautions: '우천 시 일정이 변경될 수 있습니다.',
+    templeRefundPolicy: '입소 3일 전까지 전액 환불, 이후 환불 불가.',
+    templePrecautions: '우천 시 일정이 변경될 수 있습니다.',
   },
   {
     programId: 3, templeId: 2, templeName: '직지사', region: '경상북도',
@@ -62,8 +63,8 @@ const MOCK_PROGRAMS = [
     description: '전통 발우공양 예절을 직접 체험해보는 프로그램입니다.',
     schedule: '09:30 입소 및 발우 소개\n10:00 발우공양 실습\n11:30 사찰 예절 체험\n13:00 해산',
     requiredItems: '무릎 꿇기 편한 하의, 개인 손수건',
-    refundPolicy: '입소 3일 전까지 전액 환불, 이후 환불 불가.',
-    precautions: '식이 제한(알레르기 등)이 있으면 사전에 알려주세요.',
+    templeRefundPolicy: '입소 3일 전까지 전액 환불, 이후 환불 불가.',
+    templePrecautions: '식이 제한(알레르기 등)이 있으면 사전에 알려주세요.',
   },
 ];
  
@@ -251,8 +252,8 @@ function renderProgramDetail(p) {
 
   document.getElementById('detail-price').textContent = `${p.price.toLocaleString()}원`;
 
-  document.getElementById('detail-precautions').textContent = p.precautions || '';
-  document.getElementById('detail-refund-policy').textContent = p.refundPolicy || '';
+  document.getElementById('detail-precautions').textContent = p.templePrecautions || '';
+  document.getElementById('detail-refund-policy').textContent = p.templeRefundPolicy || '';
 
   // "예약 신청" 버튼에 현재 programId를 기억시켜 둠
   document.getElementById('detail-reserve-btn').dataset.programId = p.programId;

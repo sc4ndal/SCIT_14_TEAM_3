@@ -26,6 +26,7 @@ public class TempleDTO {
 	private boolean supportEnglish;
 	private boolean isTemple;
 	private String specialNotice;
+	private String refundPolicy;
 	private String loginId;
 	private String password;
 	private boolean mustChangePassword;
