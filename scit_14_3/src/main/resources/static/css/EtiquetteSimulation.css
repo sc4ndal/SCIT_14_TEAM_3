@@ -41,6 +41,13 @@ body {
 .btn-primary { background: #c99a4b; border-color: #c99a4b; color: #1c1712; font-weight: 700; }
 .btn-primary:hover { background: #d9ab5c; }
 
+.link-home {
+    margin-top: 6px; color: rgba(243,233,216,.55); font-size: 13px;
+    text-decoration: none; border-bottom: 1px solid transparent;
+}
+.link-home:hover { color: rgba(243,233,216,.85); border-bottom-color: rgba(243,233,216,.55); }
+
+
 /* ---------- 씬(배경 placeholder) ----------
    PC 와이드스크린 VN 레이아웃: 배경이 프레임 전체를 채우고,
    대사창은 하단에 폭을 제한한 채(가운데 정렬) 오버레이되는 형태 */

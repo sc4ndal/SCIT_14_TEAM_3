@@ -41,11 +41,18 @@ public class BuddhismInfoController {
 		model.addAttribute("groups", buddhismInfoService.loadTermGroups());
 		return "buddhism/terms";
 	}
-
+	
 	@GetMapping({"", "/"})
 	public String list(@RequestParam(required = false) String category, Model model) {
+		if ("예절가이드".equals(category)) {
+			model.addAttribute("posts", buddhismInfoService.loadPosts(category));
+			return "buddhism/etiquetteGuide";
+		}
+		
 		model.addAttribute("category", category);
 		model.addAttribute("posts", buddhismInfoService.loadPosts(category));
 		return "buddhism/list";
 	}
+	
+	
 }
