@@ -1,13 +1,20 @@
 /* ===================================================================
-   사찰 예절 가이드 — B안(한 페이지, 전부 아코디언) 구현.
+   사찰 예절 가이드 — B안(한 페이지, 전부 아코디언) 렌더링.
 
-   카드 목록은 서버가 BUDDHISM_INFO(category='예절가이드')에서 읽어
-   etiquetteGuide.html에서 window.ETIQUETTE_CATEGORIES로 내려준다.
-   각 항목은 {letter, title, content} 형태이고, content는
-   "• 액션" / "  → 이유" 원문 그대로라 parseContent()가 파싱한다.
+   ⚠ 2026-09-02: zip으로 받은 실제 프로젝트를 열어보니, 이 파일이 아직
+   CATEGORIES를 하드코딩해서 직접 그리는 예전 버전이었음(컨트롤러는 이미
+   BUDDHISM_INFO에서 조회한 posts를 템플릿에 내려주고 있는데, 템플릿도
+   JS도 그 값을 안 쓰고 있었음 — 화면은 우연히 똑같이 보였을 뿐, 실제로는
+   DB랑 연결이 안 된 상태였음). 그래서 아래처럼 DB-driven 버전으로 교체함:
+
+   HTML(etiquetteGuide.html)이 서버(Thymeleaf, BUDDHISM_INFO 조회)에서
+   category별 <section class="category-card"> + <h2>(제목) +
+   <ul class="item-list">(가공 안 된 raw content 텍스트) 를 이미 그려놓으면,
+   이 스크립트가 페이지 로드 후 각 .item-list의 텍스트를 파싱해서
+   불릿 + "클릭하면 이유가 펼쳐지는" 아코디언으로 다시 그려줌(progressive
+   enhancement). 이제부터는 DB의 BUDDHISM_INFO.content 값만 바꾸면 화면에
+   바로 반영됨 — 이 파일을 다시 고칠 필요 없음.
    =================================================================== */
-
-const CATEGORIES = window.ETIQUETTE_CATEGORIES || [];
 
 // "• 액션" / "  → 이유" 형식 텍스트를 [{action, reason}] 배열로 변환.
 // DB content 컬럼 값을 그대로 넣어도 동작함(들여쓰기/공백은 trim으로 무시).
@@ -29,77 +36,41 @@ function parseContent(raw) {
     return items;
 }
 
-// DB에서 온 문자열은 innerHTML로 넣지 않고 textContent로 채운다
-// (관리자가 넣은 본문에 <, & 같은 글자가 있어도 그대로 보이게).
-function span(className, text) {
-    const el = document.createElement("span");
-    if (className) {
-        el.className = className;
+function buildItemEl(item) {
+    const li = document.createElement("li");
+    const hasReason = !!item.reason;
+
+    const btn = document.createElement("button");
+    btn.className = "item-action" + (hasReason ? "" : " no-reason");
+    btn.type = "button";
+    btn.setAttribute("aria-expanded", "false");
+    btn.innerHTML = `<span class="dot"></span><span>${item.action}</span><span class="caret">▸</span>`;
+    li.appendChild(btn);
+
+    if (hasReason) {
+        const reasonWrap = document.createElement("div");
+        reasonWrap.className = "item-reason";
+        reasonWrap.innerHTML = `<div class="item-reason-inner"><p>${item.reason}</p></div>`;
+        li.appendChild(reasonWrap);
+
+        btn.addEventListener("click", () => {
+            const isOpen = reasonWrap.classList.toggle("open");
+            btn.setAttribute("aria-expanded", String(isOpen));
+        });
     }
-    if (text != null) {
-        el.textContent = text;
-    }
-    return el;
+
+    return li;
 }
 
-function renderCategory(cat) {
-    const items = parseContent(cat.content);
-
-    const section = document.createElement("section");
-    section.className = "category-card";
-
-    const h2 = document.createElement("h2");
-    h2.appendChild(span("cat-letter", cat.letter));
-    h2.appendChild(document.createTextNode(cat.title));
-    section.appendChild(h2);
-
-    const ul = document.createElement("ul");
-    ul.className = "item-list";
-
-    items.forEach((item) => {
-        const li = document.createElement("li");
-        const hasReason = !!item.reason;
-
-        const btn = document.createElement("button");
-        btn.className = "item-action" + (hasReason ? "" : " no-reason");
-        btn.type = "button";
-        btn.setAttribute("aria-expanded", "false");
-        btn.appendChild(span("dot", null));
-        btn.appendChild(span("", item.action));
-        btn.appendChild(span("caret", "▸"));
-
-        li.appendChild(btn);
-
-        if (hasReason) {
-            const reasonWrap = document.createElement("div");
-            reasonWrap.className = "item-reason";
-            const inner = document.createElement("div");
-            inner.className = "item-reason-inner";
-            const p = document.createElement("p");
-            p.textContent = item.reason;
-            inner.appendChild(p);
-            reasonWrap.appendChild(inner);
-            li.appendChild(reasonWrap);
-
-            btn.addEventListener("click", () => {
-                const isOpen = reasonWrap.classList.toggle("open");
-                btn.setAttribute("aria-expanded", String(isOpen));
-            });
-        }
-
-        ul.appendChild(li);
+// 이미 서버가 그려놓은 .item-list(안에는 raw content 텍스트만 들어있음)를
+// 찾아서, 그 안을 불릿+아코디언 <li>들로 교체함.
+function enhance() {
+    document.querySelectorAll(".item-list").forEach((ul) => {
+        const raw = ul.textContent;
+        const items = parseContent(raw);
+        ul.innerHTML = "";
+        items.forEach((item) => ul.appendChild(buildItemEl(item)));
     });
-
-    section.appendChild(ul);
-    return section;
 }
 
-function init() {
-    const root = document.getElementById("category-list");
-    if (!root) {
-        return;
-    }
-    CATEGORIES.forEach((cat) => root.appendChild(renderCategory(cat)));
-}
-
-document.addEventListener("DOMContentLoaded", init);
+document.addEventListener("DOMContentLoaded", enhance);

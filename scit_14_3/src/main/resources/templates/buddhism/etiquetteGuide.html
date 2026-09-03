@@ -9,13 +9,8 @@
          지금은 시뮬레이션 페이지와 톤을 맞추기 위해 비워둠. -->
     <link rel="stylesheet" th:href="@{/css/buddhism/etiquetteGuide.css}">
     <title>사찰 예절 가이드 | 산문</title>
-    <!-- 알아보기 > 불교 정보 하위 페이지(intro/terms/list)와 같은 동선이라 공통 헤더/푸터를 붙인다.
-         독립 화면인 EtiquetteSimulation.html과는 성격이 다름. -->
-    <!-- buddhism.css는 서브내비(.subnav)/푸터(.site-footer) 스타일 때문에 같이 부른다.
-         본문 스타일은 뒤에 오는 etiquetteGuide.css가 덮어쓴다(로드 순서 유지할 것). -->
     <link rel="stylesheet" th:href="@{/css/common.css}">
     <link rel="stylesheet" th:href="@{/css/buddhism/buddhism.css}">
-    <link rel="stylesheet" th:href="@{/css/etiquetteGuide.css}">
 </head>
 <body>
 
@@ -30,28 +25,22 @@
         <p>처음 사찰에 방문할 때 알아두면 좋은 예절을 상황별로 정리했어요.<br>궁금한 항목을 눌러보세요.</p>
     </div>
 
-    <p class="guide-empty" th:if="${#lists.isEmpty(categories)}">
-        아직 등록된 예절 항목이 없습니다.
-    </p>
-
-    <div id="category-list"></div>
+    <div id="category-list">
+        <section class="category-card" th:each="post : ${posts}">
+            <h2 th:text="${post.title}"></h2>
+            <ul class="item-list" th:text="${post.content}"></ul>
+        </section>
+    </div>
 
     <div class="sim-cta">
-        <a th:href="@{/etiquette-simulation}">시뮬레이션 하러가기</a>
+        <a class="btn-secondary" th:href="@{/}">메인으로 돌아가기</a>
+        <a class="btn-primary" th:href="@{/etiquette-simulation}">시뮬레이션 하러가기</a>
     </div>
 
 </div>
 
 <div th:replace="~{fragments/layout :: footer}"></div>
 
-<!-- 서버가 BUDDHISM_INFO(category='예절가이드')에서 읽어온 카드 목록을 그대로 JS로 넘긴다.
-     각 항목은 {letter, title, content} 형태이고, content("• 액션 / → 이유" 원문) 파싱은
-     etiquetteGuide.js의 parseContent()가 담당한다. -->
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    window.ETIQUETTE_CATEGORIES = /*[[${categories}]]*/ [];
-    /*]]>*/
-</script>
 <script th:src="@{/js/buddhism/etiquetteGuide.js}"></script>
 </body>
 </html>
