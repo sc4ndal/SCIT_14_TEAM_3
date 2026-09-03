@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<!--
+  Spring Boot BasicErrorController 전용 fallback (HTTP 5xx).
+  @ControllerAdvice(GlobalExceptionHandler) 가 잡지 못하는 예외 전용 안전망이다.
+  - 예: 뷰(Thymeleaf) 렌더링 중 발생한 에러, 서블릿 필터 단계 예외, 응답 커밋 후 에러,
+    error/error.html 자체의 렌더링 실패 등.
+  - 절대 fragment(th:replace)나 외부 CSS/JS 에 의존하지 않는다. 그것들이 깨져도 이 페이지는 떠야 한다.
+  - 사용 가능한 모델: status, error, path, timestamp (message 는 server.error 설정에 따라 비어 있을 수 있어 쓰지 않음)
+-->
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>서버 오류</title>
+    <style>
+        body { font-family: Arial, "Malgun Gothic", sans-serif; margin: 40px; color: #333; }
+        .box { max-width: 640px; margin: 0 auto; padding: 40px 30px; border: 1px solid #ddd; border-radius: 10px; text-align: center; }
+        h1 { margin-top: 0; }
+        .desc { color: #555; margin: 16px 0 28px; line-height: 1.6; }
+        .meta { font-size: 13px; color: #888; margin-top: 24px; }
+        .meta code { background: #f5f5f5; padding: 2px 6px; border-radius: 4px; }
+        .actions { margin-top: 28px; }
+        .actions a { display: inline-block; padding: 10px 20px; border: 1px solid #ccc; border-radius: 6px; text-decoration: none; color: #333; margin: 0 4px; }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h1>🚨 요청을 처리하지 못했습니다</h1>
+
+    <p class="desc">
+        일시적인 서버 오류가 발생했습니다.<br>
+        잠시 후 다시 시도해주세요. 문제가 계속되면 관리자에게 문의해주세요.
+    </p>
+
+    <div class="actions">
+        <a th:href="@{/}" href="/">홈으로</a>
+        <a href="javascript:history.back()">이전 페이지</a>
+    </div>
+
+    <div class="meta">
+        <span th:if="${status}">오류 코드 <code th:text="${status}">500</code></span>
+        <span th:if="${traceId}"> · 문의 번호 <code th:text="${traceId}">a1b2c3d4</code></span>
+        <div th:if="${timestamp}" th:text="${timestamp}">2026-09-02 12:00:00</div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -41,6 +41,12 @@ const HOME_TRANSLATIONS = {
         eventDetailLabel: "자세히 보기 →",
         noEventText: "등록된 불교 행사가 없습니다.",
 
+        modalPeriodLabel: "기간",
+        modalPriceLabel: "참가비",
+        modalDurationLabel: "체류기간",
+        modalGoReserve: "예약하러 가기",
+        modalClose: "닫기",
+
         footerText: "사찰 관계자이신가요?",
         footerBtn: "문의하기"
     },
@@ -82,6 +88,12 @@ const HOME_TRANSLATIONS = {
         eventDetailLabel: "詳しく見る →",
         noEventText: "登録された仏教行事がありません。",
 
+        modalPeriodLabel: "期間",
+        modalPriceLabel: "参加費",
+        modalDurationLabel: "滞在期間",
+        modalGoReserve: "予約しに行く",
+        modalClose: "閉じる",
+
         footerText: "寺院関係者の方ですか？",
         footerBtn: "お問い合わせ"
     },
@@ -122,6 +134,12 @@ const HOME_TRANSLATIONS = {
         weekdayThu: "Thu", weekdayFri: "Fri", weekdaySat: "Sat",
         eventDetailLabel: "Learn more →",
         noEventText: "No Buddhist events registered.",
+
+        modalPeriodLabel: "Period",
+        modalPriceLabel: "Price",
+        modalDurationLabel: "Duration",
+        modalGoReserve: "Go to Reservation",
+        modalClose: "Close",
 
         footerText: "Are you a temple representative?",
         footerBtn: "Contact Us"

@@ -29,16 +29,15 @@
         ========================================= -->
         <section class="mypage-hero">
 
-            <span class="eyebrow">
+            <span class="eyebrow no-translate">
                 <span></span>
                 MY PAGE
                 <span></span>
             </span>
 
             <h1>
-                <span class="nickname" sec:authorize="isAuthenticated()"
-                      th:text="${#authentication.principal.nickname}">닉네임</span>님,
-                오늘도 평안하시길
+                <span class="nickname no-translate" sec:authorize="isAuthenticated()"
+                      th:text="${#authentication.principal.nickname}">닉네임</span><span>님, 오늘도 평안하시길</span>
             </h1>
 
             <p>

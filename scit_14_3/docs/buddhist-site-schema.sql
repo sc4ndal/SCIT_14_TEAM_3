@@ -24,6 +24,15 @@
 --      없이 홈 화면 "문의하기"로 제출하는 요청을 담는 별도 테이블. TEMPLE과 완전히 분리되어
 --      있고(승인해도 이 행이 TEMPLE로 "승격"되지 않음), 관리자가 승인하면 별도로 새 TEMPLE
 --      행을 생성한다. contact_email은 이 테이블에만 있고 TEMPLE에는 저장되지 않는다.
+--   9) 환불 규정은 프로그램마다 다르지 않고 사찰마다 공통이라 TEMPLE_STAY_PROGRAM에서 빼고
+--      TEMPLE.refund_policy로 옮김 - 사찰이 프로그램을 여러 개 등록해도 매번 다시 입력할
+--      필요가 없도록. 유의사항은 이미 TEMPLE.special_notice(사찰별 개별 유의사항)가 같은
+--      역할이라 별도 컬럼을 새로 안 만들고 그대로 재사용함(TEMPLE_STAY_PROGRAM에 있던
+--      유의사항 컬럼만 제거). 대신 TEMPLE_STAY_PROGRAM에 프로그램 모집(운영) 기간(open_start_date/
+--      open_end_date)을 추가함 - 기존에 빠져있던 값.
+--  10) 이 스크립트가 DROP TABLE부터 시작하는 순수 초기화 스크립트라 재실행하면 데이터가
+--      전부 사라짐 - 그래서 맨 끝에 초기 테스트 계정(사이트 관리자/일반회원/사찰) INSERT를
+--      추가해서 재실행할 때마다 로그인 가능한 계정이 최소한으로 같이 생기도록 함.
 -- =====================================================================
 
 SET NAMES utf8mb4;
@@ -60,8 +69,8 @@ SET FOREIGN_KEY_CHECKS = 1;
 CREATE TABLE USER (
     login_id     VARCHAR(30)  NOT NULL COMMENT '로그인 아이디 (변경 불가, @ 시작 불가)',
     password     VARCHAR(255) NULL     COMMENT '비밀번호 (카카오 회원은 NULL)',
-    nickname     VARCHAR(30)  NOT NULL COMMENT '법명 (본인은 수정 불가, 관리자는 회원관리에서 수정 가능)',
-    name         VARCHAR(150) NOT NULL COMMENT '실명 (여권 영문 이름 형식)',
+    nickname     VARCHAR(30)  NOT NULL COMMENT '법명 (마이페이지에서 본인 수정 가능, 관리자도 회원관리에서 수정 가능)',
+    name         VARCHAR(150) NOT NULL COMMENT '실명 (여권 영문 이름 형식, 본인 수정 불가 - 변경은 문의를 통해 관리자가 처리)',
     phone        VARCHAR(20)  NULL     COMMENT '연락처',
     email        VARCHAR(100) NULL     COMMENT '이메일 (일반회원은 필수, 사이트 관리자 계정은 불필요해서 NULL 허용)',
     role         ENUM('USER','ADMIN') NOT NULL DEFAULT 'USER' COMMENT '일반/사이트 관리자',
@@ -103,7 +112,12 @@ CREATE TABLE TEMPLE (
     support_urban     BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '도심 인근 여부',
     support_english   BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '영어 지원 여부',
     is_temple         BOOLEAN      NOT NULL DEFAULT TRUE COMMENT '실제 사찰 건물 여부',
-    special_notice    TEXT         NULL COMMENT '사찰별 개별 주의사항',
+    -- special_notice가 곧 프로그램의 "유의사항" 역할도 겸함 - 이 사찰이 등록하는 모든
+    -- 프로그램에 공통 적용됨(프로그램마다 다시 입력 안 함). refund_policy도 같은 이유로
+    -- TEMPLE_STAY_PROGRAM이 아니라 여기 있음. 트리거로 프로그램에 복사해두지 않고, 프로그램
+    -- 조회 시 TEMPLE을 조인해서 그대로 보여준다(항상 최신값 유지).
+    special_notice    TEXT         NULL COMMENT '사찰별 개별 유의사항 (프로그램 상세의 유의사항으로도 그대로 쓰임)',
+    refund_policy     TEXT         NULL COMMENT '환불 규정 (사찰 공통, 프로그램 등록 폼에서 안 받고 여기서만 관리)',
     login_id          VARCHAR(30)  NOT NULL COMMENT '사찰 관리자 계정 아이디 (@ 시작 고정)',
     password          VARCHAR(255) NOT NULL COMMENT '사찰 관리자 계정 비밀번호(암호화)',
     must_change_password BOOLEAN  NOT NULL DEFAULT FALSE COMMENT '관리자가 임시 비밀번호를 발급했으면 TRUE - 로그인 시 비밀번호 변경 페이지로 강제 이동',
@@ -122,14 +136,16 @@ CREATE TABLE TEMPLE_STAY_PROGRAM (
     title             VARCHAR(100) NOT NULL COMMENT '프로그램명',
     -- 당일형 = 반드시 당일(1일) 프로그램 / 체험형·휴식형 = 반드시 1박2일 프로그램 (고정 규칙)
     program_type      ENUM('당일형','체험형','휴식형') NOT NULL COMMENT '유형 (당일형=1일, 체험형/휴식형=1박2일 고정)',
-    image_url         VARCHAR(255) NULL COMMENT '프로그램 대표 이미지 경로',
+    image_url         VARCHAR(255) NOT NULL COMMENT '프로그램 대표 이미지 경로 (필수)',
     description       TEXT         NULL COMMENT '소개',
     schedule          TEXT         NULL COMMENT '일정표',
     required_items    TEXT         NULL COMMENT '준비물',
-    refund_policy     TEXT         NULL COMMENT '환불 규정',
-    precautions       TEXT         NULL COMMENT '주의사항',
+    -- 환불 규정/유의사항은 사찰 공통이라 여기 없음 - TEMPLE.refund_policy/special_notice 참고.
     price             INT          NOT NULL COMMENT '참가 비용(원, 1인 기준)',
-    duration          VARCHAR(20)  NOT NULL COMMENT '진행 기간 표기(예: 당일, 1박 2일)',
+    duration          VARCHAR(20)  NOT NULL COMMENT '진행 기간 표기(예: 당일, 1박 2일) - 실제 체류 기간',
+    -- duration(체류 기간)과 다른 개념: 이 프로그램을 언제부터 언제까지 모집/운영하는지의 기간.
+    open_start_date   DATE         NOT NULL COMMENT '모집(운영) 시작일',
+    open_end_date     DATE         NOT NULL COMMENT '모집(운영) 종료일',
     max_participant   INT          NOT NULL DEFAULT 20 COMMENT '최대 인원 (전 프로그램 공통 20명 고정)',
     -- 아래 컬럼들은 관리자가 직접 입력해도 저장 시점에 트리거가 소속 TEMPLE의 값으로 덮어씀
     -- (trg_program_inherit_before_insert / _before_update 참고).
@@ -143,7 +159,9 @@ CREATE TABLE TEMPLE_STAY_PROGRAM (
     CONSTRAINT fk_program_temple
         FOREIGN KEY (temple_id) REFERENCES TEMPLE(temple_id),
     CONSTRAINT chk_program_max_participant
-        CHECK (max_participant = 20)
+        CHECK (max_participant = 20),
+    CONSTRAINT chk_program_open_dates
+        CHECK (open_end_date >= open_start_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='템플스테이 프로그램 (한국어는 기본 지원, 외국어는 영어만 지원)';
 
 -- ---------------------------------------------------------------------
@@ -221,6 +239,7 @@ CREATE TABLE RESERVATION_PARTICIPANT (
     name            VARCHAR(50) NOT NULL COMMENT '이름(여권 영문 이름 형식)',
     gender          ENUM('남성','여성') NOT NULL COMMENT '성별',
     email           VARCHAR(100) NOT NULL COMMENT '참가자 이메일',
+    phone           VARCHAR(20) NULL COMMENT '연락처(대표자만 입력, 나머지는 NULL)',
     PRIMARY KEY (participant_id),
     CONSTRAINT fk_participant_reservation
         FOREIGN KEY (reservation_id) REFERENCES TEMPLE_STAY_RESERVATION(reservation_id)
@@ -430,7 +449,8 @@ CREATE TABLE TEMPLE_REGISTRATION_REQUEST (
     support_river       BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '강 인근 여부',
     support_urban       BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '도심 인근 여부',
     support_english     BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '영어 지원 여부',
-    special_notice      TEXT         NULL COMMENT '사찰별 개별 주의사항',
+    special_notice      TEXT         NULL COMMENT '사찰별 개별 유의사항',
+    refund_policy       TEXT         NULL COMMENT '환불 규정',
     contact_email       VARCHAR(100) NOT NULL COMMENT '요청자 연락 이메일 - 승인 시 계정정보 발송 대상 (TEMPLE엔 저장 안 됨)',
     status              ENUM('대기','승인') NOT NULL DEFAULT '대기' COMMENT '처리 상태',
     approved_temple_id  BIGINT       NULL COMMENT '승인 후 생성된 TEMPLE 행 추적용(승격이 아니라 별도 생성)',
@@ -439,3 +459,19 @@ CREATE TABLE TEMPLE_REGISTRATION_REQUEST (
     CONSTRAINT fk_templereq_approved_temple
         FOREIGN KEY (approved_temple_id) REFERENCES TEMPLE(temple_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='사찰 관계자가 제출한 사찰 등록 요청(관리자 승인 대기열)';
+
+-- =====================================================================
+-- 초기 테스트 계정 (이 스크립트를 재실행해서 DB를 초기화할 때마다 같이 생성됨)
+-- 비밀번호는 전부 BCryptPasswordEncoder로 해시된 값 - 아래는 원문 비밀번호 기록용 주석.
+--   사이트 관리자: admin / admin1234!
+--   일반 회원:     testuser1 / Test1234!, testuser2 / Test1234!
+--   사찰 계정:     @templetest1 / Test1234!, @templetest2 / Test1234!
+-- =====================================================================
+INSERT INTO USER (login_id, password, nickname, name, phone, email, role, login_type) VALUES
+    ('admin', '$2a$10$TbOlPSKCFHWSjqp963flveOwYKYD6EueH1VxSE2Bm/wdB1NqN5fum', '사이트관리자', 'Admin', NULL, NULL, 'ADMIN', 'LOCAL'),
+    ('testuser1', '$2a$10$RlY25ofavPN8ENU81L7oCuOL8F8C7j5bmadGfY54aCAQO6pzZ3SEu', '일반회원테스트', '테스트', NULL, 'testuser1@example.com', 'USER', 'LOCAL'),
+    ('testuser2', '$2a$10$RlY25ofavPN8ENU81L7oCuOL8F8C7j5bmadGfY54aCAQO6pzZ3SEu', '일반회원테스트2', '테스트둘', NULL, 'testuser2@example.com', 'USER', 'LOCAL');
+
+INSERT INTO TEMPLE (name, latitude, longitude, address, region, support_sea, support_mountain, support_river, support_urban, support_english, is_temple, login_id, password, must_change_password) VALUES
+    ('테스트사찰', 37.5665000, 126.9780000, '서울시 테스트구 테스트로 1', '서울', FALSE, FALSE, FALSE, TRUE, FALSE, TRUE, '@templetest1', '$2a$10$RlY25ofavPN8ENU81L7oCuOL8F8C7j5bmadGfY54aCAQO6pzZ3SEu', FALSE),
+    ('테스트사찰2', 35.1595000, 129.0756000, '부산시 테스트구 테스트로 2', '부산', TRUE, FALSE, FALSE, FALSE, FALSE, TRUE, '@templetest2', '$2a$10$RlY25ofavPN8ENU81L7oCuOL8F8C7j5bmadGfY54aCAQO6pzZ3SEu', FALSE);

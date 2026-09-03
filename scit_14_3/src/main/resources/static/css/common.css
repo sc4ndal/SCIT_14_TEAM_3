@@ -34,6 +34,11 @@
     --sans: "Noto Sans KR", sans-serif;
 }
 
+/* 링크 밑줄 전역 제거 - common.css가 사실상 전 페이지에서 로드되니 여기 한 번만 두면 됨 */
+a {
+    text-decoration: none;
+}
+
 /* ===== 헤더 (site-header) =====
    fragments/common-includes.html이 모든 페이지에 삽입되는데, 이 스타일이 원래
    home.css에만 있어서 signup/signupSelect/login 등 다른 페이지에서는 헤더가
@@ -285,6 +290,10 @@
    여기서 덧붙임. admin 페이지도 signup.css를 같이 불러오니 .badge 자체는 재사용. */
 .badge-pending{background:#c98a2e;}
 .badge-approved{background:#2f6b5e;}
+
+/* .btn-check(signup.css)의 위험 동작용 변형 - 색만 빨강으로 */
+.btn-check.btn-danger{border-color:var(--destructive);color:var(--destructive);}
+.btn-check.btn-danger:hover:not(:disabled){background:var(--destructive);color:#fff;}
 
 /* ===== 관리자 탭(회원관리/사찰관리) ===== */
 .admin-tabs{

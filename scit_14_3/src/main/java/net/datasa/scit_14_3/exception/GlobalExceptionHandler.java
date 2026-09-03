@@ -25,13 +25,13 @@ import java.util.stream.Collectors;
  * 뷰(Thymeleaf) 기반 전역 예외 처리기.
  * - 이용자에게는 일반화된 메시지 + 상태코드 + 문의번호(traceId)만 노출한다.
  * - 예외 타입 / root cause / 스택트레이스 등 상세는 서버 로그에만 traceId와 함께 남긴다.
- * - 렌더링 뷰: templates/errorView/error.html  (모델: message, status, traceId, timestamp)
+ * - 렌더링 뷰: templates/error/error.html  (모델: message, status, traceId, timestamp)
  */
 @Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
 	
-	private static final String ERROR_VIEW = "errorView/error";
+	private static final String ERROR_VIEW = "error/error";
 	private static final DateTimeFormatter TS_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 	
 	// 1. 인증 실패 (로그인 실패)

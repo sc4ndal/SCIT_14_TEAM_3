@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사찰 예절 가이드</title>
+    <!-- TODO: 다른 페이지들처럼 common-includes.html 헤더/네비를 포함할지,
+         아니면 EtiquetteSimulation.html처럼 독립 페이지로 둘지 결정 필요.
+         지금은 시뮬레이션 페이지와 톤을 맞추기 위해 비워둠. -->
+    <link rel="stylesheet" th:href="@{/css/buddhism/etiquetteGuide.css}">
     <title>사찰 예절 가이드 | 산문</title>
     <!-- 알아보기 > 불교 정보 하위 페이지(intro/terms/list)와 같은 동선이라 공통 헤더/푸터를 붙인다.
          독립 화면인 EtiquetteSimulation.html과는 성격이 다름. -->
@@ -47,6 +52,6 @@
     window.ETIQUETTE_CATEGORIES = /*[[${categories}]]*/ [];
     /*]]>*/
 </script>
-<script th:src="@{/js/etiquetteGuide.js}"></script>
+<script th:src="@{/js/buddhism/etiquetteGuide.js}"></script>
 </body>
 </html>

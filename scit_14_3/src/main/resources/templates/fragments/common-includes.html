@@ -93,9 +93,12 @@
                             <span class="notice-dot nickname-dot" sec:authorize="hasRole('ADMIN')"
                                   th:if="${pendingTempleRequestCount > 0}"></span>
 
-                            <!-- 일반회원/사찰계정: 기존 8개 그대로 -->
-                            <div class="mypage-dropdown" sec:authorize="!hasRole('ADMIN')">
+                            <!-- 일반회원: 기존 8개 그대로 -->
+                            <div class="mypage-dropdown" sec:authorize="hasRole('USER')">
 
+                            <a th:href="@{/mypage}">
+                                마이페이지
+                            </a>
                             <a th:href="@{/mypage/edit}">
                                 회원정보수정
                             </a>
@@ -119,6 +122,22 @@
                             </a>
                             <a th:href="@{/mypage/favorites/reviews}">
                                 좋아요한 리뷰
+                            </a>
+
+                            </div>
+
+                            <!-- 사찰 계정: 마이페이지/예약목록/리뷰/관심 등 일반회원 전용 기능은 안 씀 -
+                                 사찰정보수정(비밀번호+사찰 정보)이랑 자기 사찰 프로그램 등록/관리만 -->
+                            <div class="mypage-dropdown" sec:authorize="hasRole('TEMPLE')">
+
+                            <a th:href="@{/mypage/edit}">
+                                사찰정보수정
+                            </a>
+                            <a th:href="@{/temple/programs/new}">
+                                사찰 프로그램 등록
+                            </a>
+                            <a th:href="@{/temple/programs}">
+                                사찰 프로그램 관리
                             </a>
 
                             </div>

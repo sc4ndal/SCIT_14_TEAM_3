@@ -30,9 +30,25 @@ public class ReservationParticipantService {
 				.name(entity.getName())
 				.gender(entity.getGender())
 				.email(entity.getEmail())
+				.phone(entity.getPhone())
 				.build();
 	}
-	
+
+	public List<ReservationParticipantDTO> getByReservationId(Long reservationId) {
+		List<ReservationParticipantDTO> dtoList = new ArrayList<>();
+		for (ReservationParticipantEntity entity : rpr.findByReservationId(reservationId)) {
+			dtoList.add(ReservationParticipantDTO.builder()
+					.participantId(entity.getParticipantId())
+					.reservationId(entity.getReservationId())
+					.name(entity.getName())
+					.gender(entity.getGender())
+					.email(entity.getEmail())
+					.phone(entity.getPhone())
+					.build());
+		}
+		return dtoList;
+	}
+
 	/**
 	 * 참가자 예약 생성
 	 * @param reservationParticipantDTO
@@ -47,17 +63,19 @@ public class ReservationParticipantService {
 						.name(dto.getName())
 						.gender(dto.getGender())
 						.email(dto.getEmail())
+						.phone(dto.getPhone())
 						.build();
-		
-				
+
+
 		ReservationParticipantEntity saved = rpr.save(entity); // 저장! (여기서 participantId가 새로 생김) 이거 안 만들면 participantId를 알 수 없움
-		
+
 		dtoList.add(ReservationParticipantDTO.builder()
 				.participantId(saved.getParticipantId())
 				.reservationId(saved.getReservationId())	//사실 dto에서 꺼내나 saved에서 꺼내나 값이 완전히 똑같음
 				.name(dto.getName())
 				.gender(dto.getGender())
 				.email(dto.getEmail())
+				.phone(dto.getPhone())
 				.build());
 	}
 		return dtoList;
