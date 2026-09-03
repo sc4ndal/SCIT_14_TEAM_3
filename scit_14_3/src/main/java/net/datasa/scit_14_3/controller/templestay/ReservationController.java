@@ -11,6 +11,7 @@ import net.datasa.scit_14_3.service.templestay.TempleStayReservationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,7 +29,15 @@ public class ReservationController {
 	public String Reservation() {
 		return "templestay/reservation";
 	}
-	
+
+	/** 프로그램 상세보기 - 예전엔 /reservation 안 모달이었는데, 뒤로가기 누르면 이전 페이지(가이드 등)로
+	    바로 나가버려서 진짜 페이지로 분리함(programDetail.js가 데이터는 알아서 fetch해서 채움). */
+	@GetMapping("/reservation/programs/{programId}")
+	public String programDetail(@PathVariable Long programId, Model model) {
+		model.addAttribute("programId", programId);
+		return "templestay/programDetail";
+	}
+
 	/**
 	 * 템플스테이 프로그램 생성
 	 * @param TempleStayReservationDTO

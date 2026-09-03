@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>회원정보수정 · 사찰 커뮤니티</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" th:href="@{/css/signup.css}">
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+	<link rel="stylesheet" th:href="@{/css/mypage/edit.css}">
+  <link rel="icon" th:href="@{/favicon.ico}">
+	<script th:src="@{/js/mypage/edit.js}" defer></script>
+</head>
+<body>
+
+<div class="card">
+	<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+
+	<div class="header">
+		<h1>회원정보수정</h1>
+	</div>
+
+	<!-- 아직 미구현 - MypageService/Controller에 조회만 있고 저장 처리(POST)가 없어서 폼 대신 안내만 노출한다. -->
+	<div style="padding:8px 32px 32px; text-align:center; color:var(--ink-soft);">
+		<p>회원정보수정 기능은 준비 중입니다.</p>
+	</div>
+
+	<div class="page-form mp-foot">
+		<div class="form-actions">
+			<a th:href="@{/mypage}" class="btn-cancel">마이페이지로 돌아가기</a>
+		</div>
+	</div>
+
+</div>
+
+</body>
+</html>

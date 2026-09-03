@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프로그램 상세보기 · 사찰 커뮤니티</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+    <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=4d97c12d7e3e28e5dd08a2f00a58025d&libraries=services"></script>
+    <link rel="stylesheet" href="/css/common.css">
+    <style>
+        :root {
+          --bg: #efe9dd;
+          --bg-raised: #f7f3ea;
+          --ink: #2a2620;
+          --ink-soft: #5b5346;
+          --ink-faint: #8b8272;
+          --line: #d9d0bd;
+          --line-soft: #e4dccb;
+          --pine: #3d5646;
+          --pine-deep: #2b3e33;
+          --pine-tint: #e2e8e0;
+          --gold: #a9822f;
+          --gold-tint: #f1e6c8;
+          --shadow: 0 1px 2px rgba(42,38,32,0.06), 0 8px 24px -12px rgba(42,38,32,0.18);
+        }
+        @media (prefers-color-scheme: dark) {
+          :root:not([data-theme="light"]) {
+            --bg: #211d18; --bg-raised: #2a251e; --ink: #eee7d8; --ink-soft: #bcb199; --ink-faint: #8b8272;
+            --line: #3d372c; --line-soft: #332e25; --pine: #8fae9b; --pine-deep: #b7cbbe; --pine-tint: #29352e;
+            --gold: #d8b866; --gold-tint: #362d1c; --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+          }
+        }
+        :root[data-theme="dark"] {
+          --bg: #211d18; --bg-raised: #2a251e; --ink: #eee7d8; --ink-soft: #bcb199; --ink-faint: #8b8272;
+          --line: #3d372c; --line-soft: #332e25; --pine: #8fae9b; --pine-deep: #b7cbbe; --pine-tint: #29352e;
+          --gold: #d8b866; --gold-tint: #362d1c; --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+        }
+        * { box-sizing: border-box; }
+        a { color: inherit; text-decoration: none; }
+        body {
+          margin: 0; background: var(--bg); color: var(--ink);
+          font-family: "Noto Sans KR", "Malgun Gothic", sans-serif; line-height: 1.65; font-size: 15.5px;
+        }
+        h1, h2, h3 {
+          font-family: "Noto Serif KR", "Batang", serif; color: var(--ink); text-wrap: balance; font-weight: 700; margin: 0;
+        }
+        button { font-family: inherit; }
+
+        header {
+          padding: 48px 24px 0; text-align: center; border-bottom: 1px solid var(--line);
+          background: radial-gradient(60% 60% at 50% 0%, var(--pine-tint), transparent 70%);
+        }
+        header h1 { font-size: clamp(26px, 4vw, 34px); }
+        header h1::before {
+          content: "TEMPLESTAY PROGRAM"; display: block; font-family: "IBM Plex Mono", monospace;
+          font-size: 12px; letter-spacing: 0.16em; color: var(--pine); font-weight: 600; margin-bottom: 16px;
+        }
+
+        main { max-width: 880px; margin: 0 auto; padding: 40px 24px 96px; }
+
+        .back-link {
+          display: inline-flex; align-items: center; gap: 6px;
+          background: none; border: 1px solid var(--line); color: var(--ink-soft);
+          font-weight: 600; font-size: 14px; padding: 11px 22px; border-radius: 100px; margin-bottom: 20px;
+        }
+        .back-link:hover { border-color: var(--pine); color: var(--pine-deep); }
+
+        .detail-card {
+          background: var(--bg-raised); border: 1px solid var(--line); border-radius: 16px;
+          padding: 28px; box-shadow: var(--shadow);
+        }
+        .detail-title { font-size: 24px; margin-top: 4px; }
+        .detail-sub { font-size: 13.5px; color: var(--ink-soft); margin: 6px 0 4px; }
+        .detail-capacity { display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--ink-soft); margin: 0 0 24px; }
+        .capacity-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+        .capacity-dot.open { background: var(--pine); }
+        .capacity-dot.full { background: #b3402f; }
+
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        @media (max-width: 640px) { .detail-grid { grid-template-columns: 1fr; } }
+        .d-block { border: 1px solid var(--line-soft); border-radius: 12px; padding: 16px 18px; background: var(--bg); }
+        .d-block h3 { font-size: 13px; font-family: "Noto Sans KR", sans-serif; letter-spacing: 0.03em; color: var(--pine); margin-bottom: 8px; }
+        .d-block p, .d-block li { font-size: 14px; color: var(--ink-soft); }
+        #detail-schedule p { margin: 0 0 6px; font-family: "IBM Plex Mono", monospace; font-size: 12.5px; }
+        #detail-required-items { margin: 0; padding-left: 18px; }
+        .price-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .price-table th, .price-table td { text-align: left; padding: 8px 4px; border-bottom: 1px solid var(--line-soft); }
+        .price-table th { color: var(--ink-faint); font-weight: 600; font-size: 12px; }
+        #detail-price { font-family: "IBM Plex Mono", monospace; font-weight: 600; color: var(--pine-deep); }
+        #detail-map { width: 100%; height: 260px; border-radius: 10px; border: 1px solid var(--line); }
+
+        #detail-reserve-btn {
+          display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+          background: var(--pine); color: var(--bg-raised); font-weight: 700; font-size: 15px;
+          border: none; padding: 13px 26px; border-radius: 100px; cursor: pointer; box-shadow: var(--shadow);
+          margin-top: 22px;
+        }
+        #detail-reserve-btn:hover { transform: translateY(-1px); }
+        #detail-reserve-btn:disabled { background: var(--line); color: var(--ink-faint); cursor: not-allowed; box-shadow: none; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+    <h1>프로그램 상세보기</h1>
+</header>
+
+<main>
+    <a class="back-link" th:href="@{/reservation}">&larr; 목록으로</a>
+
+    <div class="detail-card">
+        <h2 class="detail-title" id="detail-title"></h2>
+        <p class="detail-sub" id="detail-sub"></p>
+        <p class="detail-capacity">
+            <span class="capacity-dot" id="detail-capacity-dot"></span>
+            <span id="detail-capacity-text"></span>
+        </p>
+
+        <div class="detail-grid">
+            <div class="d-block">
+                <h3>프로그램 소개</h3>
+                <p id="detail-description"></p>
+            </div>
+            <div id="detail-map"></div>
+            <div class="d-block">
+                <h3>일정표</h3>
+                <div id="detail-schedule"></div>
+            </div>
+            <div class="d-block">
+                <h3>준비물</h3>
+                <ul id="detail-required-items"></ul>
+            </div>
+            <div class="d-block">
+                <h3>요금 안내</h3>
+                <table class="price-table">
+                    <tr><th>구분</th><th>가격</th></tr>
+                    <tr><td>1인</td><td id="detail-price"></td></tr>
+                </table>
+            </div>
+            <div class="d-block">
+                <h3>유의사항</h3>
+                <p id="detail-precautions"></p>
+            </div>
+            <div class="d-block">
+                <h3>환불 규정</h3>
+                <p id="detail-refund-policy"></p>
+            </div>
+        </div>
+
+        <button type="button" id="detail-reserve-btn">예약 신청</button>
+    </div>
+</main>
+
+<script th:inline="javascript">
+    const PROGRAM_ID = /*[[${programId}]]*/ 0;
+</script>
+<script src="/js/mapCommon.js"></script>
+<script src="/js/templestay/templestayView.js"></script>
+<script src="/js/templestay/programDetail.js"></script>
+
+</body>
+</html>
