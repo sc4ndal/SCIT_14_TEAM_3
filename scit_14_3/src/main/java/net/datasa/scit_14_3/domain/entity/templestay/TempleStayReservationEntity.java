@@ -38,13 +38,13 @@ public class TempleStayReservationEntity {
 	private String note;
 	
 	public enum Status {
-		예약대기, 예약확정, 취소, 이용완료
+		예약확정, 취소, 이용완료
 	}
-	
+
 	@Builder.Default
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false)
-	private Status status = Status.예약대기;
+	private Status status = Status.예약확정;
 	
 	@Column(name = "canceled_at")
 	private LocalDateTime canceledAt;

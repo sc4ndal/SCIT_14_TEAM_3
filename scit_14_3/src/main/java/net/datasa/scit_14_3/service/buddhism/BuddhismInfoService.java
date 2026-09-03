@@ -3,6 +3,7 @@ package net.datasa.scit_14_3.service.buddhism;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.TermCategory;
+import net.datasa.scit_14_3.domain.dto.buddhism.EtiquetteCategoryDTO;
 import net.datasa.scit_14_3.domain.dto.buddhism.TermCardDTO;
 import net.datasa.scit_14_3.domain.dto.buddhism.TermGroupDTO;
 import net.datasa.scit_14_3.domain.entity.buddhism.BuddhismInfoEntity;
@@ -27,6 +28,9 @@ public class BuddhismInfoService {
 
 	/** 용어 사전에 뿌릴 게시글의 대분류 값 */
 	public static final String CATEGORY_TERM = "용어";
+
+	/** 사찰 예절 가이드에 뿌릴 게시글의 대분류 값 */
+	public static final String CATEGORY_ETIQUETTE = "예절가이드";
 
 	/*
 		경전 카테고리에만 붙는 난이도 배지.
@@ -65,6 +69,25 @@ public class BuddhismInfoService {
 
 		log.debug("용어 사전 로드: 용어 {}개, 소분류 {}개", terms.size(), groups.size());
 		return groups;
+	}
+
+	/**
+	 * category='예절가이드' 게시글을 아코디언 카드 순서대로 읽는다.
+	 * 카드 앞에 붙는 A, B, C... 배지는 DB에 컬럼이 없어서 조회 순서대로 여기서 매긴다.
+	 * (26개를 넘어가면 배지를 비워둔다 - 실제 데이터는 8개뿐이라 넘칠 일은 없음)
+	 */
+	public List<EtiquetteCategoryDTO> loadEtiquetteCategories() {
+		List<BuddhismInfoEntity> posts = buddhismInfoRepository.findByCategoryOrderByPostIdAsc(CATEGORY_ETIQUETTE);
+
+		List<EtiquetteCategoryDTO> categories = new ArrayList<>();
+		for (int i = 0; i < posts.size(); i++) {
+			BuddhismInfoEntity post = posts.get(i);
+			String letter = i < 26 ? String.valueOf((char) ('A' + i)) : "";
+			categories.add(new EtiquetteCategoryDTO(letter, post.getTitle(), post.getContent()));
+		}
+
+		log.debug("예절 가이드 로드: 카드 {}개", categories.size());
+		return categories;
 	}
 
 	/**

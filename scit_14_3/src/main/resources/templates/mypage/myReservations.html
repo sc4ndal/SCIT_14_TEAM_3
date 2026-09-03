@@ -103,7 +103,6 @@
           font-weight: 600;
           letter-spacing: .01em;
         }
-        .status-예약대기 { background: rgba(138, 110, 60, .12); color: var(--gold); }
         .status-예약확정 { background: rgba(92, 122, 98, .13); color: var(--green); }
         .status-취소     { background: rgba(192, 57, 43, .10); color: var(--destructive); }
         .status-이용완료 { background: var(--muted-bg); color: var(--text-tertiary); }
@@ -115,19 +114,65 @@
           font-size: 13.5px;
         }
 
+        /* 상태 필터 토글 */
+        .status-filter {
+          display: flex;
+          gap: 8px;
+          margin: 4px 0 18px;
+          flex-wrap: wrap;
+        }
+        .status-filter button {
+          background: var(--paper);
+          border: 1px solid var(--line);
+          color: var(--text-secondary);
+          font-family: var(--sans);
+          font-size: 13px;
+          font-weight: 500;
+          padding: 8px 16px;
+          border-radius: 999px;
+          cursor: pointer;
+        }
+        .status-filter button:hover { border-color: rgba(39, 33, 27, 0.25); }
+        .status-filter button.active {
+          background: var(--text-primary);
+          border-color: var(--text-primary);
+          color: var(--paper);
+          font-weight: 600;
+        }
+
         #detail-view { display: none; }
 
-        .back-btn {
-          background: none;
-          border: none;
-          color: var(--text-secondary);
-          font-size: 13px;
-          font-family: var(--sans);
-          cursor: pointer;
-          padding: 4px 0;
+        /* 목록으로 / 프로그램 정보 - 눈에 잘 띄게 큼직한 버튼으로 */
+        .detail-toolbar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
           margin-bottom: 18px;
         }
-        .back-btn:hover { color: var(--text-primary); }
+        .back-btn {
+          background: var(--paper);
+          border: 1px solid var(--line);
+          color: var(--text-primary);
+          font-size: 14px;
+          font-weight: 600;
+          font-family: var(--sans);
+          cursor: pointer;
+          padding: 11px 20px;
+          border-radius: 999px;
+        }
+        .back-btn:hover { border-color: rgba(39, 33, 27, 0.25); background: var(--secondary); }
+        .program-link-btn {
+          display: inline-block;
+          background: var(--blue);
+          color: #fff;
+          font-size: 14px;
+          font-weight: 600;
+          font-family: var(--sans);
+          padding: 11px 20px;
+          border-radius: 999px;
+        }
+        .program-link-btn:hover { opacity: .88; }
 
         .detail-card {
           background: var(--paper);
@@ -210,12 +255,21 @@
         <!-- ===================== 목록 화면 ===================== -->
         <section id="list-view">
             <h2>예약 내역 (<span id="count-label">0</span>건)</h2>
+            <div class="status-filter" id="status-filter">
+                <button type="button" data-status="" class="active">전체</button>
+                <button type="button" data-status="예약확정">예약확정</button>
+                <button type="button" data-status="취소">예약취소</button>
+                <button type="button" data-status="이용완료">이용완료</button>
+            </div>
             <div id="reservation-list"></div>
         </section>
 
         <!-- ===================== 상세 화면 ===================== -->
         <section id="detail-view">
-            <button class="back-btn" id="back-to-list-btn">&larr; 목록으로</button>
+            <div class="detail-toolbar">
+                <button class="back-btn" id="back-to-list-btn">&larr; 목록으로</button>
+                <a class="program-link-btn" id="detail-program-link" href="#">프로그램 정보 보기 →</a>
+            </div>
 
             <div class="detail-card">
                 <div class="detail-hero">
@@ -225,7 +279,7 @@
                 </div>
 
                 <div class="detail-section">
-                    <h4>프로그램 정보 <a id="detail-program-link" href="#" style="font-size:13px;font-weight:400;">프로그램 상세보기 →</a></h4>
+                    <h4>프로그램 정보</h4>
                     <div class="detail-row"><span>일정</span><span id="detail-duration"></span></div>
                     <div class="detail-row"><span>1인 가격</span><span id="detail-price"></span></div>
                     <div class="detail-row"><span>설명</span><span id="detail-description"></span></div>
