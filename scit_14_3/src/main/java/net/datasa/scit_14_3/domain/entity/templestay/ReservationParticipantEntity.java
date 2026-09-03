@@ -31,4 +31,7 @@ public class ReservationParticipantEntity {
 	
 	@Column(name = "email", length = 100, nullable = false)
 	private String email;
+
+	@Column(name = "phone", length = 20)	// 대표자만 입력, 나머지는 NULL
+	private String phone;
 }

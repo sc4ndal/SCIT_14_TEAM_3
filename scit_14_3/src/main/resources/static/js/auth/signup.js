@@ -127,6 +127,10 @@ function onLanguageChange(lang){
     const t = TRANSLATIONS[lang];
     if(!t) return; // 혹시 모를 방어 - 이 사전에 없는 언어면 그냥 무시
 
+    // 프래그먼트(로그인/회원가입 등)는 이 페이지 전용 사전이 아니라 common.js의 공용
+    // 사전(I18N_MANUAL_OVERRIDES)에 있음 - 같이 적용해줌.
+    if (window.applyManualOverrideTranslations) window.applyManualOverrideTranslations(lang);
+
     const preferredField = document.getElementById('preferredLanguageField');
     if(preferredField) preferredField.value = lang;
 

@@ -28,11 +28,12 @@ public class MypageController {
 
 	private final TempleService templeService;
 	private final MypageService mypageService;
-	
-	@PreAuthorize(("hasRole('USER')"))
+	private final CloudinaryService cloudinaryService;
+
+	@PreAuthorize("hasRole('USER')")
 	@GetMapping("/mypage")
 	public String mypage(Model model) {
-		
+
 		return "mypage/mypage";
 	}
 	
@@ -83,6 +84,7 @@ public class MypageController {
 			model.addAttribute("isTempleAccount", true);
 			model.addAttribute("loginType", "TEMPLE");
 			model.addAttribute("isLocalMember", false);
+			model.addAttribute("formData", templeService.getInfo(principal.getTempleId()));
 			return "mypage/edit";
 		}
 
@@ -91,15 +93,6 @@ public class MypageController {
 		model.addAttribute("loginType", user.getLoginType());     // "LOCAL" | "KAKAO"
 		model.addAttribute("isLocalMember", user.isLocalMember());
 		model.addAttribute("isTempleAccount", false);
-	private final CloudinaryService cloudinaryService;
-
-	@GetMapping("/mypage/edit")
-	public String edit(@AuthenticationPrincipal AppUserDetails principal, Model model) {
-		boolean isTempleAccount = principal.isTempleAccount();
-		model.addAttribute("isTempleAccount", isTempleAccount);
-		if (isTempleAccount) {
-			model.addAttribute("formData", templeService.getInfo(principal.getTempleId()));
-		}
 		return "mypage/edit";
 	}
 
@@ -148,10 +141,4 @@ public class MypageController {
 		}
 		return "redirect:/mypage/edit";
 	}
-	@GetMapping("/mypage/myreservations")
-	public String myReservation() {
-		return "mypage/myReservations";
-	}
-	
-	
 }

@@ -8,10 +8,13 @@ import net.datasa.scit_14_3.domain.dto.templestay.TempleStayReservationDTO;
 import net.datasa.scit_14_3.service.payment.PaymentService;
 import net.datasa.scit_14_3.service.templestay.ReservationParticipantService;
 import net.datasa.scit_14_3.service.templestay.TempleStayReservationService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Controller
@@ -33,8 +36,13 @@ public class ReservationController {
 	 */
 	@PostMapping("/templestayreservations")
 	@ResponseBody
-	public TempleStayReservationDTO TempleStayReservation(@RequestBody TempleStayReservationDTO TempleStayReservationDTO) {
-		return tsrs.reserved(TempleStayReservationDTO);
+	public ResponseEntity<?> TempleStayReservation(@RequestBody TempleStayReservationDTO TempleStayReservationDTO) {
+		try {
+			return ResponseEntity.ok(tsrs.reserved(TempleStayReservationDTO));
+		} catch (IllegalStateException e) {
+			// 정원 초과 등 - 프론트에서 메시지 그대로 alert로 띄움(reservation.js 참고)
+			return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+		}
 	}
 	
 	/**
@@ -64,6 +72,12 @@ public class ReservationController {
 	public List<TempleStayReservationDTO> getTempleStayReservation(@RequestParam String loginId) {
 		return tsrs.findByMyReservation(loginId);
 	}
+
+	@GetMapping("/templestayreservations/{reservationId}")
+	@ResponseBody
+	public TempleStayReservationDTO getTempleStayReservationById(@PathVariable Long reservationId) {
+		return tsrs.getInfo(reservationId);
+	}
 	
 	@GetMapping("/payments/reservation/{reservationId}")
 	@ResponseBody
@@ -73,7 +87,12 @@ public class ReservationController {
 	
 	@PatchMapping("/templestayreservations/{reservationId}/cancel")
 	@ResponseBody
-	public TempleStayReservationDTO canceledReservation(@PathVariable Long reservationId) {
-		return tsrs.canceledMyReservation(reservationId);
+	public ResponseEntity<?> canceledReservation(@PathVariable Long reservationId) {
+		try {
+			return ResponseEntity.ok(tsrs.canceledMyReservation(reservationId));
+		} catch (IllegalStateException e) {
+			// 체크인 24시간 전 취소 마감 등 - 프론트에서 메시지 그대로 alert로 띄움
+			return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+		}
 	}
 }
