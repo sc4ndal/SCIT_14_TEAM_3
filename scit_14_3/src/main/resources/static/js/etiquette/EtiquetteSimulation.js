@@ -461,7 +461,10 @@ function showResult() {
       <button class="btn btn-primary" id="btn-guide-cta">사찰 예절 자세히 알아보기</button>
     `;
         reviewList.appendChild(cta);
-        el('btn-guide-cta').onclick = () => alert('/info?category=예절가이드 로 이동 (연결 예정)');
+        // 예절 가이드는 대분류를 쿼리스트링으로 받으므로 한글 값을 인코딩해서 넘긴다.
+        el('btn-guide-cta').onclick = () => {
+            location.href = '/info?category=' + encodeURIComponent('예절가이드');
+        };
     } else {
         const title = document.createElement('div');
         title.className = 'result-section-title';
