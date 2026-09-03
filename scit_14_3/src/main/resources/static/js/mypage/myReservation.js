@@ -66,6 +66,13 @@
          });
        }
 
+       // 예약확정/취소는 시작일 빠른 순으로 위에, 이용완료는 시작일 늦은 순으로 그 아래에 모아서 보여줌
+       const upcoming = RESERVATIONS.filter(r => r.status !== '이용완료')
+         .sort((a, b) => a.startDate.localeCompare(b.startDate));
+       const finished = RESERVATIONS.filter(r => r.status === '이용완료')
+         .sort((a, b) => b.startDate.localeCompare(a.startDate));
+       RESERVATIONS = [...upcoming, ...finished];
+
        renderList();
      } catch (err) {
        console.error('예약 목록을 불러오지 못했습니다.', err);
@@ -73,17 +80,19 @@
      }
    }
   let selectedReservationId = null;
+  let statusFilter = ''; // '' = 전체
 
   function renderList() {
     const listEl = document.getElementById('reservation-list');
-    document.getElementById('count-label').textContent = RESERVATIONS.length;
+    const filtered = statusFilter ? RESERVATIONS.filter(r => r.status === statusFilter) : RESERVATIONS;
+    document.getElementById('count-label').textContent = filtered.length;
 
-    if (RESERVATIONS.length === 0) {
-      listEl.innerHTML = '<p class="empty-msg">아직 예약한 템플스테이가 없습니다.</p>';
+    if (filtered.length === 0) {
+      listEl.innerHTML = '<p class="empty-msg">해당하는 예약이 없습니다.</p>';
       return;
     }
 
-    listEl.innerHTML = RESERVATIONS.map(r => `
+    listEl.innerHTML = filtered.map(r => `
       <article class="reservation-card" data-id="${r.reservationId}">
         <div class="info">
           <h3>${r.program.title}</h3>
@@ -113,7 +122,7 @@
     document.getElementById('detail-status-badge').className = `status-badge status-${r.status}`;
     document.getElementById('detail-title').textContent = r.program.title;
     document.getElementById('detail-temple-region').textContent = `${r.program.templeName} · ${r.program.region}`;
-    document.getElementById('detail-program-link').href = r.programId ? `/reservation?programId=${r.programId}` : '#';
+    document.getElementById('detail-program-link').href = r.programId ? `/reservation/programs/${r.programId}` : '#';
 
     document.getElementById('detail-duration').textContent = r.program.duration;
     document.getElementById('detail-price').textContent = `${r.program.price.toLocaleString()}원`;
@@ -137,6 +146,14 @@
       cancelNote.textContent = '';
     }
   }
+
+  document.querySelectorAll('#status-filter button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      statusFilter = btn.dataset.status;
+      document.querySelectorAll('#status-filter button').forEach(b => b.classList.toggle('active', b === btn));
+      renderList();
+    });
+  });
 
   document.getElementById('back-to-list-btn').addEventListener('click', () => {
     document.getElementById('detail-view').style.display = 'none';
