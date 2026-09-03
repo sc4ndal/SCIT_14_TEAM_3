@@ -23,11 +23,10 @@
 		<p class="req-note"><span class="req">*</span> <span data-i18n="requiredNote">표시는 필수 입력 항목입니다</span></p>
 	</div>
 
-	<!-- ===== [추가] 회원가입 실패 시 에러 메시지 (UserController의 flash attribute) ===== -->
-	<ul class="check-result" style="color:#c0392b; text-align:center;"
-	    th:if="${errorMessages != null and !errorMessages.isEmpty()}">
-		<li th:each="msg : ${errorMessages}" th:text="${msg}"></li>
-	</ul>
+	<!-- 회원가입 실패 시 에러 메시지 (UserController가 redirect 하면서 넘기는 flash attribute).
+	     검증 오류가 여러 건이면 " / "로 이어 붙인 한 줄로 들어온다. -->
+	<p class="check-result" style="color:#c0392b; text-align:center;"
+	   th:if="${signupError != null}" th:text="${signupError}"></p>
 
 	<form class="page-form" th:action="${mode == 'kakao'} ? @{/signup/kakao-additional} : @{/signup/local}" method="post">
 
