@@ -6,17 +6,16 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.datasa.scit_14_3.domain.dto.kakao.KakaoTokenResponse;
+import net.datasa.scit_14_3.domain.dto.kakao.KakaoUserInfoResponse;
 import net.datasa.scit_14_3.domain.dto.user.KakaoAdditionalRequestDto;
 import net.datasa.scit_14_3.domain.dto.user.LocalSignupRequestDto;
 import net.datasa.scit_14_3.domain.dto.user.UserResponseDto;
-import net.datasa.scit_14_3.domain.dto.kakao.KakaoTokenResponse;
-import net.datasa.scit_14_3.domain.dto.kakao.KakaoUserInfoResponse;
 import net.datasa.scit_14_3.exception.DuplicateFieldException;
 import net.datasa.scit_14_3.security.SessionLoginService;
 import net.datasa.scit_14_3.service.user.EmailVerificationService;
 import net.datasa.scit_14_3.service.user.KakaoOAuthService;
 import net.datasa.scit_14_3.service.user.UserService;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindException;
@@ -250,52 +249,4 @@ public class UserController {
 		}
 	}
 	
-	/////////////////////////////////////////////
-	/// 여기서 부터 마이페이지
-	@PreAuthorize(("hasRole('USER')"))
-	@GetMapping("/mypage")
-	public String mypage(Model model) {
-
-		return "mypage/mypage";
-	}
-
-	// /mypage/edit은 MypageController가 담당함 (중복 매핑이라 여기서는 뺌)
-
-	// ===== 마이페이지 허브(/mypage) 카드에서 연결되는 하위 페이지들 =====
-	// 지금은 화면 껍데기만 있는 상태. 실제 데이터 바인딩은 각 기능 담당이 채운다.
-	
-	@GetMapping("/mypage/myReservations")
-	public String reservations() {
-		return "mypage/myReservations";
-	}
-	
-	@GetMapping("/mypage/myReviews")
-	public String reviews() {
-		return "mypage/myReviews";
-	}
-	
-	@GetMapping("/mypage/favorites/temples")
-	public String favoriteTemples() {
-		return "mypage/favorites/temples";
-	}
-	
-	@GetMapping("/mypage/favorites/events")
-	public String favoriteEvents() {
-		return "mypage/favorites/events";
-	}
-	
-	@GetMapping("/mypage/favorites/quotes")
-	public String favoriteQuotes() {
-		return "mypage/favorites/quotes";
-	}
-	
-	@GetMapping("/mypage/favorites/foods")
-	public String favoriteFoods() {
-		return "mypage/favorites/foods";
-	}
-	
-	@GetMapping("/mypage/favorites/reviews")
-	public String favoriteReviews() {
-		return "mypage/favorites/reviews";
-	}
 }

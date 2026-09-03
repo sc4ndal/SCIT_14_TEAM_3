@@ -85,6 +85,8 @@ input[type=password],
 input[type=tel],
 input[type=date],
 input[type=email],
+input[type=number],
+input[type=file],
 select{
     width:100%;
     padding:10px 12px;
@@ -95,7 +97,7 @@ select{
     background:#fff;
     color:var(--ink);
 }
-input:disabled{background:#f1ece1;color:var(--ink-soft);}
+input:disabled,input:read-only{background:#f1ece1;color:var(--ink-soft);}
 input:focus,select:focus{outline:none;border-color:var(--wood);}
 
 .field-inline{display:flex;gap:8px;align-items:stretch;}

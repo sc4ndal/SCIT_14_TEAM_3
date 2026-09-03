@@ -22,6 +22,11 @@ public class ReservationParticipantController {
 	public ReservationParticipantDTO getReservationParticipant(@PathVariable Long participantId) {
 		return rps.getInfo(participantId);
 	}
-	
-	
+
+	@GetMapping("/reservation/{reservationId}")
+	public List<ReservationParticipantDTO> getByReservation(@PathVariable Long reservationId) {
+		return rps.getByReservationId(reservationId);
+	}
+
+
 }

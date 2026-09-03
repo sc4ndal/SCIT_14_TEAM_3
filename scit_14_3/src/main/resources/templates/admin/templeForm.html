@@ -90,12 +90,9 @@
 				</label>
 			</div>
 
-			<div class="field">
-				<label for="specialNotice">참고사항 <span class="optional-note">(선택)</span></label>
-				<textarea id="specialNotice" name="specialNotice" rows="4"
-				          style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:14px;"
-				          th:text="${formData.specialNotice}"></textarea>
-			</div>
+			<!-- 참고사항(유의사항)/환불 규정은 사찰 계정 본인이 사찰정보수정(/mypage/edit)에서
+			     직접 설정함(MypageController /mypage/temple-info) - 사찰 관리자가 문제를
+			     일으킬 값이 아니라서 관리자가 여기서 중복으로 수정할 필요 없음. -->
 		</fieldset>
 
 		<div class="form-actions">

@@ -3,10 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사찰 예절 가이드</title>
+    <!-- TODO: 다른 페이지들처럼 common-includes.html 헤더/네비를 포함할지,
+         아니면 EtiquetteSimulation.html처럼 독립 페이지로 둘지 결정 필요.
+         지금은 시뮬레이션 페이지와 톤을 맞추기 위해 비워둠. -->
+    <link rel="stylesheet" th:href="@{/css/buddhism/etiquetteGuide.css}">
     <title>사찰 예절 가이드 | 산문</title>
     <link rel="stylesheet" th:href="@{/css/common.css}">
     <link rel="stylesheet" th:href="@{/css/buddhism/buddhism.css}">
-    <link rel="stylesheet" th:href="@{/css/etiquetteGuide.css}">
 </head>
 <body>
 
@@ -36,6 +40,6 @@
 
 <div th:replace="~{fragments/layout :: footer}"></div>
 
-<script th:src="@{/js/etiquetteGuide.js}"></script>
+<script th:src="@{/js/buddhism/etiquetteGuide.js}"></script>
 </body>
 </html>

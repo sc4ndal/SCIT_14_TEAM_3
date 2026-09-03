@@ -49,7 +49,10 @@
 			</tr>
 			<tr><th>영어 안내</th><td th:text="${request.supportEnglish} ? '가능' : '불가'"></td></tr>
 			<tr th:if="${request.specialNotice != null and !#strings.isEmpty(request.specialNotice)}">
-				<th>참고사항</th><td th:text="${request.specialNotice}"></td>
+				<th>유의사항</th><td th:text="${request.specialNotice}"></td>
+			</tr>
+			<tr th:if="${request.refundPolicy != null and !#strings.isEmpty(request.refundPolicy)}">
+				<th>환불 규정</th><td th:text="${request.refundPolicy}"></td>
 			</tr>
 			<tr><th>연락 이메일</th><td th:text="${request.contactEmail}"></td></tr>
 			</tbody>

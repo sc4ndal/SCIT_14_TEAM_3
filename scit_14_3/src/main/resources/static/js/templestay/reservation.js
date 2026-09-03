@@ -33,7 +33,8 @@ const API = {
 // ------------------------- 목데이터 (findAll 만들기 전까지 임시) -------------------------
 // 실제로는 GET /temples + GET /templestayprograms 응답을 합쳐서 아래와 같은 모양을 만들면 됨.
 // TempleStayProgramDTO 필드명(programId, templeId, title, programType, price, duration, maxParticipant,
-// description, schedule, requiredItems, refundPolicy, precautions) 그대로 사용.
+// description, schedule, requiredItems, templeRefundPolicy, templePrecautions) 그대로 사용 -
+// 환불규정/주의사항은 프로그램이 아니라 사찰(TEMPLE) 공통값이라 이름이 temple로 시작함.
 const MOCK_PROGRAMS = [
   {
     programId: 1, templeId: 1, templeName: '국제선센터', region: '부산광역시',
@@ -42,8 +43,8 @@ const MOCK_PROGRAMS = [
     description: '새벽 예불과 108배로 하루를 시작하며 마음을 정돈하는 1박 2일 프로그램입니다.',
     schedule: '1일차 15:00 입소 및 오리엔테이션\n1일차 18:00 저녁 발우공양\n1일차 19:30 저녁 예불\n2일차 04:30 새벽 예불·108배\n2일차 09:00 아침 공양 후 퇴소',
     requiredItems: '개인 세면도구, 편한 활동복, 양말(법당 착석용), 상비약(필요시)',
-    refundPolicy: '입소 7일 전까지 전액 환불, 3일 전까지 50% 환불, 이후 환불 불가.',
-    precautions: '문신 노출이 심한 복장은 삼가 주세요. 음주 후 입소는 제한될 수 있습니다.',
+    templeRefundPolicy: '입소 7일 전까지 전액 환불, 3일 전까지 50% 환불, 이후 환불 불가.',
+    templePrecautions: '문신 노출이 심한 복장은 삼가 주세요. 음주 후 입소는 제한될 수 있습니다.',
   },
   {
     programId: 2, templeId: 1, templeName: '국제선센터', region: '부산광역시',
@@ -52,8 +53,8 @@ const MOCK_PROGRAMS = [
     description: '숲길을 걸으며 진행하는 당일 명상 체험 프로그램입니다.',
     schedule: '10:00 입소 및 다도 안내\n10:30 숲길 걷기 명상\n12:00 점심 발우공양\n13:30 차담 및 마무리',
     requiredItems: '걷기 편한 신발, 개인 물병',
-    refundPolicy: '입소 3일 전까지 전액 환불, 이후 환불 불가.',
-    precautions: '우천 시 일정이 변경될 수 있습니다.',
+    templeRefundPolicy: '입소 3일 전까지 전액 환불, 이후 환불 불가.',
+    templePrecautions: '우천 시 일정이 변경될 수 있습니다.',
   },
   {
     programId: 3, templeId: 2, templeName: '직지사', region: '경상북도',
@@ -62,8 +63,8 @@ const MOCK_PROGRAMS = [
     description: '전통 발우공양 예절을 직접 체험해보는 프로그램입니다.',
     schedule: '09:30 입소 및 발우 소개\n10:00 발우공양 실습\n11:30 사찰 예절 체험\n13:00 해산',
     requiredItems: '무릎 꿇기 편한 하의, 개인 손수건',
-    refundPolicy: '입소 3일 전까지 전액 환불, 이후 환불 불가.',
-    precautions: '식이 제한(알레르기 등)이 있으면 사전에 알려주세요.',
+    templeRefundPolicy: '입소 3일 전까지 전액 환불, 이후 환불 불가.',
+    templePrecautions: '식이 제한(알레르기 등)이 있으면 사전에 알려주세요.',
   },
 ];
  
@@ -251,8 +252,8 @@ function renderProgramDetail(p) {
 
   document.getElementById('detail-price').textContent = `${p.price.toLocaleString()}원`;
 
-  document.getElementById('detail-precautions').textContent = p.precautions || '';
-  document.getElementById('detail-refund-policy').textContent = p.refundPolicy || '';
+  document.getElementById('detail-precautions').textContent = p.templePrecautions || '';
+  document.getElementById('detail-refund-policy').textContent = p.templeRefundPolicy || '';
 
   // "예약 신청" 버튼에 현재 programId를 기억시켜 둠
   document.getElementById('detail-reserve-btn').dataset.programId = p.programId;
@@ -275,7 +276,7 @@ document.getElementById('detail-reserve-btn').addEventListener('click', (e) => {
 function selectProgram(programId) {
   if(!isLoggedIn) {
   alert('로그인이 필요합니다.');
-  location.href = '/login';
+  location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
   return;
   }
 
@@ -558,13 +559,33 @@ async function submitReservation() {
     note: state.note,
   };
 
+  const totalAmount = p.price * state.participantCount;
+  const dateLabel = state.startDate === state.endDate ? `${state.startDate} (당일)` : `${state.startDate} ~ ${state.endDate}`;
+
+  const confirmMessage =
+  `아래 내용으로 예약하시겠습니까?\n\n` +
+  `프로그램: ${p.title}\n` +
+  `사찰: ${p.templeName} (${p.region})\n` +
+  `기간: ${dateLabel}\n` +
+  `인원: ${state.participantCount}명\n` +
+  `결제 수단: ${state.paymentMethod}\n` +
+  `총 금액: ${totalAmount.toLocaleString()}원`;
+
+  const ok = confirm(confirmMessage);
+  if (!ok) return;
+
   try {
-    // TODO: 실제 POST /templestayreservations 만들어지면 아래 주석 해제
     const resRes = await fetch(API.createReservation, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(reservationPayload),
     });
+    if (!resRes.ok) {
+      // 정원 초과처럼 신청 시점에 이미 자리가 없어진 경우 - 서버가 내려준 메시지 그대로 보여줌
+      const err = await resRes.json().catch(() => null);
+      alert(err && err.message ? err.message : '예약 신청에 실패했습니다.');
+      return;
+    }
     const reservation = await resRes.json();
 
     const participantPayload = state.participants.map(pt => ({
@@ -572,6 +593,7 @@ async function submitReservation() {
     name: pt.name,
     gender: pt.gender,
     email: pt.email,
+    phone: pt.phone || null,   // 대표자(participants[0])만 실제 값 있고 나머지는 폼에 입력칸이 없어서 빈 값
     }));
     const partRes = await fetch(API.createParticipants,{
         method: 'POST',
@@ -580,13 +602,36 @@ async function submitReservation() {
     });
     const participants = await partRes.json();
 
-    // PAYMENT 생성 요청
+    if (state.paymentMethod === '카카오페이') {
+      // 페이지를 완전히 떠났다 돌아오므로(카카오 결제창 리다이렉트) state가 사라짐 - 돌아왔을 때는
+      // resumeAfterKakaoPay()가 서버에서 예약을 다시 조회하고, 프로그램 정보는 state.programs(항상
+      // init에서 먼저 불러옴)에서 다시 찾으므로 여기서 따로 남겨둘 값 없음.
+      const readyRes = await fetch('/payments/kakao/ready', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reservationId: reservation.reservationId,
+          amount: totalAmount,
+          itemName: p.title,
+        }),
+      });
+      if (!readyRes.ok) {
+        const err = await readyRes.json().catch(() => null);
+        alert(err && err.message ? err.message : '카카오페이 결제 준비에 실패했습니다.');
+        return;
+      }
+      const { redirectUrl } = await readyRes.json();
+      location.href = redirectUrl; // 카카오페이 결제창으로 이동 - 이후 흐름은 payments/kakao/approve 콜백에서 이어짐
+      return;
+    }
+
+    // PAYMENT 생성 요청 (계좌이체 - 무통장입금이라 즉시결제 없이 바로 완료 처리)
     const paymentPayload = {
       reservationId: reservation.reservationId,
       paymentMethod: state.paymentMethod,
-      amount: p.price * state.participantCount,
-      depositorName: state.paymentMethod === '계좌이체' ? state.depositorName : null,
-      kakaoTid: state.paymentMethod === '카카오페이' ? state.kakaoTid : null,
+      amount: totalAmount,
+      depositorName: state.depositorName,
+      kakaoTid: null,
     };
 
     const payRes = await fetch(API.createPayment, {
@@ -598,30 +643,76 @@ async function submitReservation() {
     const payment = await payRes.json();
 
     state.reservationResult = { reservation, payment, program: p };
-    renderStep3();
-    goToStep(3);
+    goToStep(3);      // 지도 컨테이너가 hidden 상태에서 생성되면 크기가 0으로 잡혀 마커 위치가 어긋나므로 먼저 보이게 함
+    await renderStep3();
   } catch (err) {
     alert('예약 신청 중 오류가 발생했습니다.');
     console.error(err);
   }
 }
 // ------------------------- STEP 3: 신청 완료 -------------------------
-function renderStep3() {
-  const { reservation, payment, program } = state.reservationResult;
+async function renderStep3() {
+  const { reservation, payment } = state.reservationResult;
+  // 프로그램 정보는 항상 state.programs(init에서 이미 불러온 전체 목록)에서 찾음 - 카카오페이
+  // 결제창을 왕복하고 왔을 때도 loadPrograms()가 먼저 끝난 뒤라 안전하게 찾을 수 있음.
+  const program = state.programs.find(p => p.programId === reservation.programId) || state.reservationResult.program || {};
+
+  // 인원정보는 항상 서버에서 다시 조회함 - 카카오페이 결제창 왕복 후에는 state.participants가
+  // 비어있어서(페이지를 완전히 떠났다 옴) in-memory 값을 믿을 수 없음.
+  let participants = [];
+  try {
+    const res = await fetch(`/reservationparticipants/reservation/${reservation.reservationId}`);
+    if (res.ok) participants = await res.json();
+  } catch (err) {
+    console.error('참가자 정보를 불러오지 못했습니다.', err);
+  }
 
   document.getElementById('result-reservation-id').textContent = `예약번호 ${reservation.reservationId}`;
-  document.getElementById('result-program-title').textContent = program.title;
-  document.getElementById('result-temple-name').textContent = `${program.templeName} · ${program.region}`;
-  document.getElementById('result-date-range').textContent = `${reservation.startDate} ~ ${reservation.endDate}`;
+  document.getElementById('result-program-title').textContent = program.title || '';
+  document.getElementById('result-temple-name').textContent = `${program.templeName || ''} · ${program.region || ''}`;
+  document.getElementById('result-date-range').textContent =
+    reservation.startDate === reservation.endDate ? `${reservation.startDate} (당일)` : `${reservation.startDate} ~ ${reservation.endDate}`;
   document.getElementById('result-participant-count').textContent = `${reservation.participantCount}명`;
+  document.getElementById('result-participant-list').innerHTML = participants.length
+    ? participants.map(pt => `<tr><td>${pt.name}</td><td>${pt.gender}</td><td>${pt.email}</td><td>${pt.phone || '-'}</td></tr>`).join('')
+    : '<tr><td colspan="4">참가자 정보 없음</td></tr>';
   document.getElementById('result-total-amount').textContent = `${payment.amount.toLocaleString()}원`;
   document.getElementById('result-payment-method').textContent = payment.paymentMethod;
   document.getElementById('result-status').textContent = reservation.status;
+
+  if (program.programId != null) loadResultMap(program);
+}
+
+// 신청 완료 화면의 위치 지도. templestayView.js의 loadDetailMap과 같은 패턴이지만
+// #result-map 컨테이너용으로 별도 지도 인스턴스를 씀(같은 지도 객체를 두 컨테이너에서 못 씀).
+var _resultMap = null;
+var _resultMarker = null;
+function loadResultMap(program) {
+  if (typeof kakao === 'undefined' || !program.latitude || !program.longitude) return;
+  kakao.maps.load(() => {
+    const position = new kakao.maps.LatLng(program.latitude, program.longitude);
+    if (!_resultMap) {
+      _resultMap = new kakao.maps.Map(document.getElementById('result-map'), { center: position, level: 4 });
+    }
+    // 지도를 만들 때 #step-3가 막 hidden이 풀린 직후라 컨테이너 크기가 0으로 측정돼서
+    // 마커 위치가 어긋나던 문제 - relayout으로 컨테이너 크기를 다시 재게 함.
+    _resultMap.relayout();
+    _resultMap.setCenter(position);
+    if (_resultMarker) _resultMarker.setMap(null);
+    _resultMarker = createTempleMarker(_resultMap, {
+      templeId: program.templeId,
+      lat: program.latitude,
+      lng: program.longitude,
+      name: program.templeName,
+      address: program.templeAddress,
+      iconUrl: '/images/temple-marker.svg',
+    });
+  });
 }
 
 document.getElementById('go-to-my-reservations-btn').addEventListener('click', () => {
   // TODO: 마이페이지/내 예약 목록 페이지로 이동
-  alert('내 예약 목록 페이지는 아직 없습니다.');
+     location.href = '/mypage/myreservations';
 });
 
 // ------------------------- 필터 -------------------------
@@ -685,6 +776,48 @@ async function init() {
   bindFilterChangeEvents();
   renderProgramList();
   goToStep(1);
+
+  await resumeAfterKakaoPay();
+
+  // 마이페이지 예약 상세 등 외부에서 "프로그램 상세보기"로 들어온 경우(?programId=X) 바로 열어줌
+  const linkedProgramId = new URLSearchParams(location.search).get('programId');
+  if (linkedProgramId) {
+    showProgramDetail(Number(linkedProgramId));
+  }
+}
+
+// 카카오페이 결제창으로 갔다가 돌아왔을 때(?paid=success|cancel|fail&reservationId=..) 이어서 처리.
+// 결제 도중엔 페이지를 완전히 떠나서 state가 비어있으므로, 서버에서 예약/결제를 다시 조회해서 그림.
+async function resumeAfterKakaoPay() {
+  const params = new URLSearchParams(location.search);
+  const paid = params.get('paid');
+  const reservationId = params.get('reservationId');
+  if (!paid || !reservationId) return;
+
+  history.replaceState({}, '', location.pathname); // 새로고침해도 다시 안 뜨게 쿼리스트링 지움
+
+  if (paid === 'cancel') {
+    alert('결제를 취소했습니다. 예약도 함께 취소되었습니다.');
+    return;
+  }
+  if (paid === 'fail') {
+    alert('결제에 실패했습니다. 예약도 함께 취소되었습니다.');
+    return;
+  }
+  if (paid !== 'success') return;
+
+  try {
+    const [reservation, payment] = await Promise.all([
+      fetch(`/templestayreservations/${reservationId}`).then(r => r.json()),
+      fetch(`/payments/reservation/${reservationId}`).then(r => r.json()),
+    ]);
+    state.reservationResult = { reservation, payment, program: {} }; // renderStep3가 state.programs에서 다시 찾음
+    goToStep(3);
+    await renderStep3();
+  } catch (err) {
+    console.error(err);
+    alert('결제는 완료됐지만 결과를 불러오지 못했습니다. 마이페이지에서 예약 내역을 확인해 주세요.');
+  }
 }
 
 init();

@@ -65,7 +65,10 @@
         }
 
         * { box-sizing: border-box; }
-
+        a {
+        color: inherit;
+        text-decoration: none;
+        }
         body {
           margin: 0;
           background: var(--bg);
@@ -469,6 +472,12 @@
           gap: 6px;
           margin-bottom: 12px;
         }
+        /* .form-item의 display:flex가 [hidden] 기본 스타일(display:none)보다 나중에 선언돼서
+           덮어써버림(동일 명시도라 소스 순서로 이김) - 결제수단 전환 시 payment-field가 안 숨겨지던
+           원인. 명시도를 올려서 hidden이 항상 이기게 함. */
+        .form-item[hidden] {
+          display: none;
+        }
         .form-item label {
           font-size: 13px;
           font-weight: 600;
@@ -620,15 +629,32 @@
           box-shadow: var(--shadow);
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 4px;
         }
-        #reservation-result-summary p { margin: 0; font-size: 14.5px; color: var(--ink-soft); }
+        #reservation-result-summary p { margin: 0 0 10px; font-size: 14.5px; color: var(--ink-soft); }
         #result-reservation-id {
           font-family: "IBM Plex Mono", monospace;
           font-weight: 700;
           color: var(--pine-deep);
           font-size: 16px;
         }
+        .result-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: baseline;
+          gap: 18px;
+          padding: 10px 14px;
+          border-bottom: 1px solid var(--line-soft);
+        }
+        .result-row:last-child { border-bottom: none; }
+        .result-label {
+          flex: none;
+          font-size: 12.5px;
+          font-weight: 600;
+          color: var(--ink-faint);
+          letter-spacing: 0.02em;
+        }
+        .result-row > span:last-child { text-align: right; }
         #result-program-title { font-family: "Noto Serif KR", serif; font-weight: 700; font-size: 18px; color: var(--ink); }
         #result-status {
           display: inline-block;
@@ -641,9 +667,28 @@
           border-radius: 100px;
           padding: 3px 10px;
         }
-        #step-3 > button {
-          margin-top: 20px;
-          margin-right: 10px;
+        .result-section { padding: 10px 14px; border-bottom: 1px solid var(--line-soft); }
+        .result-section .result-label { display: block; margin-bottom: 10px; }
+        #result-map {
+          width: 100%;
+          height: 200px;
+          border-radius: 10px;
+          border: 1px solid var(--line);
+          margin-top: 4px;
+        }
+        .result-participant-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        .result-participant-table th, .result-participant-table td {
+          text-align: left;
+          padding: 7px 8px;
+          border-bottom: 1px solid var(--line-soft);
+        }
+        .result-participant-table th { color: var(--ink-faint); font-weight: 600; font-size: 12px; }
+        .result-participant-table tr:last-child td { border-bottom: none; }
+        .step3-actions {
+          display: flex;
+          justify-content: center;
+          gap: 12px;
+          margin-top: 24px;
         }
     </style>
 </head>
@@ -774,13 +819,13 @@
             <!-- 유의사항 -->
             <div class="d-block">
                 <h3>유의사항</h3>
-                <p id="detail-precautions"><!-- TEMPLE_STAY_PROGRAM.precautions --></p>
+                <p id="detail-precautions"><!-- TEMPLE.special_notice (사찰 공통값, 프로그램별 아님) --></p>
             </div>
 
             <!-- 환불 규정 -->
             <div class="d-block">
                 <h3>환불 규정</h3>
-                <p id="detail-refund-policy"><!-- TEMPLE_STAY_PROGRAM.refund_policy --></p>
+                <p id="detail-refund-policy"><!-- TEMPLE.refund_policy (사찰 공통값, 프로그램별 아님) --></p>
             </div>
 
         </div>
@@ -912,16 +957,29 @@
 
         <div id="reservation-result-summary">
             <p id="result-reservation-id"><!-- 예약번호 --></p>
-            <p id="result-program-title"><!-- 프로그램명 --></p>
-            <p id="result-temple-name"><!-- 사찰명 --></p>
-            <p id="result-date-range"><!-- 시작일 ~ 종료일 --></p>
-            <p id="result-participant-count"><!-- 참가 인원 --></p>
-            <p id="result-total-amount"><!-- 총 결제 금액 --></p>
-            <p id="result-payment-method"><!-- 결제 수단 --></p>
-            <p id="result-status"><!-- 예약 상태: 예약대기 --></p>
+            <div class="result-row"><span class="result-label">프로그램명</span><span id="result-program-title"></span></div>
+            <div class="result-section">
+                <span class="result-label">위치</span>
+                <div id="result-temple-name" style="margin-bottom:8px;"></div>
+                <div id="result-map"></div>
+            </div>
+            <div class="result-row"><span class="result-label">날짜</span><span id="result-date-range"></span></div>
+            <div class="result-row"><span class="result-label">인원수</span><span id="result-participant-count"></span></div>
+            <div class="result-section">
+                <span class="result-label">인원정보</span>
+                <table class="result-participant-table">
+                    <thead><tr><th>이름</th><th>성별</th><th>이메일</th><th>연락처</th></tr></thead>
+                    <tbody id="result-participant-list"></tbody>
+                </table>
+            </div>
+            <div class="result-row"><span class="result-label">결제 금액</span><span id="result-total-amount"></span></div>
+            <div class="result-row"><span class="result-label">결제 수단</span><span id="result-payment-method"></span></div>
+            <div class="result-row"><span class="result-label">예약 상태</span><span id="result-status"></span></div>
         </div>
-        <button type="button" id="step3-back-to-list-btn">목록으로</button>
-        <button type="button" id="go-to-my-reservations-btn">내 예약 확인하기</button>
+        <div class="step3-actions">
+            <button type="button" id="step3-back-to-list-btn">목록으로</button>
+            <button type="button" id="go-to-my-reservations-btn">내 예약 확인하기</button>
+        </div>
     </section>
 
 </main>
