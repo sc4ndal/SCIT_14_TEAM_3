@@ -88,6 +88,13 @@ public class WebSecurityConfig {
 							if (authentication.getPrincipal() instanceof AppUserDetails principal
 									&& principal.isMustChangePassword()) {
 								target = "/mypage/edit";
+							} else {
+								// 로그인 폼으로 넘어오기 전 있던 페이지로 되돌아가기 - 오픈 리다이렉트 방지를 위해
+								// "/"로 시작하고 "//"(스킴 생략 절대경로)는 아닌 내부 경로만 허용.
+								String redirect = request.getParameter("redirect");
+								if (redirect != null && redirect.startsWith("/") && !redirect.startsWith("//")) {
+									target = redirect;
+								}
 							}
 							response.sendRedirect(request.getContextPath() + target);
 						})

@@ -44,16 +44,50 @@ let i18nRetranslateTimer = null;
 // 기계번역이 부자연스럽거나 틀리게 나오는 문구는 여기 직접 지정함 - 있으면
 // Translator API를 아예 안 부르고 이 값을 그대로 씀(예: "로그인"이 일본어로
 // 번역기 태우면 "サインアップします"처럼 엉뚱하게 나옴 -> "ログイン"으로 고정).
+// 프래그먼트(common-includes.html)의 드롭다운/로그아웃 메뉴처럼 고정된 문구도
+// 매번 API 호출할 필요 없이 여기 사전으로 바로 처리함.
 const I18N_MANUAL_OVERRIDES = {
     '로그인': { ja: 'ログイン', en: 'Log In' },
     '회원가입': { ja: '会員登録', en: 'Sign Up' },
     '계정이 없으신가요?': { ja: 'アカウントをお持ちではありませんか？', en: "Don't have an account?" },
-    '이미 계정이 있으신가요?': { ja: 'すでにアカウントをお持ちですか？', en: 'Already have an account?' }
+    '이미 계정이 있으신가요?': { ja: 'すでにアカウントをお持ちですか？', en: 'Already have an account?' },
+
+    // ── 프래그먼트: 회원 드롭다운/로그아웃 (fragments/common-includes.html) ──
+    '마이페이지': { ja: 'マイページ', en: 'My Page' },
+    '회원정보수정': { ja: '会員情報修正', en: 'Edit Profile' },
+    '예약목록': { ja: '予約一覧', en: 'My Reservations' },
+    '내가 쓴 리뷰': { ja: '投稿したレビュー', en: 'My Reviews' },
+    '관심 사찰': { ja: 'お気に入りの寺院', en: 'Favorite Temples' },
+    '관심 행사': { ja: 'お気に入りの行事', en: 'Favorite Events' },
+    '저장한 불교 한마디': { ja: '保存した仏教の一言', en: 'Saved Buddhist Quotes' },
+    '관심 사찰음식': { ja: 'お気に入りの寺院料理', en: 'Favorite Temple Food' },
+    '좋아요한 리뷰': { ja: 'いいねしたレビュー', en: 'Liked Reviews' },
+    '사찰정보수정': { ja: '寺院情報修正', en: 'Edit Temple Info' },
+    '사찰 프로그램 등록': { ja: '寺院プログラム登録', en: 'Register Program' },
+    '사찰 프로그램 관리': { ja: '寺院プログラム管理', en: 'Manage Programs' },
+    '관리': { ja: '管理', en: 'Manage' },
+    '사찰 등록 요청 목록': { ja: '寺院登録リクエスト一覧', en: 'Temple Registration Requests' },
+    '로그아웃': { ja: 'ログアウト', en: 'Log Out' },
+
+    // ── 마이페이지 허브 (templates/mypage/mypage.html) ──
+    '님, 오늘도 평안하시길': { ja: '様、今日も安らかな一日を', en: ", have a peaceful day" },
+    '내가 저장하고 남긴 것들을 한자리에서 돌아봅니다.': { ja: '保存したり残したりしたものを一か所で振り返ります。', en: 'Review everything you have saved and left behind in one place.' },
+    '바로가기 →': { ja: 'すぐ行く →', en: 'Go →' },
+    '법명과 연락처 등 내 정보를 확인하고 수정합니다.': { ja: '法名や連絡先など、自分の情報を確認・修正します。', en: 'Check and edit your info, such as your name and contact details.' },
+    '신청한 템플스테이 예약 내역을 확인합니다.': { ja: '申し込んだテンプルステイの予約履歴を確認します。', en: 'Check your Templestay reservation history.' },
+    '사찰과 프로그램에 남긴 후기를 모아봅니다.': { ja: '寺院やプログラムに残したレビューをまとめて見ます。', en: 'See all the reviews you left for temples and programs.' },
+    '저장해 둔 사찰을 다시 찾아봅니다.': { ja: '保存しておいた寺院を再び探します。', en: 'Revisit the temples you have saved.' },
+    '관심 등록한 행사와 법회 일정입니다.': { ja: 'お気に入り登録した行事・法会の日程です。', en: 'Events and services you have favorited.' },
+    '마음에 담아둔 불교 한마디 모음입니다.': { ja: '心に留めておいた仏教の一言集です。', en: 'A collection of Buddhist quotes you have kept close.' },
+    '저장한 사찰음식을 한눈에 모아봅니다.': { ja: '保存した寺院料理を一目でまとめて見ます。', en: 'All the temple food you have saved, at a glance.' },
+    '공감을 눌러 둔 다른 사람의 후기입니다.': { ja: '「いいね」を押した他の人のレビューです。', en: "Other people's reviews you have liked." }
 };
 
-// 번역하면 안 되는 영역(브랜드 로고, 언어 버튼 자기 자신, 사용자가 직접 입력한 값)
+// 번역하면 안 되는 영역(브랜드 로고, 언어 버튼 자기 자신, 사용자가 직접 입력한 값,
+// card-kanji/background-kanji 같은 장식용 한자 - aria-hidden="true"라 스크린리더도 안 읽음).
+// 닉네임/이름처럼 사용자가 입력한 고유값을 보여주는 요소에는 .no-translate 클래스를 붙이면 됨.
 function isI18nExcluded(el){
-    return !!el.closest('.brand, .language-area, .userEntity-nickname, script, style, noscript');
+    return !!el.closest('.brand, .language-area, .userEntity-nickname, .no-translate, [aria-hidden="true"], script, style, noscript');
 }
 
 function collectI18nTextNodes(){
@@ -99,6 +133,35 @@ async function ensureTranslated(uniqueTexts, lang){
     const translatedList = await Promise.all(toTranslate.map(t => translator.translate(t)));
     toTranslate.forEach((t, i) => { cache[t] = translatedList[i]; });
 }
+
+/** I18N_MANUAL_OVERRIDES에 있는 문구만 사전 그대로 적용함(Translator API는 호출 안 함).
+    home.js처럼 페이지가 자기만의 onLanguageChange(data-i18n 사전 방식)를 쓰느라
+    defaultOnLanguageChange를 안 타는 경우에도, 프래그먼트(로그인/회원가입/드롭다운/로그아웃)
+    같은 공용 고정 문구는 그 안에서 이 함수를 같이 불러서 번역되게 함. */
+function applyManualOverrideTranslations(lang){
+    if(!i18nOriginalTextNodes){
+        i18nOriginalTextNodes = collectI18nTextNodes().map(node => ({node, text: node.textContent}));
+    }
+    i18nMutating = true;
+    try {
+        i18nOriginalTextNodes.forEach(({node, text}) => {
+            if(lang === I18N_SOURCE_LANG){
+                node.textContent = text;
+                return;
+            }
+            const trimmed = text.trim();
+            if(!trimmed) return;
+            const override = I18N_MANUAL_OVERRIDES[trimmed] && I18N_MANUAL_OVERRIDES[trimmed][lang];
+            if(override === undefined) return;
+            const leading = text.match(/^\s*/)[0];
+            const trailing = text.match(/\s*$/)[0];
+            node.textContent = leading + override + trailing;
+        });
+    } finally {
+        i18nMutating = false;
+    }
+}
+window.applyManualOverrideTranslations = applyManualOverrideTranslations;
 
 function applyTranslatedText(entries, lang){
     i18nMutating = true;

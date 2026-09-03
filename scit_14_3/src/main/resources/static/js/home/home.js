@@ -97,6 +97,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.onLanguageChange = function (lang) {
         currentLang = HOME_TRANSLATIONS[lang] ? lang : "ko";
 
+        // 프래그먼트(로그인/회원가입/드롭다운/로그아웃)는 이 페이지 전용 사전(HOME_TRANSLATIONS)이
+        // 아니라 common.js의 공용 사전(I18N_MANUAL_OVERRIDES)에 있음 - 같이 적용해줌.
+        if (window.applyManualOverrideTranslations) window.applyManualOverrideTranslations(currentLang);
+
         const t = HOME_TRANSLATIONS[currentLang];
         document.querySelectorAll("[data-i18n]").forEach(el => {
             const key = el.getAttribute("data-i18n");
@@ -427,9 +431,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    let currentYear = 2026;
-    let currentMonth = 7;
-    let selectedDate = 15;
+    const today = new Date();
+    let currentYear = today.getFullYear();
+    let currentMonth = today.getMonth();
+    let selectedDate = today.getDate();
 
     // 실제 등록된 템플스테이 프로그램(모집기간)과 불교 4대 명절로 채워짐 - loadCalendarEvents() 참고.
     // 아직 TEMPLE_EVENT(사찰 행사) 기능이 없어서, 그때까지는 이 두 소스로 대신 채움.
@@ -464,7 +469,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                     eventData[key].push({
                         title: p.title,
                         location: p.templeName || "",
-                        time: `모집기간 ${p.openStartDate} ~ ${p.openEndDate}`
+                        time: `모집기간 ${p.openStartDate} ~ ${p.openEndDate}`,
+                        description: p.description || "",
+                        price: p.price,
+                        duration: p.duration || "",
+                        programId: p.programId
                     });
                     cursor.setDate(cursor.getDate() + 1);
                 }
@@ -849,6 +858,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 detail.textContent =
                     HOME_TRANSLATIONS[currentLang].eventDetailLabel;
 
+                detail.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    openEventModal(event);
+                });
 
                 item.append(
                     title,
@@ -865,6 +878,38 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         );
 
+    }
+
+    // "자세히 보기" 클릭 시 일정 상세를 모달로 보여줌. 템플스테이 프로그램 일정이면
+    // 참가비/체류기간과 예약 페이지 링크까지 같이 보여주고, 불교 명절처럼 프로그램과
+    // 연결 안 된 일정이면 제목/장소만 보여줌.
+    function openEventModal(event) {
+        const t = HOME_TRANSLATIONS[currentLang];
+        const rows = [];
+
+        if (event.location) rows.push(`<p><strong>⌖</strong> ${escapeHtml(event.location)}</p>`);
+        if (event.time) rows.push(`<p><strong>${t.modalPeriodLabel}</strong> ${escapeHtml(event.time)}</p>`);
+        if (event.duration) rows.push(`<p><strong>${t.modalDurationLabel}</strong> ${escapeHtml(event.duration)}</p>`);
+        if (typeof event.price === "number") rows.push(`<p><strong>${t.modalPriceLabel}</strong> ${event.price.toLocaleString()}${currentLang === "ko" ? "원" : currentLang === "ja" ? "円" : " KRW"}</p>`);
+        if (event.description) rows.push(`<p style="white-space:pre-line;">${escapeHtml(event.description)}</p>`);
+
+        Swal.fire({
+            title: event.title,
+            html: rows.join(""),
+            confirmButtonText: event.programId ? t.modalGoReserve : t.modalClose,
+            showCancelButton: !!event.programId,
+            cancelButtonText: t.modalClose
+        }).then((result) => {
+            if (event.programId && result.isConfirmed) {
+                location.href = "/reservation";
+            }
+        });
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
     }
 
 

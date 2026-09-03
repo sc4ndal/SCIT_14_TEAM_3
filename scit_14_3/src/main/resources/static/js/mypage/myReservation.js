@@ -48,6 +48,7 @@
 
          RESERVATIONS.push({
            reservationId: r.reservationId,
+           programId: r.programId,
            status: r.status,
            startDate: r.startDate,
            endDate: r.endDate,
@@ -112,6 +113,7 @@
     document.getElementById('detail-status-badge').className = `status-badge status-${r.status}`;
     document.getElementById('detail-title').textContent = r.program.title;
     document.getElementById('detail-temple-region').textContent = `${r.program.templeName} · ${r.program.region}`;
+    document.getElementById('detail-program-link').href = r.programId ? `/reservation?programId=${r.programId}` : '#';
 
     document.getElementById('detail-duration').textContent = r.program.duration;
     document.getElementById('detail-price').textContent = `${r.program.price.toLocaleString()}원`;
@@ -151,7 +153,10 @@
         });
 
         if(!res.ok) {
-        throw new Error('취소 요청 실패');
+        // 체크인 24시간 전 취소 마감처럼 서버가 이유를 알려준 경우 그 메시지 그대로 보여줌
+        const err = await res.json().catch(() => null);
+        alert(err && err.message ? err.message : '예약 취소 중 오류가 발생했습니다.');
+        return;
         }
         const updated = await res.json();
         const r = RESERVATIONS.find(x => x.reservationId === updated.reservationId);

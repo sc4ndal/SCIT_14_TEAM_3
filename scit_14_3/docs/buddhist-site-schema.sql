@@ -239,6 +239,7 @@ CREATE TABLE RESERVATION_PARTICIPANT (
     name            VARCHAR(50) NOT NULL COMMENT '이름(여권 영문 이름 형식)',
     gender          ENUM('남성','여성') NOT NULL COMMENT '성별',
     email           VARCHAR(100) NOT NULL COMMENT '참가자 이메일',
+    phone           VARCHAR(20) NULL COMMENT '연락처(대표자만 입력, 나머지는 NULL)',
     PRIMARY KEY (participant_id),
     CONSTRAINT fk_participant_reservation
         FOREIGN KEY (reservation_id) REFERENCES TEMPLE_STAY_RESERVATION(reservation_id)

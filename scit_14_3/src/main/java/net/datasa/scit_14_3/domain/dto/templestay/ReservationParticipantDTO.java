@@ -16,4 +16,5 @@ public class ReservationParticipantDTO {
 	private String name;
 	private ReservationParticipantEntity.Gender gender;
 	private String email;
+	private String phone;
 }
