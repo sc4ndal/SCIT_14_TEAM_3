@@ -22,7 +22,7 @@ public class TempleStayReservationDTO {
 	private int participantCount;
 	private String note;
 	@Builder.Default
-	private TempleStayReservationEntity.Status status = TempleStayReservationEntity.Status.예약대기;
+	private TempleStayReservationEntity.Status status = TempleStayReservationEntity.Status.예약확정;
 	private LocalDateTime canceledAt;
 	private LocalDateTime createdAt;
 }

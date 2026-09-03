@@ -39,6 +39,9 @@ public class TempleStayProgramDTO {
 	private LocalDate openEndDate;
 	@Builder.Default
 	private int maxParticipant = 20;
+	// 취소 안 된 예약들의 참가 인원 합 - 몇 자리 남았는지 보여주는 용도(저장 컬럼 아니고 조회 시점에 계산).
+	@Builder.Default
+	private int reservedCount = 0;
 	@Builder.Default
 	private boolean supportEnglish = false;
 	private BigDecimal latitude;

@@ -34,7 +34,8 @@
 --      전부 사라짐 - 그래서 맨 끝에 초기 테스트 계정(사이트 관리자/일반회원/사찰) INSERT를
 --      추가해서 재실행할 때마다 로그인 가능한 계정이 최소한으로 같이 생기도록 함.
 -- =====================================================================
-
+use scit_14_3;
+set autocommit = 1;
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -218,7 +219,8 @@ CREATE TABLE TEMPLE_STAY_RESERVATION (
     end_date            DATE     NOT NULL COMMENT '이용 종료일 (계산 결과를 명시적으로 저장)',
     participant_count   INT      NOT NULL COMMENT '신청 인원',
     note                TEXT     NULL COMMENT '전달사항(비고)',
-    status              ENUM('예약대기','예약확정','취소','이용완료') NOT NULL DEFAULT '예약대기' COMMENT '진행 상태',
+    -- 사찰 관리자 승인 절차 없이 선착순으로 바로 확정하는 정책이라 '예약대기' 상태는 없음.
+    status              ENUM('예약확정','취소','이용완료') NOT NULL DEFAULT '예약확정' COMMENT '진행 상태',
     canceled_at         DATETIME NULL COMMENT '취소일시',
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '신청일시',
     PRIMARY KEY (reservation_id),
@@ -466,6 +468,7 @@ CREATE TABLE TEMPLE_REGISTRATION_REQUEST (
 --   사이트 관리자: admin / admin1234!
 --   일반 회원:     testuser1 / Test1234!, testuser2 / Test1234!
 --   사찰 계정:     @templetest1 / Test1234!, @templetest2 / Test1234!
+-- 템플스테이 프로그램 더미값도 테스트사찰/테스트사찰2 앞으로 하나씩 같이 생성됨.
 -- =====================================================================
 INSERT INTO USER (login_id, password, nickname, name, phone, email, role, login_type) VALUES
     ('admin', '$2a$10$TbOlPSKCFHWSjqp963flveOwYKYD6EueH1VxSE2Bm/wdB1NqN5fum', '사이트관리자', 'Admin', NULL, NULL, 'ADMIN', 'LOCAL'),
@@ -475,3 +478,10 @@ INSERT INTO USER (login_id, password, nickname, name, phone, email, role, login_
 INSERT INTO TEMPLE (name, latitude, longitude, address, region, support_sea, support_mountain, support_river, support_urban, support_english, is_temple, login_id, password, must_change_password) VALUES
     ('테스트사찰', 37.5665000, 126.9780000, '서울시 테스트구 테스트로 1', '서울', FALSE, FALSE, FALSE, TRUE, FALSE, TRUE, '@templetest1', '$2a$10$RlY25ofavPN8ENU81L7oCuOL8F8C7j5bmadGfY54aCAQO6pzZ3SEu', FALSE),
     ('테스트사찰2', 35.1595000, 129.0756000, '부산시 테스트구 테스트로 2', '부산', TRUE, FALSE, FALSE, FALSE, FALSE, TRUE, '@templetest2', '$2a$10$RlY25ofavPN8ENU81L7oCuOL8F8C7j5bmadGfY54aCAQO6pzZ3SEu', FALSE);
+
+-- 템플스테이 프로그램 더미값(테스트용) - latitude/longitude/support_english는 trg_program_inherit_*
+-- 트리거가 소속 TEMPLE 값으로 저장 시점에 덮어쓰므로 여기 넣는 값은 의미 없음(트리거 조건 통과용).
+-- temple_id를 이름으로 서브쿼리하는 이유: AUTO_INCREMENT 값이 리셋 순서에 따라 달라질 수 있어서.
+INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, description, schedule, required_items, price, duration, open_start_date, open_end_date, max_participant, support_english, latitude, longitude) VALUES
+    ((SELECT temple_id FROM TEMPLE WHERE name = '테스트사찰'), '테스트', '당일형', 'https://res.cloudinary.com/hquhccft/image/upload/v1788334684/SCIT-14-3/xgniosoeldeizlmwuztk.png', '테스트 프로그램', '테스트 일정표', '테스트 준비물', 100, '당일', '2026-09-02', '2026-09-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '테스트사찰2'), '숲길 명상 1박2일', '휴식형', 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?w=1200&h=800&fit=crop&auto=format', '숲길을 걸으며 마음을 정돈하는 1박2일 휴식형 템플스테이입니다.', '1일차 15:00 입소 및 오리엔테이션\n1일차 18:00 저녁 발우공양\n1일차 19:30 저녁 예불\n2일차 04:30 새벽 예불\n2일차 09:00 아침 공양 후 퇴소', '개인 세면도구, 편한 활동복, 양말(법당 착석용)', 89000, '1박2일', '2026-09-01', '2026-10-31', 20, FALSE, 0, 0);

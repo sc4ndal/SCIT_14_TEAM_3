@@ -173,12 +173,12 @@
           padding: 40px 24px 96px;
         }
 
-        section[data-step], #step-1-detail {
+        section[data-step] {
           animation: fade-in 0.2s ease;
         }
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
         @media (prefers-reduced-motion: reduce) {
-          section[data-step], #step-1-detail { animation: none; }
+          section[data-step] { animation: none; }
         }
 
         section > h2 {
@@ -281,6 +281,22 @@
           color: var(--ink-soft);
           margin: -6px 0 0;
         }
+        .program-capacity {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12.5px;
+          color: var(--ink-soft);
+          margin: 0;
+        }
+        .capacity-dot {
+          display: inline-block;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+        }
+        .capacity-dot.open { background: var(--pine); }
+        .capacity-dot.full { background: var(--red); }
         .program-price {
           margin-top: auto;
         }
@@ -313,7 +329,7 @@
         }
 
         /* ---------- Buttons (shared) ---------- */
-        .btn-primary, #go-to-reserve-btn, #step2-submit-btn, #detail-reserve-btn {
+        .btn-primary, #go-to-reserve-btn, #step2-submit-btn {
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -330,7 +346,7 @@
           transition: transform 0.15s ease, opacity 0.15s ease;
         }
         .btn-primary:hover, #go-to-reserve-btn:not(:disabled):hover,
-        #step2-submit-btn:hover, #detail-reserve-btn:hover {
+        #step2-submit-btn:hover {
           transform: translateY(-1px);
         }
         #go-to-reserve-btn:disabled {
@@ -341,7 +357,7 @@
         }
         #go-to-reserve-btn { margin-top: 24px; }
 
-        .btn-ghost, #detail-back-to-list-btn, #step2-back-btn,
+        .btn-ghost, #step2-back-btn,
         #step3-back-to-list-btn, #go-to-my-reservations-btn {
           background: none;
           border: 1px solid var(--line);
@@ -352,7 +368,7 @@
           border-radius: 100px;
           cursor: pointer;
         }
-        .btn-ghost:hover, #detail-back-to-list-btn:hover, #step2-back-btn:hover,
+        .btn-ghost:hover, #step2-back-btn:hover,
         #step3-back-to-list-btn:hover, #go-to-my-reservations-btn:hover {
           border-color: var(--pine);
           color: var(--pine-deep);
@@ -362,82 +378,7 @@
           color: var(--pine-deep);
         }
         @media (prefers-reduced-motion: reduce) {
-          .btn-primary, #go-to-reserve-btn, #step2-submit-btn, #detail-reserve-btn { transition: none; }
-        }
-
-        /* ---------- Step 1 detail ---------- */
-        #step-1-detail {
-          background: var(--bg-raised);
-          border: 1px solid var(--line);
-          border-radius: 16px;
-          padding: 28px;
-          box-shadow: var(--shadow);
-        }
-        .detail-title {
-          font-size: 24px;
-          margin-top: 14px;
-        }
-        .detail-sub {
-          font-size: 13.5px;
-          color: var(--ink-soft);
-          margin: 6px 0 24px;
-        }
-        .detail-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 18px;
-        }
-        @media (max-width: 640px) {
-          .detail-grid { grid-template-columns: 1fr; }
-        }
-        .d-block {
-          border: 1px solid var(--line-soft);
-          border-radius: 12px;
-          padding: 16px 18px;
-          background: var(--bg);
-        }
-        .d-block h3 {
-          font-size: 13px;
-          font-family: "Noto Sans KR", sans-serif;
-          letter-spacing: 0.03em;
-          color: var(--pine);
-          margin-bottom: 8px;
-        }
-        .d-block p, .d-block li {
-          font-size: 14px;
-          color: var(--ink-soft);
-        }
-        #detail-schedule p {
-          margin: 0 0 6px;
-          font-family: "IBM Plex Mono", monospace;
-          font-size: 12.5px;
-        }
-        #detail-required-items {
-          margin: 0;
-          padding-left: 18px;
-        }
-        .price-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 14px;
-        }
-        .price-table th, .price-table td {
-          text-align: left;
-          padding: 8px 4px;
-          border-bottom: 1px solid var(--line-soft);
-        }
-        .price-table th {
-          color: var(--ink-faint);
-          font-weight: 600;
-          font-size: 12px;
-        }
-        #detail-price {
-          font-family: "IBM Plex Mono", monospace;
-          font-weight: 600;
-          color: var(--pine-deep);
-        }
-        #step-1-detail > #detail-reserve-btn {
-          margin-top: 22px;
+          .btn-primary, #go-to-reserve-btn, #step2-submit-btn { transition: none; }
         }
 
         /* ---------- Step 2 ---------- */
@@ -778,61 +719,6 @@
         <button type="button" id="go-to-reserve-btn" disabled>예약 신청</button>
     </section>
 
-    <!-- ===================== STEP 1-상세: 프로그램 상세보기 (목록 안의 서브 화면) ===================== -->
-    <section id="step-1-detail" hidden>
-
-        <button type="button" id="detail-back-to-list-btn">목록으로</button>
-
-        <h2 class="detail-title"><!-- 프로그램 title --></h2>
-        <p class="detail-sub"><!-- 사찰명 · 지역 · 프로그램유형 --></p>
-
-        <div class="detail-grid">
-
-            <!-- 프로그램 설명 -->
-            <div class="d-block">
-                <h3>프로그램 소개</h3>
-                <p id="detail-description"><!-- TEMPLE_STAY_PROGRAM.description --></p>
-            </div>
-            <!-- 지도  -->
-            <div id="detail-map" style="width:100%; height:300px;"></div>
-            <!-- 일정표 -->
-            <div class="d-block">
-                <h3>일정표</h3>
-                <div id="detail-schedule"><!-- TEMPLE_STAY_PROGRAM.schedule --></div>
-            </div>
-
-            <!-- 준비물 -->
-            <div class="d-block">
-                <h3>준비물</h3>
-                <ul id="detail-required-items"><!-- TEMPLE_STAY_PROGRAM.required_items --></ul>
-            </div>
-
-            <!-- 요금 안내 -->
-            <div class="d-block">
-                <h3>요금 안내</h3>
-                <table class="price-table">
-                    <tr><th>구분</th><th>가격</th></tr>
-                    <tr><td>1인</td><td id="detail-price"><!-- price --></td></tr>
-                </table>
-            </div>
-
-            <!-- 유의사항 -->
-            <div class="d-block">
-                <h3>유의사항</h3>
-                <p id="detail-precautions"><!-- TEMPLE.special_notice (사찰 공통값, 프로그램별 아님) --></p>
-            </div>
-
-            <!-- 환불 규정 -->
-            <div class="d-block">
-                <h3>환불 규정</h3>
-                <p id="detail-refund-policy"><!-- TEMPLE.refund_policy (사찰 공통값, 프로그램별 아님) --></p>
-            </div>
-
-        </div>
-
-        <button type="button" id="detail-reserve-btn">예약 신청</button>
-    </section>
-
     <!-- ===================== STEP 2: 예약 신청 ===================== -->
     <section id="step-2" data-step="2" hidden>
         <h2>예약 신청</h2>
@@ -984,7 +870,6 @@
 
 </main>
 <script src="/js/mapCommon.js"></script>
-<script src="/js/templestay/templestayView.js"></script>
 <script src="/js/templestay/reservation.js"></script>
 
 </body>
