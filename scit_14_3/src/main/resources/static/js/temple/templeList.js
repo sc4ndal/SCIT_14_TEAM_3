@@ -11,7 +11,6 @@ kakao.maps.load(function () {
         center: new kakao.maps.LatLng(35.9, 127.7),
         level: 13
     });
-
     // 검색 기능에서 쓰기 위해 사찰 데이터 + 마커를 기억해둔다 (templeId 기준)
     var templeList = [];         // /api/temples 응답 그대로 저장
     var markerByTempleId = {};   // { templeId: kakao.maps.Marker }
@@ -80,13 +79,51 @@ kakao.maps.load(function () {
             kakao.maps.event.trigger(marker, 'click');
         }
     }
-
     document.getElementById('search-btn').addEventListener('click', runSearch);
-
     // 입력창에서 엔터키로도 검색되게
     document.getElementById('search-keyword').addEventListener('keydown', function (e) {
         if (e.key === 'Enter') {
             runSearch();
         }
     });
+
+    var typeFieldMap = {
+        'data-type-sea': 'supportSea',
+        'data-type-mountain': 'supportMountain',
+        'data-type-river': 'supportRiver',
+        'data-type-urban': 'supportUrban'
+    };
+
+    var typeAndEnglishButtons = document.querySelectorAll('#temple-filter-box button, #filter-support-english');
+
+    typeAndEnglishButtons.forEach(function (btn){
+        btn.addEventListener('click', function (){
+            btn.classList.toggle('active');
+            applyFilters();
+        });
+    });
+    function applyFilters() {
+        var activeTypeFields = [];
+        document.querySelectorAll('#temple-filter-box button.active').forEach(function (btn){
+            var field = typeFieldMap[btn.id];
+            if(field) {
+                activeTypeFields.push(field);
+            }
+        });
+
+        var englishRequired = document.getElementById('filter-support-english').classList.contains('active');
+
+        templeList.forEach(function (temple){
+            var matchType = activeTypeFields.every(function (field) {
+                return temple[field];
+            });
+            var matchEnglish = !englishRequired || temple.supportEnglish;
+
+            var match = matchType && matchEnglish;
+
+            var marker = markerByTempleId[temple.templeId];
+            if(marker) { marker.setMap(match ? map : null);}
+
+        });
+    }
 });
