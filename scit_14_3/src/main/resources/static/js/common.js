@@ -52,6 +52,12 @@ const I18N_MANUAL_OVERRIDES = {
     '계정이 없으신가요?': { ja: 'アカウントをお持ちではありませんか？', en: "Don't have an account?" },
     '이미 계정이 있으신가요?': { ja: 'すでにアカウントをお持ちですか？', en: 'Already have an account?' },
 
+    // ── 로그인 페이지(auth/login.html)의 카카오 콜백 안내 문구 - UserController가
+    // flash attribute(loginNotice)로 넘기는 고정 문구라 th:text로 그려지므로,
+    // data-i18n 대신 여기 사전(텍스트 매칭)으로 처리함 ──
+    '이미 가입된 카카오 계정입니다. 로그인해주세요.': { ja: '既に登録済みのKakaoアカウントです。ログインしてください。', en: 'This Kakao account is already registered. Please log in.' },
+    '비밀번호가 재설정되었습니다. 새 비밀번호로 로그인해주세요.': { ja: 'パスワードが再設定されました。新しいパスワードでログインしてください。', en: 'Your password has been reset. Please log in with your new password.' },
+
     // ── 프래그먼트: 회원 드롭다운/로그아웃 (fragments/common-includes.html) ──
     '마이페이지': { ja: 'マイページ', en: 'My Page' },
     '회원정보수정': { ja: '会員情報修正', en: 'Edit Profile' },

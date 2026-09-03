@@ -43,8 +43,12 @@ public class WebSecurityConfig {
 			"/login/**",           // /login, /login/kakao, /login/kakao/callback 전부 포함
 			"/signupSelect/**",
 			"/signup/**",          // /signup, /signup/local, /signup/kakao-additional 전부 포함
+			"/findAccount",
+			"/resetPassword",      // 비밀번호 재설정 링크(메일) 클릭 시 들어오는 화면 + 제출 (미로그인 상태)
 			"/api/check/**",       // 아이디/닉네임/이메일 중복확인 (가입 전, 미로그인 상태에서 호출)
 			"/api/email/**",       // 이메일 인증코드 발송/확인 (가입 전, 미로그인 상태에서 호출)
+			"/api/find-id",        // 아이디 찾기 - DB 등록 확인 후 이메일로 아이디 발송 (미로그인 상태에서 호출)
+			"/api/find-pw",        // 비밀번호 찾기 - DB 등록 확인 후 재설정 링크 이메일 발송 (미로그인 상태에서 호출)
 			"/api/location-type/**", // 사찰 등록 문의 폼(공개)의 장소 유형 AI 자동판별
 			"/temples/**",
 			"/templestayprograms/**",

@@ -15,6 +15,7 @@ import net.datasa.scit_14_3.exception.DuplicateFieldException;
 import net.datasa.scit_14_3.security.SessionLoginService;
 import net.datasa.scit_14_3.service.user.EmailVerificationService;
 import net.datasa.scit_14_3.service.user.KakaoOAuthService;
+import net.datasa.scit_14_3.service.user.PasswordResetService;
 import net.datasa.scit_14_3.service.user.UserService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,9 +23,11 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Controller
@@ -35,10 +38,16 @@ public class UserController {
 	private final KakaoOAuthService kakaoOAuthService;
 	private final SessionLoginService sessionLoginService;
 	private final EmailVerificationService emailVerificationService;
+	private final PasswordResetService passwordResetService;
 
 	private static final String PENDING_KAKAO_ID = "pendingKakaoId";
 	private static final String PENDING_KAKAO_EMAIL = "pendingKakaoEmail";
 	private static final String PENDING_KAKAO_NICKNAME = "pendingKakaoNickname";
+
+	// LocalSignupRequestDto의 비밀번호 규칙과 동일 (대/소문자·숫자·특수문자 포함 8~20자) -
+	// 비밀번호 재설정도 회원가입과 같은 강도를 요구해야 해서 서버에서 한 번 더 검증함.
+	private static final Pattern PASSWORD_PATTERN =
+			Pattern.compile("^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[!@#$%^&*()])[A-Za-z\\d!@#$%^&*()]{8,20}$");
 
 	@GetMapping("/login")
 	public String login() {
@@ -48,6 +57,15 @@ public class UserController {
 	@GetMapping("/signupSelect")
 	public String signupSelect() {
 		return "auth/signupSelect";
+	}
+
+	// 아이디 찾기/비밀번호 찾기 - 화면 하나(auth/findAccount)를 같이 쓰고, tab 파라미터로
+	// 어느 탭을 먼저 보여줄지만 다르게 줌 (tab=id 기본값, tab=pw는 로그인 화면의
+	// "비밀번호 찾기" 링크에서 넘어옴). 실제 탭 전환은 화면에서 JS로 처리함.
+	@GetMapping("/findAccount")
+	public String findAccount(@RequestParam(required = false, defaultValue = "id") String tab, Model model) {
+		model.addAttribute("activeTab", "pw".equals(tab) ? "pw" : "id");
+		return "auth/findAccount";
 	}
 
 	@GetMapping("/signup")
@@ -107,6 +125,84 @@ public class UserController {
 	public Map<String, Boolean> verifyEmailCode(@RequestBody Map<String, String> body, HttpSession session) {
 		boolean verified = emailVerificationService.verifyCode(body.get("email"), body.get("code"), session);
 		return Map.of("verified", verified);
+	}
+
+	// ================= 아이디 찾기 (DB 등록 확인 후 이메일로 원문 발송) =================
+	// findAccount.js의 sendFoundLoginIdMail()이 호출함. 인증번호 절차 없이, 해당 이메일로
+	// 가입된 계정이 있으면 그 이메일로만 아이디 원문을 보내줌 - 메일함에 접근 가능한
+	// 사람만 결과를 볼 수 있으니 그 자체가 본인 확인 역할을 함.
+
+	@PostMapping("/api/find-id")
+	@ResponseBody
+	public Map<String, Boolean> findId(@RequestBody Map<String, String> body) {
+		String email = body.get("email");
+		Optional<String> loginId = userService.findLoginIdByEmail(email);
+		loginId.ifPresent(id -> emailVerificationService.sendLoginIdMail(email, id));
+		return Map.of("sent", loginId.isPresent());
+	}
+
+	// ================= 비밀번호 재설정 (이메일만으로 트리거, 토큰 링크 5분 유효) =================
+	// findAccount.js의 findMyPwByEmail()이 호출함. 아이디 찾기와 같은 이유로 인증번호 절차 없이
+	// 바로 재설정 링크를 보냄 - 링크에 담긴 토큰 자체가 1회용 비밀번호나 마찬가지라 별도 인증 불필요.
+
+	@PostMapping("/api/find-pw")
+	@ResponseBody
+	public Map<String, Boolean> findPassword(@RequestBody Map<String, String> body, HttpServletRequest request) {
+		String email = body.get("email");
+		Optional<String> loginId = userService.findLoginIdByEmail(email);
+
+		loginId.ifPresent(id -> {
+			String token = passwordResetService.createToken(id);
+			String resetLink = ServletUriComponentsBuilder.fromContextPath(request)
+					.path("/resetPassword")
+					.queryParam("token", token)
+					.toUriString();
+			emailVerificationService.sendPasswordResetMail(email, resetLink);
+		});
+
+		return Map.of("sent", loginId.isPresent());
+	}
+
+	/** 메일의 재설정 링크를 눌러서 들어오는 화면. 토큰이 유효한 동안만 재설정 폼을 보여줌. */
+	@GetMapping("/resetPassword")
+	public String resetPasswordForm(@RequestParam String token, Model model) {
+		model.addAttribute("token", token);
+		model.addAttribute("tokenValid", passwordResetService.resolveLoginId(token).isPresent());
+		return "auth/resetPassword";
+	}
+
+	@PostMapping("/resetPassword")
+	public String resetPassword(@RequestParam String token,
+	                             @RequestParam String newPassword,
+	                             @RequestParam String newPasswordCheck,
+	                             RedirectAttributes redirectAttributes,
+	                             Model model) {
+		Optional<String> loginId = passwordResetService.resolveLoginId(token);
+		if (loginId.isEmpty()) {
+			model.addAttribute("token", token);
+			model.addAttribute("tokenValid", false);
+			return "auth/resetPassword";
+		}
+
+		if (!PASSWORD_PATTERN.matcher(newPassword).matches()) {
+			model.addAttribute("token", token);
+			model.addAttribute("tokenValid", true);
+			model.addAttribute("resetError", "비밀번호는 대문자, 소문자, 숫자, 특수문자를 각각 1개 이상 포함하여 8~20자로 입력해주세요.");
+			return "auth/resetPassword";
+		}
+
+		if (!newPassword.equals(newPasswordCheck)) {
+			model.addAttribute("token", token);
+			model.addAttribute("tokenValid", true);
+			model.addAttribute("resetError", "비밀번호가 일치하지 않습니다.");
+			return "auth/resetPassword";
+		}
+
+		userService.resetPassword(loginId.get(), newPassword);
+		passwordResetService.invalidate(token);
+
+		redirectAttributes.addFlashAttribute("loginNotice", "비밀번호가 재설정되었습니다. 새 비밀번호로 로그인해주세요.");
+		return "redirect:/login";
 	}
 
 	// ================= 로컬 회원가입 =================

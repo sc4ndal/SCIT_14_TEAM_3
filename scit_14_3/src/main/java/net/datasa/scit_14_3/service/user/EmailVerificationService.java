@@ -63,6 +63,27 @@ public class EmailVerificationService {
         return email != null && email.equals(session.getAttribute(VERIFIED_KEY));
     }
 
+    /** 아이디 찾기 - DB에 등록된 이메일로 확인되면 인증번호 없이 바로 아이디 원문을 보내준다. */
+    public void sendLoginIdMail(String email, String loginId) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("[사찰 커뮤니티] 아이디 찾기 결과 안내");
+        message.setText("가입하신 아이디: " + loginId);
+        mailSender.send(message);
+    }
+
+    /** 비밀번호 찾기 - DB에 등록된 이메일로 확인되면 재설정 링크(토큰 포함)를 보내준다. */
+    public void sendPasswordResetMail(String email, String resetLink) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("[사찰 커뮤니티] 비밀번호 재설정 안내");
+        message.setText(
+                "아래 링크에서 비밀번호를 재설정해주세요.\n" + resetLink +
+                "\n\n이 링크는 5분간만 유효합니다."
+        );
+        mailSender.send(message);
+    }
+
     /** 사찰 등록 요청이 승인됐을 때, 새로 만든 임시 로그인ID/비밀번호를 요청자에게 보냄. */
     public void sendTempleCredentials(String email, String loginId, String rawPassword) {
         SimpleMailMessage message = new SimpleMailMessage();
