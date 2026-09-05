@@ -661,7 +661,7 @@ function loadResultMap(program) {
 
 document.getElementById('go-to-my-reservations-btn').addEventListener('click', () => {
   // TODO: 마이페이지/내 예약 목록 페이지로 이동
-     location.href = '/mypage/myreservations';
+     location.href = '/mypage/myReservations';
 });
 
 // ------------------------- 필터 -------------------------

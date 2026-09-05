@@ -64,7 +64,7 @@ public class WebSecurityConfig {
 			"/templestayGuide",
 			"/templestayprograms/**",
 			"/etiquette-simulation",
-			"/mypage/myreservations"
+			"/mypage/myReservations"
 	);
 	
 	@Bean
