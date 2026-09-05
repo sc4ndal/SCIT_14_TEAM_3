@@ -15,6 +15,7 @@ import net.datasa.scit_14_3.exception.DuplicateFieldException;
 import net.datasa.scit_14_3.security.SessionLoginService;
 import net.datasa.scit_14_3.service.user.EmailVerificationService;
 import net.datasa.scit_14_3.service.user.KakaoOAuthService;
+import net.datasa.scit_14_3.service.user.PasswordResetService;
 import net.datasa.scit_14_3.service.user.UserService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,9 +24,11 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -121,19 +124,7 @@ public class UserController {
 	                          HttpServletRequest httpRequest,
 	                          HttpServletResponse httpResponse,
 							  Model model) {
-
-		// BindingResult를 파라미터로 받으면 Spring이 예외를 던지지 않고 여기에 담아만 주므로
-		// 직접 확인해야 한다 - 안 보면 LocalSignupRequestDto의 @Pattern/@NotBlank가 무력화된다.
-		// (JS 검증은 브라우저에서 우회 가능하므로 서버에서 한 번 더 막는다.)
-		if (bindingResult.hasErrors()) {
-			String summary = bindingResult.getAllErrors().stream()
-					.map(ObjectError::getDefaultMessage)
-					.collect(Collectors.joining(" / "));
-			log.info("로컬 회원가입 검증 실패: {}", summary);
-			redirectAttributes.addFlashAttribute("signupError", summary);
-			return "redirect:/signup?mode=local";
-		}
-
+		
 		// email_verified hidden 필드는 화면 표시용일 뿐 안 믿음 - 세션에 실제로 인증된 이메일인지 직접 확인.
 		// 이메일은 필수 입력으로 취급함.
 		String email = request.getEmail();
