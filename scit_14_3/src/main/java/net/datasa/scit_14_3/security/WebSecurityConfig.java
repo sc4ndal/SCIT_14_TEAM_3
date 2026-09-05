@@ -33,6 +33,7 @@ public class WebSecurityConfig {
 
 	// 로그인 없이 접근 가능한 경로
 	private static final List<String> PUBLIC_URLS = List.of(
+			// 정적 리소스 / 기본 페이지
 			"/",
 			"/favicon.ico",
 			"/css/**",
@@ -40,31 +41,35 @@ public class WebSecurityConfig {
 			"/images/**",
 			"/error",
 			"/error/**",
-			"/login/**",           // /login, /login/kakao, /login/kakao/callback 전부 포함
+
+			// 로그인 / 회원가입 (카카오 콜백, 추가정보 제출 등 하위 경로 포함)
+			"/login/**",
 			"/signupSelect/**",
-			"/signup/**",          // /signup, /signup/local, /signup/kakao-additional 전부 포함
-			"/api/check/**",       // 아이디/닉네임/이메일 중복확인 (가입 전, 미로그인 상태에서 호출)
-			"/api/email/**",       // 이메일 인증코드 발송/확인 (가입 전, 미로그인 상태에서 호출)
-			"/api/location-type/**", // 사찰 등록 문의 폼(공개)의 장소 유형 AI 자동판별
+			"/signup/**",
+			"/api/check/**",         // 아이디/닉네임/이메일 중복확인 (가입 전, 미로그인 상태에서 호출)
+			"/api/email/**",         // 이메일 인증코드 발송/확인 (가입 전, 미로그인 상태에서 호출)
+
+			// 사찰 / 템플스테이 조회
 			"/temples/**",
-			"/templestayprograms/**",
-			"/templestayreservations/**",
-			"/reservationparticipants/**",
-			"/payments/**",
-			"/payments/reservation/**",
-			"/reservation/**",
-			"/maptest/**",
-			"/info/**",
-			"/temple-requests/**",    // 사찰 관계자가 회원가입 없이 남기는 등록 요청 (공개)
-			"/reservation",
 			"/api/temples",
+			"/templestayprograms/**",
 			"/api/templestayprograms/**",
 			"/maptemplestayviews/**",
 			"/findtemple",
 			"/templestayGuide",
-			"/templestayprograms/**",
+			"/maptest/**",
+			"/info/**",
 			"/etiquette-simulation",
-			"/mypage/myreservations"
+
+			// 예약 / 결제 (컨트롤러 내부에서 개별 인증 처리)
+			"/reservation/**",
+			"/templestayreservations/**",
+			"/reservationparticipants/**",
+			"/payments/**",
+
+			// 사찰 등록 요청 (비회원)
+			"/temple-requests/**",
+			"/api/location-type/**" // 등록 요청 폼의 장소 유형 AI 자동판별
 	);
 	
 	@Bean

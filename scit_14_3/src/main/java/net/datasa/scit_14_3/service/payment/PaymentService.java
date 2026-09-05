@@ -5,11 +5,16 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.payment.PaymentDTO;
+import net.datasa.scit_14_3.domain.dto.templestay.TempleStayProgramDTO;
 import net.datasa.scit_14_3.domain.dto.templestay.TempleStayReservationDTO;
 import net.datasa.scit_14_3.domain.entity.payment.PaymentEntity;
+import net.datasa.scit_14_3.domain.entity.templestay.ReservationParticipantEntity;
 import net.datasa.scit_14_3.domain.entity.templestay.TempleStayReservationEntity;
 import net.datasa.scit_14_3.repository.payment.PaymentRepository;
+import net.datasa.scit_14_3.repository.templestay.ReservationParticipantRepository;
+import net.datasa.scit_14_3.service.templestay.TempleStayProgramService;
 import net.datasa.scit_14_3.service.templestay.TempleStayReservationService;
+import net.datasa.scit_14_3.service.user.EmailVerificationService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +29,9 @@ public class PaymentService {
 	private final PaymentRepository pr;
 	private final KakaoPayService kakaoPayService;
 	private final TempleStayReservationService reservationService;
+	private final TempleStayProgramService programService;
+	private final ReservationParticipantRepository rpr;
+	private final EmailVerificationService emailVerificationService;
 
 	@Value("${kakaopay.callback-base}")
 	private String callbackBase;
@@ -60,7 +68,8 @@ public class PaymentService {
 					.build();
 			
 			PaymentEntity saved = pr.save(entity);
-			
+			sendReceiptEmail(dto.getReservationId(), dto.getAmount(), dto.getPaymentMethod().toString());
+
 			return PaymentDTO.builder()
 					.paymentId(saved.getPaymentId())
 					.reservationId(dto.getReservationId())
@@ -142,5 +151,30 @@ public class PaymentService {
 			payment.setStatus(PaymentEntity.Status.완료);
 			payment.setPaidAt(LocalDateTime.now());
 			pr.save(payment);
+			sendReceiptEmail(reservationId, payment.getAmount(), payment.getPaymentMethod().toString());
+		}
+
+		/** 예약 확정(결제 완료) 안내 메일. 대표자(participants[0]) 앞으로 보내며, 메일 발송 실패는
+		    예약/결제 자체를 실패시키지 않도록 여기서 잡아서 로그만 남긴다. */
+		private void sendReceiptEmail(Long reservationId, int amount, String paymentMethod) {
+			try {
+				TempleStayReservationDTO reservation = reservationService.getInfo(reservationId);
+				TempleStayProgramDTO program = programService.getInfo(reservation.getProgramId());
+				ReservationParticipantEntity representative = rpr.findFirstByReservationIdOrderByParticipantIdAsc(reservationId)
+						.orElse(null);
+				if (representative == null || representative.getEmail() == null) {
+					log.warn("예약 확정 메일 발송 건너뜀(대표자 이메일 없음) reservationId={}", reservationId);
+					return;
+				}
+				emailVerificationService.sendReservationReceipt(
+						representative.getEmail(), reservationId, program.getTitle(), program.getTempleName(),
+						program.getTempleAddress(), reservation.getStartDate(), reservation.getEndDate(),
+						reservation.getParticipantCount(), amount, paymentMethod,
+						representative.getName(), representative.getPhone(),
+						program.getLatitude(), program.getLongitude()
+				);
+			} catch (Exception e) {
+				log.warn("예약 확정 메일 발송 실패 reservationId={}", reservationId, e);
+			}
 		}
 	}
