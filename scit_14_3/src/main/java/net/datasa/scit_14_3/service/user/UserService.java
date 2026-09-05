@@ -41,6 +41,25 @@ public class UserService {
         return userRepository.findById(loginId).map(this::toResponseDto);
     }
 
+    // ================= 아이디 찾기 / 비밀번호 재설정 (DB 등록 이메일 기준) =================
+
+    public Optional<String> findLoginIdByEmail(String email) {
+        // email이 비어있으면 JPA가 "email IS NULL"로 해석해서, 이메일 없이 가입한 계정
+        // (ADMIN 등)이 걸려버림 - 그 계정으로 메일을 보내려다 NPE가 나는 문제가 있었음.
+        if (email == null || email.isBlank()) {
+            return Optional.empty();
+        }
+        return userRepository.findByEmail(email).map(UserEntity::getLoginId);
+    }
+
+    /** 비밀번호 재설정 - PasswordResetService가 토큰으로 loginId를 이미 확인한 뒤에만 호출됨. */
+    @Transactional
+    public void resetPassword(String loginId, String rawPassword) {
+        UserEntity user = userRepository.findById(loginId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 회원을 찾을 수 없습니다."));
+        user.setPassword(passwordEncoder.encode(rawPassword));
+    }
+
     // ================= 사이트 관리자 - 회원관리 =================
 
     /** 회원관리 목록 전용 - 사이트 관리자(ADMIN) 계정은 여기서 관리할 대상이 아니라서 뺌. */

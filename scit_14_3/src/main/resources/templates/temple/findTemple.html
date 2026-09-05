@@ -16,66 +16,147 @@
             height: calc(100vh - 74px);
         }
         #map { width: 100%; height: 100%; }
-       #temple-search-box {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        z-index: 10;
-        background: white;
-        padding: 8px 10px;
-        border-radius: 8px;
-        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
-        display: flex;
-        gap: 6px;
-        }
-        #temple-region-box {
-            position: absolute;
-            top: 56px;
-            left: 12px;
-            z-index: 10;
-            background: white;
-            padding: 8px 10px;
-            border-radius: 8px;
-            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
-            display: pointer;
-        }
-        #temple-options {
-            position: absolute;
-            top: 0;
-            left: 100%;
-            margin-left: 6px;
-            display: flex;
-            flex-direction: row;
-            gap: 6px;
-            background: white;
-            padding: 8px 10px;
-            border-radius: 8px;
-            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
-        }
-        #temple-filter-box {
-            position: absolute;
-            top: 98px;
-            left: 12px;
-            z-index:10;
-            background: white;
-            padding: 8px 10px;
-            border-radius: 8px;
-            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
-            display: flex;
-            gap: 6px;
-        }
-        #temple-filter-box button.active {
-        background: #3d5646;
-        color: white;
-        }
+     #temple-search-box {
+    top: 12px;
+    left: 12px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    background: var(--paper);
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    box-shadow: 0 4px 20px rgba(39, 33, 27, .08);
+
+    font-family: var(--sans);
+    font-size: 13px;
+}
+
+#temple-search-box select,
+#temple-search-box input[type="text"] {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--text);
+
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 7px 10px;
+}
+
+#temple-search-box select:focus,
+#temple-search-box input[type="text"]:focus {
+    outline: none;
+    border-color: var(--green);
+}
+
+#search-btn {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+
+    background: var(--green);
+    border: none;
+    border-radius: 6px;
+    padding: 7px 16px;
+
+    cursor: pointer;
+    transition: background .15s ease;
+}
+
+#search-btn:hover {
+    background: #4a6350;
+}
+
+#type-filter-box,
+#language-filter-box {
+    background: var(--paper);
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    box-shadow: 0 4px 20px rgba(39, 33, 27, .08);
+
+    font-family: var(--sans);
+    font-size: 13px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.panel-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    color: var(--text-secondary);
+}
+
+#temple-filter-box {
+    gap: 8px;
+    flex-direction: row;
+    align-items: center;
+}
+
+#temple-filter-box button,
+#filter-support-english {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 700;
+
+    background: #fff;
+    border-radius: 999px;
+    padding: 5px 12px;
+
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+
+#data-type-sea { border: 1px solid var(--blue); color: var(--blue); }
+#data-type-mountain { border: 1px solid var(--green); color: var(--green); }
+#data-type-river { border: 1px solid var(--brown); color: var(--brown); }
+#data-type-urban { border: 1px solid var(--gold); color: var(--gold); }
+
+#data-type-sea.active { background: var(--blue); color: #fff; }
+#data-type-mountain.active { background: var(--green); color: #fff; }
+#data-type-river.active { background: var(--brown); color: #fff; }
+#data-type-urban.active { background: var(--gold); color: #fff; }
+
+#filter-support-english {
+    align-self: flex-start;
+    border: 1px solid var(--text-tertiary);
+    color: var(--text-secondary);
+}
+
+#filter-support-english.active {
+    background: var(--text);
+    color: #fff;
+    border-color: var(--text);
+}
+        #controls {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+}
+        #filter-row {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
     </style>
 </head>
 <body>
 
 <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
-
-<h2>사찰 찾아보기</h2>
 <div id="map-wrapper">
+    <div id="controls">
     <div id="temple-search-box">
 <select id="search-type">
     <option value="name">사찰 검색</option>
@@ -84,33 +165,22 @@
 <input type="text" id="search-keyword" placeholder="검색어를 입력하세요">
 <button type="button" id="search-btn">검색</button>
 </div>
-    <div id="temple-region-box">지역으로 찾기</div>
-    <div id="region-options" hidden>
-        <button type="button" id="reg
-        ion-name-seoul">서울특별시</button>
-        <button type="button" id="region-name-busan">부산광역시</button>
-        <button type="button" id="region-name-deagu">대구광역시</button>
-        <button type="button" id="region-name-ulsan">울산광역시</button>
-        <button type="button" id="region-name-gwangju">광주광역시</button>
-        <button type="button" id="region-name-deajeon">대전광역시</button>
-        <button type="button" id="region-name-incheon">인천광역시</button>
-        <button type="button" id="region-name-kyeongkido">경기도</button>
-        <button type="button" id="region-name-kangwondo">강원특별자치도</button>
-        <button type="button" id="region-name-chungcheongnamdo">충청남도</button>
-        <button type="button" id="region-name-chungcheongbokdo">충청북도</button>
-        <button type="button" id="region-name-jeonranamdo">전라남도</button>
-        <button type="button" id="region-name-jeonrabokdo">전북특별자치도</button>
-        <button type="button" id="region-name-kyeongsangnamdo">경상남도</button>
-        <button type="button" id="region-name-kyeongsangbokdo">경상북도</button>
-        <button type="button" id="region-name-jejudo">제주도</button>
-    </div>
-<div id="temple-filter-box">
+        <div id="filter-row">
+<div id="type-filter-box">
+    <div class="panel-label">유형으로 찾기</div>
+    <div class="panel-section" id="temple-filter-box">
     <button type="button" id="data-type-sea">바다</button>
     <button type="button" id="data-type-mountain">산</button>
     <button type="button" id="data-type-river">강</button>
     <button type="button" id="data-type-urban">도심</button>
-    <button type="button" id="filter-support-english">영어 지원</button>
 </div>
+    </div>
+        <div id="language-filter-box">
+        <div class="panel-label">언어지원</div>
+        <button type="button" id="filter-support-english">영어 지원</button>
+    </div>
+</div>
+    </div>
 <div id="map"></div>
 </div>
 <!-- 공통 마커 함수(map-common.js) 먼저, 이 페이지 전용 로직(temple-list.js) 나중에 -->

@@ -7,6 +7,7 @@
     <title>로그인 · 사찰 커뮤니티</title>
     <link rel="stylesheet" th:href="@{/css/common.css}">
     <link rel="stylesheet" th:href="@{/css/signup.css}">
+    <script src="/js/auth/login.js" defer></script>
 </head>
 <body>
 
@@ -15,10 +16,10 @@
 
     <div class="header">
         <h1>로그인</h1>
-        <p>아이디와 비밀번호를 입력해주세요</p>
+        <p data-i18n="subtitle">아이디와 비밀번호를 입력해주세요</p>
     </div>
 
-    <p class="check-result fail" style="margin:16px 32px 0;" th:if="${param.error}">
+    <p class="check-result fail" style="margin:16px 32px 0;" th:if="${param.error}" data-i18n="errorMsg">
         아이디 또는 비밀번호가 올바르지 않습니다.
     </p>
 
@@ -31,14 +32,15 @@
                   width:100%;padding:14px 0;box-sizing:border-box;
                   background:#FEE500;color:#191600;
                   font-size:15px;font-weight:700;border-radius:6px;
-                  text-decoration:none;">
+                  text-decoration:none;"
+           data-i18n="kakaoLoginBtn">
             카카오로 3초만에 로그인
         </a>
     </div>
 
     <div style="display:flex;align-items:center;gap:10px;margin:20px 32px 4px;color:var(--ink-soft);font-size:11px;">
         <span style="flex:1;height:1px;background:var(--border);"></span>
-        또는 아이디로 로그인
+        <span data-i18n="dividerText">또는 아이디로 로그인</span>
         <span style="flex:1;height:1px;background:var(--border);"></span>
     </div>
 
@@ -47,20 +49,26 @@
         <input type="hidden" name="redirect" th:if="${param.redirect}" th:value="${param.redirect}">
 
         <div class="field">
-            <label for="username">아이디</label>
+            <label for="username" data-i18n="idLabel">아이디</label>
             <input id="username" name="username" type="text" autocomplete="username">
         </div>
 
         <div class="field">
-            <label for="password">비밀번호</label>
+            <label for="password" data-i18n="pwLabel">비밀번호</label>
             <input id="password" name="password" type="password" autocomplete="current-password">
         </div>
 
         <div class="form-actions">
             <button class="submit" type="submit">로그인</button>
-            <a class="btn-cancel" th:href="@{/}">취소</a>
+            <a class="btn-cancel" th:href="@{/}" data-i18n="cancelBtn">취소</a>
         </div>
     </form>
+
+    <p class="footer-note" style="text-align:center;font-size:13px;color:var(--ink-soft);padding:0 32px 0;">
+        <a th:href="@{/findAccount(tab='id')}" style="color:var(--wood-dark);font-weight:700;text-decoration:none;" data-i18n="findIdLink">아이디 찾기</a>
+        |
+        <a th:href="@{/findAccount(tab='pw')}" style="color:var(--wood-dark);font-weight:700;text-decoration:none;" data-i18n="findPwLink">비밀번호 찾기</a>
+    </p>
 
     <p class="footer-note" style="text-align:center;font-size:13px;color:var(--ink-soft);padding:0 32px 28px;">
         계정이 없으신가요?

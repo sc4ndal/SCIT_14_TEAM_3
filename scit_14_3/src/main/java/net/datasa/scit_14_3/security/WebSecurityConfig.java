@@ -33,7 +33,6 @@ public class WebSecurityConfig {
 
 	// 로그인 없이 접근 가능한 경로
 	private static final List<String> PUBLIC_URLS = List.of(
-			// 정적 리소스 / 기본 페이지
 			"/",
 			"/favicon.ico",
 			"/css/**",
@@ -45,6 +44,14 @@ public class WebSecurityConfig {
 			// 로그인 / 회원가입 (카카오 콜백, 추가정보 제출 등 하위 경로 포함)
 			"/login/**",
 			"/signupSelect/**",
+			"/signup/**",          // /signup, /signup/local, /signup/kakao-additional 전부 포함
+			"/findAccount",
+			"/resetPassword",      // 비밀번호 재설정 링크(메일) 클릭 시 들어오는 화면 + 제출 (미로그인 상태)
+			"/api/check/**",       // 아이디/닉네임/이메일 중복확인 (가입 전, 미로그인 상태에서 호출)
+			"/api/email/**",       // 이메일 인증코드 발송/확인 (가입 전, 미로그인 상태에서 호출)
+			"/api/find-id",        // 아이디 찾기 - DB 등록 확인 후 이메일로 아이디 발송 (미로그인 상태에서 호출)
+			"/api/find-pw",        // 비밀번호 찾기 - DB 등록 확인 후 재설정 링크 이메일 발송 (미로그인 상태에서 호출)
+			"/api/location-type/**", // 사찰 등록 문의 폼(공개)의 장소 유형 AI 자동판별
 			"/signup/**",
 			"/api/check/**",         // 아이디/닉네임/이메일 중복확인 (가입 전, 미로그인 상태에서 호출)
 			"/api/email/**",         // 이메일 인증코드 발송/확인 (가입 전, 미로그인 상태에서 호출)
@@ -60,6 +67,7 @@ public class WebSecurityConfig {
 			"/maptest/**",
 			"/info/**",
 			"/etiquette-simulation",
+			"/mypage/myReservations",
 
 			// 예약 / 결제 (컨트롤러 내부에서 개별 인증 처리)
 			"/reservation/**",
