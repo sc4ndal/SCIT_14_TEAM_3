@@ -16,7 +16,8 @@
             height: calc(100vh - 74px);
         }
         #map { width: 100%; height: 100%; }
-     #temple-search-box {
+#temple-search-box {
+    box-sizing: border-box;
     top: 12px;
     left: 12px;
     z-index: 10;
@@ -36,6 +37,7 @@
 
 #temple-search-box select,
 #temple-search-box input[type="text"] {
+
     font-family: var(--sans);
     font-size: 13px;
     color: var(--text);
@@ -44,6 +46,11 @@
     border: 1px solid var(--line);
     border-radius: 6px;
     padding: 7px 10px;
+}
+
+#search-keyword {
+    flex: 1;
+    min-width: 0;
 }
 
 #temple-search-box select:focus,
@@ -72,7 +79,8 @@
 }
 
 #type-filter-box,
-#language-filter-box {
+#language-filter-box,
+#favorite-filter-box {
     background: var(--paper);
     padding: 8px 12px;
     border-radius: 10px;
@@ -87,11 +95,39 @@
     gap: 6px;
 }
 
+#filter-favorite {
+    align-self: center;
+
+    width: 28px;
+    height: 28px;
+    padding: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+    font-size: 16px;
+    line-height: 1;
+
+    background: #fff;
+    border: 1px solid var(--text-tertiary);
+    color: var(--text-tertiary);
+
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+#filter-favorite.active {
+    background: var(--gold);
+    color: #fff;
+    border-color: var(--gold);
+}
 .panel-label {
     font-size: 12px;
     font-weight: 700;
     letter-spacing: .02em;
     color: var(--text-secondary);
+    white-space: nowrap;
 }
 
 #temple-filter-box {
@@ -179,7 +215,11 @@
         <div class="panel-label">언어지원</div>
         <button type="button" id="filter-support-english">영어 지원</button>
     </div>
-</div>
+            <div id="favorite-filter-box">
+                <div class="panel-label">즐겨찾기</div>
+                <button type="button" id="filter-favorite">★</button>
+            </div>
+    </div>
     </div>
 <div id="map"></div>
 </div>
