@@ -1,5 +1,6 @@
 package net.datasa.scit_14_3.controller.mypage;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.mypage.MypageEditViewDto;
@@ -9,6 +10,9 @@ import net.datasa.scit_14_3.service.buddhism.TempleFoodService;
 import net.datasa.scit_14_3.service.mypage.MypageService;
 import net.datasa.scit_14_3.service.integration.CloudinaryService;
 import net.datasa.scit_14_3.service.temple.TempleService;
+import net.datasa.scit_14_3.service.user.EmailVerificationService;
+import net.datasa.scit_14_3.service.user.UserService;
+import net.datasa.scit_14_3.util.PasswordPolicy;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -31,8 +35,6 @@ public class MypageController {
 	private final TempleService templeService;
 	private final MypageService mypageService;
 	private final CloudinaryService cloudinaryService;
-	private final DailyQuoteService dailyQuoteService;
-	private final TempleFoodService templeFoodService;
 
 	@PreAuthorize("hasRole('USER')")
 	@GetMapping("/mypage")
@@ -65,14 +67,12 @@ public class MypageController {
 	}
 	
 	@GetMapping("/mypage/favorites/quotes")
-	public String favoriteQuotes(@AuthenticationPrincipal AppUserDetails principal, Model model) {
-		model.addAttribute("quotes", dailyQuoteService.getFavorites(principal.getUsername()));
+	public String favoriteQuotes() {
 		return "mypage/favorites/quotes";
 	}
-
+	
 	@GetMapping("/mypage/favorites/foods")
-	public String favoriteFoods(@AuthenticationPrincipal AppUserDetails principal, Model model) {
-		model.addAttribute("foods", templeFoodService.getFavorites(principal.getUsername()));
+	public String favoriteFoods() {
 		return "mypage/favorites/foods";
 	}
 	

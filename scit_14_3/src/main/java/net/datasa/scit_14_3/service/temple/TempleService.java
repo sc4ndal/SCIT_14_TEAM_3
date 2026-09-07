@@ -59,6 +59,13 @@ public class TempleService {
 		return dto;
 	}
 
+	/** 마이페이지 회원정보수정 진입 전 본인확인(비밀번호 재입력)에서 호출. */
+	public boolean verifyPassword(Long templeId, String rawPassword) {
+		return tr.findById(templeId)
+				.map(entity -> passwordEncoder.matches(rawPassword, entity.getPassword()))
+				.orElse(false);
+	}
+
 	/** 사찰 계정 마이페이지에서 호출. 로그인ID는 인증 로직(@ 접두사)과 얽혀있어 수정 대상에서 뺐고,
 	    비밀번호만 본인이 바꿀 수 있게 함 - 관리자가 임시 발급한 비밀번호를 그대로 쓰지 않도록. */
 	public void changePassword(Long templeId, String currentPassword, String newPassword) {
