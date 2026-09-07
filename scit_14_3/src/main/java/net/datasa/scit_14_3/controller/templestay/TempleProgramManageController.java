@@ -5,6 +5,7 @@ import net.datasa.scit_14_3.domain.dto.templestay.TempleStayProgramDTO;
 import net.datasa.scit_14_3.security.AppUserDetails;
 import net.datasa.scit_14_3.service.integration.CloudinaryService;
 import net.datasa.scit_14_3.service.templestay.TempleStayProgramService;
+import net.datasa.scit_14_3.service.templestay.TempleStayReservationService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -29,12 +30,22 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class TempleProgramManageController {
 
 	private final TempleStayProgramService templeStayProgramService;
+	private final TempleStayReservationService templeStayReservationService;
 	private final CloudinaryService cloudinaryService;
 
 	@GetMapping
 	public String list(@AuthenticationPrincipal AppUserDetails principal, Model model) {
 		model.addAttribute("programs", templeStayProgramService.getByTemple(principal.getTempleId()));
 		return "templestay/templeProgramList";
+	}
+
+	/** 프로그램 하나 상세보기 - 이 프로그램에 걸린 예약들을 대표자 인적사항과 함께 보여줌. */
+	@GetMapping("/{programId}")
+	public String detail(@AuthenticationPrincipal AppUserDetails principal,
+						  @PathVariable Long programId, Model model) {
+		model.addAttribute("program", templeStayProgramService.getForOwner(programId, principal.getTempleId()));
+		model.addAttribute("reservations", templeStayReservationService.getByProgramId(programId));
+		return "templestay/templeProgramDetail";
 	}
 
 	@GetMapping("/new")

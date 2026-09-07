@@ -219,7 +219,9 @@ document.getElementById('go-to-reserve-btn').addEventListener('click', () => {
 });
 
 document.getElementById('step3-back-to-list-btn').addEventListener('click', () => {
-  goToStep(1);
+  // goToStep(1)만 하면 state.programs가 방금 예약하기 전 값 그대로라 예약자수가 안 바뀐 걸로 보임 -
+  // 페이지를 아예 새로 불러서 목록을 다시 조회하게 함
+  location.href = '/reservation';
 });
 
 function selectProgram(programId) {
@@ -517,8 +519,9 @@ async function submitReservation() {
   `사찰: ${p.templeName} (${p.region})\n` +
   `기간: ${dateLabel}\n` +
   `인원: ${state.participantCount}명\n` +
-  `결제 수단: ${state.paymentMethod}\n` +
-  `총 금액: ${totalAmount.toLocaleString()}원`;
+  `결제 수단: ${state.paymentMethod}` +
+  (state.paymentMethod === '계좌이체' ? `\n입금자명: ${state.depositorName || '(미입력)'}` : '') +
+  `\n총 금액: ${totalAmount.toLocaleString()}원`;
 
   const ok = confirm(confirmMessage);
   if (!ok) return;

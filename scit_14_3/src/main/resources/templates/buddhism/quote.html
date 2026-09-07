@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>오늘의 불교 한마디 | 산문</title>
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+	<link rel="stylesheet" th:href="@{/css/buddhism/buddhism.css}">
+	<link rel="stylesheet" th:href="@{/css/buddhism/quote.css}">
+</head>
+<body>
+
+<div id="auth-info" style="display:none;"
+	 sec:authorize="isAuthenticated()"
+	 th:attr="data-login-id=${#authentication.principal.username}"></div>
+
+<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="quote">
+
+	<section class="quote-hero">
+		<p class="quote-hero__eyebrow">오늘의 불교 한마디</p>
+		<h1 class="quote-hero__title">잠시 멈추고, 마음에 새겨봅니다</h1>
+	</section>
+
+	<section class="quote-card" th:if="${quote != null}">
+		<p class="quote-card__content" id="quote-content" th:text="${quote.content()}">한마디 내용</p>
+		<p class="quote-card__source" id="quote-source" th:text="${quote.source()}"
+		   th:hidden="${quote.source() == null}">출처</p>
+
+		<div class="quote-actions">
+			<button type="button" class="quote-refresh-btn" id="quote-refresh-btn">
+				다른 한마디 보기
+			</button>
+
+			<button type="button" class="favorite-toggle" id="quote-favorite-btn"
+					th:classappend="${quote.favorited()} ? 'is-favorited' : ''"
+					th:attr="data-favorite-url=@{'/info/quote/' + ${quote.quoteId()} + '/favorite'}, aria-pressed=${quote.favorited()}"
+					th:data-favorited="${quote.favorited()}">
+				<span class="favorite-toggle__icon"></span>
+				<span class="favorite-toggle__label" th:text="${quote.favorited()} ? '즐겨찾기됨' : '즐겨찾기'">즐겨찾기</span>
+			</button>
+		</div>
+	</section>
+
+	<section class="quote-card" th:if="${quote == null}">
+		<p class="quote-card__empty">
+			아직 등록된 한마디가 없습니다. <code>docs/buddhism-quote-food-seed.sql</code>을 실행하면 채워집니다.
+		</p>
+	</section>
+
+	<p class="terms-back">
+		<a th:href="@{/mypage/favorites/quotes}" sec:authorize="isAuthenticated()">저장한 한마디 모아보기 →</a>
+	</p>
+
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+
+<script defer th:src="@{/js/buddhism/favoriteButton.js}"></script>
+<script defer th:src="@{/js/buddhism/quote.js}"></script>
+
+</body>
+</html>

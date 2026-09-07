@@ -4,9 +4,12 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.datasa.scit_14_3.domain.dto.templestay.ProgramReservationDTO;
 import net.datasa.scit_14_3.domain.dto.templestay.TempleStayReservationDTO;
+import net.datasa.scit_14_3.domain.entity.templestay.ReservationParticipantEntity;
 import net.datasa.scit_14_3.domain.entity.templestay.TempleStayProgramEntity;
 import net.datasa.scit_14_3.domain.entity.templestay.TempleStayReservationEntity;
+import net.datasa.scit_14_3.repository.templestay.ReservationParticipantRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayProgramRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayReservationRepository;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,7 @@ import java.util.List;
 public class TempleStayReservationService {
 	private final TempleStayReservationRepository tsrr;
 	private final TempleStayProgramRepository tspr;
+	private final ReservationParticipantRepository rpr;
 	
 	public TempleStayReservationDTO getInfo(Long reservationId) {
 		TempleStayReservationEntity entity = tsrr.findById(reservationId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
@@ -138,6 +142,26 @@ public class TempleStayReservationService {
 		TempleStayReservationEntity entity = tsrr.findById(reservationId)
 				.orElseThrow(() -> new EntityNotFoundException("해당되는 템플스테이 예약 번호가 존재하지 않습니다."));
 		entity.setStatus(TempleStayReservationEntity.Status.취소);
+	}
+
+	/** 사찰 프로그램 관리 > 상세보기 - 이 프로그램에 걸린 예약들을 대표자 인적사항과 함께 보여줌. */
+	public List<ProgramReservationDTO> getByProgramId(Long programId) {
+		List<ProgramReservationDTO> result = new ArrayList<>();
+		for (TempleStayReservationEntity r : tsrr.findByProgramIdOrderByStartDateAsc(programId)) {
+			ReservationParticipantEntity representative =
+					rpr.findFirstByReservationIdOrderByParticipantIdAsc(r.getReservationId()).orElse(null);
+			result.add(ProgramReservationDTO.builder()
+					.reservationId(r.getReservationId())
+					.representativeName(representative != null ? representative.getName() : "-")
+					.representativeEmail(representative != null ? representative.getEmail() : "-")
+					.representativePhone(representative != null ? representative.getPhone() : "-")
+					.participantCount(r.getParticipantCount())
+					.startDate(r.getStartDate())
+					.endDate(r.getEndDate())
+					.status(r.getStatus())
+					.build());
+		}
+		return result;
 	}
 	}
 
