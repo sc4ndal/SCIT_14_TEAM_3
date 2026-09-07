@@ -73,3 +73,94 @@
 .mp-foot .form-actions {
 	margin-top: 0;
 }
+
+/* ── 이메일 변경 모달 ─────────────────────────────────────────── */
+.modal-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(39, 33, 27, .45);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	z-index: 100;
+}
+.modal-overlay[hidden] {
+	display: none;
+}
+.modal {
+	width: 100%;
+	max-width: 460px;
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	padding: 28px;
+}
+.modal h2 {
+	font-family: 'Noto Serif KR', serif;
+	font-weight: 700;
+	font-size: 17px;
+	margin: 0 0 16px;
+}
+.modal .field {
+	margin-bottom: 0;
+}
+.modal-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 20px;
+}
+
+/* ── 이메일 변경 모달: 메일발송 버튼은 중복조회와 같은 줄(.email-row)에 두되,
+   margin-left:auto로 그 줄의 오른쪽 끝(select 오른쪽 정렬)까지 밀어냄 ── */
+.email-row .btn-send-mail {
+	margin-top: 0;
+	margin-left: auto;
+}
+
+/* ── 이메일 변경 모달: 아이디 입력칸 크기 고정 ─────────────────────
+   signup.css의 .email-row input.email-local은 flex:1이라 옆에 있는 다른
+   요소가 나타나거나 사라지면 남는 공간 계산이 바뀌면서 아이디 칸 크기도
+   같이 바뀐다 - 이 모달에서만 flex-grow/shrink를 꺼서 크기를 고정한다.
+   signup.html은 그대로 둠. */
+#newEmailLocal {
+	flex: none;
+	width: 150px;
+}
+
+/* ── 이메일 변경 모달: 도메인 콤보박스 (select 대신 목록선택+자유입력을
+   한 칸에서 지원 - W3C ARIA APG combobox 패턴) ───────────────────── */
+.combo {
+	position: relative;
+	flex: none;
+	width: 160px;
+}
+.combo-list {
+	position: absolute;
+	top: calc(100% + 4px);
+	left: 0;
+	right: 0;
+	z-index: 10;
+	margin: 0;
+	padding: 4px 0;
+	list-style: none;
+	max-height: 220px;
+	overflow-y: auto;
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	box-shadow: 0 4px 12px rgba(39, 33, 27, .15);
+}
+.combo-list[hidden] {
+	display: none;
+}
+.combo-list li {
+	padding: 8px 12px;
+	font-size: 13px;
+	cursor: pointer;
+}
+.combo-list li:hover,
+.combo-list li.combo-list__active {
+	background: #f6f1e6;
+}

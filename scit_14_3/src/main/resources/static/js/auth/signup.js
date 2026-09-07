@@ -30,6 +30,7 @@ const TRANSLATIONS = {
         marketingOptional: "[선택]", marketingText: "이벤트·할인 등 광고성 정보를 이메일로 수신하는 것에 동의합니다",
         submitBtn: "가입 완료", cancelBtn: "취소",
         dupCheckFillFirst: "값을 먼저 입력해주세요", dupCheckOk: "✔ 사용 가능한 값입니다",
+        loginIdAvailableMsg: "✔ 사용 가능한 아이디입니다", nicknameAvailableMsg: "✔ 사용 가능한 법명입니다",
         dupCheckTaken: "이미 사용 중인 값입니다", dupCheckError: "확인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요",
         mailSendError: "메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요",
         cancelConfirmTitle: "정말 취소하시겠어요?", cancelConfirmText: "입력하신 정보는 삭제됩니다.",
@@ -66,6 +67,7 @@ const TRANSLATIONS = {
         marketingOptional: "[任意]", marketingText: "イベント・割引などの広告性情報をメールで受け取ることに同意します",
         submitBtn: "登録完了", cancelBtn: "キャンセル",
         dupCheckFillFirst: "先に値を入力してください", dupCheckOk: "✔ 使用可能です",
+        loginIdAvailableMsg: "✔ 使用可能なIDです", nicknameAvailableMsg: "✔ 使用可能な法名です",
         dupCheckTaken: "既に使用されている値です", dupCheckError: "確認中にエラーが発生しました。しばらくしてから再度お試しください",
         mailSendError: "メールの送信に失敗しました。しばらくしてから再度お試しください",
         cancelConfirmTitle: "本当にキャンセルしますか？", cancelConfirmText: "入力した情報は削除されます。",
@@ -102,6 +104,7 @@ const TRANSLATIONS = {
         marketingOptional: "[Optional]", marketingText: "I agree to receive promotional emails such as events and discounts",
         submitBtn: "Complete Sign Up", cancelBtn: "Cancel",
         dupCheckFillFirst: "Please enter a value first", dupCheckOk: "\u2714 Available",
+        loginIdAvailableMsg: "\u2714 This ID is available", nicknameAvailableMsg: "\u2714 This nickname is available",
         dupCheckTaken: "This value is already taken", dupCheckError: "Something went wrong. Please try again shortly",
         mailSendError: "Failed to send the email. Please try again shortly",
         cancelConfirmTitle: "Are you sure you want to cancel?", cancelConfirmText: "Your entered information will be deleted.",
@@ -174,7 +177,7 @@ const dupState = { loginId: false, nickname: false };
 
 function checkLoginId(){
     if(!validateLoginId()) return;
-    checkDuplicate('/api/check/login-id', 'loginId', 'loginIdResult', 'loginId');
+    checkDuplicate('/api/check/login-id', 'loginId', 'loginIdResult', 'loginId', 'loginIdAvailableMsg');
 }
 
 // 이름: 입력값이 비면 해당 결과 메시지도 같이 지움 (중복확인 대상이 아니라 포맷 오류만 표시하는 필드)
@@ -210,7 +213,7 @@ function validateNickname(){
 
 function checkNickname(){
     if(!validateNickname()) return;
-    checkDuplicate('/api/check/nickname', 'nickname', 'nicknameResult', 'nickname');
+    checkDuplicate('/api/check/nickname', 'nickname', 'nicknameResult', 'nickname', 'nicknameAvailableMsg');
 }
 
 /* ===== 비밀번호 유효성 검사 (대/소문자·숫자·특수문자 4종류 + 8~20자) ===== */
@@ -292,8 +295,10 @@ function validateName(){
 
 /* ===== 중복확인 (실제 서버 조회) =====
    기대 응답 형식: { "available": true|false }
-   stateKey가 있으면(dupState에 있는 키) 결과에 맞춰 dupState도 같이 갱신 - 제출 전 게이트에서 씀. */
-async function checkDuplicate(endpoint, fieldId, resultId, stateKey){
+   stateKey가 있으면(dupState에 있는 키) 결과에 맞춰 dupState도 같이 갱신 - 제출 전 게이트에서 씀.
+   availableMsgKey를 넘기면 "사용 가능한 값입니다" 대신 필드명이 들어간 메시지(예: dupCheckOk 대신
+   loginIdAvailableMsg)를 쓴다 - 안 넘기면 기존 dupCheckOk로 대체. */
+async function checkDuplicate(endpoint, fieldId, resultId, stateKey, availableMsgKey){
     const value = document.getElementById(fieldId).value.trim();
     const resultEl = document.getElementById(resultId);
 
@@ -307,7 +312,7 @@ async function checkDuplicate(endpoint, fieldId, resultId, stateKey){
         const res = await fetch(`${endpoint}?value=${encodeURIComponent(value)}`);
         if(!res.ok) throw new Error('서버 응답 오류: ' + res.status);
         const data = await res.json();
-        setResult(resultEl, data.available ? msg('dupCheckOk') : msg('dupCheckTaken'), data.available ? 'ok' : 'fail');
+        setResult(resultEl, data.available ? msg(availableMsgKey || 'dupCheckOk') : msg('dupCheckTaken'), data.available ? 'ok' : 'fail');
         if(stateKey in dupState) dupState[stateKey] = !!data.available;
     } catch(err){
         if(stateKey in dupState) dupState[stateKey] = false;

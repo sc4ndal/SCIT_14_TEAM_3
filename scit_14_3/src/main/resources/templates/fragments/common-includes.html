@@ -99,13 +99,13 @@
                             <a th:href="@{/mypage}">
                                 마이페이지
                             </a>
-                            <a th:href="@{/mypage/edit}">
+                            <a th:href="@{/mypage/edit/verify}">
                                 회원정보수정
                             </a>
-                            <a th:href="@{/mypage/myReservations}">
+                            <a th:href="@{/mypage/reservations}">
                                 예약목록
                             </a>
-                            <a th:href="@{/mypage/myReviews}">
+                            <a th:href="@{/mypage/reviews}">
                                 내가 쓴 리뷰
                             </a>
                             <a th:href="@{/mypage/favorites/temples}">
@@ -130,7 +130,7 @@
                                  사찰정보수정(비밀번호+사찰 정보)이랑 자기 사찰 프로그램 등록/관리만 -->
                             <div class="mypage-dropdown" sec:authorize="hasRole('TEMPLE')">
 
-                            <a th:href="@{/mypage/edit}">
+                            <a th:href="@{/mypage/edit/verify}">
                                 사찰정보수정
                             </a>
                             <a th:href="@{/temple/programs/new}">
