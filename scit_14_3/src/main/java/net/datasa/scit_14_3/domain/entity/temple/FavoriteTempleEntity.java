@@ -1,8 +1,7 @@
-package net.datasa.scit_14_3.domain.entity;
+package net.datasa.scit_14_3.domain.entity.temple;
 
 import jakarta.persistence.*;
 import lombok.*;
-import net.datasa.scit_14_3.domain.entity.temple.TempleEntity;
 
 import java.time.LocalDateTime;
 

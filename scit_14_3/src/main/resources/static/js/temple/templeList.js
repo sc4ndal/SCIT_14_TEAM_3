@@ -68,7 +68,34 @@ kakao.maps.load(function () {
         });
 
     // ------------------------- 검색 -------------------------
+    function showResultList(temples) {
+        var list = document.getElementById('result-list');
+        list.innerHTML = ''; // 이전 검색 결과 지우기
 
+        temples.forEach(function (temple){
+            var li = document.createElement('li');
+            // 검색 결과 리스트에 사찰 이름이랑 주소 표시
+            li.innerHTML =
+            '<div class = "result-name">' + temple.name + '</div>' +
+            '<div class = "result-address">' + temple.address + '</div>';
+
+        // 리스트 항목을 클릭하면 그 사찰로 이동 + 정보창 열기
+        li.addEventListener('click', function() {
+            map.setCenter(new kakao.maps.LatLng(temple.latitude, temple.longitude));
+            map.setLevel(4);
+
+            var marker = markerByTempleId[temple.templeId];
+            if(marker) {
+                kakao.maps.event.trigger(marker, 'click');
+            }
+        });
+        list.appendChild(li);
+        });
+        document.getElementById('result-panel').hidden = false;
+    }
+    document.getElementById('result-panel-close').addEventListener('click', function(){
+        document.getElementById('result-panel').hidden = true;
+    });
     function runSearch() {
         var type = document.getElementById('search-type').value; // 'name' 또는 'address'
         var keyword = document.getElementById('search-keyword').value.trim();
@@ -104,7 +131,7 @@ kakao.maps.load(function () {
             bounds.extend(new kakao.maps.LatLng(temple.latitude, temple.longitude));
         });
         map.setBounds(bounds);
-
+        showResultList(matched);
         return;
     }
 
