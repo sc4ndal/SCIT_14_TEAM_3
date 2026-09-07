@@ -40,12 +40,12 @@ public class MypageController {
 	// ===== 마이페이지 허브(/mypage) 카드에서 연결되는 하위 페이지들 =====
 	// 지금은 화면 껍데기만 있는 상태. 실제 데이터 바인딩은 각 기능 담당이 채운다.
 	
-	@GetMapping("/mypage/reservations")
+	@GetMapping("/mypage/myReservations")
 	public String reservations() {
 		return "mypage/myReservations";
 	}
-	
-	@GetMapping("/mypage/reviews") // 내가 작성한 리뷰
+
+	@GetMapping("/mypage/myReviews") // 내가 작성한 리뷰
 	public String reviews() {
 		return "mypage/myReviews";
 	}

@@ -146,12 +146,12 @@ body {
 .item-action:not(.no-reason):hover { background: var(--accent-blue-soft); }
 .item-action.no-reason { cursor: default; }
 .item-action .dot {
-    width: 4px; height: 4px; border-radius: 50%;
+    width: 6px; height: 6px; border-radius: 50%;
     background: var(--text-tertiary); flex: none;
 }
 .item-action .caret {
     margin-left: auto;
-    font-size: 11px;
+    font-size: 20px;
     color: var(--text-tertiary);
     transition: transform .15s;
     flex: none;

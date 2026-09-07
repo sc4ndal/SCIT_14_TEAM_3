@@ -195,28 +195,28 @@
     <div id="controls">
     <div id="temple-search-box">
 <select id="search-type">
-    <option value="name">사찰 검색</option>
-    <option value="address">주소 검색</option>
+    <option value="name" data-i18n="searchTypeName">사찰 검색</option>
+    <option value="address" data-i18n="searchTypeAddress">주소 검색</option>
 </select>
-<input type="text" id="search-keyword" placeholder="검색어를 입력하세요">
-<button type="button" id="search-btn">검색</button>
+<input type="text" id="search-keyword" data-i18n-placeholder="searchPlaceholder" placeholder="검색어를 입력하세요">
+<button type="button" id="search-btn" data-i18n="searchBtn">검색</button>
 </div>
         <div id="filter-row">
 <div id="type-filter-box">
-    <div class="panel-label">유형으로 찾기</div>
+    <div class="panel-label" data-i18n="typeFilterLabel">유형으로 찾기</div>
     <div class="panel-section" id="temple-filter-box">
-    <button type="button" id="data-type-sea">바다</button>
-    <button type="button" id="data-type-mountain">산</button>
-    <button type="button" id="data-type-river">강</button>
-    <button type="button" id="data-type-urban">도심</button>
+    <button type="button" id="data-type-sea" data-i18n="typeSea">바다</button>
+    <button type="button" id="data-type-mountain" data-i18n="typeMountain">산</button>
+    <button type="button" id="data-type-river" data-i18n="typeRiver">강</button>
+    <button type="button" id="data-type-urban" data-i18n="typeUrban">도심</button>
 </div>
     </div>
         <div id="language-filter-box">
-        <div class="panel-label">언어지원</div>
-        <button type="button" id="filter-support-english">영어 지원</button>
+        <div class="panel-label" data-i18n="languageFilterLabel">언어지원</div>
+        <button type="button" id="filter-support-english" data-i18n="supportEnglish">영어 지원</button>
     </div>
             <div id="favorite-filter-box">
-                <div class="panel-label">즐겨찾기</div>
+                <div class="panel-label" data-i18n="favoriteFilterLabel">즐겨찾기</div>
                 <button type="button" id="filter-favorite">★</button>
             </div>
     </div>
@@ -224,6 +224,7 @@
 <div id="map"></div>
 </div>
 <!-- 공통 마커 함수(map-common.js) 먼저, 이 페이지 전용 로직(temple-list.js) 나중에 -->
+<script src="/js/temple/findTemple.i18n.js"></script>
 <script src="/js/mapCommon.js"></script>
 <script src="/js/temple/templeList.js"></script>
 
