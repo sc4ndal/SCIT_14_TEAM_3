@@ -12,6 +12,9 @@ import java.util.List;
 public interface TempleStayReservationRepository extends JpaRepository<TempleStayReservationEntity, Long> {
 	List<TempleStayReservationEntity> findByLoginId(String loginId);
 
+	// 사찰 프로그램 관리 > 상세보기에서 이 프로그램에 걸린 예약들을 볼 때 씀
+	List<TempleStayReservationEntity> findByProgramIdOrderByStartDateAsc(Long programId);
+
 	// 취소되지 않은 예약들의 참가 인원 합 - 정원 초과 여부 판단용
 	@Query("select coalesce(sum(r.participantCount), 0) from TempleStayReservationEntity r " +
 			"where r.programId = :programId and r.status <> :canceled")

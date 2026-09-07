@@ -901,7 +901,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             cancelButtonText: t.modalClose
         }).then((result) => {
             if (event.programId && result.isConfirmed) {
-                location.href = "/reservation";
+                location.href = "/reservation/programs/" + event.programId;
             }
         });
     }
