@@ -219,3 +219,4 @@ BUDDHISM_INFO, MOKTAK, DAILY_QUOTE, TEMPLE_FOOD_RECOMMENDATION 네 테이블은 
 - **회원 탈퇴 이력 보존이 필요해지면**: 다시 `status`/`withdrawn_at`을 추가하거나, 탈퇴 회원 정보를 별도 로그 테이블에 옮겨 담는 방식을 고려할 수 있습니다.
 - **목탁 개인 랭킹/역대 기록이 필요해지면**: 현재는 오늘 카운트만 남기므로, 날짜별 기록이 필요할 경우 `moktak_daily_log(user_id, log_date, count)` 같은 별도 로그 테이블을 추가하는 방향을 고려할 수 있습니다.
 - **COMMENT (댓글)**: 리뷰나 게시글에 댓글 기능을 붙일 때 필요
+- **TEMPLE_FOOD_RECOMMENDATION.recipe_url 컬럼 분리(2026-09-07)**: "사찰 음식" 화면에 레시피 참고 링크를 추가하면서, 정식으로는 `recipe_url VARCHAR(255)` 컬럼을 새로 추가하는 게 맞습니다. 다만 마이그레이션 시점에 다른 로컬 연결(다른 스키마의 커밋 안 된 트랜잭션)이 이 테이블에 메타데이터 락을 잡고 있어 `ALTER TABLE`이 막혀 있었고, 팀 합의로 우선 컬럼 추가 없이 진행했습니다. 그래서 지금은 `recipe` TEXT 컬럼 마지막 줄에 `참고 레시피: <url>` 형식으로 링크를 함께 저장하고, `TempleFoodService.toDto()`가 그 줄을 정규식으로 파싱해서 `recipe` 본문과 `recipeUrl`을 분리합니다(시드 데이터는 `docs/buddhism-quote-food-seed.sql` 참고). 나중에 락 문제가 없는 시점에 `recipe_url` 컬럼을 정식으로 추가하고 싶다면, 시드 데이터의 마지막 줄들을 그 컬럼으로 옮기고 파싱 로직을 지우면 됩니다.

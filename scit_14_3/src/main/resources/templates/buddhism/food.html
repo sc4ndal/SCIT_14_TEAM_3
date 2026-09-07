@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>사찰 음식 | 산문</title>
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+	<link rel="stylesheet" th:href="@{/css/buddhism/buddhism.css}">
+	<link rel="stylesheet" th:href="@{/css/buddhism/food.css}">
+</head>
+<body>
+
+<div id="auth-info" style="display:none;"
+	 sec:authorize="isAuthenticated()"
+	 th:attr="data-login-id=${#authentication.principal.username}"></div>
+
+<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="food">
+
+	<section class="food-hero">
+		<h1 class="food-hero__title">사찰 음식</h1>
+		<p class="food-hero__lead">고기와 오신채(마늘·파·부추 등) 없이도 정갈한 맛을 내는 사찰의 밥상입니다</p>
+	</section>
+
+	<p class="food-empty" th:if="${#lists.isEmpty(foods)}">
+		아직 등록된 사찰음식이 없습니다. <code>docs/buddhism-quote-food-seed.sql</code>을 실행하면 채워집니다.
+	</p>
+
+	<div class="food-grid">
+		<article class="food-card" th:each="food : ${foods}">
+
+			<img class="food-card__image" th:if="${food.imageUrl() != null}" th:src="${food.imageUrl()}"
+				 th:alt="${food.foodName()}">
+
+			<div class="food-card__body">
+				<h2 class="food-card__title" th:text="${food.foodName()}">음식명</h2>
+				<p class="food-card__desc" th:if="${food.description() != null}" th:text="${food.description()}">소개</p>
+
+				<div class="food-card__recipe" th:if="${food.recipe() != null}">
+					<p class="food-card__recipe-title">레시피</p>
+					<p class="food-card__recipe-text" th:text="${food.recipe()}">레시피 본문</p>
+					<a class="food-card__recipe-link" th:if="${food.recipeUrl() != null}"
+					   th:href="${food.recipeUrl()}" target="_blank" rel="noopener noreferrer">
+						레시피 참고 링크 →
+					</a>
+				</div>
+
+				<div class="food-card__footer">
+					<button type="button" class="favorite-toggle"
+							th:classappend="${food.favorited()} ? 'is-favorited' : ''"
+							th:attr="data-favorite-url=@{'/info/food/' + ${food.recommendationId()} + '/favorite'}, aria-pressed=${food.favorited()}"
+							th:data-favorited="${food.favorited()}">
+						<span class="favorite-toggle__icon"></span>
+						<span class="favorite-toggle__label" th:text="${food.favorited()} ? '즐겨찾기됨' : '즐겨찾기'">즐겨찾기</span>
+					</button>
+				</div>
+			</div>
+
+		</article>
+	</div>
+
+	<p class="terms-back">
+		<a th:href="@{/mypage/favorites/foods}" sec:authorize="isAuthenticated()">저장한 사찰음식 모아보기 →</a>
+	</p>
+
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+
+<script defer th:src="@{/js/buddhism/favoriteButton.js}"></script>
+
+</body>
+</html>
