@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.mypage.MypageEditViewDto;
 import net.datasa.scit_14_3.security.AppUserDetails;
+import net.datasa.scit_14_3.service.buddhism.DailyQuoteService;
+import net.datasa.scit_14_3.service.buddhism.TempleFoodService;
 import net.datasa.scit_14_3.service.mypage.MypageService;
 import net.datasa.scit_14_3.service.integration.CloudinaryService;
 import net.datasa.scit_14_3.service.temple.TempleService;
@@ -29,6 +31,8 @@ public class MypageController {
 	private final TempleService templeService;
 	private final MypageService mypageService;
 	private final CloudinaryService cloudinaryService;
+	private final DailyQuoteService dailyQuoteService;
+	private final TempleFoodService templeFoodService;
 
 	@PreAuthorize("hasRole('USER')")
 	@GetMapping("/mypage")
@@ -61,12 +65,14 @@ public class MypageController {
 	}
 	
 	@GetMapping("/mypage/favorites/quotes")
-	public String favoriteQuotes() {
+	public String favoriteQuotes(@AuthenticationPrincipal AppUserDetails principal, Model model) {
+		model.addAttribute("quotes", dailyQuoteService.getFavorites(principal.getUsername()));
 		return "mypage/favorites/quotes";
 	}
-	
+
 	@GetMapping("/mypage/favorites/foods")
-	public String favoriteFoods() {
+	public String favoriteFoods(@AuthenticationPrincipal AppUserDetails principal, Model model) {
+		model.addAttribute("foods", templeFoodService.getFavorites(principal.getUsername()));
 		return "mypage/favorites/foods";
 	}
 	

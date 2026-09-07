@@ -1,0 +1,115 @@
+/* ============================================================
+   알아보기 > 사찰 음식 (/info/food)
+   공통 토큰(--paper/--ink/--accent 등)은 buddhism.css를 그대로 재사용한다.
+   ============================================================ */
+
+.food-hero {
+	max-width: 720px;
+	margin: 0 auto;
+	padding: 96px 24px 48px;
+	text-align: center;
+}
+
+.food-hero__title {
+	margin: 0;
+	font-size: 36px;
+	letter-spacing: -.02em;
+}
+
+.food-hero__lead {
+	margin: 16px 0 0;
+	color: var(--ink-soft);
+	font-size: 16px;
+}
+
+.food-empty {
+	max-width: 720px;
+	margin: 0 auto;
+	padding: 40px 24px;
+	text-align: center;
+	color: var(--ink-soft);
+}
+
+.food-grid {
+	max-width: 1080px;
+	margin: 0 auto 96px;
+	padding: 0 24px;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	gap: 24px;
+}
+
+.food-card {
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var(--line);
+	border-radius: 20px;
+	background: #fff;
+	overflow: hidden;
+}
+
+.food-card__image {
+	width: 100%;
+	aspect-ratio: 4 / 3;
+	object-fit: cover;
+	background: var(--paper-deep);
+}
+
+.food-card__body {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	padding: 24px;
+}
+
+.food-card__title {
+	margin: 0;
+	font-size: 19px;
+}
+
+.food-card__desc {
+	margin: 10px 0 0;
+	color: var(--ink-soft);
+	font-size: 14.5px;
+}
+
+.food-card__recipe {
+	margin: 18px 0 0;
+	padding-top: 16px;
+	border-top: 1px dashed var(--line);
+}
+
+.food-card__recipe-title {
+	margin: 0 0 8px;
+	font-size: 13px;
+	letter-spacing: .04em;
+	color: var(--accent);
+	font-weight: 700;
+}
+
+.food-card__recipe-text {
+	margin: 0;
+	font-size: 14px;
+	line-height: 1.7;
+	color: var(--ink);
+	white-space: pre-line;
+}
+
+.food-card__recipe-link {
+	display: inline-block;
+	margin-top: 10px;
+	font-size: 13.5px;
+	color: var(--accent);
+	text-decoration: none;
+}
+
+.food-card__recipe-link:hover {
+	text-decoration: underline;
+}
+
+.food-card__footer {
+	margin-top: auto;
+	padding-top: 20px;
+	display: flex;
+	justify-content: flex-end;
+}
