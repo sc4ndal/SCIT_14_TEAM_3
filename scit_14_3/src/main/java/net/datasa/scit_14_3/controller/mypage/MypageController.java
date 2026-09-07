@@ -1,12 +1,18 @@
 package net.datasa.scit_14_3.controller.mypage;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.mypage.MypageEditViewDto;
 import net.datasa.scit_14_3.security.AppUserDetails;
+import net.datasa.scit_14_3.service.buddhism.DailyQuoteService;
+import net.datasa.scit_14_3.service.buddhism.TempleFoodService;
 import net.datasa.scit_14_3.service.mypage.MypageService;
 import net.datasa.scit_14_3.service.integration.CloudinaryService;
 import net.datasa.scit_14_3.service.temple.TempleService;
+import net.datasa.scit_14_3.service.user.EmailVerificationService;
+import net.datasa.scit_14_3.service.user.UserService;
+import net.datasa.scit_14_3.util.PasswordPolicy;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;

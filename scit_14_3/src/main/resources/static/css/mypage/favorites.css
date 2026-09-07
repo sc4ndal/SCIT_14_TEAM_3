@@ -1,0 +1,181 @@
+/* ======================================================
+   favorites.css — 마이페이지 즐겨찾기 목록 공용
+   (저장한 불교 한마디 / 관심 사찰음식)
+   토큰(--bg/--text/--brown/--line/--serif/--sans 등)은 common.css를 재사용한다.
+====================================================== */
+
+.favorites-hero {
+	text-align: center;
+}
+
+.favorites-hero h1 {
+	margin: 0;
+	font-family: var(--serif);
+	font-size: 32px;
+	font-weight: 500;
+	letter-spacing: -.03em;
+}
+
+.favorites-hero p {
+	margin: 16px 0 0;
+	color: var(--text-tertiary);
+	font-size: 14.5px;
+}
+
+.favorites-empty {
+	margin-top: 64px;
+	padding: 48px 24px;
+	text-align: center;
+	color: var(--text-tertiary);
+	border: 1px dashed var(--line);
+	border-radius: 16px;
+}
+
+/* ---------- 저장한 한마디 ---------- */
+
+.quote-favorite-list {
+	margin-top: 48px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.quote-favorite-item {
+	padding: 28px 30px;
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	background: rgba(253, 250, 246, .72);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24px;
+}
+
+.quote-favorite-item__text {
+	flex: 1;
+}
+
+.quote-favorite-item__content {
+	margin: 0;
+	font-family: var(--serif);
+	font-size: 17px;
+	line-height: 1.7;
+	white-space: pre-line;
+}
+
+.quote-favorite-item__source {
+	margin: 10px 0 0;
+	font-size: 13px;
+	color: var(--text-tertiary);
+}
+
+.quote-favorite-item__source::before {
+	content: "— ";
+}
+
+/* ---------- 관심 사찰음식 ---------- */
+
+.food-favorite-grid {
+	margin-top: 48px;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 18px;
+}
+
+.food-favorite-card {
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	background: rgba(253, 250, 246, .72);
+	overflow: hidden;
+}
+
+.food-favorite-card__image {
+	width: 100%;
+	aspect-ratio: 4 / 3;
+	object-fit: cover;
+	background: var(--muted-bg);
+}
+
+.food-favorite-card__body {
+	padding: 22px;
+}
+
+.food-favorite-card__title {
+	margin: 0;
+	font-family: var(--serif);
+	font-size: 18px;
+}
+
+.food-favorite-card__desc {
+	margin: 8px 0 0;
+	font-size: 13.5px;
+	color: var(--text-tertiary);
+}
+
+.food-favorite-card__recipe {
+	margin: 14px 0 0;
+	padding-top: 12px;
+	border-top: 1px dashed var(--line);
+	font-size: 13px;
+	line-height: 1.7;
+	white-space: pre-line;
+}
+
+.food-favorite-card__link {
+	display: inline-block;
+	margin-top: 8px;
+	font-size: 13px;
+	color: var(--brown);
+}
+
+.food-favorite-card__footer {
+	padding: 0 22px 22px;
+	display: flex;
+	justify-content: flex-end;
+}
+
+/* ---------- 즐겨찾기 해제 버튼 ----------
+   buddhism.css의 .favorite-toggle과 같은 클래스명을 쓰지만(favoriteButton.js 공용),
+   이 페이지는 buddhism.css를 안 불러오므로 마이페이지 색상 토큰으로 다시 정의한다. */
+
+.favorite-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 9px 18px;
+	border: 1px solid var(--brown);
+	border-radius: 999px;
+	background: transparent;
+	color: var(--brown);
+	font-size: 13px;
+	font-family: inherit;
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.favorite-toggle:hover {
+	background: rgba(155, 104, 69, .08);
+}
+
+.favorite-toggle:disabled {
+	opacity: .6;
+	cursor: default;
+}
+
+.favorite-toggle .favorite-toggle__icon::before {
+	content: "★";
+}
+
+.favorite-toggle.is-favorited {
+	background: var(--brown);
+	color: #fff;
+}
+
+@media (max-width: 560px) {
+	.quote-favorite-item {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+}

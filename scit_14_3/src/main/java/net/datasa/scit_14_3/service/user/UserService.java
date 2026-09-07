@@ -52,6 +52,14 @@ public class UserService {
         return userRepository.findByEmail(email).map(UserEntity::getLoginId);
     }
 
+    /** 마이페이지 회원정보수정 진입 전 본인확인(비밀번호 재입력)에서 호출. 카카오 회원은
+        비밀번호가 없어 이 경로 자체를 안 타므로 여기선 LOCAL 회원만 들어온다고 가정한다. */
+    public boolean verifyPassword(String loginId, String rawPassword) {
+        return userRepository.findById(loginId)
+                .map(user -> passwordEncoder.matches(rawPassword, user.getPassword()))
+                .orElse(false);
+    }
+
     /** 비밀번호 재설정 - PasswordResetService가 토큰으로 loginId를 이미 확인한 뒤에만 호출됨. */
     @Transactional
     public void resetPassword(String loginId, String rawPassword) {
@@ -89,6 +97,41 @@ public class UserService {
         user.setPhone(phone);
         user.setEmail(email);
         user.setRole(role);
+    }
+
+    /** 마이페이지(/mypage/edit) 본인 정보수정. 아이디(PK)/이름은 여기서 안 건드림 - 이름은
+        가입 후 수정 불가, 아이디는 애초에 화면에서 읽기전용. newPassword가 null/blank면
+        비밀번호는 그대로 둔다 - 컨트롤러가 패턴/일치 검증을 마친 뒤에만 넘겨준다고 가정.
+        emailVerified는 email을 실제로 바꾸려는 경우에만 확인함(컨트롤러가 세션에서 직접
+        확인해 넘겨줌 - 클라이언트가 보낸 값은 안 믿음, registerLocal과 같은 원칙). */
+    @Transactional
+    public void updateOwnProfile(String loginId, String nickname, String phone, String email,
+                                  String newPassword, boolean emailVerified) {
+        UserEntity user = userRepository.findById(loginId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 회원을 찾을 수 없습니다."));
+
+        String trimmedNickname = nickname.trim();
+        if (!trimmedNickname.equals(user.getNickname()) && userRepository.existsByNickname(trimmedNickname)) {
+            throw new IllegalStateException("이미 사용 중인 법명입니다.");
+        }
+
+        boolean emailChanged = email != null && !email.equals(user.getEmail());
+        if (emailChanged) {
+            if (userRepository.existsByEmail(email)) {
+                throw new IllegalStateException("이미 사용 중인 이메일입니다.");
+            }
+            if (!emailVerified) {
+                throw new IllegalStateException("이메일 인증을 완료해주세요.");
+            }
+        }
+
+        user.setNickname(trimmedNickname);
+        user.setPhone(phone);
+        user.setEmail(email);
+
+        if (newPassword != null && !newPassword.isBlank()) {
+            user.setPassword(passwordEncoder.encode(newPassword));
+        }
     }
 
     public void delete(String loginId) {
