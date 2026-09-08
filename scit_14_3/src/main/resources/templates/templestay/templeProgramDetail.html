@@ -46,6 +46,8 @@
 				<th>인원</th>
 				<th>이용 날짜</th>
 				<th>상태</th>
+				<th>신청일시</th>
+				<th>관리</th>
 			</tr>
 			</thead>
 			<tbody>
@@ -56,12 +58,20 @@
 				<td th:text="${r.representativeEmail}"></td>
 				<td th:text="${r.participantCount} + '명'"></td>
 				<td th:text="${r.startDate == r.endDate} ? ${r.startDate} : (${r.startDate} + ' ~ ' + ${r.endDate})"></td>
-				<td th:text="${r.status}"></td>
+				<td class="status-cell" th:text="${r.status}"></td>
+				<td th:text="${#temporals.format(r.createdAt, 'yy/MM/dd HH:mm')}"></td>
+				<td>
+					<button type="button" class="cancel-reservation-btn danger" th:attr="data-reservation-id=${r.reservationId}">취소</button>
+				</td>
 			</tr>
 			</tbody>
 		</table>
 	</div>
 </div>
 
+<script th:inline="javascript">
+	const PROGRAM_ID = /*[[${program.programId}]]*/ 0;
+</script>
+<script src="/js/templestay/templeProgramDetail.js"></script>
 </body>
 </html>

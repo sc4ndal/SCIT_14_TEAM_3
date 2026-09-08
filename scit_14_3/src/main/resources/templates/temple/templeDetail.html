@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title th:text="${temple.name} + ' · 사찰 커뮤니티'">사찰 상세보기 · 사찰 커뮤니티</title>
+	<!-- 카카오맵 SDK -->
+	<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=4d97c12d7e3e28e5dd08a2f00a58025d&libraries=services"></script>
+	<link rel="stylesheet" th:href="@{/css/signup.css}">
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+	<style>
+		.back-link-top { display:inline-block; margin:20px 0 0 32px; }
+		#temple-map { width:100%; height:280px; border-radius:10px; border:1px solid var(--ink-faint,#ccc); margin:16px 0; }
+
+		/* 사찰 대표 사진 - 사진이 없어도 자리는 그대로 확보해서 레이아웃이 안 흔들리게 함 */
+		.temple-photo { width:100%; height:280px; border-radius:10px; overflow:hidden; background:var(--secondary); }
+		.temple-photo img { width:100%; height:100%; object-fit:cover; display:block; }
+		.temple-photo-placeholder {
+			width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+			color:var(--text-tertiary); font-size:14px;
+		}
+
+		.info-block { margin-top:20px; }
+		.info-block h3 { font-size:14px; margin-bottom:6px; }
+		.program-card-list { display:grid; gap:12px; margin-top:10px; }
+		.program-card {
+			display:block; border:1px solid var(--line,#ddd); border-radius:10px;
+			padding:14px 16px; text-decoration:none; color:inherit;
+		}
+		.program-card:hover { border-color:var(--wood-dark,#5c4a33); }
+		.program-card strong { display:block; margin-bottom:4px; }
+		.program-card span { font-size:13px; color:var(--ink-soft,#777); }
+	</style>
+</head>
+<body>
+
+<div class="card" style="max-width:800px;">
+	<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+
+	<a class="back-link-top btn-check" th:href="@{/findtemple}">&larr; 지도로 돌아가기</a>
+
+	<div class="header">
+		<h1 th:text="${temple.name}"></h1>
+		<p th:text="${temple.address}"></p>
+	</div>
+
+	<div style="padding:0 32px 32px;">
+		<div class="temple-photo">
+			<img th:if="${temple.imageUrl}" th:src="${temple.imageUrl}" th:alt="${temple.name}">
+			<div th:unless="${temple.imageUrl}" class="temple-photo-placeholder">사진 준비중입니다</div>
+		</div>
+
+		<div class="type-pill-group" style="margin-top:16px;">
+			<span class="type-pill sea" th:if="${temple.supportSea}">바다</span>
+			<span class="type-pill mountain" th:if="${temple.supportMountain}">산</span>
+			<span class="type-pill river" th:if="${temple.supportRiver}">강</span>
+			<span class="type-pill urban" th:if="${temple.supportUrban}">도심</span>
+			<span class="type-pill english" th:if="${temple.supportEnglish}">영어 지원</span>
+		</div>
+
+		<div id="temple-map"></div>
+
+		<div class="info-block" th:if="${temple.specialNotice}">
+			<h3>유의사항</h3>
+			<p th:text="${temple.specialNotice}"></p>
+		</div>
+
+		<div class="info-block" th:if="${temple.refundPolicy}">
+			<h3>환불 규정</h3>
+			<p th:text="${temple.refundPolicy}"></p>
+		</div>
+
+		<div class="info-block">
+			<h3>이 사찰의 템플스테이 프로그램</h3>
+			<p th:if="${#lists.isEmpty(programs)}" style="color:var(--ink-soft);">등록된 프로그램이 없습니다.</p>
+			<div class="program-card-list" th:if="${!#lists.isEmpty(programs)}">
+				<a class="program-card" th:each="p : ${programs}" th:href="@{/reservation/programs/{id}(id=${p.programId})}">
+					<strong th:text="${p.title}"></strong>
+					<span th:text="${p.programType} + ' · ' + ${p.duration} + ' · ' + ${#numbers.formatInteger(p.price, 0, 'COMMA')} + '원'"></span>
+				</a>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script th:inline="javascript">
+	const TEMPLE_ID = /*[[${temple.templeId}]]*/ 0;
+	const TEMPLE_LAT = /*[[${temple.latitude}]]*/ 0;
+	const TEMPLE_LNG = /*[[${temple.longitude}]]*/ 0;
+	const TEMPLE_NAME = /*[[${temple.name}]]*/ '';
+	const TEMPLE_ADDRESS = /*[[${temple.address}]]*/ '';
+</script>
+<script src="/js/mapCommon.js"></script>
+<script src="/js/temple/templeDetail.js"></script>
+</body>
+</html>
