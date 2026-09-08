@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import net.datasa.scit_14_3.domain.entity.templestay.TempleStayReservationEntity;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * 사찰 프로그램 관리 > 상세보기 화면 전용 - 예약 한 건 + 그 예약 대표자 인적사항을 한 줄로 보여주기
@@ -25,4 +26,5 @@ public class ProgramReservationDTO {
 	private LocalDate startDate;
 	private LocalDate endDate;
 	private TempleStayReservationEntity.Status status;
+	private LocalDateTime createdAt;
 }

@@ -6,18 +6,24 @@ import net.datasa.scit_14_3.security.AppUserDetails;
 import net.datasa.scit_14_3.service.integration.CloudinaryService;
 import net.datasa.scit_14_3.service.templestay.TempleStayProgramService;
 import net.datasa.scit_14_3.service.templestay.TempleStayReservationService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.Map;
 
 /**
  * 사찰 계정(ROLE_TEMPLE) 자신이 등록한 템플스테이 프로그램을 등록/조회하는 화면.
@@ -46,6 +52,19 @@ public class TempleProgramManageController {
 		model.addAttribute("program", templeStayProgramService.getForOwner(programId, principal.getTempleId()));
 		model.addAttribute("reservations", templeStayReservationService.getByProgramId(programId));
 		return "templestay/templeProgramDetail";
+	}
+
+	/** 이 프로그램 상세보기 화면에서 예약 하나를 직접 취소 (버튼 클릭 시 AJAX로 호출됨). */
+	@PatchMapping("/{programId}/reservations/{reservationId}/cancel")
+	@ResponseBody
+	public ResponseEntity<?> cancelReservation(@AuthenticationPrincipal AppUserDetails principal,
+												@PathVariable Long reservationId) {
+		try {
+			templeStayReservationService.cancelByTempleAdmin(reservationId, principal.getTempleId());
+			return ResponseEntity.ok(Map.of("status", "취소"));
+		} catch (IllegalStateException e) {
+			return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+		}
 	}
 
 	@GetMapping("/new")

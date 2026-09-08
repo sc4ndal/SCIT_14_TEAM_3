@@ -94,6 +94,11 @@
           color: var(--text-secondary);
           margin-bottom: 7px;
         }
+        .reservation-card .meta .applied-at {
+          margin: 0 0 7px;
+          font-size: 11px;
+          color: var(--text-tertiary);
+        }
 
         .status-badge {
           display: inline-block;
@@ -288,6 +293,7 @@
                 <div class="detail-section">
                     <h4>내 예약 정보</h4>
                     <div class="detail-row"><span>예약 번호</span><span id="detail-reservation-id"></span></div>
+                    <div class="detail-row"><span>신청 일시</span><span id="detail-created-at"></span></div>
                     <div class="detail-row"><span>이용 날짜</span><span id="detail-date-range"></span></div>
                     <div class="detail-row"><span>참가 인원</span><span id="detail-participant-count"></span></div>
                     <div class="detail-row"><span>결제 금액</span><span id="detail-amount"></span></div>

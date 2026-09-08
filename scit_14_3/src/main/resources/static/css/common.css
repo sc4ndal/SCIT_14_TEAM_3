@@ -345,6 +345,7 @@ a {
 .type-pill.mountain{background:var(--green);}
 .type-pill.river{background:var(--brown);}
 .type-pill.urban{background:var(--gold);}
+.type-pill.english{background:var(--text);}
 
 /* 사찰 등록 요청 대기 알림 점 (드롭다운 메뉴 항목 옆) */
 .notice-link{display:inline-flex;align-items:center;gap:6px;}
