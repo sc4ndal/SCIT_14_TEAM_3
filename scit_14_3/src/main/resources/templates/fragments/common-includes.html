@@ -85,10 +85,13 @@
                         <!-- 닉네임에 마우스 올리면 마이페이지 드롭다운이 바로 아래로 뜸(별도 트리거 행 없앰) -->
                         <div class="mypage-menu">
                             <!-- 일반회원은 법명, 사찰계정은 사찰명 (AppUserDetails.getNickname()) -->
-                            <span class="userEntity-nickname"
-                                  th:text="${#authentication.principal.nickname}">
-                                닉네임명
-                            </span>
+                            <!-- 닉네임 클릭 시 마이페이지로 이동 (사찰/어드민 계정의 경로 오류는 의도된 사항) -->
+                            <a class="userEntity-nickname-link" th:href="@{/mypage}">
+                                <span class="userEntity-nickname"
+                                      th:text="${#authentication.principal.nickname}">
+                                    닉네임명
+                                </span>
+                            </a>
                             <!-- 사찰 등록 요청 대기 알림 - 드롭다운 열지 않아도 바로 보이도록 닉네임 우측상단에 표시 -->
                             <span class="notice-dot nickname-dot" sec:authorize="hasRole('ADMIN')"
                                   th:if="${pendingTempleRequestCount > 0}"></span>

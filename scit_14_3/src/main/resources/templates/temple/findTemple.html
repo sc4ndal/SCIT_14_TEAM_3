@@ -187,7 +187,7 @@
     flex-direction: row;
     gap: 10px;
 }
-        #result-panel {
+#result-panel {
     position: fixed;
     top: 74px;
     right: 0;
@@ -203,7 +203,15 @@
     flex-direction: column;
 
     font-family: var(--sans);
+
+    transform: translateX(0);           /* 기본: 화면 안에 위치 */
+    transition: transform .25s ease;    /* 움직일 때 부드럽게 */
 }
+
+#result-panel.collapsed {
+    transform: translateX(100%);        /* 자기 너비만큼 오른쪽으로 밀어서 화면 밖으로 */
+}
+
 #result-panel[hidden] { display: none; }
 
 #result-panel-header {
@@ -227,6 +235,44 @@
     line-height: 1;
     color: var(--text-tertiary);
     cursor: pointer;
+}
+
+#result-panel-toggle {
+    position: fixed;
+    top: 50%;
+    right: 280px;
+    transform: translateY(-50%);
+    z-index: 16;
+
+    width: 24px;
+    height: 56px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-right: none;
+    border-radius: 10px 0 0 10px;
+    box-shadow: -3px 0 12px rgba(39, 33, 27, .1);
+
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--text-tertiary);
+    cursor: pointer;
+
+    transition: right .2s ease, background .15s ease, color .15s ease;
+}
+
+#result-panel-toggle:hover {
+    background: var(--bg);
+    color: var(--brown);
+}
+
+/* 패널이 접혀있을 때(hidden)는 화면 오른쪽 끝에 딱 붙는다 */
+#result-panel-toggle.collapsed {
+    right: 0;
 }
 
 #result-list {
@@ -295,9 +341,10 @@
     </div>
 <div id="map"></div>
 </div>
-<div id="result-panel" hidden>
+<button type="button" id="result-panel-toggle">></button>
+<div id="result-panel" class="collapsed">
     <div id="result-panel-header">
-        <span id="result-panel-title">검색 결과</span>
+        <span id="result-panel-title">사찰 목록</span>
         <button type="button" id="result-panel-close">x</button>
     </div>
     <ul id="result-list"></ul>

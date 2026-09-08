@@ -1,77 +1,61 @@
 package net.datasa.scit_14_3.service.temple;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import net.datasa.scit_14_3.domain.dto.temple.TempleDTO;
+import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.entity.temple.FavoriteTempleEntity;
 import net.datasa.scit_14_3.domain.entity.temple.TempleEntity;
 import net.datasa.scit_14_3.repository.temple.FavoriteTempleRepository;
 import net.datasa.scit_14_3.repository.temple.TempleRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
-/** 사찰 즐겨찾기 - 지도 정보창의 별표, 사찰 상세보기의 즐겨찾기 버튼, 마이페이지 > 관심 사찰 목록에서 씀. */
+@Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class FavoriteTempleService {
-
 	private final FavoriteTempleRepository ftr;
-	private final TempleRepository templeRepository;
-
-	/** 비로그인이면 아무것도 즐겨찾기한 게 없는 것과 동일하게 처리 - 목록 화면에서 즐겨찾기 표시용. */
-	public Set<Long> favoritedIds(String loginId) {
-		return loginId == null ? Collections.emptySet() : ftr.findFavoritedTempleIds(loginId);
-	}
-
-	public boolean isFavorited(String loginId, Long templeId) {
-		return loginId != null && ftr.existsByLoginIdAndTemple_TempleId(loginId, templeId);
-	}
-
-	public List<TempleDTO> getFavorites(String loginId) {
-		return ftr.findByLoginId(loginId).stream()
-				.map(f -> toDto(f.getTemple()))
-				.toList();
-	}
-
-	/** 이미 즐겨찾기한 상태면 해제, 아니면 새로 등록. 반환값은 처리 후 즐겨찾기 상태(true=등록됨). */
-	@Transactional
-	public boolean toggleFavorite(String loginId, Long templeId) {
-		if (ftr.existsByLoginIdAndTemple_TempleId(loginId, templeId)) {
+	private final TempleService ts;
+	private final TempleRepository tr;
+	
+	public boolean toggleFavoriteTemple(String loginId, Long templeId) {
+		boolean alreadyFavoriteTemple = ftr.existsByLoginIdAndTemple_TempleId(loginId, templeId);
+		
+		// 즐겨찾기가 되어 있으면 취소로 변경, 즐겨찾기가 되어 있지 않으면 등록
+		if(alreadyFavoriteTemple) {
 			ftr.deleteByLoginIdAndTemple_TempleId(loginId, templeId);
 			return false;
+		} else {
+			TempleEntity TempleEntity = tr.findById(templeId).orElseThrow(()-> new EntityNotFoundException("존재하지 않는 데이터입니다."));
+			
+			FavoriteTempleEntity favoriteTempleEntity = FavoriteTempleEntity.builder()
+					.loginId(loginId)
+					.temple(TempleEntity)
+					.build();
+			ftr.save(favoriteTempleEntity);
+			return true;
 		}
-
-		TempleEntity temple = templeRepository.findById(templeId)
-				.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 사찰입니다."));
-		ftr.save(FavoriteTempleEntity.builder()
-				.loginId(loginId)
-				.temple(temple)
-				.build());
-		return true;
 	}
-
-	private TempleDTO toDto(TempleEntity entity) {
-		return TempleDTO.builder()
-				.templeId(entity.getTempleId())
-				.name(entity.getName())
-				.imageUrl(entity.getImageUrl())
-				.latitude(entity.getLatitude())
-				.longitude(entity.getLongitude())
-				.address(entity.getAddress())
-				.region(entity.getRegion())
-				.supportSea(entity.isSupportSea())
-				.supportMountain(entity.isSupportMountain())
-				.supportRiver(entity.isSupportRiver())
-				.supportUrban(entity.isSupportUrban())
-				.supportEnglish(entity.isSupportEnglish())
-				.isTemple(entity.isTemple())
-				.specialNotice(entity.getSpecialNotice())
-				.refundPolicy(entity.getRefundPolicy())
-				.favorited(true)
-				.build();
+	
+	/**
+	 * 즐겨찾기 여부(확인용)
+	 * @param loginId
+	 * @param templeId
+	 * @return ftr.existsByLoginIdAndTemple_TempleId(loginId, templeId);
+	 */
+	public boolean isFavoriteTemple(String loginId, Long templeId) {
+		return ftr.existsByLoginIdAndTemple_TempleId(loginId, templeId);
+	}
+	
+	/**
+	 * 마이페이지 즐겨찾기 목록
+	 * @param loginId
+	 * @return ftr.findByLoginId(loginId);
+	 */
+	public List<FavoriteTempleEntity> getMyFavoriteTemple(String loginId) {
+		return ftr.findByLoginId(loginId);
 	}
 }
