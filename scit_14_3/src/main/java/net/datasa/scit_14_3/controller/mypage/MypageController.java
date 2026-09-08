@@ -55,6 +55,12 @@ public class MypageController {
 	public String reviews() {
 		return "mypage/myReviews";
 	}
+
+	// 예약목록의 "리뷰 작성" 버튼에서 연결 - 실제 데이터 조회/검증은 reviewWrite.js가 REST API로 처리
+	@GetMapping("/mypage/reviews/write")
+	public String reviewWrite() {
+		return "mypage/reviewWrite";
+	}
 	
 	@GetMapping("/mypage/favorites/temples")
 	public String favoriteTemples() {

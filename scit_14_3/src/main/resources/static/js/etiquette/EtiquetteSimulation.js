@@ -22,7 +22,7 @@
 const SCENES = {
 
     prologue: {
-        type: 'story', bg: '집',
+        type: 'story', bg: '집', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B0%A9.png',
         lines: [
             '오랜만에 마음이 복잡했다.',
             '누가 그러던데, 이럴 땐 절에 가서 마음을 좀 가라앉히고 오는 것도 나쁘지 않다고.',
@@ -32,7 +32,7 @@ const SCENES = {
     },
 
     scene01: {
-        type: 'choice', bg: '집 · 옷장 앞', judged: true,
+        type: 'choice', bg: '집 · 옷장 앞', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B0%A9.png', judged: true,
         resultId: { no: '01', title: '사찰 방문 준비' },
         lines: ['그러고 보니 절에 갈 때는 뭘 입어야 하지? 그냥 평소처럼 입고 가도 되나......?'],
         choices: [
@@ -44,7 +44,7 @@ const SCENES = {
     },
 
     scene02: {
-        type: 'story', bg: '사찰 입구 → 경내',
+        type: 'story', bg: '사찰 입구 → 경내', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844159/%EB%B6%88%EC%84%A0%EC%82%AC_%EC%95%9E.png',
         lines: [
             '얼마 후, 사찰에 도착했다. 생각했던 것보다 조용했다.',
             '바깥에서 들리던 소리도 어느새 멀어지고, 가끔 바람에 나뭇잎이 흔들리는 소리만 들려왔다.',
@@ -54,7 +54,7 @@ const SCENES = {
     },
 
     scene03: {
-        type: 'choice', bg: '법당 정면 (문 3개)', judged: true,
+        type: 'choice', bg: '법당 정면 (문 3개)', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B2%95%EB%8B%B9%EC%A0%95%EB%A9%B4.png',judged: true,
         resultId: { no: '02', title: '법당 출입' },
         lines: [
             '경내를 둘러보다 법당 앞에 도착했다. 막상 들어가려니 문이 하나가 아니었다.',
@@ -69,7 +69,7 @@ const SCENES = {
     },
 
     scene04: {
-        type: 'choice', bg: '법당 내부 · 불상', judged: true,
+        type: 'choice', bg: '법당 내부 · 불상', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B2%95%EB%8B%B9_%EB%82%B4%EB%B6%80.png',judged: true,
         resultId: { no: '03', title: '법당에서의 인사' },
         lines: [
             '법당 안으로 들어서자 분위기가 한층 더 조용해졌다. 정면에는 불상이 모셔져 있었고,',
@@ -84,7 +84,7 @@ const SCENES = {
     },
 
     scene05: {
-        type: 'choice', bg: '법당 내부 · 초와 향', judged: true,
+        type: 'choice', bg: '법당 내부 · 초와 향', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844159/%EC%B4%88_%ED%96%A5%EB%A1%9C.png',judged: true,
         resultId: { no: '04', title: '초와 향' },
         lines: [
             '인사를 마치고 주변을 둘러보던 중, 한쪽에 놓인 초와 향이 눈에 들어왔다.',
@@ -99,7 +99,7 @@ const SCENES = {
     },
 
     scene06: {
-        type: 'choice', bg: '법당 내부 · 불상 앞', judged: true,
+        type: 'choice', bg: '법당 내부 · 불상 앞', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B2%95%EB%8B%B9_%EB%82%B4%EB%B6%80.png',judged: true,
         resultId: { no: '05', title: '참배하기' },
         lines: [
             '초와 향이 놓인 곳을 지나 불상 앞쪽으로 향했다. 주변에서는 사람들이 조용히 절을 올리고 있었다.',
@@ -114,7 +114,7 @@ const SCENES = {
     },
 
     scene07: {
-        type: 'choice', bg: '법당 내부 · 다른 참배객', judged: true,
+        type: 'choice', bg: '법당 내부 · 다른 참배객', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B2%95%EB%8B%B9_%EB%82%B4%EB%B6%80.png',judged: true,
         resultId: { no: '06', title: '다른 참배객 배려하기' },
         lines: [
             '참배를 마치고 자리에서 일어났다. 이제 밖으로 나가려던 순간,',
@@ -127,7 +127,7 @@ const SCENES = {
     },
 
     scene08: {
-        type: 'choice', bg: '사찰 경내 · 스님과 마주침', judged: true,
+        type: 'choice', bg: '사찰 경내 · 스님과 마주침', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788856122/%EC%8A%A4%EB%8B%98%EB%93%B1%EC%9E%A5.png',judged: true,
         resultId: { no: '07', title: '스님께 인사하기' },
         lines: [
             '법당을 나와 경내를 천천히 걸었다. 처음 들어올 때보다는 조금 긴장이 풀린 것 같았다.',
@@ -142,7 +142,7 @@ const SCENES = {
     },
 
     scene09: {
-        type: 'choice', bg: '사찰 공양간', judged: true,
+        type: 'choice', bg: '사찰 공양간', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EA%B3%B5%EC%96%91%EA%B0%84.png',judged: true,
         resultId: { no: '08', title: '공양하기' },
         lines: [
             '경내를 둘러보다 보니 어느새 시간이 꽤 흘렀다. 마침 공양 시간이 되어 공양간으로 향했다.',
@@ -156,7 +156,7 @@ const SCENES = {
     },
 
     scene10: {
-        type: 'story', bg: '사찰 경내 · 노을',
+        type: 'story', bg: '사찰 경내 · 노을', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844159/%EA%B2%BD%EB%82%B4_%EB%82%AE.png',
         lines: [
             '공양을 마치고 밖으로 나오니 어느새 시간이 꽤 지나 있었다.',
             '처음 들어왔을 때보다 경내가 조금 익숙하게 느껴졌다.',
@@ -167,7 +167,7 @@ const SCENES = {
     },
 
     hidden1: {
-        type: 'choice', bg: '사찰 경내 · 마루 밑 고양이',
+        type: 'choice', bg: '사찰 경내 · 마루 밑 고양이', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788856120/%EB%A7%88%EB%A3%A8%EB%B0%91%EA%B3%A0%EC%96%91%EC%9D%B4.png',
         lines: [
             '공양을 마치고 밖으로 나왔다. 슬슬 돌아갈까 생각하며 입구 쪽으로 걷던 중—',
             '고양이: 야옹.',
@@ -181,7 +181,7 @@ const SCENES = {
     },
 
     hidden2: {
-        type: 'choice', bg: '사찰 경내 · 앞장서는 고양이',
+        type: 'choice', bg: '사찰 경내 · 앞장서는 고양이', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788856122/%EC%84%B9%EC%8B%9C%ED%95%9C%EC%82%BC%EC%83%89%EC%9D%B4%EB%92%B7%ED%83%9C.png',
         lines: [
             '고양이가 슬금슬금 다가오더니, 몇 걸음 앞장서 걷기 시작했다.',
             '몇 걸음 걷다 멈춰서 뒤돌아보길 반복한다. 나: ......따라오라는 건가?'
@@ -194,7 +194,7 @@ const SCENES = {
     },
 
     hidden3: {
-        type: 'story', bg: '인적 드문 나무 아래',
+        type: 'story', bg: '인적 드문 나무 아래', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844159/%ED%9E%88%EB%93%A0%EA%B3%A0%EC%96%91%EC%9D%B4.png',
         lines: [
             '고양이를 따라 조용한 나무 아래로 이동했다. 고양이가 그 자리에 눕고, 나도 옆에 조용히 앉았다.',
             '처음 사찰에 오기로 했을 때는 머릿속이 온통 복잡한 생각뿐이었다.',
@@ -303,6 +303,16 @@ function startGame() {
 function renderScene() {
     const scene = SCENES[state.currentSceneId];
     el('bg-label').textContent = 'BG: ' + scene.bg;
+    // 2026-09-03: bgImage가 있는 씬은 실제 이미지를 배경으로 깔고 라벨은 숨김(has-image 클래스로 CSS에서 처리).
+    // 없는 씬은 기존처럼 배경 없이 "BG: 이름" 텍스트 라벨만 보임 — 그림이 채워질 때마다 한 씬씩 자연스럽게 전환됨.
+    const bgLayer = el('bg-layer');
+    if (scene.bgImage) {
+        bgLayer.style.backgroundImage = "url('" + scene.bgImage + "')";
+        bgLayer.classList.add('has-image');
+    } else {
+        bgLayer.style.backgroundImage = '';
+        bgLayer.classList.remove('has-image');
+    }
     el('story-text').textContent = scene.lines[state.lineIndex];
 
     const isLastLine = state.lineIndex === scene.lines.length - 1;

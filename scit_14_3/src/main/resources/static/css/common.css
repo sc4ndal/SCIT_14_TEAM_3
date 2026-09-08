@@ -179,6 +179,15 @@ a {
     gap: 10px;
 }
 
+.userEntity-nickname-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.userEntity-nickname-link:hover {
+    color: inherit;
+}
+
 .userEntity-nickname {
     font-size: 12px;
     font-weight: 500;
