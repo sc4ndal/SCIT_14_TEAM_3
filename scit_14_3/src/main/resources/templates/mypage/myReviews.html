@@ -6,10 +6,118 @@
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <link rel="stylesheet" th:href="@{/css/common.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}" type="text/css">
     <title>내가 쓴 리뷰 · 佛선자</title>
+    <style>
+        .page-title {
+          margin: 0 0 20px;
+          font-family: var(--serif);
+          font-weight: 500;
+          font-size: 21px;
+          color: var(--text-primary);
+        }
+        #review-list-section h2 {
+          font-family: var(--serif);
+          font-weight: 500;
+          font-size: 15px;
+          margin: 4px 0 16px;
+          color: var(--text-secondary);
+        }
+
+        .review-item-card {
+          background: var(--paper);
+          border: 1px solid var(--line);
+          border-radius: 8px;
+          padding: 20px 22px;
+          margin-bottom: 12px;
+        }
+        .review-item-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: baseline;
+          gap: 12px;
+        }
+        .review-item-header h3 {
+          margin: 0;
+          font-family: var(--serif);
+          font-weight: 500;
+          font-size: 15.5px;
+          color: var(--text-primary);
+        }
+        .review-item-rating {
+          flex-shrink: 0;
+          color: var(--gold);
+          font-size: 14px;
+          letter-spacing: 1px;
+        }
+        .review-item-meta {
+          margin: 4px 0 12px;
+          font-size: 12.5px;
+          color: var(--text-tertiary);
+        }
+        .review-item-content {
+          margin: 0;
+          font-size: 13.5px;
+          line-height: 1.6;
+          color: var(--text-primary);
+          white-space: pre-line;
+        }
+        .review-item-images {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-top: 14px;
+        }
+        .review-item-images img {
+          width: 84px;
+          height: 84px;
+          object-fit: cover;
+          border-radius: 6px;
+          border: 1px solid var(--line);
+        }
+
+        .review-item-actions {
+          display: flex;
+          gap: 8px;
+          margin-top: 16px;
+        }
+        .review-item-edit-btn,
+        .review-item-delete-btn {
+          padding: 7px 16px;
+          border-radius: 999px;
+          font-family: var(--sans);
+          font-size: 12.5px;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .review-item-edit-btn {
+          background: var(--paper);
+          border: 1px solid var(--blue);
+          color: var(--blue);
+        }
+        .review-item-edit-btn:hover { background: rgba(107, 122, 158, .08); }
+        .review-item-delete-btn {
+          background: var(--paper);
+          border: 1px solid var(--destructive);
+          color: var(--destructive);
+        }
+        .review-item-delete-btn:hover { background: rgba(192, 57, 43, .06); }
+
+        .empty-msg {
+          text-align: center;
+          color: var(--text-tertiary);
+          padding: 40px 0;
+          font-size: 13.5px;
+        }
+    </style>
 </head>
 
 <body>
+
+<div id="auth-info" style="display:none;"
+     sec:authorize="isAuthenticated()"
+     th:attr="data-login-id=${#authentication.principal.username}">
+</div>
 
 <header>
     <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
@@ -17,11 +125,17 @@
 
 <main class="mypage-main">
     <div class="mypage-inner">
-        <!-- 내가 쓴 리뷰 내용 영역 -->
+        <h1 class="page-title">내가 쓴 리뷰</h1>
+
+        <section id="review-list-section">
+            <h2>리뷰 내역 (<span id="review-count-label">0</span>건)</h2>
+            <div id="review-list"></div>
+        </section>
     </div>
 </main>
 
 <div th:replace="~{fragments/layout :: footer}"></div>
 
+<script src="/js/mypage/myReviews.js"></script>
 </body>
 </html>

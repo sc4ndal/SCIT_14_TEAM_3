@@ -159,7 +159,76 @@
       cancelBtn.disabled = false;
       cancelNote.textContent = '';
     }
+
+    // 리뷰 작성/수정/삭제 버튼: 이용완료 상태에서만 노출. 이미 작성한 리뷰가 있으면
+    // "리뷰 작성" 대신 "리뷰 수정"+"리뷰 삭제"로 바뀐다.
+    updateReviewButtons(r);
   }
+
+  async function updateReviewButtons(r) {
+    const reviewBtnRow = document.getElementById('review-btn-row');
+    const reviewBtn = document.getElementById('review-btn');
+    const deleteBtn = document.getElementById('review-delete-btn');
+
+    // 리뷰 존재 여부를 먼저 확인한 뒤에 버튼을 한 번에 보여준다 - 미리 "리뷰 작성"으로 켜뒀다가
+    // 확인 끝나고 "리뷰 수정"으로 바뀌면 그 사이에 잘못 클릭할 수 있어서, 결과 나오기 전엔 숨겨둠.
+    reviewBtnRow.style.display = 'none';
+
+    if (r.status !== '이용완료') {
+      return;
+    }
+
+    let review = null;
+    try {
+      const res = await fetch(`/reviews/reservation/${r.reservationId}`);
+      if (res.ok) {
+        review = await res.json();
+      }
+    } catch (err) {
+      console.error('리뷰 작성 여부를 확인하지 못했습니다.', err);
+    }
+
+    // 그 사이에 다른 예약 상세로 넘어갔으면(빠르게 다른 카드 클릭 등) 지금 결과를 반영하면 안 됨
+    if (selectedReservationId !== r.reservationId) {
+      return;
+    }
+
+    if (review) {
+      reviewBtn.textContent = '리뷰 수정';
+      reviewBtn.href = `/mypage/reviews/write?reservationId=${r.reservationId}&reviewId=${review.reviewId}`;
+      deleteBtn.style.display = 'block';
+      deleteBtn.dataset.reviewId = review.reviewId;
+    } else {
+      reviewBtn.textContent = '리뷰 작성';
+      reviewBtn.href = `/mypage/reviews/write?reservationId=${r.reservationId}`;
+      deleteBtn.style.display = 'none';
+      delete deleteBtn.dataset.reviewId;
+    }
+
+    reviewBtnRow.style.display = 'flex';
+  }
+
+  document.getElementById('review-delete-btn').addEventListener('click', async () => {
+    const reviewId = document.getElementById('review-delete-btn').dataset.reviewId;
+    if (!reviewId) return;
+
+    const ok = confirm('작성한 리뷰를 삭제하시겠습니까?');
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`/reviews/${reviewId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        alert(err && err.message ? err.message : '리뷰 삭제 중 오류가 발생했습니다.');
+        return;
+      }
+      alert('리뷰가 삭제되었습니다.');
+      showDetail(selectedReservationId);
+    } catch (err) {
+      console.error('리뷰 삭제 중 오류가 발생했습니다.', err);
+      alert('리뷰 삭제 중 오류가 발생했습니다.');
+    }
+  });
 
   document.querySelectorAll('#status-filter button').forEach(btn => {
     btn.addEventListener('click', () => {

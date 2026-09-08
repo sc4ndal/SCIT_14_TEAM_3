@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <link rel="stylesheet" th:href="@{/css/common.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}" type="text/css">
+    <title>리뷰 작성 · 佛선자</title>
+    <style>
+        .page-title {
+          margin: 0 0 20px;
+          font-family: var(--serif);
+          font-weight: 500;
+          font-size: 21px;
+          color: var(--text-primary);
+        }
+
+        .review-card {
+          max-width: 640px;
+          margin: 0 auto;
+          background: var(--paper);
+          border: 1px solid var(--line);
+          border-radius: 10px;
+          overflow: hidden;
+        }
+        .review-hero { background: var(--secondary); padding: 26px 24px; }
+        .review-hero h2 {
+          margin: 0 0 6px;
+          font-family: var(--serif);
+          font-weight: 500;
+          font-size: 19px;
+          color: var(--text-primary);
+        }
+        .review-hero p { margin: 0; font-size: 12.5px; color: var(--text-secondary); }
+
+        .review-section { padding: 24px; border-top: 1px solid var(--line); }
+        .review-section h4 {
+          margin: 0 0 12px;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: .02em;
+          color: var(--text-tertiary);
+        }
+
+        .rating-stars { display: flex; gap: 6px; font-size: 30px; margin-bottom: 26px; }
+        .rating-stars button {
+          background: none;
+          border: none;
+          padding: 0;
+          line-height: 1;
+          cursor: pointer;
+          color: var(--line);
+          transition: color 0.1s ease;
+        }
+        .rating-stars button.filled { color: var(--gold); }
+
+        .review-textarea {
+          width: 100%;
+          min-height: 160px;
+          padding: 14px;
+          border: 1px solid var(--line);
+          border-radius: 6px;
+          font-family: var(--sans);
+          font-size: 14px;
+          color: var(--text-primary);
+          resize: vertical;
+        }
+        .review-textarea:focus { outline: none; border-color: var(--blue); }
+
+        .image-upload-note {
+          margin: 20px 0 10px;
+          font-size: 11.5px;
+          color: var(--text-tertiary);
+        }
+        .image-upload-input { font-size: 13px; }
+        .image-preview-list {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 14px;
+        }
+        .image-preview-item {
+          position: relative;
+          width: 84px;
+          height: 84px;
+          border-radius: 6px;
+          overflow: hidden;
+          border: 1px solid var(--line);
+        }
+        .image-preview-item img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+        .image-preview-item button {
+          position: absolute;
+          top: 2px;
+          right: 2px;
+          width: 18px;
+          height: 18px;
+          border: none;
+          border-radius: 50%;
+          background: rgba(39, 33, 27, .65);
+          color: #fff;
+          font-size: 11px;
+          line-height: 1;
+          cursor: pointer;
+        }
+
+        .review-actions { display: flex; gap: 10px; padding: 0 24px 28px; }
+        .review-back-btn,
+        .review-submit-btn {
+          flex: 1;
+          padding: 13px;
+          border-radius: 6px;
+          font-family: var(--sans);
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .review-back-btn {
+          background: var(--paper);
+          border: 1px solid var(--line);
+          color: var(--text-primary);
+        }
+        .review-back-btn:hover { border-color: rgba(39, 33, 27, 0.25); background: var(--secondary); }
+        .review-submit-btn {
+          background: var(--blue);
+          border: 1px solid var(--blue);
+          color: #fff;
+        }
+        .review-submit-btn:hover { opacity: .88; }
+        .review-submit-btn:disabled {
+          background: var(--muted-bg);
+          border-color: var(--line);
+          color: var(--text-muted);
+          cursor: not-allowed;
+          opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+<div id="auth-info" style="display:none;"
+     sec:authorize="isAuthenticated()"
+     th:attr="data-login-id=${#authentication.principal.username}">
+</div>
+
+<header>
+    <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+</header>
+
+<main class="mypage-main">
+    <div class="mypage-inner">
+        <h1 class="page-title" id="page-heading">리뷰 작성</h1>
+
+        <div class="review-card">
+            <div class="review-hero">
+                <h2 id="review-program-title">-</h2>
+                <p id="review-program-meta"></p>
+            </div>
+
+            <div class="review-section">
+                <h4>평점</h4>
+                <div class="rating-stars" id="rating-stars">
+                    <button type="button" data-value="1">★</button>
+                    <button type="button" data-value="2">★</button>
+                    <button type="button" data-value="3">★</button>
+                    <button type="button" data-value="4">★</button>
+                    <button type="button" data-value="5">★</button>
+                </div>
+
+                <h4>리뷰 내용</h4>
+                <textarea class="review-textarea" id="review-content"
+                          placeholder="템플스테이는 어떠셨나요? 다른 분들에게 도움이 될 후기를 남겨주세요."></textarea>
+
+                <div id="image-upload-fields">
+                    <h4 style="margin-top:24px;">사진 첨부 (선택)</h4>
+                    <input class="image-upload-input" id="review-images" type="file"
+                           accept="image/*" multiple>
+                    <p class="image-upload-note">
+                        사진 1장당 최대 10MB, 최대 5장까지만 첨부할 수 있습니다.
+                    </p>
+                </div>
+                <!-- 작성 중인/기존 첨부 사진 미리보기 - 수정 모드에서도 각 사진의 × 버튼으로 삭제 가능 -->
+                <div class="image-preview-list" id="image-preview-list"></div>
+            </div>
+
+            <div class="review-actions">
+                <button class="review-back-btn" type="button" onclick="location.href='/mypage/reservations'">취소</button>
+                <button class="review-submit-btn" id="review-submit-btn" type="button">리뷰 등록</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="/js/mypage/reviewWrite.js"></script>
+</body>
+</html>
