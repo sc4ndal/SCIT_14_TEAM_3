@@ -9,6 +9,17 @@
     실제로 컨트롤러 만들면 그 URL로만 바꿔주면 됨.
 */
  
+// 서버가 내려주는 신청일시("2026-09-07T14:47:03...") -> "26/09/07 14:47" 로 표시
+function formatAppliedAt(iso) {
+  if (!iso) return '-';
+  const yy = iso.slice(2, 4);
+  const mm = iso.slice(5, 7);
+  const dd = iso.slice(8, 10);
+  const hh = iso.slice(11, 13);
+  const mi = iso.slice(14, 16);
+  return `${yy}/${mm}/${dd} ${hh}:${mi}`;
+}
+
 // ------------------------- API 엔드포인트 -------------------------
   const authInfo = document.getElementById('auth-info');
   const isLoggedIn = !!authInfo;
@@ -594,7 +605,11 @@ async function submitReservation() {
 
     const payment = await payRes.json();
 
-    state.reservationResult = { reservation, payment, program: p };
+    // 방금 만든 예약은 신청일시(created_at)가 DB가 채워주는 값이라 응답에 아직 안 실려있음 -
+    // 다시 조회해서 실제 신청일시가 담긴 예약 정보로 바꿔치기함.
+    const freshReservation = await fetch(`/templestayreservations/${reservation.reservationId}`).then(r => r.json());
+
+    state.reservationResult = { reservation: freshReservation, payment, program: p };
     goToStep(3);      // 지도 컨테이너가 hidden 상태에서 생성되면 크기가 0으로 잡혀 마커 위치가 어긋나므로 먼저 보이게 함
     await renderStep3();
   } catch (err) {
@@ -620,6 +635,7 @@ async function renderStep3() {
   }
 
   document.getElementById('result-reservation-id').textContent = `예약번호 ${reservation.reservationId}`;
+  document.getElementById('result-applied-at').textContent = formatAppliedAt(reservation.createdAt);
   document.getElementById('result-program-title').textContent = program.title || '';
   document.getElementById('result-temple-name').textContent = `${program.templeName || ''} · ${program.region || ''}`;
   document.getElementById('result-date-range').textContent =

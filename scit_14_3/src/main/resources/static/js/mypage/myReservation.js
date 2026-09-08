@@ -11,6 +11,17 @@
    // ------------------------- 실제 예약 목록 -------------------------
    let RESERVATIONS = [];
 
+   // 서버가 내려주는 신청일시("2026-09-07T14:47:03...") -> "26/09/07 14:47" 로 표시
+   function formatAppliedAt(iso) {
+     if (!iso) return '-';
+     const yy = iso.slice(2, 4);
+     const mm = iso.slice(5, 7);
+     const dd = iso.slice(8, 10);
+     const hh = iso.slice(11, 13);
+     const mi = iso.slice(14, 16);
+     return `${yy}/${mm}/${dd} ${hh}:${mi}`;
+   }
+
    async function loadMyReservations() {
      try {
        // 예약 목록 + 사찰 목록 + 프로그램 목록을 동시에 요청 (서로 기다릴 필요 없으니 Promise.all)
@@ -53,6 +64,7 @@
            startDate: r.startDate,
            endDate: r.endDate,
            participantCount: r.participantCount,
+           createdAt: r.createdAt,
            amount: payment ? payment.amount : null,
            paymentMethod: payment ? payment.paymentMethod : null,
            program: {
@@ -99,6 +111,7 @@
           <p>${r.program.templeName} · ${r.program.region}</p>
         </div>
         <div class="meta">
+          <p class="applied-at">신청 ${formatAppliedAt(r.createdAt)}</p>
           <div class="date">${r.startDate}${r.startDate !== r.endDate ? ' ~ ' + r.endDate : ''}</div>
           <span class="status-badge status-${r.status}">${r.status}</span>
         </div>
@@ -129,6 +142,7 @@
     document.getElementById('detail-description').textContent = r.program.description;
 
     document.getElementById('detail-reservation-id').textContent = `#${r.reservationId}`;
+    document.getElementById('detail-created-at').textContent = formatAppliedAt(r.createdAt);
     document.getElementById('detail-date-range').textContent =
       r.startDate === r.endDate ? `${r.startDate} (당일)` : `${r.startDate} ~ ${r.endDate}`;
     document.getElementById('detail-participant-count').textContent = `${r.participantCount}명`;
