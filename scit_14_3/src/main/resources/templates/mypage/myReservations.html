@@ -210,6 +210,35 @@
         .detail-row span:last-child { color: var(--text-primary); font-weight: 500; }
 
         .cancel-area { padding: 20px 24px 28px; }
+        .review-btn-row {
+          display: none;
+          gap: 10px;
+          margin-bottom: 10px;
+        }
+        .review-btn,
+        .review-delete-btn {
+          flex: 1;
+          padding: 13px;
+          border-radius: 6px;
+          font-family: var(--sans);
+          font-size: 14px;
+          font-weight: 600;
+          text-align: center;
+          cursor: pointer;
+        }
+        .review-btn {
+          background: var(--paper);
+          border: 1px solid var(--blue);
+          color: var(--blue);
+        }
+        .review-btn:hover { background: rgba(107, 122, 158, .08); }
+        .review-delete-btn {
+          display: none;
+          background: var(--paper);
+          border: 1px solid var(--destructive);
+          color: var(--destructive);
+        }
+        .review-delete-btn:hover { background: rgba(192, 57, 43, .06); }
         .cancel-btn {
           width: 100%;
           padding: 13px;
@@ -295,6 +324,12 @@
                 </div>
 
                 <div class="cancel-area">
+                    <!-- 이용완료 상태일 때만 노출. 리뷰 미작성이면 "리뷰 작성", 이미 작성했으면
+                         "리뷰 수정"/"리뷰 삭제"로 바뀜 (myReservation.js updateReviewButtons 참고) -->
+                    <div class="review-btn-row" id="review-btn-row">
+                        <a class="review-btn" id="review-btn" href="#">리뷰 작성</a>
+                        <button class="review-delete-btn" id="review-delete-btn" type="button">리뷰 삭제</button>
+                    </div>
                     <button class="cancel-btn" id="cancel-btn">예약 취소</button>
                     <p class="cancel-note" id="cancel-note"></p>
                 </div>
