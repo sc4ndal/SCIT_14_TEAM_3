@@ -9,6 +9,7 @@ import net.datasa.scit_14_3.service.buddhism.DailyQuoteService;
 import net.datasa.scit_14_3.service.buddhism.TempleFoodService;
 import net.datasa.scit_14_3.service.mypage.MypageService;
 import net.datasa.scit_14_3.service.integration.CloudinaryService;
+import net.datasa.scit_14_3.service.temple.FavoriteTempleService;
 import net.datasa.scit_14_3.service.temple.TempleService;
 import net.datasa.scit_14_3.service.user.EmailVerificationService;
 import net.datasa.scit_14_3.service.user.UserService;
@@ -35,6 +36,9 @@ public class MypageController {
 	private final TempleService templeService;
 	private final MypageService mypageService;
 	private final CloudinaryService cloudinaryService;
+	private final UserService userService;
+	private final EmailVerificationService emailVerificationService;
+	private final FavoriteTempleService favoriteTempleService;
 
 	@PreAuthorize("hasRole('USER')")
 	@GetMapping("/mypage")
@@ -57,7 +61,8 @@ public class MypageController {
 	}
 	
 	@GetMapping("/mypage/favorites/temples")
-	public String favoriteTemples() {
+	public String favoriteTemples(@AuthenticationPrincipal AppUserDetails principal, Model model) {
+		model.addAttribute("temples", favoriteTempleService.getFavorites(principal.getUsername()));
 		return "mypage/favorites/temples";
 	}
 	
@@ -81,6 +86,29 @@ public class MypageController {
 		return "mypage/favorites/reviews";
 	}
 	
+	/** 회원정보수정 들어가기 전 본인 확인 - 비밀번호를 다시 입력받음. */
+	@GetMapping("/mypage/edit/verify")
+	public String editVerifyForm(@AuthenticationPrincipal AppUserDetails principal, Model model) {
+		model.addAttribute("nickname", principal.getNickname());
+		return "mypage/verifyPassword";
+	}
+
+	@PostMapping("/mypage/edit/verify")
+	public String editVerify(@AuthenticationPrincipal AppUserDetails principal,
+							  @RequestParam String password,
+							  Model model) {
+		boolean ok = principal.isTempleAccount()
+				? templeService.verifyPassword(principal.getTempleId(), password)
+				: userService.verifyPassword(principal.getUsername(), password);
+
+		if (!ok) {
+			model.addAttribute("nickname", principal.getNickname());
+			model.addAttribute("verifyError", "비밀번호가 일치하지 않습니다.");
+			return "mypage/verifyPassword";
+		}
+		return "redirect:/mypage/edit";
+	}
+
 	@GetMapping("/mypage/edit")
 	public String editForm(@AuthenticationPrincipal AppUserDetails principal, Model model) {
 
@@ -95,6 +123,26 @@ public class MypageController {
 		model.addAttribute("user", user);
 		model.addAttribute("loginType", user.getLoginType());     // "LOCAL" | "KAKAO"
 		return "mypage/userEdit";
+	}
+
+	/** 일반회원 마이페이지(회원정보수정) 저장. 이메일을 실제로 바꾸는 경우에만 서버가 세션에서
+	    직접 인증 여부를 확인함(클라이언트 값은 안 믿음 - registerLocal과 같은 원칙). */
+	@PostMapping("/mypage/user-info")
+	public String updateUserInfo(@AuthenticationPrincipal AppUserDetails principal,
+								  @RequestParam String nickname,
+								  @RequestParam(required = false) String phone,
+								  @RequestParam String email,
+								  @RequestParam(required = false) String newPassword,
+								  HttpSession session,
+								  RedirectAttributes redirectAttributes) {
+		try {
+			boolean emailVerified = emailVerificationService.isVerified(email, session);
+			userService.updateOwnProfile(principal.getUsername(), nickname, phone, email, newPassword, emailVerified);
+			redirectAttributes.addFlashAttribute("profileUpdateSuccess", true);
+		} catch (IllegalStateException e) {
+			redirectAttributes.addFlashAttribute("profileUpdateError", e.getMessage());
+		}
+		return "redirect:/mypage/edit";
 	}
 
 	/** 사찰 계정 본인이 직접 수정 가능한 값들만 - 이름/주소/위치/지역/장소유형처럼 잘못 넣으면

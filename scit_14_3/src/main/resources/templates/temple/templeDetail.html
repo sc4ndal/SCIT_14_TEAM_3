@@ -30,6 +30,13 @@
 		.program-card:hover { border-color:var(--wood-dark,#5c4a33); }
 		.program-card strong { display:block; margin-bottom:4px; }
 		.program-card span { font-size:13px; color:var(--ink-soft,#777); }
+
+		#favorite-btn {
+			border:none; background:none; cursor:pointer;
+			font-size:0.7em; line-height:1; vertical-align:middle;
+			color:#ccc; padding:0 0 0 8px;
+		}
+		#favorite-btn.active { color:#f4c25c; }
 	</style>
 </head>
 <body>
@@ -40,7 +47,10 @@
 	<a class="back-link-top btn-check" th:href="@{/findtemple}">&larr; 지도로 돌아가기</a>
 
 	<div class="header">
-		<h1 th:text="${temple.name}"></h1>
+		<h1>
+			<span th:text="${temple.name}"></span>
+			<button type="button" id="favorite-btn" th:classappend="${favorited} ? ' active'" title="즐겨찾기">★</button>
+		</h1>
 		<p th:text="${temple.address}"></p>
 	</div>
 

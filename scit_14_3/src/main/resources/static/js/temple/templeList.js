@@ -57,7 +57,8 @@ kakao.maps.load(function () {
                     name: temple.name,
                     address: temple.address,
                     // imageUrl이 없으면(null) 기본 마커 이미지로 대체
-                    iconUrl: temple.imageUrl || '/images/temple-marker.svg'
+                    iconUrl: temple.imageUrl || '/images/temple-marker.svg',
+                    favorited: temple.favorited
                 });
 
                 markerByTempleId[temple.templeId] = marker;
@@ -178,6 +179,14 @@ kakao.maps.load(function () {
             applyFilters();
         });
     });
+
+    // 즐겨찾기 필터 - 켜져있으면 내가 즐겨찾기한 사찰만 지도에 남긴다
+    var favoriteFilterBtn = document.getElementById('filter-favorite');
+    favoriteFilterBtn.addEventListener('click', function () {
+        favoriteFilterBtn.classList.toggle('active');
+        applyFilters();
+    });
+
     function applyFilters() {
         var activeTypeFields = [];
         document.querySelectorAll('#temple-filter-box button.active').forEach(function (btn){
@@ -188,18 +197,28 @@ kakao.maps.load(function () {
         });
 
         var englishRequired = document.getElementById('filter-support-english').classList.contains('active');
+        var favoriteRequired = favoriteFilterBtn.classList.contains('active');
 
         templeList.forEach(function (temple){
             var matchType = activeTypeFields.every(function (field) {
                 return temple[field];
             });
             var matchEnglish = !englishRequired || temple.supportEnglish;
+            var matchFavorite = !favoriteRequired || temple.favorited;
 
-            var match = matchType && matchEnglish;
+            var match = matchType && matchEnglish && matchFavorite;
 
             var marker = markerByTempleId[temple.templeId];
             if(marker) { marker.setMap(match ? map : null);}
 
         });
     }
+
+    // 지도 정보창의 즐겨찾기 별을 눌렀을 때(map-common.js) 여기 templeList 데이터도 같이 갱신하고,
+    // 즐겨찾기 필터가 켜져있으면 방금 해제한 사찰이 바로 지도에서 사라지도록 다시 필터를 적용함.
+    window.onTempleFavoriteToggled = function (templeId, favorited) {
+        var temple = templeList.find(function (t) { return t.templeId === templeId; });
+        if (temple) temple.favorited = favorited;
+        applyFilters();
+    };
 });

@@ -30,4 +30,5 @@ public class TempleDTO {
 	private String loginId;
 	private String password;
 	private boolean mustChangePassword;
+	private boolean favorited; // 로그인한 회원이 이 사찰을 즐겨찾기 했는지 - 목록 조회 시에만 채워짐(TempleService는 안 채움)
 }

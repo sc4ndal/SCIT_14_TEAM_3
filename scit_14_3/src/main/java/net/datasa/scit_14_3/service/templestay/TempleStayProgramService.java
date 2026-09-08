@@ -15,6 +15,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -25,7 +27,7 @@ public class TempleStayProgramService {
 	private final TempleRepository templeRepository;
 	private final TempleStayReservationRepository tsrr;
 
-	private TempleStayProgramDTO toDto(TempleStayProgramEntity entity) {
+	private TempleStayProgramDTO toDto(TempleStayProgramEntity entity, int reservedCount) {
 		return TempleStayProgramDTO.builder()
 				.programId(entity.getProgramId())
 				.templeId(entity.getTemple().getTempleId()) // entity.getTemple()로 한 번 거쳐서 ID 꺼냄
@@ -44,12 +46,29 @@ public class TempleStayProgramService {
 				.openStartDate(entity.getOpenStartDate())
 				.openEndDate(entity.getOpenEndDate())
 				.maxParticipant(entity.getMaxParticipant())
-				.reservedCount(tsrr.sumActiveParticipantCount(entity.getProgramId(), TempleStayReservationEntity.Status.취소))
+				.reservedCount(reservedCount)
 				.supportEnglish(entity.isSupportEnglish())
 				.latitude(entity.getTemple().getLatitude())
 				.longitude(entity.getTemple().getLongitude())
 				.createdAt(entity.getCreatedAt())
 				.build();
+	}
+
+	private TempleStayProgramDTO toDto(TempleStayProgramEntity entity) {
+		int reservedCount = tsrr.sumActiveParticipantCount(entity.getProgramId(), TempleStayReservationEntity.Status.취소);
+		return toDto(entity, reservedCount);
+	}
+
+	// 목록 조회(getAll/getByTemple)에서 프로그램마다 reservedCount 쿼리를 따로 날리면
+	// N+1이 돼서 프로그램 수가 늘어날수록 느려진다 - 여기서 한 번에 그룹핑 쿼리로 다 가져온 뒤 매핑한다.
+	private List<TempleStayProgramDTO> toDtoList(List<TempleStayProgramEntity> entities) {
+		Map<Long, Integer> reservedCounts = tsrr.sumActiveParticipantCountGroupedByProgram(TempleStayReservationEntity.Status.취소)
+				.stream()
+				.collect(Collectors.toMap(row -> (Long) row[0], row -> ((Long) row[1]).intValue()));
+
+		return entities.stream()
+				.map(entity -> toDto(entity, reservedCounts.getOrDefault(entity.getProgramId(), 0)))
+				.toList();
 	}
 
 	/**
@@ -67,12 +86,12 @@ public class TempleStayProgramService {
 	 * @return
 	 */
 	public List<TempleStayProgramDTO> getAll() {
-		return tspr.findAll().stream().map(this::toDto).toList();
+		return toDtoList(tspr.findAll());
 	}
 
 	/** 사찰 계정 자신이 등록한 프로그램만 (마이페이지 > 사찰 프로그램 관리) */
 	public List<TempleStayProgramDTO> getByTemple(Long templeId) {
-		return tspr.findByTemple_TempleId(templeId).stream().map(this::toDto).toList();
+		return toDtoList(tspr.findByTemple_TempleId(templeId));
 	}
 
 	/** 수정 폼 진입용 - 본인 사찰 소속 프로그램인지 같이 확인 */

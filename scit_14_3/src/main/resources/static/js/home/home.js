@@ -788,7 +788,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
 
-        events.forEach(
+        const EVENT_PANEL_LIMIT = 5;
+        const visibleEvents = events.slice(0, EVENT_PANEL_LIMIT);
+
+        visibleEvents.forEach(
             event => {
 
                 const item =
@@ -877,6 +880,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             }
         );
+
+        if (events.length > EVENT_PANEL_LIMIT) {
+            const more =
+                document.createElement("a");
+
+            more.className = "event-more-link";
+            more.href = "/reservation";
+            more.textContent = HOME_TRANSLATIONS[currentLang].moreProgramsLabel;
+
+            eventPanel.appendChild(more);
+        }
 
     }
 

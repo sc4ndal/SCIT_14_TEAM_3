@@ -12,6 +12,7 @@ import net.datasa.scit_14_3.domain.entity.templestay.TempleStayReservationEntity
 import net.datasa.scit_14_3.repository.templestay.ReservationParticipantRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayProgramRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayReservationRepository;
+import net.datasa.scit_14_3.repository.user.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -27,6 +28,7 @@ public class TempleStayReservationService {
 	private final TempleStayReservationRepository tsrr;
 	private final TempleStayProgramRepository tspr;
 	private final ReservationParticipantRepository rpr;
+	private final UserRepository userRepository;
 	
 	public TempleStayReservationDTO getInfo(Long reservationId) {
 		TempleStayReservationEntity entity = tsrr.findById(reservationId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
@@ -54,6 +56,13 @@ public class TempleStayReservationService {
 	 * @return
 	 */
 	public TempleStayReservationDTO reserved(TempleStayReservationDTO dto) {
+
+		// login_id가 USER(회원) 테이블을 FK로 참조해서, 사찰/관리자 계정으로 예약을 시도하면
+		// 저장 시점에 FK 위반으로 죽어 "신청 실패"만 뜨고 이유를 알 수 없었다 - 여기서 미리 막아서
+		// 이유가 담긴 메시지로 내려준다(컨트롤러가 IllegalStateException을 409로 변환해서 alert로 보여줌).
+		if (!userRepository.existsById(dto.getLoginId())) {
+			throw new IllegalStateException("회원 계정으로만 예약할 수 있습니다. 사찰/관리자 계정은 예약할 수 없습니다.");
+		}
 
 		TempleStayProgramEntity program = tspr.findByIdForUpdate(dto.getProgramId())
 				.orElseThrow(() -> new EntityNotFoundException("해당되는 프로그램이 존재하지 않습니다."));
