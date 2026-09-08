@@ -16,13 +16,20 @@
 
     <div class="etiquette-language-widget" th:insert="~{fragments/common-includes :: languageOnly}"></div>
 
+    <!-- 로딩 (씬 배경 이미지 전부 미리 받아올 때까지 표시, EtiquetteSimulation.js 상단 preloadSceneImages 참고) -->
+    <div class="screen active" id="screen-loading">
+        <p data-i18n="ui.loadingText">불러오는 중...</p>
+        <div id="loading-bar-track"><div id="loading-bar-fill"></div></div>
+        <div id="loading-percent">0%</div>
+    </div>
+
     <!-- 타이틀 -->
-    <div class="screen active" id="screen-title">
-        <h1>사찰 예절 시뮬레이션</h1>
-        <p>「미(스님)연(애)시(뮬레이션)」<br>선택을 통해 첫 사찰 방문을 경험해보세요.</p>
-        <button class="btn btn-primary" id="btn-start">시작하기</button>
-        <button class="btn" id="btn-open-collection">엔딩 도감</button>
-        <a class="link-home" th:href="@{/}">메인으로 돌아가기</a>
+    <div class="screen" id="screen-title">
+        <h1 data-i18n="ui.titleH1">사찰 예절 시뮬레이션</h1>
+        <p><span data-i18n="ui.titleSub1">「미(스님)연(애)시(뮬레이션)」</span><br><span data-i18n="ui.titleSub2">선택을 통해 첫 사찰 방문을 경험해보세요.</span></p>
+        <button class="btn btn-primary" id="btn-start" data-i18n="ui.btnStart">시작하기</button>
+        <button class="btn" id="btn-open-collection" data-i18n="ui.btnCollection">엔딩 도감</button>
+        <a class="link-home" th:href="@{/}" data-i18n="ui.linkHome">메인으로 돌아가기</a>
     </div>
 
     <!-- 진행 화면 (스토리 / 선택지 공용) -->
@@ -47,19 +54,19 @@
         <div id="ending-title"></div>
         <div id="ending-score"></div>
         <div id="ending-desc"></div>
-        <button class="btn btn-primary" id="btn-goto-result">오늘의 참배 돌아보기</button>
+        <button class="btn btn-primary" id="btn-goto-result" data-i18n="ui.btnGotoResult">오늘의 참배 돌아보기</button>
     </div>
 
     <!-- 결과: 오늘의 참배 돌아보기 -->
     <div class="screen" id="screen-result">
         <div id="result-inner">
             <div id="result-summary"></div>
-            <div class="result-section-title">✓ 잘 지킨 예절</div>
+            <div class="result-section-title" data-i18n="ui.checklistTitle">✓ 잘 지킨 예절</div>
             <div id="checklist"></div>
             <div id="review-list"></div>
             <div id="result-actions">
-                <button class="btn" id="btn-result-replay">다시 플레이하기</button>
-                <button class="btn" id="btn-result-title">처음 화면으로</button>
+                <button class="btn" id="btn-result-replay" data-i18n="ui.btnReplay">다시 플레이하기</button>
+                <button class="btn" id="btn-result-title" data-i18n="ui.btnBackTitle">처음 화면으로</button>
             </div>
         </div>
     </div>
@@ -67,9 +74,9 @@
     <!-- 엔딩 도감 -->
     <div class="screen" id="screen-collection">
         <div id="collection-inner">
-            <button class="btn" id="btn-close-collection" style="margin-bottom:14px;">← 뒤로</button>
-            <h1 style="font-size:18px;margin:0 0 4px;">엔딩 도감</h1>
-            <p style="font-size:13px;opacity:.6;margin:0;">아직 발견하지 못한 엔딩은 ???로 표시됩니다.</p>
+            <button class="btn" id="btn-close-collection" style="margin-bottom:14px;" data-i18n="ui.btnBack">← 뒤로</button>
+            <h1 style="font-size:18px;margin:0 0 4px;" data-i18n="ui.collectionH1">엔딩 도감</h1>
+            <p style="font-size:13px;opacity:.6;margin:0;" data-i18n="ui.collectionDesc">아직 발견하지 못한 엔딩은 ???로 표시됩니다.</p>
             <div id="collection-grid"></div>
         </div>
     </div>
@@ -92,5 +99,6 @@
 </div>
 
 <script th:src="@{/js/etiquette/EtiquetteSimulation.js}"></script>
+<script th:src="@{/js/etiquette/EtiquetteSimulation.i18n.js}"></script>
 </body>
 </html>

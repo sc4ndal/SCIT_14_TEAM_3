@@ -22,21 +22,21 @@ kakao.maps.load(function () {
 });
 
 // ===== 즐겨찾기 버튼 =====
+// 즐겨찾기 토글은 FavoriteTempleController(/api/favoritetemples/{id}/toggle)로 일원화됨
 document.getElementById('favorite-btn').addEventListener('click', function () {
     var btn = this;
-    fetch('/temples/' + TEMPLE_ID + '/favorite', { method: 'POST' })
+    fetch('/api/favoritetemples/' + TEMPLE_ID + '/toggle', { method: 'POST' })
         .then(function (res) {
-            if (res.status === 401) {
-                alert('로그인이 필요합니다.');
-                return null;
+            if (!res.ok) {
+                throw new Error('즐겨찾기 처리 실패 (로그인이 필요할 수 있어요.)');
             }
             return res.json();
         })
         .then(function (data) {
-            if (!data) return;
-            btn.classList.toggle('active', data.favorited);
+            btn.classList.toggle('active', data.favorite);
         })
         .catch(function () {
-            alert('즐겨찾기 처리 중 오류가 발생했습니다.');
+            alert('로그인 후 즐겨찾기가 가능합니다.');
+            location.href = '/login';
         });
 });

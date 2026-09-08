@@ -26,6 +26,11 @@
 
  var currentOpenInfoWindow = null;
 
+// templeList.js(사찰 찾아보기)에서만 window.favoriteTempleIds를 초기화해뒀음 - 이 파일은
+// 사찰 상세/예약/프로그램뷰 페이지에서도 같이 쓰이는데 그 페이지들은 이 배열을 안 만들어서
+// 없으면 여기서 만들어둠(즐겨찾기 필터가 없는 페이지에서도 에러 안 나게).
+window.favoriteTempleIds = window.favoriteTempleIds || [];
+
 function createTempleMarker(map, temple) {
     // 1. 좌표 객체 생성
     var position = new kakao.maps.LatLng(temple.lat, temple.lng);

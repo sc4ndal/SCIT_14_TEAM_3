@@ -283,13 +283,6 @@ kakao.maps.load(function () {
         });
     });
 
-    // 즐겨찾기 필터 - 켜져있으면 내가 즐겨찾기한 사찰만 지도에 남긴다
-    var favoriteFilterBtn = document.getElementById('filter-favorite');
-    favoriteFilterBtn.addEventListener('click', function () {
-        favoriteFilterBtn.classList.toggle('active');
-        applyFilters();
-    });
-
     function applyFilters() {
         var activeTypeFields = [];
         document.querySelectorAll('#temple-filter-box button.active').forEach(function (btn){
@@ -307,7 +300,6 @@ kakao.maps.load(function () {
                 return temple[field];
             });
             var matchEnglish = !englishRequired || temple.supportEnglish;
-            var favoriteRequired = document.getElementById('filter-favorite').classList.contains('active');
             var matchFavorite = !favoriteRequired || favoriteTempleIds.indexOf(temple.templeId) !== -1;
             var match = matchType && matchEnglish && matchFavorite;
 

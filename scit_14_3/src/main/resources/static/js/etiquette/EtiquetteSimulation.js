@@ -284,10 +284,58 @@ const state = {
 
 const el = (id) => document.getElementById(id);
 
+// ---------- 사전형식 번역 ----------
+// SCENES/RESULT_EXPLAIN/ENDINGS의 한국어 문자열이 그 자체로 "ko" 원본이자 폴백이라
+// TRANSLATIONS(EtiquetteSimulation.i18n.js)에는 en/ja만 있으면 됨 - t()가 없는 키/ko일 때는
+// 그대로 fallback(한국어 원문)을 돌려줌. 정적 UI(타이틀/버튼 등)는 data-i18n 속성으로 따로 처리.
+let currentLang = 'ko';
+function t(key, fallback) {
+    const dict = window.SIM_TRANSLATIONS && window.SIM_TRANSLATIONS[currentLang];
+    return (dict && dict[key] !== undefined) ? dict[key] : fallback;
+}
+
+// Fisher-Yates - 선택지 표시 순서를 매번 섞을 때 씀
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     el(id).classList.add('active');
 }
+
+// 씬 진입 시점에야 background-image를 걸어서 그때 로드가 시작돼 버벅였음 - 페이지 로드하자마자
+// 전체 씬 배경 이미지를 미리 fetch해서 브라우저 캐시에 데워두고, 그동안 로딩 화면에 %를 보여줌
+// (같은 URL이 여러 씬에서 재사용되니 중복 제거). 다 받아지면(실패해도 카운트는 함) 타이틀로 넘어감.
+(function preloadSceneImages() {
+    const urls = [...new Set(Object.values(SCENES).map(scene => scene.bgImage).filter(Boolean))];
+    const fill = el('loading-bar-fill');
+    const percentText = el('loading-percent');
+    let loaded = 0;
+
+    if (urls.length === 0) {
+        showScreen('screen-title');
+        return;
+    }
+
+    urls.forEach((url) => {
+        const img = new Image();
+        img.onload = img.onerror = onOneLoaded;
+        img.src = url;
+    });
+
+    function onOneLoaded() {
+        loaded++;
+        const percent = Math.round((loaded / urls.length) * 100);
+        fill.style.width = percent + '%';
+        percentText.textContent = percent + '%';
+        if (loaded === urls.length) showScreen('screen-title');
+    }
+})();
 
 function startGame() {
     state.currentSceneId = 'prologue';
@@ -313,7 +361,7 @@ function renderScene() {
         bgLayer.style.backgroundImage = '';
         bgLayer.classList.remove('has-image');
     }
-    el('story-text').textContent = scene.lines[state.lineIndex];
+    el('story-text').textContent = t(state.currentSceneId + '.line' + state.lineIndex, scene.lines[state.lineIndex]);
 
     const isLastLine = state.lineIndex === scene.lines.length - 1;
     const choiceLayer = el('choice-layer');
@@ -321,10 +369,12 @@ function renderScene() {
 
     if (isLastLine && scene.type === 'choice') {
         el('advance-hint').style.display = 'none';
-        scene.choices.forEach((choice) => {
+        // 정답이 항상 1번에 몰려있으면 눈치로 맞힐 수 있어서 매번 보여줄 때마다 순서를 섞음.
+        // 판정/기록은 choice 객체(정답 여부, label) 값 기준이라 표시 순서만 바꿔도 로직엔 영향 없음.
+        shuffle([...scene.choices]).forEach((choice) => {
             const btn = document.createElement('button');
             btn.className = 'choice-btn';
-            btn.textContent = choice.label;
+            btn.textContent = t(state.currentSceneId + '.choice' + choice.id + '.label', choice.label);
             btn.onclick = () => selectChoice(scene, choice);
             choiceLayer.appendChild(btn);
         });
@@ -348,7 +398,9 @@ function selectChoice(scene, choice) {
     }
     if (choice.after && choice.after.length) {
         // 선택 직후 반응 대사(1줄 이상)를 다른 대사와 동일하게 한 줄씩 보여주고 넘어감 (정오답 노출 없음)
-        playLines(choice.after, 0, () => advanceTo(choice.next));
+        const afterKeyPrefix = state.currentSceneId + '.choice' + choice.id + '.after';
+        const translatedAfter = choice.after.map((line, i) => t(afterKeyPrefix + i, line));
+        playLines(translatedAfter, 0, () => advanceTo(choice.next));
         return;
     }
     advanceTo(choice.next);
@@ -427,10 +479,11 @@ function showEnding(forcedKey) {
     }
     state.lastEndingKey = key;
     const ending = ENDINGS[key];
+    // name(PERFECT END 등)은 원래도 영문/한자로 스타일링된 표기라 언어별로 안 바꿈
     el('ending-name').textContent = ending.name;
-    el('ending-title').textContent = '「' + ending.title + '」';
+    el('ending-title').textContent = '「' + t(key + '.title', ending.title) + '」';
     el('ending-score').textContent = ending.scoreLabel;
-    el('ending-desc').textContent = ending.desc;
+    el('ending-desc').textContent = t(key + '.desc', ending.desc);
     unlockEnding(key);
     showScreen('screen-ending');
 }
@@ -442,9 +495,10 @@ function showResult() {
 
     // SECRET END는 엔딩 화면(screen-ending)에서만 점수를 숨김(ENDINGS.SECRET.scoreLabel === '').
     // 결과 화면(오늘의 참배 돌아보기)에서는 다른 엔딩과 동일하게 실제 정답 개수를 보여줌.
+    const summaryTemplate = t('ui.resultSummary', '{total}가지 예절 중 {correct}가지를 잘 지켰어요');
     el('result-summary').innerHTML =
-        `${total}가지 예절 중 ${correctCount}가지를 잘 지켰어요` +
-        '<small>아래에서 오늘 방문을 다시 확인해보세요.</small>';
+        summaryTemplate.replace('{total}', total).replace('{correct}', correctCount) +
+        `<small>${t('ui.resultSummarySub', '아래에서 오늘 방문을 다시 확인해보세요.')}</small>`;
 
     // 체크리스트 — 잘 지킨 예절만 제목 위주로 간단히 표시
     const checklist = el('checklist');
@@ -454,11 +508,12 @@ function showResult() {
         const scene = SCENES[id];
         const row = document.createElement('div');
         row.className = 'check-item correct';
-        row.textContent = '✓ ' + scene.resultId.no + ' ' + scene.resultId.title;
+        row.textContent = '✓ ' + scene.resultId.no + ' ' + t(id + '.resultTitle', scene.resultId.title);
         checklist.appendChild(row);
     });
 
-    // 다시 알아볼 예절 (오답 중심) — "내가 선택한 행동"은 state.answers에 저장된 실제 선택 문구를 그대로 사용
+    // 다시 알아볼 예절 (오답 중심) — "내가 선택한 행동"은 state.answers에 저장된 실제 선택(choiceId)을
+    // 현재 언어로 다시 번역해서 보여줌(선택 당시 언어가 아니라 지금 보고 있는 언어 기준)
     const reviewList = el('review-list');
     reviewList.innerHTML = '';
     const wrongIds = JUDGED_ORDER.filter(id => !state.answers[id]?.correct);
@@ -467,8 +522,8 @@ function showResult() {
         const cta = document.createElement('div');
         cta.style.marginTop = '18px';
         cta.innerHTML = `
-      <p style="margin:0 0 12px;font-size:13.5px;color:#7a6c55;">다시 알아볼 예절이 없습니다.</p>
-      <button class="btn btn-primary" id="btn-guide-cta">사찰 예절 자세히 알아보기</button>
+      <p style="margin:0 0 12px;font-size:13.5px;color:#7a6c55;">${t('ui.noWrongText', '다시 알아볼 예절이 없습니다.')}</p>
+      <button class="btn btn-primary" id="btn-guide-cta">${t('ui.guideCta', '사찰 예절 자세히 알아보기')}</button>
     `;
         reviewList.appendChild(cta);
         // 예절 가이드는 대분류를 쿼리스트링으로 받으므로 한글 값을 인코딩해서 넘긴다.
@@ -478,7 +533,7 @@ function showResult() {
     } else {
         const title = document.createElement('div');
         title.className = 'result-section-title';
-        title.textContent = '다시 알아볼 예절';
+        title.textContent = t('ui.reviewTitle', '다시 알아볼 예절');
         reviewList.appendChild(title);
 
         const cardsWrap = document.createElement('div');
@@ -488,14 +543,17 @@ function showResult() {
         wrongIds.forEach((id) => {
             const scene = SCENES[id];
             const info = RESULT_EXPLAIN[id];
-            const myChoiceLabel = state.answers[id]?.label ?? '(선택 기록 없음)';
+            const answer = state.answers[id];
+            const myChoiceLabel = answer
+                ? t(id + '.choice' + answer.choiceId + '.label', answer.label)
+                : t('ui.noAnswerRecorded', '(선택 기록 없음)');
             const card = document.createElement('div');
             card.className = 'review-card';
             card.innerHTML = `
-        <h4>${scene.resultId.no} ${scene.resultId.title} ${info.done ? '' : '<span class="todo-tag">TODO</span>'}</h4>
-        <div class="review-row"><b>내가 선택한 행동</b>${myChoiceLabel}</div>
-        <div class="review-row"><b>올바른 행동</b>${info.correctLabel}</div>
-        <div class="review-explain">${info.explain}</div>
+        <h4>${scene.resultId.no} ${t(id + '.resultTitle', scene.resultId.title)} ${info.done ? '' : '<span class="todo-tag">TODO</span>'}</h4>
+        <div class="review-row"><b>${t('ui.myChoiceHeading', '내가 선택한 행동')}</b>${myChoiceLabel}</div>
+        <div class="review-row"><b>${t('ui.correctActionHeading', '올바른 행동')}</b>${t(id + '.correctLabel', info.correctLabel)}</div>
+        <div class="review-explain">${t(id + '.explain', info.explain)}</div>
       `;
             cardsWrap.appendChild(card);
         });
@@ -529,10 +587,36 @@ function renderCollection() {
         const cell = document.createElement('div');
         cell.className = 'collection-cell' + (unlocked ? ' unlocked' : '');
         cell.innerHTML = unlocked
-            ? `<div class="mark">${key === 'SECRET' ? '★' : '◆'}</div>${ending.name}<br>「${ending.title}」`
+            ? `<div class="mark">${key === 'SECRET' ? '★' : '◆'}</div>${ending.name}<br>「${t(key + '.title', ending.title)}」`
             : `<div class="mark">?</div>????????`;
         grid.appendChild(cell);
     });
+}
+
+/* ---------- 사전형식 번역: 언어 전환 훅 ---------- */
+// common.js가 언어 버튼 클릭 시 호출함(다른 페이지들과 동일한 컨벤션). 이 페이지는 게임 상태에 따라
+// 화면이 계속 다시 그려지는 구조라, 정적 UI(data-i18n)뿐 아니라 "지금 떠 있는 화면"도 같은 렌더
+// 함수를 다시 호출해서 새 언어로 즉시 갱신한다.
+function onLanguageChange(lang) {
+    currentLang = lang;
+    if (window.applyManualOverrideTranslations) window.applyManualOverrideTranslations(lang);
+
+    const dict = window.SIM_TRANSLATIONS && window.SIM_TRANSLATIONS[lang];
+    document.querySelectorAll('[data-i18n]').forEach((elm) => {
+        const key = elm.getAttribute('data-i18n');
+        if (dict && dict[key] !== undefined) elm.textContent = dict[key];
+    });
+
+    if (el('screen-scene').classList.contains('active')) {
+        if (state.isPlayingAfter) return; // after-대사 재생 중엔 굳이 안 건드림(다음 진행에서 이미 새 언어로 나감)
+        renderScene();
+    } else if (el('screen-ending').classList.contains('active') && state.lastEndingKey) {
+        showEnding(state.lastEndingKey);
+    } else if (el('screen-result').classList.contains('active')) {
+        showResult();
+    } else if (el('screen-collection').classList.contains('active')) {
+        renderCollection();
+    }
 }
 
 /* ---------- 버튼 바인딩 ---------- */

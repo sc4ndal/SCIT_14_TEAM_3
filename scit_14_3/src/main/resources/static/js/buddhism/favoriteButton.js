@@ -59,9 +59,11 @@ document.addEventListener('click', function (e) {
 		})
 		.then(function (data) {
 			if (!data) return;
-			applyFavoriteState(btn, data.favorited);
+			// 한마디/음식은 {favorited}, 사찰 즐겨찾기(/api/favoritetemples)는 {favorite}로 내려줘서 둘 다 받음
+			var favorited = data.favorited !== undefined ? data.favorited : data.favorite;
+			applyFavoriteState(btn, favorited);
 
-			if (!data.favorited) {
+			if (!favorited) {
 				var card = btn.closest('[data-remove-on-unfavorite]');
 				if (card) card.remove();
 			}

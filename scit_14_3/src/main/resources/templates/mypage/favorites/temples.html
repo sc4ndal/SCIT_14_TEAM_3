@@ -55,7 +55,7 @@
 
                 <div class="food-favorite-card__footer">
                     <button type="button" class="favorite-toggle is-favorited"
-                            th:attr="data-favorite-url=@{'/temples/' + ${temple.templeId} + '/favorite'}"
+                            th:attr="data-favorite-url=@{'/api/favoritetemples/' + ${temple.templeId} + '/toggle'}"
                             data-favorited="true" aria-pressed="true">
                         <span class="favorite-toggle__icon"></span>
                         <span class="favorite-toggle__label">즐겨찾기됨</span>

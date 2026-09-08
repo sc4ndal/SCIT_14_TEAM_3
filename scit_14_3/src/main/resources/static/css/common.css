@@ -84,6 +84,12 @@ a {
     gap: 12px;
 }
 
+.brand img {
+    padding : 40px;
+    height: 180px;
+    width: auto;
+}
+
 .brand-circle {
     width: 32px;
     height: 32px;

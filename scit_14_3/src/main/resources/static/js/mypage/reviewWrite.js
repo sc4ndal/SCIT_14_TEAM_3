@@ -16,7 +16,7 @@ const isEditMode = !!editingReviewId;
 
 if (!reservationId) {
   alert('잘못된 접근입니다.');
-  location.href = '/mypage/reservations';
+  location.href = '/mypage/myReservations';
 }
 
 // ------------------------- 사진 첨부 (작성/수정 공통) -------------------------
@@ -110,12 +110,12 @@ async function init() {
     // 검증하지만 여기서 먼저 걸러서 불필요한 폼 입력을 막는다.
     if (reservation.loginId !== currentLoginId) {
       alert('본인의 예약에만 리뷰를 작성할 수 있습니다.');
-      location.href = '/mypage/reservations';
+      location.href = '/mypage/myReservations';
       return;
     }
     if (reservation.status !== '이용완료') {
       alert('이용이 완료된 예약만 리뷰를 작성할 수 있습니다.');
-      location.href = '/mypage/reservations';
+      location.href = '/mypage/myReservations';
       return;
     }
 
@@ -126,12 +126,12 @@ async function init() {
 
     if (!isEditMode && existingReview) {
       alert('이미 이 예약에 대한 리뷰를 작성했습니다.');
-      location.href = '/mypage/reservations';
+      location.href = '/mypage/myReservations';
       return;
     }
     if (isEditMode && !existingReview) {
       alert('수정할 리뷰를 찾을 수 없습니다.');
-      location.href = '/mypage/reservations';
+      location.href = '/mypage/myReservations';
       return;
     }
 
@@ -158,7 +158,7 @@ async function init() {
   } catch (err) {
     console.error('리뷰 작성 페이지 초기화 중 오류가 발생했습니다.', err);
     alert('예약 정보를 불러오는 중 오류가 발생했습니다.');
-    location.href = '/mypage/reservations';
+    location.href = '/mypage/myReservations';
   }
 }
 
@@ -210,7 +210,7 @@ document.getElementById('review-submit-btn').addEventListener('click', async () 
     }
 
     alert(isEditMode ? '리뷰가 수정되었습니다.' : '리뷰가 등록되었습니다.');
-    location.href = '/mypage/reservations';
+    location.href = '/mypage/myReservations';
   } catch (err) {
     console.error(err);
     alert('리뷰 저장 중 오류가 발생했습니다.');
