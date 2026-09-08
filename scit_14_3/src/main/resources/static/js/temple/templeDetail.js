@@ -20,3 +20,23 @@ kakao.maps.load(function () {
 
     kakao.maps.event.trigger(marker, 'click'); // 정보창도 바로 열어줌
 });
+
+// ===== 즐겨찾기 버튼 =====
+document.getElementById('favorite-btn').addEventListener('click', function () {
+    var btn = this;
+    fetch('/temples/' + TEMPLE_ID + '/favorite', { method: 'POST' })
+        .then(function (res) {
+            if (res.status === 401) {
+                alert('로그인이 필요합니다.');
+                return null;
+            }
+            return res.json();
+        })
+        .then(function (data) {
+            if (!data) return;
+            btn.classList.toggle('active', data.favorited);
+        })
+        .catch(function () {
+            alert('즐겨찾기 처리 중 오류가 발생했습니다.');
+        });
+});

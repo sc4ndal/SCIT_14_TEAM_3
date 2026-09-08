@@ -236,6 +236,35 @@
           margin-top: 12px;
         }
 
+        #program-pagination {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 6px;
+          margin-top: 20px;
+        }
+        #program-pagination button {
+          min-width: 34px;
+          height: 34px;
+          padding: 0 8px;
+          border: 1px solid var(--line);
+          border-radius: 8px;
+          background: var(--bg-raised);
+          color: inherit;
+          cursor: pointer;
+          font-size: 13px;
+        }
+        #program-pagination button.active {
+          background: var(--pine);
+          border-color: var(--pine);
+          color: var(--bg-raised);
+          font-weight: 700;
+        }
+        #program-pagination button:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+
         .program-card {
           border: 1px solid var(--line);
           border-radius: 14px;
@@ -714,6 +743,9 @@
             <!-- 프로그램 카드가 여기에 반복 렌더링됨 -->
 
         </div>
+
+        <!-- 페이지네이션: 한 페이지에 9개(3줄 x 3개)씩만 보여주고 나머지는 페이지로 넘김 -->
+        <div id="program-pagination"></div>
 
         <!-- 목록에서 카드를 클릭해 선택해야 활성화되는 버튼 -->
         <button type="button" id="go-to-reserve-btn" disabled>예약 신청</button>

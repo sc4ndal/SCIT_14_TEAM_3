@@ -62,7 +62,7 @@ function createTempleMarker(map, temple) {
         '<div style="display:flex;align-items:center;gap:6px;white-space:nowrap;">' +
         '  <div style="font-size:15px;font-weight:bold;">' + temple.name + '</div>' +
         '  <span class = "favorite-wrapper" style="position:relative;display:inline-flex;">' +
-        '  <button type="button" class="favorite-star-btn" style="border:none;background:none;font-size:19px;line-height:1;cursor:pointer;color:#ccc;padding:0;">★</button>' +
+        '  <button type="button" class="favorite-star-btn" style="border:none;background:none;font-size:19px;line-height:1;cursor:pointer;color:' + (temple.favorited ? '#f4c25c' : '#ccc') + ';padding:0;">★</button>' +
         '  </span>' +
         '</div>' +
         '<div style="font-size:13px;white-space:nowrap;">' + temple.address + '</div>' +
@@ -72,6 +72,7 @@ function createTempleMarker(map, temple) {
 
     var favoriteBtn = infoContent.querySelector('.favorite-star-btn');
     var favoriteWrapper = infoContent.querySelector('.favorite-wrapper');
+    if (temple.favorited) favoriteBtn.classList.add('active');
 
     // 6. 즐겨찾기 버튼에 마우스 올렸을 때 뜨는 말풍선 (이름표랑 같은 스타일)
     var favoriteTooltip = document.createElement('div');

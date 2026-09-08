@@ -6,10 +6,16 @@
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <link rel="stylesheet" th:href="@{/css/common.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/css/mypage/favorites.css}" type="text/css">
     <title>관심 사찰 · 佛선자</title>
 </head>
 
 <body>
+
+<div id="auth-info" style="display:none;"
+     sec:authorize="isAuthenticated()"
+     th:attr="data-login-id=${#authentication.principal.username}"></div>
 
 <header>
     <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
@@ -17,11 +23,54 @@
 
 <main class="mypage-main">
     <div class="mypage-inner">
-        <!-- 관심 사찰 내용 영역 -->
+
+        <section class="favorites-hero">
+            <h1>관심 사찰</h1>
+            <p>저장해 둔 사찰을 다시 찾아봅니다.</p>
+        </section>
+
+        <p class="favorites-empty" th:if="${#lists.isEmpty(temples)}">
+            아직 즐겨찾기한 사찰이 없습니다. <a th:href="@{/findtemple}">사찰 찾아보러 가기 →</a>
+        </p>
+
+        <div class="food-favorite-grid" th:unless="${#lists.isEmpty(temples)}">
+            <article class="food-favorite-card" th:each="temple : ${temples}" data-remove-on-unfavorite>
+
+                <img class="food-favorite-card__image" th:if="${temple.imageUrl}"
+                     th:src="${temple.imageUrl}" th:alt="${temple.name}">
+
+                <div class="food-favorite-card__body">
+                    <h2 class="food-favorite-card__title">
+                        <a th:href="@{/temple-detail/{id}(id=${temple.templeId})}" th:text="${temple.name}">사찰명</a>
+                    </h2>
+                    <p class="food-favorite-card__desc" th:text="${temple.address}">주소</p>
+
+                    <div class="type-pill-group" style="margin-top:10px;">
+                        <span class="type-pill sea" th:if="${temple.supportSea}">바다</span>
+                        <span class="type-pill mountain" th:if="${temple.supportMountain}">산</span>
+                        <span class="type-pill river" th:if="${temple.supportRiver}">강</span>
+                        <span class="type-pill urban" th:if="${temple.supportUrban}">도심</span>
+                    </div>
+                </div>
+
+                <div class="food-favorite-card__footer">
+                    <button type="button" class="favorite-toggle is-favorited"
+                            th:attr="data-favorite-url=@{'/temples/' + ${temple.templeId} + '/favorite'}"
+                            data-favorited="true" aria-pressed="true">
+                        <span class="favorite-toggle__icon"></span>
+                        <span class="favorite-toggle__label">즐겨찾기됨</span>
+                    </button>
+                </div>
+
+            </article>
+        </div>
+
     </div>
 </main>
 
 <div th:replace="~{fragments/layout :: footer}"></div>
+
+<script defer th:src="@{/js/buddhism/favoriteButton.js}"></script>
 
 </body>
 </html>

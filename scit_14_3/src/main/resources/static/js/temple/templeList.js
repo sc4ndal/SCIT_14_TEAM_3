@@ -77,7 +77,8 @@ kakao.maps.load(function () {
                     name: temple.name,
                     address: temple.address,
                     // imageUrl이 없으면(null) 기본 마커 이미지로 대체
-                    iconUrl: temple.imageUrl || '/images/temple-marker.svg'
+                    iconUrl: temple.imageUrl || '/images/temple-marker.svg',
+                    favorited: temple.favorited
                 });
 
                 markerByTempleId[temple.templeId] = marker;
@@ -281,6 +282,14 @@ kakao.maps.load(function () {
             applyFilters();
         });
     });
+
+    // 즐겨찾기 필터 - 켜져있으면 내가 즐겨찾기한 사찰만 지도에 남긴다
+    var favoriteFilterBtn = document.getElementById('filter-favorite');
+    favoriteFilterBtn.addEventListener('click', function () {
+        favoriteFilterBtn.classList.toggle('active');
+        applyFilters();
+    });
+
     function applyFilters() {
         var activeTypeFields = [];
         document.querySelectorAll('#temple-filter-box button.active').forEach(function (btn){
@@ -291,6 +300,7 @@ kakao.maps.load(function () {
         });
 
         var englishRequired = document.getElementById('filter-support-english').classList.contains('active');
+        var favoriteRequired = favoriteFilterBtn.classList.contains('active');
 
         templeList.forEach(function (temple){
             var matchType = activeTypeFields.every(function (field) {

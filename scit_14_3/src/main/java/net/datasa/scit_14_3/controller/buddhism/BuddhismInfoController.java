@@ -36,17 +36,23 @@ public class BuddhismInfoController {
 		return "buddhism/intro";
 	}
 
+	// 용어 값 자체는 DB(BUDDHISM_INFO, category='용어')에 그대로 있지만, 이 화면은 사전 방식
+	// 번역(js/buddhism/terms.i18n.js)을 써야 해서 화면에 값을 직접 고정해서 씀 - DB는 그대로
+	// 두고(나중에 다시 DB 구동 방식으로 되돌릴 수도 있어서) 여기서 불러오기만 안 함.
+	// BuddhismInfoService.loadTermGroups()/TermCategory/TermCardDTO/TermGroupDTO도 그대로
+	// 남겨둠(되돌릴 때 다시 씀).
 	@GetMapping({"/terms", "/terms/"})
-	public String terms(Model model) {
-		model.addAttribute("groups", buddhismInfoService.loadTermGroups());
+	public String terms() {
 		return "buddhism/terms";
 	}
 	
 	@GetMapping({"", "/"})
 	public String list(@RequestParam(required = false) String category, Model model) {
-		// 예절가이드는 카드 목록이 아니라 아코디언 전용 화면이라 DTO로 따로 내려준다.
+		// 예절가이드도 용어 사전(terms)과 같은 이유로 값 변경이 없는 정적 콘텐츠라
+		// DB(BUDDHISM_INFO, category='예절가이드') 대신 화면에 직접 고정하고 사전형식
+		// 번역(js/buddhism/etiquetteGuide.i18n.js)을 씀 - DB/서비스/시드 SQL은 그대로 두고
+		// (나중에 다시 DB 구동 방식으로 되돌릴 수도 있어서) 여기서 불러오기만 안 함.
 		if (BuddhismInfoService.CATEGORY_ETIQUETTE.equals(category)) {
-			model.addAttribute("categories", buddhismInfoService.loadEtiquetteCategories());
 			return "buddhism/etiquetteGuide";
 		}
 

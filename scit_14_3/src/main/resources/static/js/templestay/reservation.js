@@ -84,6 +84,7 @@ const state = {
   step: 1,                    // 1: 목록/상세, 2: 예약신청, 3: 신청완료
   programs: MOCK_PROGRAMS,    // GET /templestayprograms 결과로 교체 예정
   filter: { region: '', templeId: '', programType: '', headcount: '' },
+  page: 1,                    // 프로그램 목록 페이지네이션 (한 페이지 = 3줄 x 3개 = 9개)
   checkedProgramId: null,     // 목록에서 체크박스로 체크해둔 programId
   selectedProgram: null,      // 선택된 program 객체
   loginId: currentLoginId,      // TODO: 로그인 세션/토큰에서 가져오도록 교체
@@ -173,16 +174,24 @@ function renderTempleOptions(region) {
     uniqueTemples(region).map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
 }
 
+const PROGRAM_PAGE_SIZE = 9; // 3줄 x 3개
+
 function renderProgramList() {
   const listEl = document.getElementById('program-list');
   const results = filteredPrograms();
 
   if (results.length === 0) {
     listEl.innerHTML = '<p>조건에 맞는 프로그램이 없습니다.</p>';
+    document.getElementById('program-pagination').innerHTML = '';
     return;
   }
 
-  listEl.innerHTML = results.map(p => {
+  const totalPages = Math.max(1, Math.ceil(results.length / PROGRAM_PAGE_SIZE));
+  if (state.page > totalPages) state.page = totalPages;
+  const pageStart = (state.page - 1) * PROGRAM_PAGE_SIZE;
+  const pageResults = results.slice(pageStart, pageStart + PROGRAM_PAGE_SIZE);
+
+  listEl.innerHTML = pageResults.map(p => {
     const full = remainingSeats(p) <= 0;
     return `
     <article class="program-card ${state.checkedProgramId === p.programId ? 'picked' : ''}" data-program-id="${p.programId}">
@@ -218,6 +227,40 @@ function renderProgramList() {
   });
 
   updateGoToReserveButton();
+  renderPagination(totalPages);
+}
+
+const PROGRAM_PAGE_WINDOW = 10; // 페이지 번호는 한 번에 최대 10개까지만 보여주고, 그 이상은 « » 로 블록 이동
+
+function renderPagination(totalPages) {
+  const pagerEl = document.getElementById('program-pagination');
+
+  if (totalPages <= 1) {
+    pagerEl.innerHTML = '';
+    return;
+  }
+
+  const blockStart = Math.floor((state.page - 1) / PROGRAM_PAGE_WINDOW) * PROGRAM_PAGE_WINDOW + 1;
+  const blockEnd = Math.min(blockStart + PROGRAM_PAGE_WINDOW - 1, totalPages);
+
+  const buttons = [];
+  buttons.push(`<button type="button" data-page="${blockStart - 1}" ${blockStart === 1 ? 'disabled' : ''}>«</button>`);
+  buttons.push(`<button type="button" data-page="${state.page - 1}" ${state.page === 1 ? 'disabled' : ''}>‹</button>`);
+  for (let i = blockStart; i <= blockEnd; i++) {
+    buttons.push(`<button type="button" class="${i === state.page ? 'active' : ''}" data-page="${i}">${i}</button>`);
+  }
+  buttons.push(`<button type="button" data-page="${state.page + 1}" ${state.page === totalPages ? 'disabled' : ''}>›</button>`);
+  buttons.push(`<button type="button" data-page="${blockEnd + 1}" ${blockEnd === totalPages ? 'disabled' : ''}>»</button>`);
+
+  pagerEl.innerHTML = buttons.join('');
+
+  pagerEl.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.page = Number(btn.dataset.page);
+      renderProgramList();
+      document.getElementById('program-list').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
 }
 
 function updateGoToReserveButton() {
@@ -691,19 +734,23 @@ function bindFilterChangeEvents() {
     state.filter.region = e.target.value;
     // 지역이 바뀌면 이전에 골라둔 사찰이 그 지역과 안 맞을 수 있으니 초기화하고 옵션도 다시 그림
     state.filter.templeId = '';
+    state.page = 1;
     renderTempleOptions(state.filter.region);
     renderProgramList();
   });
   document.getElementById('filter-temple').addEventListener('change', (e) => {
     state.filter.templeId = e.target.value;
+    state.page = 1;
     renderProgramList();
   });
   document.getElementById('filter-program-type').addEventListener('change', (e) => {
     state.filter.programType = e.target.value;
+    state.page = 1;
     renderProgramList();
   });
   document.getElementById('filter-headcount').addEventListener('change', (e) => {
     state.filter.headcount = e.target.value;
+    state.page = 1;
     renderProgramList();
   });
 }
