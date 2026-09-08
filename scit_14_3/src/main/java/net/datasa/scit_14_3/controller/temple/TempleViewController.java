@@ -26,7 +26,7 @@ public class TempleViewController {
 		model.addAttribute("temple", templeService.getInfo(templeId));
 		model.addAttribute("programs", templeStayProgramService.getByTemple(templeId));
 		String loginId = principal == null ? null : principal.getUsername();
-		model.addAttribute("favorited", favoriteTempleService.isFavorited(loginId, templeId));
+		model.addAttribute("favorited", favoriteTempleService.isFavoriteTemple(loginId, templeId));
 		return "temple/templeDetail";
 	}
 }
