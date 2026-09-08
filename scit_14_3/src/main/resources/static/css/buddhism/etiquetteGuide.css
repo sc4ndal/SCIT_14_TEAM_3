@@ -16,7 +16,14 @@
     --radius-xl: 14px;
 }
 
+/* 공통 헤더/푸터(fragments/layout)를 함께 쓰므로 body는 세로로 쌓이게 두고,
+   가운데 정렬과 여백은 아래 #guide-root가 담당한다.
+   (body를 flex로 만들면 헤더/푸터가 본문과 가로로 나란히 놓인다.) */
 body {
+    margin: 0;
+    /* 사이트 공용 헤더(commonIncludes, .site-header)가 position:fixed 74px라서
+       buddhism.css와 동일하게 그만큼 밀어준다. */
+    padding-top: 74px;
     font-family: "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
     background: var(--background);
     color: var(--foreground);
@@ -139,12 +146,12 @@ body {
 .item-action:not(.no-reason):hover { background: var(--accent-blue-soft); }
 .item-action.no-reason { cursor: default; }
 .item-action .dot {
-    width: 4px; height: 4px; border-radius: 50%;
+    width: 6px; height: 6px; border-radius: 50%;
     background: var(--text-tertiary); flex: none;
 }
 .item-action .caret {
     margin-left: auto;
-    font-size: 11px;
+    font-size: 20px;
     color: var(--text-tertiary);
     transition: transform .15s;
     flex: none;

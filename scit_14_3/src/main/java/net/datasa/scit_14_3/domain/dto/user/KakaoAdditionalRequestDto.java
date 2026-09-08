@@ -20,4 +20,14 @@ public class KakaoAdditionalRequestDto {
     private String name;     // 여권 영문 이름 형식
     private String phone;
     private String email;
+
+    // 앞뒤 공백만 있는 값 때문에 패턴 검증이 불필요하게 실패하지 않도록, 바인딩 시점에 먼저
+    // 다듬어둔다 - @Setter(Lombok)가 이미 정의된 이 두 개는 건너뛰고 나머지만 생성해준다.
+    public void setNickname(String nickname) {
+        this.nickname = nickname == null ? null : nickname.trim();
+    }
+
+    public void setName(String name) {
+        this.name = name == null ? null : name.trim();
+    }
 }

@@ -1,4 +1,4 @@
-package net.datasa.scit_14_3.controller.temple;
+package net.datasa.scit_14_3.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,14 +11,18 @@ import org.springframework.web.bind.annotation.PathVariable;
 @Controller
 @RequiredArgsConstructor
 public class MapTempleController {
+	@GetMapping("/maptemples")
+	public String getMapTemple() {
+		return "mapTemple";
+	}
 	@GetMapping("/maptemplestayviews/{programId}")
 	public String getMapTempleStayView(@PathVariable Long programId, Model model) {
 		model.addAttribute("programId", programId);
-		return "templestay/mapTempleStayView";
+		return "mapTempleStayView";
 	}
-
+	
 	@GetMapping("/maptemplestayfavorites")
 	public String getMapTempleStayFavorite() {
-		return "templestay/mapTempleStayFavorite";
+		return "mapTempleStayFavorite";
 	}
 }

@@ -6,10 +6,16 @@
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <link rel="stylesheet" th:href="@{/css/common.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/css/mypage/favorites.css}" type="text/css">
     <title>관심 사찰음식 · 佛선자</title>
 </head>
 
 <body>
+
+<div id="auth-info" style="display:none;"
+     sec:authorize="isAuthenticated()"
+     th:attr="data-login-id=${#authentication.principal.username}"></div>
 
 <header>
     <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
@@ -17,11 +23,54 @@
 
 <main class="mypage-main">
     <div class="mypage-inner">
-        <!-- 관심 사찰음식 내용 영역 -->
+
+        <section class="favorites-hero">
+            <h1>관심 사찰음식</h1>
+            <p>저장해 둔 사찰음식과 레시피를 한눈에 모아봅니다.</p>
+        </section>
+
+        <p class="favorites-empty" th:if="${#lists.isEmpty(foods)}">
+            아직 저장한 사찰음식이 없습니다. <a th:href="@{/info/food}">사찰 음식 보러가기 →</a>
+        </p>
+
+        <div class="food-favorite-grid" th:unless="${#lists.isEmpty(foods)}">
+            <article class="food-favorite-card" th:each="food : ${foods}" data-remove-on-unfavorite>
+
+                <img class="food-favorite-card__image" th:if="${food.imageUrl() != null}"
+                     th:src="${food.imageUrl()}" th:alt="${food.foodName()}">
+
+                <div class="food-favorite-card__body">
+                    <h2 class="food-favorite-card__title" th:text="${food.foodName()}">음식명</h2>
+                    <p class="food-favorite-card__desc" th:if="${food.description() != null}"
+                       th:text="${food.description()}">소개</p>
+
+                    <p class="food-favorite-card__recipe" th:if="${food.recipe() != null}"
+                       th:text="${food.recipe()}">레시피 본문</p>
+
+                    <a class="food-favorite-card__link" th:if="${food.recipeUrl() != null}"
+                       th:href="${food.recipeUrl()}" target="_blank" rel="noopener noreferrer">
+                        레시피 참고 링크 →
+                    </a>
+                </div>
+
+                <div class="food-favorite-card__footer">
+                    <button type="button" class="favorite-toggle is-favorited"
+                            th:attr="data-favorite-url=@{'/info/food/' + ${food.recommendationId()} + '/favorite'}"
+                            data-favorited="true" aria-pressed="true">
+                        <span class="favorite-toggle__icon"></span>
+                        <span class="favorite-toggle__label">즐겨찾기됨</span>
+                    </button>
+                </div>
+
+            </article>
+        </div>
+
     </div>
 </main>
 
 <div th:replace="~{fragments/layout :: footer}"></div>
+
+<script defer th:src="@{/js/buddhism/favoriteButton.js}"></script>
 
 </body>
 </html>

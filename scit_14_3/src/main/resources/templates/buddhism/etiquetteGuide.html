@@ -25,8 +25,8 @@
     </div>
 
     <div id="category-list">
-        <section class="category-card" th:each="post : ${posts}">
-            <h2 th:text="${post.title}"></h2>
+        <section class="category-card" th:each="post : ${categories}">
+            <h2><span class="cat-letter" th:text="${post.letter}"></span><span th:text="${post.title}"></span></h2>
             <ul class="item-list" th:text="${post.content}"></ul>
         </section>
     </div>

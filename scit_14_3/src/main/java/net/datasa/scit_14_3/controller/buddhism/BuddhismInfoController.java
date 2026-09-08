@@ -44,11 +44,12 @@ public class BuddhismInfoController {
 	
 	@GetMapping({"", "/"})
 	public String list(@RequestParam(required = false) String category, Model model) {
-		if ("예절가이드".equals(category)) {
-			model.addAttribute("posts", buddhismInfoService.loadPosts(category));
+		// 예절가이드는 카드 목록이 아니라 아코디언 전용 화면이라 DTO로 따로 내려준다.
+		if (BuddhismInfoService.CATEGORY_ETIQUETTE.equals(category)) {
+			model.addAttribute("categories", buddhismInfoService.loadEtiquetteCategories());
 			return "buddhism/etiquetteGuide";
 		}
-		
+
 		model.addAttribute("category", category);
 		model.addAttribute("posts", buddhismInfoService.loadPosts(category));
 		return "buddhism/list";

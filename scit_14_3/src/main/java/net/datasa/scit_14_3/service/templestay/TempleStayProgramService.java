@@ -7,8 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.templestay.TempleStayProgramDTO;
 import net.datasa.scit_14_3.domain.entity.temple.TempleEntity;
 import net.datasa.scit_14_3.domain.entity.templestay.TempleStayProgramEntity;
+import net.datasa.scit_14_3.domain.entity.templestay.TempleStayReservationEntity;
 import net.datasa.scit_14_3.repository.temple.TempleRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayProgramRepository;
+import net.datasa.scit_14_3.repository.templestay.TempleStayReservationRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +23,7 @@ import java.util.List;
 public class TempleStayProgramService {
 	private final TempleStayProgramRepository tspr;
 	private final TempleRepository templeRepository;
+	private final TempleStayReservationRepository tsrr;
 
 	private TempleStayProgramDTO toDto(TempleStayProgramEntity entity) {
 		return TempleStayProgramDTO.builder()
@@ -41,6 +44,7 @@ public class TempleStayProgramService {
 				.openStartDate(entity.getOpenStartDate())
 				.openEndDate(entity.getOpenEndDate())
 				.maxParticipant(entity.getMaxParticipant())
+				.reservedCount(tsrr.sumActiveParticipantCount(entity.getProgramId(), TempleStayReservationEntity.Status.취소))
 				.supportEnglish(entity.isSupportEnglish())
 				.latitude(entity.getTemple().getLatitude())
 				.longitude(entity.getTemple().getLongitude())

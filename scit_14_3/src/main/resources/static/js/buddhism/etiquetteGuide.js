@@ -19,6 +19,9 @@
 // "• 액션" / "  → 이유" 형식 텍스트를 [{action, reason}] 배열로 변환.
 // DB content 컬럼 값을 그대로 넣어도 동작함(들여쓰기/공백은 trim으로 무시).
 function parseContent(raw) {
+    if (!raw) {
+        return [];
+    }
     const lines = raw.split("\n").map((l) => l.trim()).filter(Boolean);
     const items = [];
     let current = null;

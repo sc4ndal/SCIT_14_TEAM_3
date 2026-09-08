@@ -13,6 +13,8 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -75,7 +77,17 @@ public class GlobalExceptionHandler {
 		return ERROR_VIEW;
 	}
 	
-	// 5. 그 외 모든 미처리 예외 → 500
+	// 5. 매핑된 핸들러가 없는 주소 (오타 URL 등) → 404
+	//    이걸 안 두면 아래 포괄 Exception 핸들러에 잡혀서 존재하지 않는 주소가 500으로 응답된다.
+	@ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
+	@ResponseStatus(HttpStatus.NOT_FOUND)
+	public String handleNotFound(Exception e, HttpServletRequest request, Model model) {
+		String traceId = fillErrorModel(model, HttpStatus.NOT_FOUND, "요청하신 페이지를 찾을 수 없습니다.");
+		log.info("[{}] 없는 주소 {} {}", traceId, request.getMethod(), request.getRequestURI());
+		return ERROR_VIEW;
+	}
+
+	// 6. 그 외 모든 미처리 예외 → 500
 	@ExceptionHandler(Exception.class)
 	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
 	public String handleException(Exception e, HttpServletRequest request, Model model) {

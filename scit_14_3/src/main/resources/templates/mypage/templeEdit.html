@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>사찰정보수정 · 사찰 커뮤니티</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" th:href="@{/css/signup.css}">
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+	<link rel="stylesheet" th:href="@{/css/mypage/edit.css}">
+  <link rel="icon" th:href="@{/favicon.ico}">
+	<script th:src="@{/js/mypage/edit.js}" defer></script>
+</head>
+<body>
+
+<div class="card">
+	<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+
+	<div class="header">
+		<h1>사찰정보수정</h1>
+		<p>사찰 정보를 확인하고 변경할 수 있습니다</p>
+		<p class="mp-login-type">
+			<span class="badge">일반 로그인</span>
+			<span class="mp-loginid" th:text="${formData?.loginId}">login_id</span>
+		</p>
+	</div>
+
+	<p class="check-result" style="color:#2f6b5e; text-align:center;" th:if="${templeInfoSuccess}">
+		사찰 정보가 저장되었습니다.
+	</p>
+
+	<!-- 이름/주소/위치/지역/장소유형처럼 잘못 넣으면 문제가 생기는 값은 여기 없음 - 등록 시
+	     검증된 뒤로 고정, 변경 필요하면 문의를 통해 관리자에게 요청. 대표이미지/영어지원여부/
+	     환불규정/유의사항은 사찰 본인이 제일 잘 아는 값이라 자유롭게 수정 가능. -->
+	<form class="page-form" th:action="@{/mypage/temple-info}" method="post" enctype="multipart/form-data">
+		<fieldset>
+			<legend>사찰 정보</legend>
+
+			<div class="field">
+				<label for="imageFile">대표 이미지 <span class="optional-note">(선택)</span></label>
+				<input type="file" id="imageFile" name="imageFile" accept="image/*">
+				<p class="hint">최대 10MB까지 업로드 가능합니다</p>
+				<input type="hidden" name="existingImageUrl" th:value="${formData?.imageUrl}">
+				<div th:if="${formData?.imageUrl != null and !#strings.isEmpty(formData?.imageUrl)}" style="margin-top:8px;">
+					<img id="imagePreview" alt="" th:src="${formData?.imageUrl}"
+					     style="display:block;max-width:220px;border-radius:4px;border:1px solid var(--border);">
+					<!-- form 태그를 안쪽 form(사찰 정보) 안에 중첩할 수 없어서(HTML상 form 중첩 불가),
+					     form="removeImageForm"으로 페이지 아래쪽에 따로 둔 폼과 연결함 -->
+					<button type="submit" form="removeImageForm" class="btn-check btn-danger" style="margin-top:6px;">이미지 삭제</button>
+				</div>
+				<img id="imagePreviewEmpty" alt="" style="display:none;max-width:220px;margin-top:8px;border-radius:4px;border:1px solid var(--border);"
+				     th:if="${formData?.imageUrl == null or #strings.isEmpty(formData?.imageUrl)}">
+			</div>
+
+			<div class="field">
+				<label class="terms-checkbox" style="margin-bottom:0;">
+					<input type="checkbox" name="supportEnglish" value="true" th:checked="${formData?.supportEnglish}">
+					<span>영어 안내 지원 가능</span>
+				</label>
+			</div>
+
+			<div class="field">
+				<label for="refundPolicy">환불 규정 <span class="optional-note">(선택)</span></label>
+				<textarea id="refundPolicy" name="refundPolicy" rows="4"
+				          style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:14px;"
+				          th:text="${formData?.refundPolicy}"></textarea>
+				<p class="hint">프로그램마다 따로 입력하지 않고 여기서 한 번만 등록하면 등록하는 모든 프로그램에 공통 적용됩니다</p>
+			</div>
+
+			<div class="field">
+				<label for="specialNotice">유의사항 <span class="optional-note">(선택)</span></label>
+				<textarea id="specialNotice" name="specialNotice" rows="4"
+				          style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:14px;"
+				          th:text="${formData?.specialNotice}"></textarea>
+			</div>
+		</fieldset>
+
+		<div class="form-actions">
+			<button class="submit" type="submit">저장</button>
+		</div>
+	</form>
+
+	<form id="removeImageForm" th:action="@{/mypage/temple-info/remove-image}" method="post"
+	      onsubmit="return confirm('등록된 이미지를 삭제하시겠습니까?');"></form>
+
+	<form class="page-form" th:action="@{/mypage/temple-password}" method="post" id="pwForm">
+		<fieldset>
+			<legend>비밀번호 변경</legend>
+
+			<p class="check-result" style="color:#2f6b5e; text-align:center;" th:if="${passwordChangeSuccess}">
+				비밀번호가 변경되었습니다.
+			</p>
+			<p class="check-result" id="passwordChangeError" style="color:#b3402f; text-align:center;" th:if="${passwordChangeError}" th:text="${passwordChangeError}">
+			</p>
+			<p class="check-result" style="color:#c98a2e; text-align:center;" th:if="${formData?.mustChangePassword}">
+				관리자가 발급한 임시 비밀번호입니다. 계속 사용하시려면 비밀번호를 변경해주세요.
+			</p>
+
+			<div class="field">
+				<label for="currentPassword"><span>현재 비밀번호</span><span class="req">*</span></label>
+				<input type="password" id="currentPassword" name="currentPassword"
+				       required autocomplete="current-password">
+			</div>
+
+			<div class="field">
+				<label for="newPassword"><span>새 비밀번호</span><span class="req">*</span></label>
+				<input type="password" id="newPassword" name="newPassword"
+				       required minlength="8" autocomplete="new-password">
+				<p class="hint">8자 이상</p>
+			</div>
+
+			<div class="field">
+				<label for="newPasswordConfirm"><span>새 비밀번호 확인</span><span class="req">*</span></label>
+				<input type="password" id="newPasswordConfirm" name="newPasswordConfirm"
+				       required minlength="8" autocomplete="new-password">
+				<span class="check-result fail" id="pwMismatch" hidden>새 비밀번호가 일치하지 않습니다.</span>
+			</div>
+
+			<div class="form-actions">
+				<button type="submit" class="submit">비밀번호 변경</button>
+			</div>
+		</fieldset>
+	</form>
+
+	<div class="page-form mp-foot">
+		<div class="form-actions">
+			<a th:href="@{/}" class="btn-cancel">홈으로 돌아가기</a>
+		</div>
+	</div>
+
+	<script>
+		// 대표 이미지 로컬 미리보기 (실제 업로드는 폼 제출 시 서버에서 처리)
+		// 새 비밀번호 일치 확인(#pwMismatch)은 /js/mypage/edit.js 가 이미 처리함(#pwForm 있으면 자동 적용).
+		const imageFileInput = document.getElementById('imageFile');
+		const imagePreview = document.getElementById('imagePreview');
+		if (imageFileInput) {
+			imageFileInput.addEventListener('change', () => {
+				const file = imageFileInput.files[0];
+				if (!file) return;
+				let preview = imagePreview;
+				if (!preview) {
+					preview = document.getElementById('imagePreviewEmpty');
+					preview.id = 'imagePreview';
+				}
+				const reader = new FileReader();
+				reader.onload = () => {
+					preview.src = reader.result;
+					preview.style.display = 'block';
+				};
+				reader.readAsDataURL(file);
+			});
+		}
+
+		// "현재 비밀번호가 일치하지 않습니다" 서버 에러는 다시 입력을 시작하면 바로 치워서 지저분하게 안 남게 함
+		const currentPasswordInput = document.getElementById('currentPassword');
+		const passwordChangeErrorEl = document.getElementById('passwordChangeError');
+		if (currentPasswordInput && passwordChangeErrorEl) {
+			currentPasswordInput.addEventListener('input', () => {
+				passwordChangeErrorEl.style.display = 'none';
+			}, { once: true });
+		}
+	</script>
+
+</div>
+
+</body>
+</html>

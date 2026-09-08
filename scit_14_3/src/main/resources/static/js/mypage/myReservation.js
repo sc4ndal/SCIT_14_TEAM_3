@@ -11,6 +11,17 @@
    // ------------------------- 실제 예약 목록 -------------------------
    let RESERVATIONS = [];
 
+   // 서버가 내려주는 신청일시("2026-09-07T14:47:03...") -> "26/09/07 14:47" 로 표시
+   function formatAppliedAt(iso) {
+     if (!iso) return '-';
+     const yy = iso.slice(2, 4);
+     const mm = iso.slice(5, 7);
+     const dd = iso.slice(8, 10);
+     const hh = iso.slice(11, 13);
+     const mi = iso.slice(14, 16);
+     return `${yy}/${mm}/${dd} ${hh}:${mi}`;
+   }
+
    async function loadMyReservations() {
      try {
        // 예약 목록 + 사찰 목록 + 프로그램 목록을 동시에 요청 (서로 기다릴 필요 없으니 Promise.all)
@@ -53,6 +64,7 @@
            startDate: r.startDate,
            endDate: r.endDate,
            participantCount: r.participantCount,
+           createdAt: r.createdAt,
            amount: payment ? payment.amount : null,
            paymentMethod: payment ? payment.paymentMethod : null,
            program: {
@@ -66,6 +78,13 @@
          });
        }
 
+       // 예약확정/취소는 시작일 빠른 순으로 위에, 이용완료는 시작일 늦은 순으로 그 아래에 모아서 보여줌
+       const upcoming = RESERVATIONS.filter(r => r.status !== '이용완료')
+         .sort((a, b) => a.startDate.localeCompare(b.startDate));
+       const finished = RESERVATIONS.filter(r => r.status === '이용완료')
+         .sort((a, b) => b.startDate.localeCompare(a.startDate));
+       RESERVATIONS = [...upcoming, ...finished];
+
        renderList();
      } catch (err) {
        console.error('예약 목록을 불러오지 못했습니다.', err);
@@ -73,23 +92,26 @@
      }
    }
   let selectedReservationId = null;
+  let statusFilter = ''; // '' = 전체
 
   function renderList() {
     const listEl = document.getElementById('reservation-list');
-    document.getElementById('count-label').textContent = RESERVATIONS.length;
+    const filtered = statusFilter ? RESERVATIONS.filter(r => r.status === statusFilter) : RESERVATIONS;
+    document.getElementById('count-label').textContent = filtered.length;
 
-    if (RESERVATIONS.length === 0) {
-      listEl.innerHTML = '<p class="empty-msg">아직 예약한 템플스테이가 없습니다.</p>';
+    if (filtered.length === 0) {
+      listEl.innerHTML = '<p class="empty-msg">해당하는 예약이 없습니다.</p>';
       return;
     }
 
-    listEl.innerHTML = RESERVATIONS.map(r => `
+    listEl.innerHTML = filtered.map(r => `
       <article class="reservation-card" data-id="${r.reservationId}">
         <div class="info">
           <h3>${r.program.title}</h3>
           <p>${r.program.templeName} · ${r.program.region}</p>
         </div>
         <div class="meta">
+          <p class="applied-at">신청 ${formatAppliedAt(r.createdAt)}</p>
           <div class="date">${r.startDate}${r.startDate !== r.endDate ? ' ~ ' + r.endDate : ''}</div>
           <span class="status-badge status-${r.status}">${r.status}</span>
         </div>
@@ -113,13 +135,14 @@
     document.getElementById('detail-status-badge').className = `status-badge status-${r.status}`;
     document.getElementById('detail-title').textContent = r.program.title;
     document.getElementById('detail-temple-region').textContent = `${r.program.templeName} · ${r.program.region}`;
-    document.getElementById('detail-program-link').href = r.programId ? `/reservation?programId=${r.programId}` : '#';
+    document.getElementById('detail-program-link').href = r.programId ? `/reservation/programs/${r.programId}` : '#';
 
     document.getElementById('detail-duration').textContent = r.program.duration;
     document.getElementById('detail-price').textContent = `${r.program.price.toLocaleString()}원`;
     document.getElementById('detail-description').textContent = r.program.description;
 
     document.getElementById('detail-reservation-id').textContent = `#${r.reservationId}`;
+    document.getElementById('detail-created-at').textContent = formatAppliedAt(r.createdAt);
     document.getElementById('detail-date-range').textContent =
       r.startDate === r.endDate ? `${r.startDate} (당일)` : `${r.startDate} ~ ${r.endDate}`;
     document.getElementById('detail-participant-count').textContent = `${r.participantCount}명`;
@@ -137,6 +160,14 @@
       cancelNote.textContent = '';
     }
   }
+
+  document.querySelectorAll('#status-filter button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      statusFilter = btn.dataset.status;
+      document.querySelectorAll('#status-filter button').forEach(b => b.classList.toggle('active', b === btn));
+      renderList();
+    });
+  });
 
   document.getElementById('back-to-list-btn').addEventListener('click', () => {
     document.getElementById('detail-view').style.display = 'none';

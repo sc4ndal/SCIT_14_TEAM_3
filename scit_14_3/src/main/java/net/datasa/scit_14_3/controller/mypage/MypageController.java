@@ -1,12 +1,18 @@
 package net.datasa.scit_14_3.controller.mypage;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.mypage.MypageEditViewDto;
 import net.datasa.scit_14_3.security.AppUserDetails;
+import net.datasa.scit_14_3.service.buddhism.DailyQuoteService;
+import net.datasa.scit_14_3.service.buddhism.TempleFoodService;
 import net.datasa.scit_14_3.service.mypage.MypageService;
 import net.datasa.scit_14_3.service.integration.CloudinaryService;
 import net.datasa.scit_14_3.service.temple.TempleService;
+import net.datasa.scit_14_3.service.user.EmailVerificationService;
+import net.datasa.scit_14_3.service.user.UserService;
+import net.datasa.scit_14_3.util.PasswordPolicy;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -44,8 +50,8 @@ public class MypageController {
 	public String reservations() {
 		return "mypage/myReservations";
 	}
-	
-	@GetMapping("/mypage/myReviews")
+
+	@GetMapping("/mypage/myReviews") // 내가 작성한 리뷰
 	public String reviews() {
 		return "mypage/myReviews";
 	}
@@ -70,7 +76,7 @@ public class MypageController {
 		return "mypage/favorites/foods";
 	}
 	
-	@GetMapping("/mypage/favorites/reviews")
+	@GetMapping("/mypage/favorites/reviews") // 내가 좋아요 한 리뷰
 	public String favoriteReviews() {
 		return "mypage/favorites/reviews";
 	}
@@ -79,21 +85,16 @@ public class MypageController {
 	public String editForm(@AuthenticationPrincipal AppUserDetails principal, Model model) {
 
 		// 사찰 계정은 USER 테이블에 없어 뷰 DTO 조회가 불가 - 비밀번호 변경만 별도 흐름으로 처리한다.
-		// (edit.html은 ${user.*} 를 참조하므로 사찰용 화면은 추후 분리 권장)
+		// 사찰/일반회원은 수정 내용이 많이 달라서 템플릿 자체를 분리함(templeEdit.html / userEdit.html).
 		if (principal.isTempleAccount()) {
-			model.addAttribute("isTempleAccount", true);
-			model.addAttribute("loginType", "TEMPLE");
-			model.addAttribute("isLocalMember", false);
 			model.addAttribute("formData", templeService.getInfo(principal.getTempleId()));
-			return "mypage/edit";
+			return "mypage/templeEdit";
 		}
 
 		MypageEditViewDto user = mypageService.getEditView(principal.getUsername());
 		model.addAttribute("user", user);
 		model.addAttribute("loginType", user.getLoginType());     // "LOCAL" | "KAKAO"
-		model.addAttribute("isLocalMember", user.isLocalMember());
-		model.addAttribute("isTempleAccount", false);
-		return "mypage/edit";
+		return "mypage/userEdit";
 	}
 
 	/** 사찰 계정 본인이 직접 수정 가능한 값들만 - 이름/주소/위치/지역/장소유형처럼 잘못 넣으면

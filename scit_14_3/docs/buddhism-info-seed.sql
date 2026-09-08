@@ -98,7 +98,20 @@ INSERT INTO buddhism_info (category, title, content) VALUES
 ('용어', '화엄경', '온 세상이 서로 비추며 이어져 있다는 장대한 세계관을 담은 경전입니다. 분량과 내용 모두 깊어서 어느 정도 익숙해진 뒤에 읽기를 권합니다.');
 
 
--- 사찰 예절 가이드 --
+-- ============================================================
+-- 사찰 예절 가이드 (category='예절가이드')
+--
+-- /info?category=예절가이드 화면(templates/buddhism/etiquetteGuide.html)이 읽어갑니다.
+-- 카드 앞 A~H 배지는 DB 컬럼이 아니라 post_id 오름차순 순서대로 서버가 매기므로,
+-- 아래 INSERT 순서가 곧 화면에 나오는 순서입니다.
+--
+-- content는 "• 액션 / → 이유" 형식을 지켜야 합니다 - etiquetteGuide.js의
+-- parseContent()가 이 두 줄 형식을 기준으로 아코디언 항목을 만듭니다.
+-- (들여쓰기는 trim으로 무시되므로 자유롭게 넣어도 됩니다.)
+-- ============================================================
+
+DELETE FROM buddhism_info WHERE category = '예절가이드';
+
 INSERT INTO BUDDHISM_INFO (category, title, content) VALUES
     ('예절가이드', '방문 준비',
      '• 단정하고 편한 옷차림

@@ -9,6 +9,17 @@
     실제로 컨트롤러 만들면 그 URL로만 바꿔주면 됨.
 */
  
+// 서버가 내려주는 신청일시("2026-09-07T14:47:03...") -> "26/09/07 14:47" 로 표시
+function formatAppliedAt(iso) {
+  if (!iso) return '-';
+  const yy = iso.slice(2, 4);
+  const mm = iso.slice(5, 7);
+  const dd = iso.slice(8, 10);
+  const hh = iso.slice(11, 13);
+  const mi = iso.slice(14, 16);
+  return `${yy}/${mm}/${dd} ${hh}:${mi}`;
+}
+
 // ------------------------- API 엔드포인트 -------------------------
   const authInfo = document.getElementById('auth-info');
   const isLoggedIn = !!authInfo;
@@ -99,13 +110,17 @@ function computeEndDate(program, startDate) {
   return start.toISOString().slice(0, 10);
 }
 
+function remainingSeats(p) {
+  return p.maxParticipant - (p.reservedCount || 0);
+}
+
 function filteredPrograms() {
   const f = state.filter;
   return state.programs.filter(p =>
     (!f.region || p.region === f.region) &&
     (!f.templeId || String(p.templeId) === f.templeId) &&
     (!f.programType || p.programType === f.programType) &&
-    (!f.headcount || p.maxParticipant >= Number(f.headcount))
+    (!f.headcount || remainingSeats(p) >= Number(f.headcount))
   );
 }
 
@@ -119,29 +134,17 @@ function uniqueTemples(region) {
   return [...seen.entries()]; // [[templeId, templeName], ...]
 }
 
-// TEXT 컬럼(줄바꿈/쉼표 구분 문자열)을 항목별 배열로 나눠주는 헬퍼
-function splitTextField(text) {
-  if (!text) return [];
-  return text.split(/\n|,/).map(s => s.trim()).filter(Boolean);
-}
-
 // ------------------------- STEP 전환 (1/2/3) -------------------------
 function goToStep(step) {
   state.step = step;
   document.querySelectorAll('main > section[data-step]').forEach(sec => {
     sec.hidden = Number(sec.dataset.step) !== step;
   });
-  document.getElementById('step-1-detail').hidden = true;   // 추가: 상세보기 화면은 항상 숨김 처리
   document.querySelectorAll('#progress-steps li').forEach((li, i) => {
     li.classList.toggle('active', i === step - 1);
   });
 
   window.scrollTo(0, 0);   // 추가: 화면 맨 위로 스크롤 (단계 바뀌는 느낌 확실하게)
-
-  // step 1로 돌아올 때는 항상 목록부터 보여줌 (상세보기는 초기화)
-  if (step === 1) {
-    showProgramList();
-  }
 }
 
 // ------------------------- STEP 1: 목록 렌더링 -------------------------
@@ -179,24 +182,28 @@ function renderProgramList() {
     return;
   }
 
-  listEl.innerHTML = results.map(p => `
+  listEl.innerHTML = results.map(p => {
+    const full = remainingSeats(p) <= 0;
+    return `
     <article class="program-card ${state.checkedProgramId === p.programId ? 'picked' : ''}" data-program-id="${p.programId}">
       <span class="program-type-badge">${p.programType}</span>
       <h3 class="program-title">${p.title}</h3>
       <p class="program-temple-region">${p.templeName} · ${p.region}</p>
+      <p class="program-capacity">
+        <span class="capacity-dot ${full ? 'full' : 'open'}"></span>
+        ${p.reservedCount || 0} / ${p.maxParticipant}명
+      </p>
       <div class="program-price">
         <span class="price-adult">${p.price.toLocaleString()}원</span>
       </div>
-      <button type="button" class="program-detail-btn" data-program-id="${p.programId}">상세보기</button>
+      <a class="program-detail-btn" href="/reservation/programs/${p.programId}">상세보기</a>
     </article>
-  `).join('');
+  `;
+  }).join('');
 
-  // 상세보기 버튼은 카드 선택과 별개로 동작 (클릭 시 카드 선택으로 안 번지게 stopPropagation)
+  // 상세보기는 이제 실제 링크(<a>)라 stopPropagation만 해서 카드 클릭 선택으로 안 번지게 함
   listEl.querySelectorAll('.program-detail-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      showProgramDetail(Number(btn.dataset.programId));
-    });
+    btn.addEventListener('click', (e) => e.stopPropagation());
   });
 
   // 카드 자체를 클릭하면 그 프로그램이 선택됨 (한 번에 하나만 선택 가능)
@@ -217,60 +224,15 @@ function updateGoToReserveButton() {
   document.getElementById('go-to-reserve-btn').disabled = !state.checkedProgramId;
 }
 
-// ------------------------- STEP 1-상세: 프로그램 상세보기 -------------------------
-// 목록/상세는 진행 표시상 둘 다 "01 프로그램 목록" 단계에 속하는 서브 화면이라
-// state.step은 그대로 1로 유지하고, #step-1 / #step-1-detail 두 영역만 서로 토글한다.
-
-function showProgramList() {
-  document.getElementById('step-1').hidden = false;
-  document.getElementById('step-1-detail').hidden = true;
-}
-
-function showProgramDetail(programId) {
-  const program = state.programs.find(p => p.programId === programId);
-  if (!program) return;
-
-  document.getElementById('step-1').hidden = true;
-  document.getElementById('step-1-detail').hidden = false;
-
-  renderProgramDetail(program);
-  loadDetailMap(programId);     // 추가: 사찰 위치 지도 그리기
-}
-
-function renderProgramDetail(p) {
-  document.querySelector('#step-1-detail .detail-title').textContent = p.title;
-  document.querySelector('#step-1-detail .detail-sub').textContent =
-    `${p.templeName} · ${p.region} · ${p.programType}`;
-
-  document.getElementById('detail-description').textContent = p.description || '';
-
-  document.getElementById('detail-schedule').innerHTML =
-    splitTextField(p.schedule).map(line => `<p>${line}</p>`).join('');
-
-  document.getElementById('detail-required-items').innerHTML =
-    splitTextField(p.requiredItems).map(item => `<li>${item}</li>`).join('');
-
-  document.getElementById('detail-price').textContent = `${p.price.toLocaleString()}원`;
-
-  document.getElementById('detail-precautions').textContent = p.templePrecautions || '';
-  document.getElementById('detail-refund-policy').textContent = p.templeRefundPolicy || '';
-
-  // "예약 신청" 버튼에 현재 programId를 기억시켜 둠
-  document.getElementById('detail-reserve-btn').dataset.programId = p.programId;
-}
-
 document.getElementById('go-to-reserve-btn').addEventListener('click', () => {
   if (!state.checkedProgramId) return;
   selectProgram(state.checkedProgramId);
 });
 
-document.getElementById('detail-back-to-list-btn').addEventListener('click', showProgramList);
-
 document.getElementById('step3-back-to-list-btn').addEventListener('click', () => {
-  goToStep(1);
-});
-document.getElementById('detail-reserve-btn').addEventListener('click', (e) => {
-  selectProgram(Number(e.target.dataset.programId));
+  // goToStep(1)만 하면 state.programs가 방금 예약하기 전 값 그대로라 예약자수가 안 바뀐 걸로 보임 -
+  // 페이지를 아예 새로 불러서 목록을 다시 조회하게 함
+  location.href = '/reservation';
 });
 
 function selectProgram(programId) {
@@ -568,8 +530,9 @@ async function submitReservation() {
   `사찰: ${p.templeName} (${p.region})\n` +
   `기간: ${dateLabel}\n` +
   `인원: ${state.participantCount}명\n` +
-  `결제 수단: ${state.paymentMethod}\n` +
-  `총 금액: ${totalAmount.toLocaleString()}원`;
+  `결제 수단: ${state.paymentMethod}` +
+  (state.paymentMethod === '계좌이체' ? `\n입금자명: ${state.depositorName || '(미입력)'}` : '') +
+  `\n총 금액: ${totalAmount.toLocaleString()}원`;
 
   const ok = confirm(confirmMessage);
   if (!ok) return;
@@ -642,7 +605,11 @@ async function submitReservation() {
 
     const payment = await payRes.json();
 
-    state.reservationResult = { reservation, payment, program: p };
+    // 방금 만든 예약은 신청일시(created_at)가 DB가 채워주는 값이라 응답에 아직 안 실려있음 -
+    // 다시 조회해서 실제 신청일시가 담긴 예약 정보로 바꿔치기함.
+    const freshReservation = await fetch(`/templestayreservations/${reservation.reservationId}`).then(r => r.json());
+
+    state.reservationResult = { reservation: freshReservation, payment, program: p };
     goToStep(3);      // 지도 컨테이너가 hidden 상태에서 생성되면 크기가 0으로 잡혀 마커 위치가 어긋나므로 먼저 보이게 함
     await renderStep3();
   } catch (err) {
@@ -668,6 +635,7 @@ async function renderStep3() {
   }
 
   document.getElementById('result-reservation-id').textContent = `예약번호 ${reservation.reservationId}`;
+  document.getElementById('result-applied-at').textContent = formatAppliedAt(reservation.createdAt);
   document.getElementById('result-program-title').textContent = program.title || '';
   document.getElementById('result-temple-name').textContent = `${program.templeName || ''} · ${program.region || ''}`;
   document.getElementById('result-date-range').textContent =
@@ -712,7 +680,7 @@ function loadResultMap(program) {
 
 document.getElementById('go-to-my-reservations-btn').addEventListener('click', () => {
   // TODO: 마이페이지/내 예약 목록 페이지로 이동
-     location.href = '/mypage/myreservations';
+     location.href = '/mypage/myReservations';
 });
 
 // ------------------------- 필터 -------------------------
@@ -779,10 +747,14 @@ async function init() {
 
   await resumeAfterKakaoPay();
 
-  // 마이페이지 예약 상세 등 외부에서 "프로그램 상세보기"로 들어온 경우(?programId=X) 바로 열어줌
-  const linkedProgramId = new URLSearchParams(location.search).get('programId');
-  if (linkedProgramId) {
-    showProgramDetail(Number(linkedProgramId));
+  // 프로그램 상세보기 페이지(programDetail.js)의 "예약 신청" 버튼으로 들어온 경우
+  // (?startBooking=X) 목록 단계 건너뛰고 바로 예약 신청(step2)으로 이동.
+  // 비로그인 상태면 selectProgram이 /login?redirect=이 URL 그대로 보내야 하므로,
+  // 로그인 안 된 상태에서는 쿼리스트링을 미리 지우지 않는다(로그인 후 이 파라미터로 다시 돌아와서 이어짐).
+  const startBookingId = new URLSearchParams(location.search).get('startBooking');
+  if (startBookingId) {
+    if (isLoggedIn) history.replaceState({}, '', location.pathname);
+    selectProgram(Number(startBookingId));
   }
 }
 

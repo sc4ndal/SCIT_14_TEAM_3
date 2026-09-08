@@ -37,6 +37,7 @@ const I18N_SOURCE_LANG = 'ko';
 let i18nCurrentLang = 'ko';
 const i18nTranslationCache = {}; // i18nTranslationCache[lang][원문] = 번역문
 let i18nOriginalTextNodes = null; // [{node, text}] - 최초 1회만 스냅샷
+let i18nOriginalPlaceholders = null; // [{el, text}] - placeholder 속성은 텍스트 노드가 아니라 별도 스냅샷
 let i18nMutating = false; // 번역 결과를 우리가 쓰는 중인지(옵저버가 자기 자신을 보고 재귀하지 않도록)
 let i18nObserver = null;
 let i18nRetranslateTimer = null;
@@ -51,6 +52,12 @@ const I18N_MANUAL_OVERRIDES = {
     '회원가입': { ja: '会員登録', en: 'Sign Up' },
     '계정이 없으신가요?': { ja: 'アカウントをお持ちではありませんか？', en: "Don't have an account?" },
     '이미 계정이 있으신가요?': { ja: 'すでにアカウントをお持ちですか？', en: 'Already have an account?' },
+
+    // ── 로그인 페이지(auth/login.html)의 카카오 콜백 안내 문구 - UserController가
+    // flash attribute(loginNotice)로 넘기는 고정 문구라 th:text로 그려지므로,
+    // data-i18n 대신 여기 사전(텍스트 매칭)으로 처리함 ──
+    '이미 가입된 카카오 계정입니다. 로그인해주세요.': { ja: '既に登録済みのKakaoアカウントです。ログインしてください。', en: 'This Kakao account is already registered. Please log in.' },
+    '비밀번호가 재설정되었습니다. 새 비밀번호로 로그인해주세요.': { ja: 'パスワードが再設定されました。新しいパスワードでログインしてください。', en: 'Your password has been reset. Please log in with your new password.' },
 
     // ── 프래그먼트: 회원 드롭다운/로그아웃 (fragments/common-includes.html) ──
     '마이페이지': { ja: 'マイページ', en: 'My Page' },
@@ -102,6 +109,14 @@ function collectI18nTextNodes(){
     let n;
     while((n = walker.nextNode())) nodes.push(n);
     return nodes;
+}
+
+/** input/textarea의 placeholder도 화면에 보이는 안내문이라 같이 번역 대상에 넣음 -
+    속성이라 TreeWalker(SHOW_TEXT)로는 안 잡혀서 별도로 모음. */
+function collectI18nPlaceholderElements(){
+    return Array.from(document.body.querySelectorAll('[placeholder]')).filter(el => {
+        return el.placeholder && el.placeholder.trim() && !isI18nExcluded(el);
+    });
 }
 
 /** uniqueTexts 중 아직 캐시에 없는 것만 Translator API로 번역해서 lang의 캐시에 채워 넣음.
@@ -181,20 +196,42 @@ function applyTranslatedText(entries, lang){
     }
 }
 
-/** 최초 스냅샷 이후에 새로 생긴 텍스트 노드(달력 월 이동 등)를 찾아서 같은 방식으로 번역함. */
+/** placeholder는 앞뒤 공백을 보존할 이유가 없어(입력칸 안내문일 뿐) 값을 그대로 치환함. */
+function applyTranslatedPlaceholders(entries, lang){
+    entries.forEach(({el, text}) => {
+        const trimmed = text.trim();
+        if(!trimmed) return;
+        const translated = i18nTranslationCache[lang][trimmed];
+        if(translated === undefined) return;
+        el.placeholder = translated;
+    });
+}
+
+/** 최초 스냅샷 이후에 새로 생긴 텍스트 노드/placeholder(달력 월 이동, 모달 등)를 찾아서 같은 방식으로 번역함. */
 async function retranslateNewContent(lang){
     if(!i18nOriginalTextNodes || lang === I18N_SOURCE_LANG) return;
-    const known = new Set(i18nOriginalTextNodes.map(o => o.node));
-    const freshNodes = collectI18nTextNodes().filter(n => !known.has(n));
-    if(freshNodes.length === 0) return;
+    const knownNodes = new Set(i18nOriginalTextNodes.map(o => o.node));
+    const freshNodes = collectI18nTextNodes().filter(n => !knownNodes.has(n));
 
-    const entries = freshNodes.map(node => ({node, text: node.textContent}));
-    i18nOriginalTextNodes.push(...entries);
+    const knownEls = new Set((i18nOriginalPlaceholders || []).map(o => o.el));
+    const freshPlaceholderEls = collectI18nPlaceholderElements().filter(el => !knownEls.has(el));
+
+    if(freshNodes.length === 0 && freshPlaceholderEls.length === 0) return;
+
+    const textEntries = freshNodes.map(node => ({node, text: node.textContent}));
+    const placeholderEntries = freshPlaceholderEls.map(el => ({el, text: el.placeholder}));
+    i18nOriginalTextNodes.push(...textEntries);
+    if(!i18nOriginalPlaceholders) i18nOriginalPlaceholders = [];
+    i18nOriginalPlaceholders.push(...placeholderEntries);
 
     try {
-        const uniqueTexts = Array.from(new Set(entries.map(o => o.text.trim()).filter(Boolean)));
+        const uniqueTexts = Array.from(new Set([
+            ...textEntries.map(o => o.text.trim()),
+            ...placeholderEntries.map(o => o.text.trim())
+        ].filter(Boolean)));
         await ensureTranslated(uniqueTexts, lang);
-        applyTranslatedText(entries, lang);
+        applyTranslatedText(textEntries, lang);
+        applyTranslatedPlaceholders(placeholderEntries, lang);
     } catch(e){
         console.warn('[common.js] 새로 생긴 텍스트 번역 중 오류가 발생했습니다.', e);
     }
@@ -215,6 +252,9 @@ async function defaultOnLanguageChange(lang, btn){
     if(!i18nOriginalTextNodes){
         i18nOriginalTextNodes = collectI18nTextNodes().map(node => ({node, text: node.textContent}));
     }
+    if(!i18nOriginalPlaceholders){
+        i18nOriginalPlaceholders = collectI18nPlaceholderElements().map(el => ({el, text: el.placeholder}));
+    }
 
     if(lang === I18N_SOURCE_LANG){
         i18nCurrentLang = lang;
@@ -233,10 +273,14 @@ async function defaultOnLanguageChange(lang, btn){
     if(btn) btn.classList.add('i18n-loading');
 
     try {
-        const uniqueTexts = Array.from(new Set(i18nOriginalTextNodes.map(o => o.text.trim()).filter(Boolean)));
+        const uniqueTexts = Array.from(new Set([
+            ...i18nOriginalTextNodes.map(o => o.text.trim()),
+            ...i18nOriginalPlaceholders.map(o => o.text.trim())
+        ].filter(Boolean)));
         await ensureTranslated(uniqueTexts, lang);
         i18nCurrentLang = lang;
         applyTranslatedText(i18nOriginalTextNodes, lang);
+        applyTranslatedPlaceholders(i18nOriginalPlaceholders, lang);
         startI18nObserver();
     } catch(e){
         console.warn('[common.js] 번역 중 오류가 발생했습니다.', e);
@@ -249,6 +293,9 @@ function applyOriginalText(){
     i18nMutating = true;
     try {
         i18nOriginalTextNodes.forEach(({node, text}) => { node.textContent = text; });
+        if(i18nOriginalPlaceholders){
+            i18nOriginalPlaceholders.forEach(({el, text}) => { el.placeholder = text; });
+        }
     } finally {
         i18nMutating = false;
     }

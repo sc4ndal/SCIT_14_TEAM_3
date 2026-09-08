@@ -566,6 +566,45 @@ a {
 	text-decoration: none;
 }
 
+/* ---------- 즐겨찾기 버튼 (오늘의 한마디 / 사찰 음식 공용) ---------- */
+
+.favorite-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 20px;
+	border: 1px solid var(--accent);
+	border-radius: 999px;
+	background: #fff;
+	color: var(--accent);
+	font-size: 14px;
+	font-family: inherit;
+	cursor: pointer;
+	transition: background-color .15s ease, color .15s ease;
+}
+
+.favorite-toggle:hover {
+	background: var(--accent-soft);
+}
+
+.favorite-toggle:disabled {
+	opacity: .6;
+	cursor: default;
+}
+
+.favorite-toggle .favorite-toggle__icon::before {
+	content: "☆";
+}
+
+.favorite-toggle.is-favorited {
+	background: var(--accent);
+	color: #fff;
+}
+
+.favorite-toggle.is-favorited .favorite-toggle__icon::before {
+	content: "★";
+}
+
 /* ---------- 반응형: 좁은 화면에서는 지그재그를 한 줄로 편다 ---------- */
 
 @media (max-width: 860px) {

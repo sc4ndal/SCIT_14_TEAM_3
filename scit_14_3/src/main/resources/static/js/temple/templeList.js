@@ -6,10 +6,28 @@
 //       해당 사찰로 지도 중심을 옮기고 마커를 클릭한 것처럼 정보창을 띄운다.
 
 kakao.maps.load(function () {
+    // 카드 박스 정렬 맞게끔 설정함.
+    function syncSearchBoxWidth() {
+        var filterRow = document.getElementById('filter-row');
+        var searchBox = document.getElementById('temple-search-box');
+        searchBox.style.width = filterRow.offsetWidth + 'px';
+    }
+
+    syncSearchBoxWidth();
+    window.addEventListener('resize', syncSearchBoxWidth);
+
     // 대한민국 전체가 보이도록 넓게 설정 (사찰들이 전국에 퍼져있으므로)
     var map = new kakao.maps.Map(document.getElementById('map'), {
         center: new kakao.maps.LatLng(35.9, 127.7),
         level: 13
+    });
+
+    // 지도 빈 공간 클릭하면 열려있던 정보창 닫기
+    kakao.maps.event.addListener(map, 'click', function () {
+        if (currentOpenInfoWindow) {
+            currentOpenInfoWindow.close();
+            currentOpenInfoWindow = null;
+        }
     });
 
     // 검색 기능에서 쓰기 위해 사찰 데이터 + 마커를 기억해둔다 (templeId 기준)
@@ -50,7 +68,34 @@ kakao.maps.load(function () {
         });
 
     // ------------------------- 검색 -------------------------
+    function showResultList(temples) {
+        var list = document.getElementById('result-list');
+        list.innerHTML = ''; // 이전 검색 결과 지우기
 
+        temples.forEach(function (temple){
+            var li = document.createElement('li');
+            // 검색 결과 리스트에 사찰 이름이랑 주소 표시
+            li.innerHTML =
+            '<div class = "result-name">' + temple.name + '</div>' +
+            '<div class = "result-address">' + temple.address + '</div>';
+
+        // 리스트 항목을 클릭하면 그 사찰로 이동 + 정보창 열기
+        li.addEventListener('click', function() {
+            map.setCenter(new kakao.maps.LatLng(temple.latitude, temple.longitude));
+            map.setLevel(4);
+
+            var marker = markerByTempleId[temple.templeId];
+            if(marker) {
+                kakao.maps.event.trigger(marker, 'click');
+            }
+        });
+        list.appendChild(li);
+        });
+        document.getElementById('result-panel').hidden = false;
+    }
+    document.getElementById('result-panel-close').addEventListener('click', function(){
+        document.getElementById('result-panel').hidden = true;
+    });
     function runSearch() {
         var type = document.getElementById('search-type').value; // 'name' 또는 'address'
         var keyword = document.getElementById('search-keyword').value.trim();
@@ -60,10 +105,40 @@ kakao.maps.load(function () {
             return;
         }
 
-        var found = templeList.find(function (temple) {
-            var target = type === 'address' ? temple.address : temple.name;
-            return target && target.indexOf(keyword) !== -1;
+    if (type === 'address') {
+        // 주소/지역 검색 - 조건에 맞는 사찰을 전부 찾는다
+        var matched = templeList.filter(function (temple) {
+            var addressMatch = temple.address && temple.address.indexOf(keyword) !== -1;
+            var regionMatch = temple.region && temple.region.indexOf(keyword) !== -1;
+            return addressMatch || regionMatch;
         });
+
+        if (matched.length === 0) {
+            alert('검색 결과가 없습니다.');
+            return;
+        }
+
+        // 검색된 사찰만 지도에 남기고 나머지는 숨긴다
+        templeList.forEach(function (temple) {
+            var marker = markerByTempleId[temple.templeId];
+            if (!marker) return;
+            marker.setMap(matched.indexOf(temple) !== -1 ? map : null);
+        });
+
+        // 검색된 사찰들이 전부 화면에 들어오게 지도 범위를 맞춘다
+        var bounds = new kakao.maps.LatLngBounds();
+        matched.forEach(function (temple) {
+            bounds.extend(new kakao.maps.LatLng(temple.latitude, temple.longitude));
+        });
+        map.setBounds(bounds);
+        showResultList(matched);
+        return;
+    }
+
+    // 이름 검색은 기존과 동일 - 하나만 찾아서 그 위치로 이동 + 정보창 열기
+    var found = templeList.find(function (temple) {
+        return temple.name && temple.name.indexOf(keyword) !== -1;
+    });
 
         if (!found) {
             alert('검색 결과가 없습니다.');
@@ -80,13 +155,51 @@ kakao.maps.load(function () {
             kakao.maps.event.trigger(marker, 'click');
         }
     }
-
     document.getElementById('search-btn').addEventListener('click', runSearch);
-
     // 입력창에서 엔터키로도 검색되게
     document.getElementById('search-keyword').addEventListener('keydown', function (e) {
         if (e.key === 'Enter') {
             runSearch();
         }
     });
+
+    var typeFieldMap = {
+        'data-type-sea': 'supportSea',
+        'data-type-mountain': 'supportMountain',
+        'data-type-river': 'supportRiver',
+        'data-type-urban': 'supportUrban'
+    };
+
+    var typeAndEnglishButtons = document.querySelectorAll('#temple-filter-box button, #filter-support-english');
+
+    typeAndEnglishButtons.forEach(function (btn){
+        btn.addEventListener('click', function (){
+            btn.classList.toggle('active');
+            applyFilters();
+        });
+    });
+    function applyFilters() {
+        var activeTypeFields = [];
+        document.querySelectorAll('#temple-filter-box button.active').forEach(function (btn){
+            var field = typeFieldMap[btn.id];
+            if(field) {
+                activeTypeFields.push(field);
+            }
+        });
+
+        var englishRequired = document.getElementById('filter-support-english').classList.contains('active');
+
+        templeList.forEach(function (temple){
+            var matchType = activeTypeFields.every(function (field) {
+                return temple[field];
+            });
+            var matchEnglish = !englishRequired || temple.supportEnglish;
+
+            var match = matchType && matchEnglish;
+
+            var marker = markerByTempleId[temple.templeId];
+            if(marker) { marker.setMap(match ? map : null);}
+
+        });
+    }
 });
