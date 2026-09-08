@@ -73,7 +73,7 @@ function createTempleMarker(map, temple) {
     var favoriteBtn = infoContent.querySelector('.favorite-star-btn');
     var favoriteWrapper = infoContent.querySelector('.favorite-wrapper');
 
-    // 즐겨찾기 버튼에 마우스 올렸을 때 뜨는 말풍선 (이름표랑 같은 스타일)
+    // 6. 즐겨찾기 버튼에 마우스 올렸을 때 뜨는 말풍선 (이름표랑 같은 스타일)
     var favoriteTooltip = document.createElement('div');
     favoriteTooltip.style.cssText =
         'position:absolute;bottom:120%;left:50%;transform:translateX(-50%);' +
@@ -90,9 +90,79 @@ function createTempleMarker(map, temple) {
         favoriteTooltip.style.display = 'none';
     });
 
+    // 7. 정보창 열릴 때, 이미 즐겨찾기 되어있는지 서버에 물어봐서 별표 색 맞춰놓기
+    fetch('/api/favoritetemples/' + temple.templeId)
+    .then(function (response){
+        if (!response.ok) {
+            throw new Error('즐겨찾기 상태 확인 실패');
+        }
+        return response.json();
+    })
+    .then(function (data) {
+        if (data.favorite) {
+            favoriteBtn.classList.add('active');
+            favoriteBtn.style.color = '#f4c25c';
+            // favoriteTempleIds 배열에 이 사찰 ID가 아직 없으면 추가
+            if (window.favoriteTempleIds.indexOf(temple.templeId) === -1) {
+                window.favoriteTempleIds.push(temple.templeId);
+            }
+        } else {
+            favoriteBtn.classList.remove('active');
+            favoriteBtn.style.color = '#ccc';
+
+            // favoriteTempleIds 배열에서 이 사찰 ID의 위치를 찾음
+            var idx = window.favoriteTempleIds.indexOf(temple.templeId);
+            if (idx !== -1) {
+                // 배열 안에 있으면(-1이 아니면) 그 위치에서 1개를 삭제
+                window.favoriteTempleIds.splice(idx, 1)
+            }
+        }
+        // refreshFavoriteFilter 함수가 실제로 존재하는지 확인 (안전장치)
+        if (typeof window.refreshFavoriteFilter === 'function') {
+            window.refreshFavoriteFilter();
+        }
+    })
+    .catch(function (error) {
+        console.error(error);
+    });
+
+    // 8. 별표 클릭하면 서버에 토글 요청 보내서 실제로 저장/삭제
     favoriteBtn.addEventListener('click', function(){
-        favoriteBtn.classList.toggle('active');
-        favoriteBtn.style.color = favoriteBtn.classList.contains('active') ? '#f4c25c' : '#ccc';
+        fetch('/api/favoritetemples/' + temple.templeId + '/toggle', {
+            method: 'POST'
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('즐겨찾기 처리 실패 (로그인이 필요할 수 있어요.)');
+                }
+                return response.json();
+            })
+            .then(function (data) {
+                if (data.favorite) {
+                    favoriteBtn.classList.add('active');
+                    favoriteBtn.style.color = '#f4c25c';
+                     if (window.favoriteTempleIds.indexOf(temple.templeId) === -1) {
+                                        window.favoriteTempleIds.push(temple.templeId);
+                     }
+                } else {
+                    favoriteBtn.classList.remove('active');
+                    favoriteBtn.style.color = '#ccc';
+
+                    // favoriteTempleIds 배열에서 이 사찰 ID의 위치를 찾아서 삭제
+                    var idx = window.favoriteTempleIds.indexOf(temple.templeId);
+                    if (idx !== -1) {
+                        window.favoriteTempleIds.splice(idx, 1);
+                    }
+                }
+                 if (typeof window.refreshFavoriteFilter === 'function') {
+                    window.refreshFavoriteFilter();
+                    }
+            })
+            .catch(function (error) {
+                console.error(error);
+                alert('로그인 후 즐겨찾기가 가능합니다.')
+                location.href = '/login';
+            });
     });
 
     var infowindow = new kakao.maps.InfoWindow({
@@ -101,20 +171,15 @@ function createTempleMarker(map, temple) {
     });
 
 
-    // 6. 이벤트 등록: 마우스 오버 → 이름표 표시
+    // 9. 이벤트 등록: 마우스 오버 → 이름표 표시
     kakao.maps.event.addListener(marker, 'mouseover', function () {
         nameTooltip.setMap(map);
     });
 
-    // 7. 이벤트 등록: 마우스 아웃 → 이름표 숨김
+    // 10. 이벤트 등록: 마우스 아웃 → 이름표 숨김
     kakao.maps.event.addListener(marker, 'mouseout', function () {
         nameTooltip.setMap(null);
     });
-
-//    // 8. 이벤트 등록: 마커 클릭 → 상세 정보창 열기
-//    kakao.maps.event.addListener(marker, 'click', function () {
-//        infowindow.open(map, marker);
-//    });
 
      kakao.maps.event.addListener(marker, 'click', function () {
             // 이전에 열려있던 정보창이 있으면 닫기
