@@ -3,37 +3,277 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>사찰 예절 가이드</title>
-    <!-- TODO: 다른 페이지들처럼 common-includes.html 헤더/네비를 포함할지,
-         아니면 EtiquetteSimulation.html처럼 독립 페이지로 둘지 결정 필요.
-         지금은 시뮬레이션 페이지와 톤을 맞추기 위해 비워둠. -->
-    <link rel="stylesheet" th:href="@{/css/buddhism/etiquetteGuide.css}">
     <title>사찰 예절 가이드 | 산문</title>
     <link rel="stylesheet" th:href="@{/css/common.css}">
     <link rel="stylesheet" th:href="@{/css/buddhism/buddhism.css}">
+    <link rel="stylesheet" th:href="@{/css/buddhism/etiquetteGuide.css}">
 </head>
 <body>
 
 <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
 
+<!--
+    값 변경이 없는 정적 콘텐츠라 DB(BUDDHISM_INFO, category='예절가이드') 대신 화면에 직접 고정.
+    사전형식(data-i18n) 번역(js/buddhism/etiquetteGuide.i18n.js)을 쓰려면 서버 렌더 반복문이 아니라
+    빌드 타임에 구조가 고정된 정적 마크업이어야 해서 이렇게 바꿈. DB 테이블/서비스/DTO/시드
+    SQL(docs/buddhism-info-seed.sql)은 그대로 두고(나중에 다시 DB 구동 방식으로 되돌릴 수도 있어서)
+    여기서 불러오기만 안 함 - BuddhismInfoController/BuddhismInfoService.loadEtiquetteCategories() 참고.
+-->
+
 <div id="guide-root">
 
     <div class="guide-header">
-        <div class="kicker">준비하기</div>
-        <h1>사찰 예절 가이드</h1>
-        <p>처음 사찰에 방문할 때 알아두면 좋은 예절을 상황별로 정리했어요.<br>궁금한 항목을 눌러보세요.</p>
+        <div class="kicker" data-i18n="guideKicker">준비하기</div>
+        <h1 data-i18n="guideTitle">사찰 예절 가이드</h1>
+        <p>
+            <span data-i18n="guideSubtitle1">처음 사찰에 방문할 때 알아두면 좋은 예절을 상황별로 정리했어요.</span><br>
+            <span data-i18n="guideSubtitle2">궁금한 항목을 눌러보세요.</span>
+        </p>
     </div>
 
     <div id="category-list">
-        <section class="category-card" th:each="post : ${categories}">
-            <h2><span class="cat-letter" th:text="${post.letter}"></span><span th:text="${post.title}"></span></h2>
-            <ul class="item-list" th:text="${post.content}"></ul>
+
+        <section class="category-card">
+            <h2><span class="cat-letter">A</span><span data-i18n="cat_A_title">방문 준비</span></h2>
+            <ul class="item-list">
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_A1_action">단정하고 편한 옷차림</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_A1_reason">절하거나 바닥에 앉을 일이 많아서, 편한 옷이 예절에도 맞고 실제로도 편하다.</p></div>
+                    </div>
+                </li>
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_A2_action">벗기 편한 신발 준비</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_A2_reason">사찰 내부는 신발을 벗고 들어가는 공간이 많다.</p></div>
+                    </div>
+                </li>
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_A3_action">법당에서는 양말 착용(맨발 금지)</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_A3_reason">법당에 맨발로 들어가지 않는 것이 예의다.</p></div>
+                    </div>
+                </li>
+            </ul>
         </section>
+
+        <section class="category-card">
+            <h2><span class="cat-letter">B</span><span data-i18n="cat_B_title">법당에 들어가기</span></h2>
+            <ul class="item-list">
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_B1_action">가운데 문(어간문) 대신 좌우측 문 이용</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_B1_reason">어간문은 주지스님·원로스님, 큰 법회 때를 위한 문이다.</p></div>
+                    </div>
+                </li>
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_B2_action">문은 소리 나지 않게 닫기</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_B2_reason">안에서 참배하는 사람들을 방해하지 않기 위해서다.</p></div>
+                    </div>
+                </li>
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_B3_action">들어서면 불상을 향해 합장 반배</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_B3_reason">법당에 들어설 때의 기본 인사다.</p></div>
+                    </div>
+                </li>
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_B4_action">이미 켜진 초·향은 그대로 두고 빈자리 찾기</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_B4_reason">다른 사람의 발원(기원)을 방해하지 않고, 낭비도 막기 위해서다.</p></div>
+                    </div>
+                </li>
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_B5_action">중앙 통로 대신 양옆으로 이동</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_B5_reason">참배객 통행을 방해하지 않기 위해서다.</p></div>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="category-card">
+            <h2><span class="cat-letter">C</span><span data-i18n="cat_C_title">절하는 법</span></h2>
+            <ul class="item-list">
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_C1_action">합장: 두 손바닥·손가락을 가지런히 붙이고 손목을 가슴에서 약 5cm 띄워 세움</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_C1_reason">기본 자세다.</p></div>
+                    </div>
+                </li>
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_C2_action">반배: 합장한 채 허리와 머리를 약 60도 숙임</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_C2_reason">스님과 마주쳤을 때, 법당을 드나들 때 사용한다.</p></div>
+                    </div>
+                </li>
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_C3_action">삼배(큰절)는 세 번 — 임의로 늘리거나 줄이지 않기</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_C3_reason">부처님을 공경하고, 가르침을 따르고, 승가를 따른다는 세 가지 의미를 담은 정해진 횟수다.</p></div>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="category-card">
+            <h2><span class="cat-letter">D</span><span data-i18n="cat_D_title">다른 사람 배려하기</span></h2>
+            <ul class="item-list">
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_D1_action">절하고 있는 사람 앞을 지나가지 않기</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_D1_reason">수행을 방해하지 않도록 뒤쪽으로 돌아간다.</p></div>
+                    </div>
+                </li>
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_D2_action">스님과 마주치면 합장 반배 (허리 숙여 인사 X)</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_D2_reason">사찰에서의 올바른 인사법이다.</p></div>
+                    </div>
+                </li>
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_D3_action">스님이 공양·좌선·휴식 중이거나 새벽예불 전이면 인사 생략</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_D3_reason">방해가 되지 않게 하기 위해서다.</p></div>
+                    </div>
+                </li>
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_D4_action">스님과 대화할 때는 존칭 사용, 짧게</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_D4_reason">기본 예의다.</p></div>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="category-card">
+            <h2><span class="cat-letter">E</span><span data-i18n="cat_E_title">공양간에서</span></h2>
+            <ul class="item-list">
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_E1_action">먹을 수 있는 만큼만 담기</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_E1_reason">정성으로 준비된 음식을 남기지 않기 위해서다.</p></div>
+                    </div>
+                </li>
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_E2_action">외부 음식 반입하지 않기</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_E2_reason">사찰에서 제공하는 공양만 먹는 것이 원칙이다.</p></div>
+                    </div>
+                </li>
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_E3_action">육류·마늘·파 등 오신채류는 보통 없음</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_E3_reason">참고로 알아두면 좋다.</p></div>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="category-card">
+            <h2><span class="cat-letter">F</span><span data-i18n="cat_F_title">법회 참석 시</span></h2>
+            <ul class="item-list">
+                <li>
+                    <button class="item-action no-reason" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_F1_action">의식집·필기도구 미리 준비</span><span class="caret">▸</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_F2_action">시작 20~30분 전 도착, 늦었다면 조용히 착석</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_F2_reason">자리를 정돈할 시간을 확보하기 위해서다.</p></div>
+                    </div>
+                </li>
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_F3_action">중간에 일어나 나가지 않기</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_F3_reason">실례가 되는 행동이다.</p></div>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="category-card">
+            <h2><span class="cat-letter">G</span><span data-i18n="cat_G_title">나갈 때</span></h2>
+            <ul class="item-list">
+                <li>
+                    <button class="item-action no-reason" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_G1_action">쓰레기는 정해진 장소에, 개인 물건 챙기기</span><span class="caret">▸</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="item-action" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_G2_action">조용히 퇴장</span><span class="caret">▸</span>
+                    </button>
+                    <div class="item-reason">
+                        <div class="item-reason-inner"><p data-i18n="item_G2_reason">들어올 때와 마찬가지다.</p></div>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="category-card">
+            <h2><span class="cat-letter">H</span><span data-i18n="cat_H_title">경내에서 항상 지킬 것</span></h2>
+            <ul class="item-list">
+                <li>
+                    <button class="item-action no-reason" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_H1_action">음주·육식·흡연·고성방가 금지</span><span class="caret">▸</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="item-action no-reason" type="button" aria-expanded="false">
+                        <span class="dot"></span><span data-i18n="item_H2_action">비치된 물품은 소중히 다루기</span><span class="caret">▸</span>
+                    </button>
+                </li>
+            </ul>
+        </section>
+
     </div>
 
     <div class="sim-cta">
-        <a class="btn-secondary" th:href="@{/}">메인으로 돌아가기</a>
-        <a class="btn-primary" th:href="@{/etiquette-simulation}">시뮬레이션 하러가기</a>
+        <a class="btn-secondary" th:href="@{/}" data-i18n="guideBackHome">메인으로 돌아가기</a>
+        <a class="btn-primary" th:href="@{/etiquette-simulation}" data-i18n="guideGoSimulation">시뮬레이션 하러가기</a>
     </div>
 
 </div>
@@ -41,5 +281,6 @@
 <div th:replace="~{fragments/layout :: footer}"></div>
 
 <script th:src="@{/js/buddhism/etiquetteGuide.js}"></script>
+<script th:src="@{/js/buddhism/etiquetteGuide.i18n.js}"></script>
 </body>
 </html>

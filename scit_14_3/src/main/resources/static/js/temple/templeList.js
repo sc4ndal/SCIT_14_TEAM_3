@@ -10,7 +10,7 @@ kakao.maps.load(function () {
     function syncSearchBoxWidth() {
         var filterRow = document.getElementById('filter-row');
         var searchBox = document.getElementById('temple-search-box');
-        searchBox.style.width = (filterRow.offsetWidth) + 'px';    // 검색 기능창 폭
+        searchBox.style.width = filterRow.offsetWidth + 'px';
     }
 
     syncSearchBoxWidth();
@@ -80,7 +80,8 @@ kakao.maps.load(function () {
                     name: temple.name,
                     address: temple.address,
                     // imageUrl이 없으면(null) 기본 마커 이미지로 대체
-                    iconUrl: temple.imageUrl || '/images/temple-marker.svg'
+                    iconUrl: temple.imageUrl || '/images/temple-marker.svg',
+                    favorited: temple.favorited
                 });
 
                 markerByTempleId[temple.templeId] = marker;
@@ -284,6 +285,7 @@ kakao.maps.load(function () {
             applyFilters();
         });
     });
+
     function applyFilters() {
         var activeTypeFields = [];
         document.querySelectorAll('#temple-filter-box button.active').forEach(function (btn){

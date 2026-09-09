@@ -33,6 +33,22 @@ body {
 .etiquette-language-widget .language-button.active { color: #c99a4b; }
 .etiquette-language-widget .language-area span { color: rgba(255,255,255,.25); }
 
+/* ---------- 로딩 ---------- */
+#screen-loading {
+    justify-content: center; align-items: center; gap: 16px;
+    background: linear-gradient(160deg, #3a2f28, #1c1712);
+    color: #f3e9d8; text-align: center;
+}
+#screen-loading p { font-size: 14px; opacity: .75; margin: 0; }
+#loading-bar-track {
+    width: 220px; height: 6px; border-radius: 4px;
+    background: rgba(255,255,255,.12); overflow: hidden;
+}
+#loading-bar-fill {
+    width: 0%; height: 100%; background: #c99a4b; transition: width .15s ease-out;
+}
+#loading-percent { font-size: 13px; color: rgba(243,233,216,.6); }
+
 /* ---------- 타이틀 ---------- */
 #screen-title {
     justify-content: center; align-items: center; gap: 22px;

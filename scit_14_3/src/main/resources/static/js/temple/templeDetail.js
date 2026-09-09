@@ -20,3 +20,23 @@ kakao.maps.load(function () {
 
     kakao.maps.event.trigger(marker, 'click'); // 정보창도 바로 열어줌
 });
+
+// ===== 즐겨찾기 버튼 =====
+// 즐겨찾기 토글은 FavoriteTempleController(/api/favoritetemples/{id}/toggle)로 일원화됨
+document.getElementById('favorite-btn').addEventListener('click', function () {
+    var btn = this;
+    fetch('/api/favoritetemples/' + TEMPLE_ID + '/toggle', { method: 'POST' })
+        .then(function (res) {
+            if (!res.ok) {
+                throw new Error('즐겨찾기 처리 실패 (로그인이 필요할 수 있어요.)');
+            }
+            return res.json();
+        })
+        .then(function (data) {
+            btn.classList.toggle('active', data.favorite);
+        })
+        .catch(function () {
+            alert('로그인 후 즐겨찾기가 가능합니다.');
+            location.href = '/login';
+        });
+});

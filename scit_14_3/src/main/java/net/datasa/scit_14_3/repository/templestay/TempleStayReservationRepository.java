@@ -20,4 +20,11 @@ public interface TempleStayReservationRepository extends JpaRepository<TempleSta
 			"where r.programId = :programId and r.status <> :canceled")
 	int sumActiveParticipantCount(@Param("programId") Long programId,
 	                               @Param("canceled") TempleStayReservationEntity.Status canceled);
+
+	// sumActiveParticipantCount를 프로그램마다 반복 호출하면 목록 조회가 N+1이 돼서 느려짐 -
+	// 목록 화면(getAll/getByTemple)에서는 이걸로 한 번에 프로그램별 합계를 묶어서 가져온다.
+	// Object[] = { programId(Long), sum(Long) }
+	@Query("select r.programId, coalesce(sum(r.participantCount), 0) from TempleStayReservationEntity r " +
+			"where r.status <> :canceled group by r.programId")
+	List<Object[]> sumActiveParticipantCountGroupedByProgram(@Param("canceled") TempleStayReservationEntity.Status canceled);
 }

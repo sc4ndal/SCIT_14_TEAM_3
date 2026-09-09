@@ -40,6 +40,7 @@ const HOME_TRANSLATIONS = {
         weekdayThu: "목", weekdayFri: "금", weekdaySat: "토",
         eventDetailLabel: "자세히 보기 →",
         noEventText: "등록된 불교 행사가 없습니다.",
+        moreProgramsLabel: "더보기",
 
         modalPeriodLabel: "기간",
         modalPriceLabel: "참가비",
@@ -87,6 +88,7 @@ const HOME_TRANSLATIONS = {
         weekdayThu: "木", weekdayFri: "金", weekdaySat: "土",
         eventDetailLabel: "詳しく見る →",
         noEventText: "登録された仏教行事がありません。",
+        moreProgramsLabel: "もっと見る",
 
         modalPeriodLabel: "期間",
         modalPriceLabel: "参加費",
@@ -134,6 +136,7 @@ const HOME_TRANSLATIONS = {
         weekdayThu: "Thu", weekdayFri: "Fri", weekdaySat: "Sat",
         eventDetailLabel: "Learn more →",
         noEventText: "No Buddhist events registered.",
+        moreProgramsLabel: "See more",
 
         modalPeriodLabel: "Period",
         modalPriceLabel: "Price",

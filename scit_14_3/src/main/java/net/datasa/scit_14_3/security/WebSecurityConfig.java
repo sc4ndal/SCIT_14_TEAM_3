@@ -55,6 +55,9 @@ public class WebSecurityConfig {
 			// 사찰 / 템플스테이 조회
 			"/temples/**",
 			"/api/temples",
+			// 즐겨찾기 조회(단건/목록) - 지도 마커마다 호출되는 조회성 API라 비로그인도 열어둠(빈 값/false로 응답).
+			// 등록/해제(toggle)는 컨트롤러 내부 @PreAuthorize("hasRole('USER')")로 개별 인증 처리.
+			"/api/favoritetemples/**",
 			"/templestayprograms/**",
 			"/api/templestayprograms/**",
 			"/maptemplestayviews/**",

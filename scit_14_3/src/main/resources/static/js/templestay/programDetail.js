@@ -28,6 +28,15 @@ async function init() {
 }
 
 function render(p) {
+  const hero = document.querySelector('.detail-hero');
+  const heroImg = document.getElementById('detail-image');
+  if (p.imageUrl) {
+    heroImg.src = p.imageUrl;
+    heroImg.alt = p.title;
+  } else {
+    hero.style.display = 'none';
+  }
+
   document.getElementById('detail-title').textContent = p.title;
   document.getElementById('detail-sub').textContent = `${p.templeName} · ${p.region || ''} · ${p.programType}`;
 

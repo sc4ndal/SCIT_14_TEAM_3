@@ -70,6 +70,11 @@
           background: var(--bg-raised); border: 1px solid var(--line); border-radius: 16px;
           padding: 28px; box-shadow: var(--shadow);
         }
+        .detail-hero {
+          width: 100%; aspect-ratio: 16 / 7; border-radius: 12px; overflow: hidden;
+          background: var(--line-soft); margin-bottom: 22px;
+        }
+        .detail-hero img { width: 100%; height: 100%; object-fit: contain; display: block; }
         .detail-title { font-size: 24px; margin-top: 4px; }
         .detail-sub { font-size: 13.5px; color: var(--ink-soft); margin: 6px 0 4px; }
         .detail-capacity { display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--ink-soft); margin: 0 0 24px; }
@@ -78,6 +83,7 @@
         .capacity-dot.full { background: #b3402f; }
 
         .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .detail-grid .d-block.full { grid-column: 1 / -1; }
         @media (max-width: 640px) { .detail-grid { grid-template-columns: 1fr; } }
         .d-block { border: 1px solid var(--line-soft); border-radius: 12px; padding: 16px 18px; background: var(--bg); }
         .d-block h3 { font-size: 13px; font-family: "Noto Sans KR", sans-serif; letter-spacing: 0.03em; color: var(--pine); margin-bottom: 8px; }
@@ -111,6 +117,8 @@
     <a class="back-link" th:href="@{/reservation}">&larr; 목록으로</a>
 
     <div class="detail-card">
+        <div class="detail-hero"><img id="detail-image" alt=""></div>
+
         <h2 class="detail-title" id="detail-title"></h2>
         <p class="detail-sub" id="detail-sub"></p>
         <p class="detail-capacity">
@@ -119,11 +127,14 @@
         </p>
 
         <div class="detail-grid">
-            <div class="d-block">
+            <div class="d-block full">
                 <h3>프로그램 소개</h3>
                 <p id="detail-description"></p>
             </div>
-            <div id="detail-map"></div>
+            <div class="d-block full">
+                <h3>위치</h3>
+                <div id="detail-map"></div>
+            </div>
             <div class="d-block">
                 <h3>일정표</h3>
                 <div id="detail-schedule"></div>
@@ -143,7 +154,7 @@
                 <h3>유의사항</h3>
                 <p id="detail-precautions"></p>
             </div>
-            <div class="d-block">
+            <div class="d-block full">
                 <h3>환불 규정</h3>
                 <p id="detail-refund-policy"></p>
             </div>
