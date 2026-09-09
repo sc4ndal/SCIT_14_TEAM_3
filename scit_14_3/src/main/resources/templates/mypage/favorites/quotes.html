@@ -33,12 +33,12 @@
             아직 저장한 한마디가 없습니다. <a th:href="@{/info/quote}">오늘의 한마디 보러가기 →</a>
         </p>
 
-        <div class="quote-favorite-list" th:unless="${#lists.isEmpty(quotes)}">
-            <article class="quote-favorite-item" th:each="quote : ${quotes}" data-remove-on-unfavorite>
+        <div class="quote-favorite-grid" data-favorites-grid="quote-pagination" th:unless="${#lists.isEmpty(quotes)}">
+            <article class="quote-favorite-card" th:each="quote : ${quotes}" data-remove-on-unfavorite>
 
-                <div class="quote-favorite-item__text">
-                    <p class="quote-favorite-item__content" th:text="${quote.content()}">한마디 내용</p>
-                    <p class="quote-favorite-item__source" th:if="${quote.source() != null}"
+                <div class="quote-favorite-card__text">
+                    <p class="quote-favorite-card__content" th:text="${quote.content()}">한마디 내용</p>
+                    <p class="quote-favorite-card__source" th:if="${quote.source() != null}"
                        th:text="${quote.source()}">출처</p>
                 </div>
 
@@ -52,12 +52,19 @@
             </article>
         </div>
 
+        <div class="pagination" id="quote-pagination" th:unless="${#lists.isEmpty(quotes)}"></div>
+
+        <p class="favorites-more" th:unless="${#lists.isEmpty(quotes)}">
+            <a th:href="@{/info/quote}">다른 한마디 보러가기 →</a>
+        </p>
+
     </div>
 </main>
 
 <div th:replace="~{fragments/layout :: footer}"></div>
 
 <script defer th:src="@{/js/buddhism/favoriteButton.js}"></script>
+<script defer th:src="@{/js/mypage/favoritesPagination.js}"></script>
 
 </body>
 </html>

@@ -31,31 +31,38 @@
 	border-radius: 16px;
 }
 
-/* ---------- 저장한 한마디 ---------- */
-
-.quote-favorite-list {
-	margin-top: 48px;
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
+.favorites-more {
+	margin-top: 28px;
+	text-align: center;
+	font-size: 14px;
 }
 
-.quote-favorite-item {
+.favorites-more a {
+	color: var(--brown);
+	text-decoration: none;
+}
+
+/* ---------- 저장한 한마디 ---------- */
+
+.quote-favorite-grid {
+	margin-top: 48px;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 18px;
+}
+
+.quote-favorite-card {
 	padding: 28px 30px;
 	border: 1px solid var(--line);
 	border-radius: 16px;
 	background: rgba(253, 250, 246, .72);
 	display: flex;
-	align-items: center;
+	flex-direction: column;
 	justify-content: space-between;
-	gap: 24px;
+	gap: 20px;
 }
 
-.quote-favorite-item__text {
-	flex: 1;
-}
-
-.quote-favorite-item__content {
+.quote-favorite-card__content {
 	margin: 0;
 	font-family: var(--serif);
 	font-size: 17px;
@@ -63,14 +70,57 @@
 	white-space: pre-line;
 }
 
-.quote-favorite-item__source {
+.quote-favorite-card__source {
 	margin: 10px 0 0;
 	font-size: 13px;
 	color: var(--text-tertiary);
 }
 
-.quote-favorite-item__source::before {
+.quote-favorite-card__source::before {
 	content: "— ";
+}
+
+.quote-favorite-card .favorite-toggle {
+	align-self: flex-end;
+}
+
+.quote-favorite-card[hidden] {
+	display: none;
+}
+
+/* ---------- 페이지네이션 (한 페이지 최대 6장) ---------- */
+
+.pagination {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 6px;
+	margin-top: 28px;
+}
+
+.pagination button {
+	min-width: 34px;
+	height: 34px;
+	padding: 0 8px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--paper);
+	color: inherit;
+	font-family: inherit;
+	cursor: pointer;
+	font-size: 13px;
+}
+
+.pagination button.active {
+	background: var(--brown);
+	border-color: var(--brown);
+	color: #fff;
+	font-weight: 700;
+}
+
+.pagination button:disabled {
+	opacity: .4;
+	cursor: not-allowed;
 }
 
 /* ---------- 관심 사찰음식 ---------- */
@@ -89,6 +139,10 @@
 	border-radius: 16px;
 	background: rgba(253, 250, 246, .72);
 	overflow: hidden;
+}
+
+.food-favorite-card[hidden] {
+	display: none;
 }
 
 .food-favorite-card__image {
@@ -171,11 +225,4 @@
 .favorite-toggle.is-favorited {
 	background: var(--brown);
 	color: #fff;
-}
-
-@media (max-width: 560px) {
-	.quote-favorite-item {
-		flex-direction: column;
-		align-items: flex-start;
-	}
 }

@@ -33,7 +33,7 @@
             아직 저장한 사찰음식이 없습니다. <a th:href="@{/info/food}">사찰 음식 보러가기 →</a>
         </p>
 
-        <div class="food-favorite-grid" th:unless="${#lists.isEmpty(foods)}">
+        <div class="food-favorite-grid" data-favorites-grid="food-pagination" th:unless="${#lists.isEmpty(foods)}">
             <article class="food-favorite-card" th:each="food : ${foods}" data-remove-on-unfavorite>
 
                 <img class="food-favorite-card__image" th:if="${food.imageUrl() != null}"
@@ -65,12 +65,19 @@
             </article>
         </div>
 
+        <div class="pagination" id="food-pagination" th:unless="${#lists.isEmpty(foods)}"></div>
+
+        <p class="favorites-more" th:unless="${#lists.isEmpty(foods)}">
+            <a th:href="@{/info/food}">다른 사찰음식 보러가기 →</a>
+        </p>
+
     </div>
 </main>
 
 <div th:replace="~{fragments/layout :: footer}"></div>
 
 <script defer th:src="@{/js/buddhism/favoriteButton.js}"></script>
+<script defer th:src="@{/js/mypage/favoritesPagination.js}"></script>
 
 </body>
 </html>
