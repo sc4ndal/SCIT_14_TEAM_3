@@ -84,7 +84,7 @@ public class MypageController {
 		model.addAttribute("quotes", dailyQuoteService.getFavorites(principal.getUsername()));
 		return "mypage/favorites/quotes";
 	}
-	
+
 	@GetMapping("/mypage/favorites/foods")
 	public String favoriteFoods(@AuthenticationPrincipal AppUserDetails principal, Model model) {
 		model.addAttribute("foods", templeFoodService.getFavorites(principal.getUsername()));
