@@ -1,4 +1,8 @@
-
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>템플스테이 첫걸음</title>
 <style>
   :root {
@@ -70,6 +74,7 @@
     font-family: "Noto Sans KR", "Malgun Gothic", sans-serif;
     line-height: 1.7;
     font-size: 16px;
+    word-break: keep-all;
   }
 
   h1, h2, h3 {
@@ -85,7 +90,7 @@
   }
 
   .wrap {
-    max-width: 760px;
+    max-width: 860px;
     margin: 0 auto;
     padding: 0 24px 96px;
   }
@@ -163,8 +168,8 @@
   }
   .section-intro {
     color: var(--ink-soft);
-    max-width: 62ch;
     margin: 0 0 28px;
+    word-break: keep-all
   }
 
   /* ---------- Definition callout ---------- */
@@ -411,7 +416,6 @@
     margin: 12px 0 0;
     color: var(--ink-soft);
     font-size: 14.5px;
-    max-width: 62ch;
   }
   summary:focus-visible {
     outline: 2px solid var(--pine);
@@ -449,7 +453,6 @@
     color: inherit;
     opacity: 0.82;
     margin: 0 auto 22px;
-    max-width: 46ch;
     font-size: 14.5px;
   }
   .btn {
@@ -479,15 +482,16 @@
     margin-top: 28px;
   }
 </style>
-
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <link rel="stylesheet" href="/css/common.css">
+</head>
+<body>
 <header class="hero">
   <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
   <span class="hero-eyebrow">TEMPLESTAY 101</span>
   <h1>예약 버튼을 누르기 전,<br><em>템플스테이</em>가 무엇인지부터</h1>
-  <p>산사에서 하루, 스님의 일상을 잠시 빌려 사는 일. 처음이라도 낯설지 않도록, 필요한 것만 정리했습니다.</p>
+  <p>산사에서 하루, 스님의 일상을 잠시 빌려 사는 일.<br>처음이라도 낯설지 않도록, 필요한 것만 정리했습니다.</p>
 </header>
 
 <div class="wrap">
@@ -498,8 +502,7 @@
       <h2>템플스테이란?</h2>
     </div>
     <div class="definition">
-      <p><strong>템플스테이(Templestay)</strong>는 사찰에 머물며 스님과 수행자의 일상 — 예불, 참선, 공양(식사), 울력(청소·울력 노동) — 을 함께 체험하는 한국 전통문화 프로그램입니다. 2002년 한·일 월드컵을 계기로 시작되어, 지금은 전국 약 130여 개 사찰에서 연간 수십만 명이 참여하는 대표적인 문화 체험으로 자리 잡았습니다.</p>
-      <p>종교와 무관하게 누구나 신청할 수 있습니다. 도심의 소음에서 벗어나 자연 속에서 하루이틀 자신을 돌아보는 시간에 가깝고, 참가 목적에 따라 크게 두 가지 유형으로 나뉩니다.</p>
+      <p><strong>템플스테이(Templestay)</strong>는 사찰에 머물며 스님과 수행자의 일상 — 예불, 참선, 공양(식사), 울력(청소·울력 노동) — 을 함께 체험하는 한국 전통문화 프로그램입니다. 2002년 한·일 월드컵을 계기로 시작되어, 지금은 전국 약 130여 개 사찰에서 연간 수십만 명이 참여하는 대표적인 문화 체험으로 자리 잡았습니다.<br><br>종교와 무관하게 누구나 신청할 수 있습니다. 도심의 소음에서 벗어나 자연 속에서 하루이틀 자신을 돌아보는 시간에 가깝고, 참가 목적에 따라 크게 두 가지 유형으로 나뉩니다.</p>
     </div>
   </section>
 
@@ -644,7 +647,7 @@
       <span class="section-num">05</span>
       <h2>예약은 이렇게 진행돼요</h2>
     </div>
-    <p class="section-intro">한국불교문화사업단이 운영하는 공식 사이트(templestay.com)를 기준으로 한 흐름입니다.</p>
+<!--    <p class="section-intro">한국불교문화사업단이 운영하는 공식 사이트(templestay.com)를 기준으로 한 흐름입니다.</p>-->
     <div class="steps">
       <div class="step">
         <span class="step-n mono">1</span>
@@ -704,5 +707,6 @@
     </div>
     <p class="foot-note">본 페이지는 템플스테이 입문자를 위한 일반 안내이며, 실제 일정과 비용은 사찰과 회차에 따라 달라질 수 있습니다.</p>
   </section>
-
 </div>
+</body>
+</html>

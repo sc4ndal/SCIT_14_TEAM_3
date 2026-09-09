@@ -186,7 +186,7 @@ function renderProgramList() {
     const full = remainingSeats(p) <= 0;
     return `
     <article class="program-card ${state.checkedProgramId === p.programId ? 'picked' : ''}" data-program-id="${p.programId}">
-      <span class="program-type-badge">${p.programType}</span>
+      <span class="program-type-badge" data-type="${p.programType}">${p.programType}</span>
       <h3 class="program-title">${p.title}</h3>
       <p class="program-temple-region">${p.templeName} · ${p.region}</p>
       <p class="program-capacity">

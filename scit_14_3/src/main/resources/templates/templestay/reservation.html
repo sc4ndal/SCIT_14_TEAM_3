@@ -26,6 +26,8 @@
           --red: #96432f;
           --red-tint: #f0ded6;
           --shadow: 0 1px 2px rgba(42,38,32,0.06), 0 8px 24px -12px rgba(42,38,32,0.18);
+          --blue: #3c5a72;
+          --blue-tint: #dfe6ea;
         }
         @media (prefers-color-scheme: dark) {
           :root:not([data-theme="light"]) {
@@ -44,6 +46,8 @@
             --red: #d8917d;
             --red-tint: #3a241f;
             --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+            --blue: #8fb2c9;
+            --blue-tint: #263038;
           }
         }
         :root[data-theme="dark"] {
@@ -62,6 +66,8 @@
           --red: #d8917d;
           --red-tint: #3a241f;
           --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+          --blue: #8fb2c9;
+          --blue-tint: #263038;
         }
 
         * { box-sizing: border-box; }
@@ -266,10 +272,21 @@
           font-family: "IBM Plex Mono", monospace;
           font-size: 11.5px;
           font-weight: 600;
-          color: var(--gold);
-          background: var(--gold-tint);
+          color: var(--badge-color, var(--gold));
+          background: var(--badge-tint, var(--gold-tint));
           border-radius: 100px;
           padding: 3px 10px;
+        }
+        .program-type-badge[data-type="체험형"] {
+         --badge-color: var(--pine-deep);
+         --badge-tint: var(--pine-tint); }
+        .program-type-badge[data-type="휴식형"] {
+         --badge-color: var(--blue);
+         --badge-tint: var(--blue-tint);
+         }
+        .program-type-badge[data-type="당일형"] {
+        --badge-color: var(--gold-deep, var(--gold));
+        --badge-tint: var(--gold-tint);
         }
         .program-title {
           font-family: "Noto Serif KR", serif;
