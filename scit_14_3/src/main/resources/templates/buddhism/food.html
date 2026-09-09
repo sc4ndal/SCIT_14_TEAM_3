@@ -15,13 +15,12 @@
 	 th:attr="data-login-id=${#authentication.principal.username}"></div>
 
 <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
-<div th:replace="~{fragments/layout :: header}"></div>
 
 <main class="food">
 
 	<section class="food-hero">
 		<h1 class="food-hero__title">사찰 음식</h1>
-		<p class="food-hero__lead">고기와 오신채(마늘·파·부추 등) 없이도 정갈한 맛을 내는 사찰의 밥상입니다</p>
+		<p class="food-hero__lead">고기와 오신채(마늘·파·부추·달래·양파) 없이도 정갈한 맛을 내는 사찰의 밥상입니다</p>
 	</section>
 
 	<p class="food-empty" th:if="${#lists.isEmpty(foods)}">

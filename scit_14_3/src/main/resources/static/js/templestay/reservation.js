@@ -195,17 +195,21 @@ function renderProgramList() {
     const full = remainingSeats(p) <= 0;
     return `
     <article class="program-card ${state.checkedProgramId === p.programId ? 'picked' : ''}" data-program-id="${p.programId}">
-      <span class="program-type-badge">${p.programType}</span>
+      <div class="program-card-top">
+        <span class="program-type-badge">${p.programType}</span>
+        <p class="program-capacity">
+          <span class="capacity-dot ${full ? 'full' : 'open'}"></span>
+          ${p.reservedCount || 0} / ${p.maxParticipant}명
+        </p>
+      </div>
       <h3 class="program-title">${p.title}</h3>
       <p class="program-temple-region">${p.templeName} · ${p.region}</p>
-      <p class="program-capacity">
-        <span class="capacity-dot ${full ? 'full' : 'open'}"></span>
-        ${p.reservedCount || 0} / ${p.maxParticipant}명
-      </p>
-      <div class="program-price">
-        <span class="price-adult">${p.price.toLocaleString()}원</span>
+      <div class="program-card-footer">
+        <div class="program-price">
+          <span class="price-adult">${p.price.toLocaleString()}원</span>
+        </div>
+        <a class="program-detail-btn" href="/reservation/programs/${p.programId}">상세보기</a>
       </div>
-      <a class="program-detail-btn" href="/reservation/programs/${p.programId}">상세보기</a>
     </article>
   `;
   }).join('');
@@ -280,9 +284,13 @@ document.getElementById('step3-back-to-list-btn').addEventListener('click', () =
 
 function selectProgram(programId) {
   if(!isLoggedIn) {
-  alert('로그인이 필요합니다.');
-  location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
-  return;
+    alert('로그인이 필요합니다.');
+    // 목록에서 카드 체크 후 "신청" 버튼으로 들어온 경로는 URL에 programId가 없어서(?startBooking=
+    // 파라미터 없이 그냥 /reservation) 로그인 후 돌아와도 어떤 프로그램을 고르려 했는지 알 수 없었음.
+    // programDetail.js에서 들어온 경로(이미 ?startBooking= 붙어있음)와 동일하게 항상 붙여서 보냄.
+    const returnUrl = '/reservation?startBooking=' + programId;
+    location.href = '/login?redirect=' + encodeURIComponent(returnUrl);
+    return;
   }
 
   const program = state.programs.find(p => p.programId === programId);
@@ -538,6 +546,8 @@ document.getElementById('reservation-form').addEventListener('submit', async (e)
 
 // ------------------------- 제출 -------------------------
 async function submitReservation() {
+  if (state.isSubmitting) return; // 서버 응답 오기 전에 또 눌러도 무시 (중복 신청 방지)
+
   const p = state.selectedProgram;
 
   // 최소한의 유효성 검사
@@ -580,6 +590,8 @@ async function submitReservation() {
   const ok = confirm(confirmMessage);
   if (!ok) return;
 
+  state.isSubmitting = true;
+  setSubmitLoading(true);
   try {
     const resRes = await fetch(API.createReservation, {
         method: 'POST',
@@ -658,8 +670,27 @@ async function submitReservation() {
   } catch (err) {
     alert('예약 신청 중 오류가 발생했습니다.');
     console.error(err);
+  } finally {
+    // 성공 시엔 카카오페이면 페이지를 완전히 떠나고, 계좌이체면 step3로 넘어가서 이 버튼 자체가
+    // 안 보이니 굳이 안 풀어도 되지만, 실패로 여기 되돌아오는 모든 경로를 한 곳에서 확실히 풀기 위해 finally에 둠.
+    state.isSubmitting = false;
+    setSubmitLoading(false);
   }
 }
+
+// 신청 버튼에 원형 스피너 표시/해제 - 서버 응답 오기 전 중복 클릭 방지용
+function setSubmitLoading(loading) {
+  const btn = document.getElementById('step2-submit-btn');
+  if (loading) {
+    btn.dataset.originalText = btn.textContent;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span> 처리 중...';
+  } else {
+    btn.disabled = false;
+    btn.textContent = btn.dataset.originalText || '예약 및 결제 신청';
+  }
+}
+
 // ------------------------- STEP 3: 신청 완료 -------------------------
 async function renderStep3() {
   const { reservation, payment } = state.reservationResult;

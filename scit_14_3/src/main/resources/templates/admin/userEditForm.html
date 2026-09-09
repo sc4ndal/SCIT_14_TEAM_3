@@ -19,7 +19,7 @@
 		<p th:text="'아이디: ' + ${target.loginId}"></p>
 	</div>
 
-	<p class="check-result" style="color:var(--destructive); text-align:center;" th:if="${manageError}" th:text="${manageError}"></p>
+	<p class="admin-alert admin-alert--err" th:if="${manageError}" th:text="${manageError}"></p>
 
 	<form class="page-form" th:action="@{/admin/manage/user/{id}(id=${target.loginId})}" method="post">
 		<fieldset>

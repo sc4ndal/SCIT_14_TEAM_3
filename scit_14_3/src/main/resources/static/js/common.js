@@ -59,6 +59,10 @@ const I18N_MANUAL_OVERRIDES = {
     '이미 가입된 카카오 계정입니다. 로그인해주세요.': { ja: '既に登録済みのKakaoアカウントです。ログインしてください。', en: 'This Kakao account is already registered. Please log in.' },
     '비밀번호가 재설정되었습니다. 새 비밀번호로 로그인해주세요.': { ja: 'パスワードが再設定されました。新しいパスワードでログインしてください。', en: 'Your password has been reset. Please log in with your new password.' },
 
+    // ── 프래그먼트: 로고 옆 메인 네비게이션 (fragments/common-includes.html) ──
+    '템플스테이예약': { ja: 'テンプルステイ予約', en: 'Book a Templestay' },
+    '사찰찾기': { ja: '寺院を探す', en: 'Find a Temple' },
+
     // ── 프래그먼트: 회원 드롭다운/로그아웃 (fragments/common-includes.html) ──
     '마이페이지': { ja: 'マイページ', en: 'My Page' },
     '회원정보수정': { ja: '会員情報修正', en: 'Edit Profile' },
@@ -301,6 +305,20 @@ function applyOriginalText(){
     }
 }
 
+// ===== 언어 선택 저장(쿠키) =====
+// 페이지 이동/새로고침해도 방금 고른 언어가 유지되도록 쿠키에 저장해둔다. 1년 유지.
+const I18N_LANG_COOKIE = 'preferredLang';
+
+function getCookie(name){
+    const match = document.cookie.match(new RegExp('(?:^| )' + name + '=([^;]+)'));
+    return match ? decodeURIComponent(match[1]) : null;
+}
+
+function setCookie(name, value, days){
+    const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
+    document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/; SameSite=Lax';
+}
+
 document.querySelectorAll('.language-button').forEach(function(btn){
     btn.addEventListener('click', function(){
         const lang = btn.getAttribute('data-lang');
@@ -309,12 +327,38 @@ document.querySelectorAll('.language-button').forEach(function(btn){
             b.classList.toggle('active', b === btn);
         });
 
+        setCookie(I18N_LANG_COOKIE, lang, 365);
+
         if(typeof onLanguageChange === 'function'){
             onLanguageChange(lang);
         } else {
             defaultOnLanguageChange(lang, btn);
         }
     });
+});
+
+// 페이지 로드 시 저장해둔 언어가 있으면(한국어가 아니면) 자동으로 그 언어를 다시 적용.
+// home.js처럼 페이지가 자기만의 onLanguageChange(data-i18n 사전 방식)를 쓰느라
+// DOMContentLoaded 콜백 안에서 뒤늦게 정의하는 경우가 있어서, common.js(defer라 그보다
+// 먼저 실행됨)에서 바로 호출하면 아직 함수가 없어서 크롬 내장 번역 경로로 새버림 -
+// DOMContentLoaded 이후로 미뤄서 그런 페이지들의 onLanguageChange가 먼저 정의되게 함
+// (리스너 등록 순서상 그 페이지 스크립트가 먼저 등록되므로 먼저 실행됨).
+document.addEventListener('DOMContentLoaded', function applySavedLanguage(){
+    const saved = getCookie(I18N_LANG_COOKIE);
+    if(!saved || saved === I18N_SOURCE_LANG) return;
+
+    const targetBtn = document.querySelector('.language-button[data-lang="' + saved + '"]');
+    if(!targetBtn) return;
+
+    document.querySelectorAll('.language-button').forEach(function(b){
+        b.classList.toggle('active', b === targetBtn);
+    });
+
+    if(typeof onLanguageChange === 'function'){
+        onLanguageChange(saved);
+    } else {
+        defaultOnLanguageChange(saved, targetBtn);
+    }
 });
 
 /* ===== 인증 드롭다운(auth-nav-fragment) 관련 코드는 여기 그대로 유지 =====

@@ -309,6 +309,15 @@
 <body>
 
 <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+
+<!-- 로그인 여부를 templeList.js가 확실하게 판단할 수 있는 서버 렌더 마커 - reservation.html과
+     동일한 패턴. /api/favoritetemples는 비로그인이어도 200(빈 값)을 내려주게 바뀌어서
+     그 응답 성공/실패로는 더 이상 로그인 여부를 구분할 수 없음. -->
+<div id="auth-info" style="display:none;"
+     sec:authorize="isAuthenticated()"
+     th:attr="data-login-id=${#authentication.principal.username}">
+</div>
+
 <div id="map-wrapper">
     <div id="controls">
     <div id="temple-search-box">
