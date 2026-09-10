@@ -1,0 +1,167 @@
+/* ======================================================
+   events.css — 찾아보기 > 불교 행사 (/events)
+   토큰(--bg/--text/--brown/--line/--serif/--sans 등)은 common.css를 재사용한다.
+====================================================== */
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--sans);
+}
+
+.events-main {
+	/* 고정 헤더(.site-header, height 74px) 아래로 본문을 내림 */
+	padding-top: 74px;
+}
+
+.events-inner {
+	width: min(1120px, calc(100% - 140px));
+	margin: 0 auto;
+	padding-top: 96px;
+	padding-bottom: 120px;
+}
+
+
+/* ---------- 히어로 ---------- */
+
+.events-hero {
+	text-align: center;
+}
+
+.events-hero .eyebrow {
+	display: inline-flex;
+	align-items: center;
+	gap: 14px;
+	font-size: 13px;
+	letter-spacing: .04em;
+	color: var(--text-tertiary);
+}
+
+.events-hero .eyebrow span {
+	width: 40px;
+	height: 1px;
+	background: rgba(39, 33, 27, .10);
+}
+
+.events-hero h1 {
+	margin: 26px 0 0;
+	font-family: var(--serif);
+	font-size: 36px;
+	font-weight: 500;
+	letter-spacing: -.045em;
+}
+
+.events-hero p {
+	margin: 20px 0 0;
+	font-family: var(--serif);
+	font-size: 15px;
+	line-height: 2;
+	color: var(--text-tertiary);
+}
+
+.events-divider {
+	width: 100%;
+	height: 1px;
+	margin: 70px 0 54px;
+	background: var(--line);
+}
+
+
+/* ---------- 카드 그리드 ---------- */
+
+.events-empty {
+	padding: 48px 24px;
+	text-align: center;
+	color: var(--text-tertiary);
+}
+
+.events-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 18px;
+}
+
+.event-card {
+	padding: 28px 26px;
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	background: rgba(253, 250, 246, .72);
+}
+
+.event-card__date {
+	font-size: 12.5px;
+	letter-spacing: .03em;
+	color: var(--brown);
+	font-weight: 600;
+}
+
+.event-card__title {
+	margin: 10px 0 0;
+	font-family: var(--serif);
+	font-size: 19px;
+	font-weight: 500;
+	letter-spacing: -.02em;
+}
+
+.event-card__temple {
+	margin: 10px 0 0;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 13px;
+	color: var(--text-secondary);
+}
+
+.event-card__desc {
+	margin: 14px 0 0;
+	padding-top: 14px;
+	border-top: 1px dashed var(--line);
+	font-size: 13.5px;
+	line-height: 1.75;
+	color: var(--text-tertiary);
+}
+
+.event-card__link {
+	display: inline-block;
+	margin-top: 14px;
+	font-size: 13px;
+	color: var(--brown);
+	text-decoration: none;
+}
+
+.event-card__link:hover {
+	text-decoration: underline;
+}
+
+
+/* ---------- 반응형 ---------- */
+
+@media (max-width: 980px) {
+	.events-inner {
+		width: calc(100% - 64px);
+	}
+
+	.events-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (max-width: 560px) {
+	.events-inner {
+		width: calc(100% - 40px);
+		padding-top: 68px;
+	}
+
+	.events-hero h1 {
+		font-size: 28px;
+	}
+
+	.events-grid {
+		grid-template-columns: 1fr;
+	}
+}

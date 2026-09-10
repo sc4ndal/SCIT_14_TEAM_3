@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>불교 행사 | 佛선자</title>
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+	<link rel="stylesheet" th:href="@{/css/temple/events.css}">
+</head>
+<body>
+
+<header>
+	<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+</header>
+
+<main class="events-main">
+	<div class="events-inner">
+
+		<section class="events-hero">
+			<span class="eyebrow no-translate"><span></span>EVENTS<span></span></span>
+			<h1>불교 행사</h1>
+			<p>박람회·법회·전통문화 행사 등 전국 사찰에서 열리는 불교 행사를 모았습니다.</p>
+		</section>
+
+		<div class="events-divider"></div>
+
+		<p class="events-empty" th:if="${#lists.isEmpty(events)}">
+			아직 등록된 행사가 없습니다.
+		</p>
+
+		<div class="events-grid" th:unless="${#lists.isEmpty(events)}">
+			<article class="event-card" th:each="event : ${events}">
+
+				<div class="event-card__date">
+					<span th:text="${#temporals.format(event.startDate, 'yyyy.MM.dd')}">2026.01.01</span>
+					<span th:if="${event.endDate != event.startDate}"
+						  th:text="'~ ' + ${#temporals.format(event.endDate, 'yyyy.MM.dd')}">~ 2026.01.07</span>
+				</div>
+
+				<h2 class="event-card__title" th:text="${event.title}">행사명</h2>
+
+				<p class="event-card__temple">
+					<span aria-hidden="true">⌖</span>
+					<span th:text="${event.templeName}">사찰명</span>
+				</p>
+
+				<p class="event-card__desc" th:if="${event.description != null}" th:text="${event.description}">
+					행사 소개
+				</p>
+
+				<a class="event-card__link" th:if="${event.linkUrl != null}" th:href="${event.linkUrl}"
+				   target="_blank" rel="noopener noreferrer">
+					자세히 보기 →
+				</a>
+
+			</article>
+		</div>
+
+	</div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+
+</body>
+</html>
