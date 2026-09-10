@@ -379,7 +379,7 @@ INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, desc
     ((SELECT temple_id FROM TEMPLE WHERE name = '흥국사(여수)'), '호국사찰에서 하룻밤(휴식형)', '휴식형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '흥국사 휴식형 템플스테이는 모든 일정이 자율입니다. 천년의 유구한 역사를 몸과 마음으로 느낄 수 있고, 숲과 계곡 돌탑이 어우러져 발길 닿는 곳마다 자연과 하나가 되는 프로그램(흥국사 템플스테이 체험자에게 여수시 낭만버스 무료 탑승권 증정).', '1일차;14:30~15:00 오리엔테이션(사찰 예절, 주의사항);15:00~16:00 사찰안내;17:00 저녁공양;18:00 저녁 예불(자율);21:00~21:30 취침준비 및 취침;2일차;04:30~05:00 새벽예불(자율);06:00 아침공양;08:00~10:00 108돌탑길 명상(자율);10:00~10:30 방사정리 및 회향', '개인 세면도구(수건, 칫솔, 치약, 비누, 샴푸, 머리빗 등), 여벌옷, 운동화, 양말, 개인 보온물병(헤어드라이기 비치, 참가복 바지만 제공), 동절기 방한용품', 60000, '1박 2일', '2017-01-23', '2027-02-01', 20, FALSE, 0, 0);
 
 -- 당일형 프로그램 221건 (templestay.com 2026-09-10 기준 당일형 카테고리 전체 수집)
-INSERT INTO temple_stay_program (temple_id, title, program_type, image_url, description, schedule, required_items, price, duration, open_start_date, open_end_date, max_participant, support_english, latitude, longitude) VALUES
+INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, description, schedule, required_items, price, duration, open_start_date, open_end_date, max_participant, support_english, latitude, longitude) VALUES
     ((SELECT temple_id FROM TEMPLE WHERE name = '심택사'), '싱잉볼 명상 & 사찰음식 체험', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/3/20250303124906157_1_S.webp', '♦ 전통 불교문화, 명상, 사찰음식 등으로 사찰 문화 체험을 원하시는 분, 시간이 부족하신 분,
    몸과 마음의 휴식이 필요하신 분은 도심 속 힐링 전통사찰 심택사로 오세요!
 ♦ ''사찰음식 체험'' & ''싱잉볼 소리 명상''을 체험하며 소중한 추억을 만들어 보세요!
@@ -617,212 +617,7 @@ INSERT INTO temple_stay_program (temple_id, title, program_type, image_url, desc
 나의 행운을 넘어
 가족과 지인에게도 따뜻한 삶을 전하는
 마음의 시간을 만들고자 합니다.', '1일차;13:00~16:00 숲길 명상과 행운의 목걸이 만들기', '간편한 복장, 편안한신발, 개인컵(물병) , 양말을 꼭 챙겨주세요~~~', 30000, '당일', '2026-02-04', '2026-12-31', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '보덕관음사'), '[당일형] 명상 배우고 쉬면서 생각 내려놓기-당일형으로 추천합니다!!!!', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/20/20260620091355765_1_S.webp', 'span {
-    font-size: 16px !important;
-}
-
-table tr td, table tr th, .summary, .info ul li{
-    font-size: 16px !important;
-}
-
-.bold-color {
-    color: #b45213 !important;
-}
-
-.margin-top {
-    margin-top: 10px !important;
-}
-
-.summary {
-    font-weight: bold !important;
-}
-
-.title-imgage {
-    float: left !important;
-    width: 40% !important;
-    margin: 10px 30px 15px 0px !important;
-    box-shadow: 5px 5px 3px #666 !important;
-}
-
-.ul-display {
-    padding: 0px 0px 0px 25px !important;
-}
-
-.ul-display > li {
-    font-size: 16px !important;
-    list-style: disc !important;
-    text-align: left !important;
-}
-
-.ul-display > li > span, .program-content-1-2 > span, .font-weight-bold{
-    font-weight: bold !important;
-}
-
-/* 이미지 컨테이너 */
-.image-container {
-    display: flex !important;
-    flex-wrap: wrap !important; /* 줄바꿈 허용 */
-    justify-content: flex-start !important;
-    gap: 10px 2% !important; /* 상하 간격 30px, 좌우 간격 2% */
-    width: 100% !important;
-    margin-top: 20px !important;
-}
-
-/* 각 이미지 아이템 (이미지 + 텍스트) */
-.image-container > div {
-    flex: 0 0 32% !important; /* 한 줄에 3개 배치 */
-    text-align: center !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    flex-direction: column !important; /* 이미지와 텍스트를 세로로 나열 */
-    margin-bottom: 10px !important; /* 아래 줄과의 추가 여백 */
-}
-
-.image-container img {
-    width: 100% !important;
-    height: auto !important;
-    aspect-ratio: 3 / 2 !important; /* 이미지 비율을 통일시켜 정렬 유지 */
-    object-fit: cover !important;
-    border-radius: 4px !important;
-    display: block;
-    margin-bottom: 12px !important; /* 이미지와 바로 아래 글자 사이의 간격 */
-}
-
-/* 이미지 아래 글자 스타일 */
-.caption-text {
-    font-size: 16px !important;
-    line-height: 1.4 !important;
-    font-weight: 500 !important;
-    color: #333 !important;
-    word-break: keep-all !important; /* 단어 단위 줄바꿈 */
-    text-align: center !important;
-}
-
-.program-title {
-    background-color: #b2a070 !important;
-    text-align: center !important;
-    font-size: 16px !important;
-    text-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3) !important;
-    color: white !important;
-    box-shadow: 5px 5px 3px #666 !important;
-    font-weight: bold !important;
-    padding: 10px !important;
-    margin: 20px 0px 10px 0px !important;
-}
-
-.program-content {
-    display: flex !important;
-    align-items: flex-start !important;
-    flex-wrap: wrap !important; /* 자식이 넘치면 다음 줄로 보냄 */
-    gap: 20px !important;       /* 자식 사이의 간격 */
-    width: 100% !important;
-    margin: 20px 0 !important;
-}
-
-.program-content-1-1 {
-    font-size: 18px !important;
-    font-weight: bold !important;
-    margin-bottom: 10px !important;
-}
-
-.program-content-1-2 {
-    font-size: 16px !important;
-}
-
-.program-content-copy {
-    margin-bottom: 10px !important;
-    display: inline-block !important;
-}
-
-.part-1 {
-    text-align: left !important;
-    font-size: 18px !important;
-    font-weight: bold !important;
-    margin-top: 40px !important;
-    margin-bottom: 10px !important;
-    clear: both !important;
-}
-
-.fixed-bottom-bar {
-    /* 하단 고정 및 여백 설정 */
-    position: fixed !important;
-    bottom: 0px !important;
-    left: 0px !important;
-    right: 0px !important;
-    max-width: 1280px !important;
-    margin: 0 auto !important;
-    /* 버튼 정렬을 위한 Flex 설정 */
-    display: flex !important;
-    gap: 15px !important; /* 버튼 사이의 간격 */
-    /* 시각적 스타일 */
-    background-color: white !important;
-    padding: 15px 20px !important;
-
-    z-index: 1000 !important;
-  }
-
-  .btn {
-    /* 버튼이 동일한 비율로 공간을 채우도록 설정 */
-    flex: 1 !important;
-    height: 50px !important;
-    font-size: 16px !important;
-    font-weight: bold !important;
-    cursor: pointer !important;
-
-  }
-
-  .btn-secondary {
-    background-color: #b45213 !important;
-    color: white !important;
-    border: 0px !important;
-  }
-
-  .btn-primary {
-    background-color: white !important;
-    color: black !important;
-    border: 2px solid black !important;
-  }
-
-  /* 클릭 효과 */
-  .btn:active {
-    opacity: 0.8 !important;
-    transform: scale(0.98) !important;
-  }
-
-  .templestay-part {
-    background-color: #b45213 !important;
-    color: white !important;
-    font-size: 12px !important;
-    font-weight: bold !important;
-    border-radius: 15px !important;
-    display: inline-block !important;
-    padding: 5px 15px !important;
-    margin-bottom: 5px !important;
-  }
-
-
-/* [모바일용] 화면 너비가 768px 이하일 때 */
-@media screen and (max-width: 768px) {
-    .image-container > div {
-        flex: 0 0 100% !important; /* 한 줄에 1개씩 */
-
-    }
-
-    .image-container {
-        gap: 10px 0 !important;
-    }
-
-    .program-content-1 {
-        flex: 0 0 100% !important; /* 가로를 꽉 채우도록 설정 */
-    }
-
-    .title-imgage {
-        width: 100% !important;
-        margin-bottom: 20px !important;
-    }
-}
-
-무거운 마음은 두고, 가벼운 숨결만 채워가는 하루
+    ((SELECT temple_id FROM TEMPLE WHERE name = '보덕관음사'), '[당일형] 명상 배우고 쉬면서 생각 내려놓기-당일형으로 추천합니다!!!!', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/20/20260620091355765_1_S.webp', '무거운 마음은 두고, 가벼운 숨결만 채워가는 하루
 
 끝없이 이어지는 생각과 소음에서 잠시 로그아웃하세요. 산사의 맑은 공기를 마시며 걷고, 차 한 잔의 온기에 집중하며, 오직 나의 호흡만을 마주하는 시간. 단 하루의 여정이지만, 당신의 일상을 지탱할 깊은 고요를 선물합니다.
 우리만의 독립된 공간에서 더욱 깊이 있는 선명상과 차담을 경험하실 수 있습니다. 팀 빌딩, 동호회, 가족 모임 등 소중한 분들과 함께하는 고요한 여정을 예약해 보세요.
@@ -832,157 +627,84 @@ table tr td, table tr th, .summary, .info ul li{
 
 😁 이용 안내
 
-
 	당일형 운영 : 8인 이상의 경우 단체신청도 가능합니다.
 	맞춤형 진행 : 단체의 성격과 선호에 맞춰 시작 시간 및 프로그램 구성을 자유롭게 조정해 드립니다.
 
-
-
-
 👍 당일형 템플스테이만의 특별한 혜택
-
 
 	전문성 : 지도법사 스님이 직접 프로그램 진행
 	편의 제공 : 수련복 지급 및 주차장 무료 이용
 
-
-
-
 👉 프로그램 시작 전 안내사항
-
 
 	도  착 시 간 : 원활한 준비를 위해 프로그램 시작 시간 10분 전까지 도착해 주시기 바랍니다.
 	주  차  안 내 : 사중 주차장을 무료로 이용하실 수 있습니다.
-
-
-
 
 🥣 풍경 맛집 보덕 관음사
 
 보덕 관음사의 멋진 풍경을 감상하세요.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 🔎 당일형 표준 프로그램 안내(변경 가능)
 
 입소 (수련복 받기)
 
-
-	일정 : 오후2시30분~3시분 도착
+	일정 : 오후2시30분~3시분 도착 
 	장소 :  템플관
 	진행 :  지도법사 또는 템플스테이 팀장
-
-
-
 
 불교의 전통과 문화를 느끼는 시간
 
 사찰안내는 단순히 불교사찰을 방문해 보는 것이 아니라 살아 숨쉬는 불교의 전통과 문화를 느끼고 배우는 불교 전통문화 순례의 길이 될 것입니다. 사찰의 구조와 건축, 조각, 공예, 단청 등 각종 불교 문화재들은 부처님의 가르침과 민족의 전통을 오롯이 간직하고 있기에 사찰순례를 통하여 이러한 의미와 아름다움을 음미해 보는 경험을 해보는 것입니다.
 사찰안내는 다음 코스로 진행됩니다.
-
-
-
+ 
 
 공양(사찰음식 맛보기)
-
 
 	일정 : 17:30~18:00(저녁공양)
 	장소 : 공양간
 	진행 : 템플스테이 실무자
-
 
 수행자의 지혜가 담긴 사찰음식 공양
 사찰에서는 식사를 공양이라고 합니다. 공양이란 “부처님 전에 음식을 올린다” 라는 의미인데 단순히 음식을 먹는 이상의 의미가 있습니다.
 사찰에서는 음식이 우리에게 오기까지 수고로움을 아끼지 않은 수많은 이들에 대한 고마움과 자연에 대한 감사의 마음 그리고 쌀 한 톨도 낭비하지 않겠다는 절약의 정신을 강조합니다.
 또한 공양주보살님의 정성이 가득 담긴 음식을 공양 받으실 수 있습니다.
 
-
-
 사찰안내 후 맛좋은 약수 맛보기
-
 
 	일정 : 17:00~17:30(사찰안내)
 	장소 : 대웅전(출발)
-	진행 : 지도법사 스님 또는 템플스테이 실무자
+	진행 : 지도법사 스님 또는 템플스테이 실무자 
 
-
-
+ 
 걷는 동안 온전히 나에게 집해 보세요
 바쁜 일상 속, 온전히 나에게 집중하는 시간이 필요하신가요? 걷기 명상은 몸과 마음을 동시에 깨우는 가장 쉬운 명상법입니다.
 땅을 딛는 한 걸음마다 발바닥의 감각에 집중하고, 불어오는 바람, 스치는 햇살을 온전히 느껴보세요. 복잡한 생각은 잠시 멈추고, 발소리마저 명상이 되는 순간을 경험하게 됩니다. 걷는 동안 오롯이 나 자신과 연결되며, 맑은 정신과 평온함을 되찾을 수 있습니다.
 
-
-
 선명상 입문 체험 후 행복을 찾는 108배 염주 만들기
-
 
 	일정 : 15:00~16:00(60분)
 	장소 : 대웅전
 	진행 : 지도법사 스님과 템플스테이 실무자
 
-
 마음의 평화를 위한 선명상 배우기
 산사에서 마음을 밝히고, 선명상으로 나를 찿아 떠나는 시간 마음의 평안을 찿고, 쉬어보는 시간입니다. 자기 자신의 욕망과 타인과의 갈등과 대립을 해결하는 가장 지혜로운 방법은 인정하고 받아들이는 마음 입니다. 상쾌한 이른 아침 운학산 둘레길에서 걷기명상을 하거나, 일상에서 알아차림을 체험해 봅니다. 이 선명상 체험은 일상에서도 적용되어, 여러분의 마음에 평안을 줄 것입니다.
 
-
-
-스님과의 차담
-
+스님과의 차담 
 
 	일정 : 16:00~17:00(차담후 소감문 작성)
 	장소 : 차담실
 	진행 : 지도법사 스님
 
-
 따뜻한 위로가 담긴 차 한 잔으로 마음을 나누는 시간
 일반적인 생활과 달리 수행을 하는 스님과 마주앉아 대화를 나누는 것은 템플스테이가 주는 아주 특별한 경험 중의 하나입니다. 우리나라 전통문화의 보고인 불교 문화에 대한 궁금증뿐만 아니라 살아가면서 겪게 되는 고민과 갈등에 대해 특별한 주제 없이 편안하게 이야기를 나눌 수 있습니다. 스님과 함께 차 한 잔을 나누는 차담은 템플스테이에서도 가장 의미 있는 시간이기도 합니다.
-
-
-
 
 소원 풍경등 달기
 
 도자기 풍경에 12띠별로 참가자들의 작은바램과 소원을 적어 탑에 달아봅니다
-아름다운 풍경소리에 설레고 반짝반짝 빛을내며 우리를 비춰주듯 환하게 빛나고
+아름다운 풍경소리에 설레고 반짝반짝 빛을내며 우리를 비춰주듯 환하게 빛나고 
 있는 풍경등에 마음까지 환해집니다.
 
-
-
-  단체문의(☎️031-339-6612)
-
-
-  document.addEventListener(''DOMContentLoaded'', function() {
-    // 이제 DOM이 확실히 생성되었습니다.
-    const area = document.querySelector(''.reserveArea'');
-    if (area) {
-        area.id = ''reserve'';
-        console.log("아이디가 성공적으로 추가되었습니다.");
-    }
-
-    const target = document.querySelector(''.place > h3'');
-
-    if (target) {
-        // 2. 추가할 새로운 div 생성
-        const newDiv = document.createElement(''div'');
-        newDiv.className = ''templestay-part''; // 클래스 추가
-        newDiv.innerHTML = ''체험형'';
-
-        // 3. 타겟 요소 바로 위에 삽입
-        target.before(newDiv);
-    }
-});', '1일차;14:30~14:50 입소 / 수련복 받기;14:50~16:00 5분 선명상 체험과  행복을 찾는 108배 염주 만들기;16:10~17:00 풍경등에 소원적어 달기 / 스님과의 차담;17:00~17:30 사찰소개(보덕관음사 알아보기);17:30~18:00 저녁공양후 퇴소(마침)', '수련복 조끼를 지급합니다.
+  단체문의(☎️031-339-6612)', '1일차;14:30~14:50 입소 / 수련복 받기;14:50~16:00 5분 선명상 체험과  행복을 찾는 108배 염주 만들기;16:10~17:00 풍경등에 소원적어 달기 / 스님과의 차담;17:00~17:30 사찰소개(보덕관음사 알아보기);17:30~18:00 저녁공양후 퇴소(마침)', '수련복 조끼를 지급합니다.
 	양말을 꼭 준비해 주세요.(사찰 내에서는 맨발로 다니시면 안 됩니다)
 	슬리퍼도 안됩니다. (크록스 형태는 가능)
 	하절기에는 햇살이 뜨겁고 벌레가 많으니 필요한 물품과 상비약을 준비해오세요.
@@ -1390,7 +1112,7 @@ table tr td, table tr th, .summary, .info ul li{
 
 - 프로그램 진행 중 사진 및 동영상 촬영이 이루어질 수 있으며, 촬영된 자료는 홍보 및 기록 목적으로 활용될 수 있습니다.', '1일차;10:00~10:10 일주문(조계사 정문) 왼쪽 옆 ''사찰안내소'' 집결;10:10~11:10 스님과의 차담, 명상;11:10~11:50 연꽃컵등 만들기;11:50~12:30 사찰안내', '사찰에 오실 때는 소매 없는 셔츠나 짧은 바지, 슬리퍼, 샌들보다는
 단정한 복장으로 오시는 것이 좋습니다.', 50000, '당일', '2026-06-01', '2026-10-31', 20, FALSE, 0, 0),
-
+    ((SELECT temple_id FROM TEMPLE WHERE name = '조계사'), '[단체] "마음산책" 당일형 템플스테이 (대상: ''외국인'' 10인 이상 단체)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/16/20260616021752409_1_S.webp', '
 사찰의 전통문화를 경험하고자 하는 내외국인을 위하여 2시간 동안 간소하게 체험하는 당일형 템플스테이입니다.
 
 ◇ 사찰안내
@@ -1432,7 +1154,7 @@ table tr td, table tr th, .summary, .info ul li{
 
 - 프로그램 진행 중 사진 및 동영상 촬영이 이루어질 수 있으며, 촬영된 자료는 홍보 및 기록 목적으로 활용될 수 있습니다.', '1일차;10:00~10:10 일주문(조계사 정문) 왼쪽 옆 ''사찰안내소'' 집결;10:10~11:10 스님과의 차담, 명상;11:10~11:50 연꽃컵등 만들기;11:50~12:30 사찰안내', '사찰에 오실 때는 소매 없는 셔츠나 짧은 바지, 슬리퍼, 샌들보다는
 단정한 복장으로 오시는 것이 좋습니다.', 50000, '당일', '2026-06-01', '2026-10-31', 20, FALSE, 0, 0),
-참가인원은 단체 최소 5인이상일 때에만 진행하며, 날짜 및 시간등 일정은 협의하여 조절 가능합니다.
+    ((SELECT temple_id FROM TEMPLE WHERE name = '정토사'), '(사회공익당일형)마음 비우기 템플스테이-단체', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/15/20260615014337384_1_S.webp', '참가인원은 단체 최소 5인이상일 때에만 진행하며, 날짜 및 시간등 일정은 협의하여 조절 가능합니다.
 *날짜 예약은 전화로만 가능합니다. 미리 전화 부탁드립니다.
 
 10:00 ~  10:30 |  도착 및 오리엔테이션
@@ -1472,6 +1194,7 @@ table tr td, table tr th, .summary, .info ul li{
 내 마음에도 머물러 보세요.', '1일차;13:00~14:00 오리엔테이션 및 사찰 안내;14:00~15:00 사경 & 나만의 목탁 만들기;15:00~16:00 스님과의 차담', '"크게 준비하지 않아도 됩니다. 잠시 머무를 마음이면 충분합니다."', 40000, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '광제사'), '스님과 차담 그리고 걷기명상', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/5/31/20260531052524703_1_S.webp', '누구나 참가 가능 하며, 스님과 맜있는 차 한잔 하고 광제사 주변 아름다운 산책길을 걸으며 명상의 즐거움을 느껴보세요
 아울러 광제사에서 내려다보이는 세종시의 야경과 밤하늘의 별빛 까지 자연스럽게 명상의 세계로 들어갑니다.', '1일차;19:00~20:30 스님과 차담 &걷기명상&별빛명상', '운동화와 편한복장', 20000, '당일', '2026-05-31', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '연운사'), '(당일형)고요한 마음쉼, 예불체험 템플스테이 (단체신청)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/5/26/20260526072044234_1_S.webp', '「고요한 마음쉼, 예불체험」
 바쁜 일상 속 잠시 멈춤.
 법당의 고요함 속에서 두 손 모아 마음을 쉬어가고,
 예불의 의미를 배우며 나를 돌아보는 시간을 가져봅니다.
@@ -2015,6 +1738,7 @@ STEP 3 나눔 : 차담, 소감나누기
 수바위와 울산바위 동해바다가 한눈에 보이는 금강산 화암사
 
 나를 돌아보는 귀중한 시간을 가져보세요...', '1일차;13:00~13:30 사찰안내;13:30~15:30 계곡산책과,수바위.신선대다녀오기;15:30~16:00 인원점검,회향', '운동화, 손수건, 개인물병', 30000, '당일', '2024-03-03', '2026-11-01', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '진관사'), '[개별신청] 내가 먹은 음식이 내 몸과 인격을 만든다', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '"내가 먹은 음식이 내 몸과 인격을 만든다." 천년고찰이며, 사찰음식의 명소인 진관사에서 사찰음식을 맛볼 수 있는 기회를 마련했습니다. 현대화시킨 발우공양으로 조금 편안하게 접근하고, 집에 가서도 시도할 수 있길 바라는 마음으로 준비합니다. 나의 몸과 환경을 모두 살리는 발우공양은 묵언으로 진행합니다. 
 * 위 일정은 사중상황에 따라 변동 될 수 있습니다.
 ** 15명 미만시 일정이 취소될 수 있습니다.', '1일차;10:30~10:30 도착 및 기본 습의;10:40~11:10 사찰 안내;11:10~11:20 포행;11:20~11:40 명상;11:40~12:30 점심 공양;12:30~13:30 스님과의 차담;13:30~13:30 회향', '마스크, 운동화(편한 신발), 양말 착용, 개인(보온)물통 짧은 반바지와 치마, 민소매옷, 슬리퍼는 삼가해주시기 바랍니다.', 80000, '당일', '2024-03-19', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '대승사'), '당일형 체험', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '', '1일차;14:00~14:30 사찰안내;14:30~16:00 암자순례;16:00~17:00 스님과차담', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다.
@@ -2234,6 +1958,7 @@ o 삶을 살아가면서 미처 살펴보지 못한 것이 아주 소중할 수�
 염주 만들기        : 나만의 소망과 염원을 한 알씩 정성껏 담아 만드는 체험입니다.
 도갑사 문화해설 : 해설사와 함께 사찰 구석구석을 둘러보며 숨겨진 깊은 이야기를 듣습니다.
 스님과 차담및 명상     은은한 차향을 음미하며 현재에 집중하고 생각을 가라앉히는 시간입니다.', '1일차;13:00~13:30 도착 및 O.T (프로그램 및 사찰예절 안내);13:30~14:00 염원에 마음을 담다, [염주 만들기];14:00~15:20 천년 고찰의 숨결을 느끼다, [도갑사 문화해설];15:20~16:40 스님과 함께 따뜻한 차 한 잔의 여유 [차명상]', '텀블러, 편한운동화, 수련복 안에 입을 옷, 보온성외투, 모자', 20000, '당일', '2026-05-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '도선사'), '도선사 [어울림] 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/29/20260829011212671_1_S.webp', '■ 도선사 당일형(Daily) 템플스테이 프로그램은 지역아동센터 및 지역복지단체를 대상으로 4시간 동안 진행되며,
 사찰안내. 사찰식 점심공양. 선명상. 스님과의 차담 등을 선택하실 수 있습니다.
 
 ■ 일정, 프로그램 및 진행시간은 사전에 전화(010-3157-3161)로 상의하시길 바랍니다.
@@ -2288,6 +2013,7 @@ o 삶을 살아가면서 미처 살펴보지 못한 것이 아주 소중할 수�
 - 개인참가는 불가하며 10인 이상 단체만 예약 가능합니다.', '1일차;10:00~10:30 입소, 법복 착용;10:30~11:00 사찰예절 안내;11:00~12:00 석왕사 안내;12:00~13:00 점심공양;13:00~13:30 휴식;13:30~14:30 체험 선택;14:30~15:00 명상 및 체험후기 작성 (우천 시 ''명상 → 컵등만들기'')', '별도의 준비물이 없습니다.
 편한 신발을 준비해 오시면 됩니다.
 동절기에는 개인 방한용품을 준비하세요.', 30000, '당일', '2025-04-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '도선사'), '도선사 [꿈나무] 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/7/12/20260712122504941_1_S.webp', '■ 도선사 당일형(Daily) 템플스테이 프로그램은 보육기관 및 보육원 단체를 대상으로 4시간 동안 진행되며,
 사찰안내. 사찰식 점심공양. 선명상. 스님과의 차담 등을 선택하실 수 있습니다.
 
 ■ 일정, 프로그램 및 진행시간은 사전에 전화(010-3157-3161)로 상의하시길 바랍니다.
@@ -2438,212 +2164,7 @@ o 삶을 살아가면서 미처 살펴보지 못한 것이 아주 소중할 수�
  명상을 통해 떠오른 이미지를  자유롭게 표현해 보고,
 서로의 이미지를 바라보며 마음의 연결을 경험하는  소중한 시간입니다.
 스님과의 차담시간에는  마음을 나누며 잠시 쉬어가시길 바랍니다.', '1일차;13:00~13:10 오리엔테이션;13:10~14:40 잠시, 나를  만나다.;14:40~15:30 사찰안내;15:30~16:30 스님과의 차담', '편한 상하의 복장과 개인컵(텀블러), 양말을 꼭 준비해 주세요.', 30000, '당일', '2026-04-06', '2026-09-30', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '팔공산석굴암'), '길 따라 마음 따라', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/1/5/20260105111754911_1_S.webp', 'span {
-    font-size: 16px !important;
-}
-
-table tr td, table tr th, .summary, .info ul li{
-    font-size: 16px !important;
-}
-
-.bold-color {
-    color: #b45213 !important;
-}
-
-.margin-top {
-    margin-top: 10px !important;
-}
-
-.summary {
-    font-weight: bold !important;
-}
-
-.title-imgage {
-    float: left !important;
-    width: 40% !important;
-    margin: 10px 30px 15px 0px !important;
-    box-shadow: 5px 5px 3px #666 !important;
-}
-
-.ul-display {
-    padding: 0px 0px 0px 25px !important;
-}
-
-.ul-display > li {
-    font-size: 16px !important;
-    list-style: disc !important;
-    text-align: left !important;
-}
-
-.ul-display > li > span, .program-content-1-2 > span, .font-weight-bold{
-    font-weight: bold !important;
-}
-
-/* 이미지 컨테이너 */
-.image-container {
-    display: flex !important;
-    flex-wrap: wrap !important; /* 줄바꿈 허용 */
-    justify-content: flex-start !important;
-    gap: 10px 2% !important; /* 상하 간격 30px, 좌우 간격 2% */
-    width: 100% !important;
-    margin-top: 20px !important;
-}
-
-/* 각 이미지 아이템 (이미지 + 텍스트) */
-.image-container > div {
-    flex: 0 0 32% !important; /* 한 줄에 3개 배치 */
-    text-align: center !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    flex-direction: column !important; /* 이미지와 텍스트를 세로로 나열 */
-    margin-bottom: 10px !important; /* 아래 줄과의 추가 여백 */
-}
-
-.image-container img {
-    width: 100% !important;
-    height: auto !important;
-    aspect-ratio: 3 / 2 !important; /* 이미지 비율을 통일시켜 정렬 유지 */
-    object-fit: cover !important;
-    border-radius: 4px !important;
-    display: block;
-    margin-bottom: 12px !important; /* 이미지와 바로 아래 글자 사이의 간격 */
-}
-
-/* 이미지 아래 글자 스타일 */
-.caption-text {
-    font-size: 16px !important;
-    line-height: 1.4 !important;
-    font-weight: 500 !important;
-    color: #333 !important;
-    word-break: keep-all !important; /* 단어 단위 줄바꿈 */
-    text-align: center !important;
-}
-
-.program-title {
-    background-color: #b2a070 !important;
-    text-align: center !important;
-    font-size: 16px !important;
-    text-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3) !important;
-    color: white !important;
-    box-shadow: 5px 5px 3px #666 !important;
-    font-weight: bold !important;
-    padding: 10px !important;
-    margin: 20px 0px 10px 0px !important;
-}
-
-.program-content {
-    display: flex !important;
-    align-items: flex-start !important;
-    flex-wrap: wrap !important; /* 자식이 넘치면 다음 줄로 보냄 */
-    gap: 20px !important;       /* 자식 사이의 간격 */
-    width: 100% !important;
-    margin: 20px 0 !important;
-}
-
-.program-content-1-1 {
-    font-size: 18px !important;
-    font-weight: bold !important;
-    margin-bottom: 10px !important;
-}
-
-.program-content-1-2 {
-    font-size: 16px !important;
-}
-
-.program-content-copy {
-    margin-bottom: 10px !important;
-    display: inline-block !important;
-}
-
-.part-1 {
-    text-align: left !important;
-    font-size: 18px !important;
-    font-weight: bold !important;
-    margin-top: 40px !important;
-    margin-bottom: 10px !important;
-    clear: both !important;
-}
-
-.fixed-bottom-bar {
-    /* 하단 고정 및 여백 설정 */
-    position: fixed !important;
-    bottom: 0px !important;
-    left: 0px !important;
-    right: 0px !important;
-    max-width: 1280px !important;
-    margin: 0 auto !important;
-    /* 버튼 정렬을 위한 Flex 설정 */
-    display: flex !important;
-    gap: 15px !important; /* 버튼 사이의 간격 */
-    /* 시각적 스타일 */
-    background-color: white !important;
-    padding: 15px 20px !important;
-
-    z-index: 1000 !important;
-  }
-
-  .btn {
-    /* 버튼이 동일한 비율로 공간을 채우도록 설정 */
-    flex: 1 !important;
-    height: 50px !important;
-    font-size: 16px !important;
-    font-weight: bold !important;
-    cursor: pointer !important;
-
-  }
-
-  .btn-secondary {
-    background-color: #b45213 !important;
-    color: white !important;
-    border: 0px !important;
-  }
-
-  .btn-primary {
-    background-color: white !important;
-    color: black !important;
-    border: 2px solid black !important;
-  }
-
-  /* 클릭 효과 */
-  .btn:active {
-    opacity: 0.8 !important;
-    transform: scale(0.98) !important;
-  }
-
-  .templestay-part {
-    background-color: #b45213 !important;
-    color: white !important;
-    font-size: 12px !important;
-    font-weight: bold !important;
-    border-radius: 15px !important;
-    display: inline-block !important;
-    padding: 5px 15px !important;
-    margin-bottom: 5px !important;
-  }
-
-
-/* [모바일용] 화면 너비가 768px 이하일 때 */
-@media screen and (max-width: 768px) {
-    .image-container > div {
-        flex: 0 0 100% !important; /* 한 줄에 1개씩 */
-
-    }
-
-    .image-container {
-        gap: 10px 0 !important;
-    }
-
-    .program-content-1 {
-        flex: 0 0 100% !important; /* 가로를 꽉 채우도록 설정 */
-    }
-
-    .title-imgage {
-        width: 100% !important;
-        margin-bottom: 20px !important;
-    }
-}
-
-잠시 머무는 천년의 고요, 당일형 템플스테이
+    ((SELECT temple_id FROM TEMPLE WHERE name = '팔공산석굴암'), '길 따라 마음 따라', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/1/5/20260105111754911_1_S.webp', '잠시 머무는 천년의 고요, 당일형 템플스테이
 
 경주 석굴암보다 100년 앞선 우리 역사 최초의 석굴사원, 팔공산 석굴암(국보 제109호)으로 여러분을 초대합니다.
 
@@ -2659,87 +2180,53 @@ table tr td, table tr th, .summary, .info ul li{
 
 😁 이용 안내
 
-
 	당일형 운영 : 10인 이상 단체 맞춤형으로 운영
-
-
-
 
 단체 프로그램
 
-
-
 👍 당일형 템플스테이만의 특별한 혜택
-
 
 	특별 혜택 : 일반인 미개방 구역인 국보 제109호 삼존석굴 내 108배 및 참배
 	전문성 : 지도법사 스님이 직접 프로그램 진행
 	최신 시설 : 2025년 리모델링을 마친 최신 시설
 	편의 제공 : 문화원 전용 주차장 무료 이용
 
-
-
-
 지도법사 혜아스님
-
-
 
 주차장
 
-
-
 👉 프로그램 시작 전 안내사항
-
 
 	주차 안내: 템플스테이 문화원 주차장을 이용하시면 편리합니다.(무료)
 	접수 : 문화원 1층 사무실로 오셔서 접수하시고 지정된 장소에서 기다려 주세요.
 
-
-
-
 템플스테이 문화원
 
-
-
 템플스테이 사무실(문화원1층)
-
-
 
 🔎 세부 프로그램 안내
 
 사찰 예절
 
-
 	일정 : 10:00~10:30(30분)
 	장소 : 대강당(템플스테이 문화원 2층)
 	진행 : 지도법사 혜아스님
 
-
-일정 및 장소 안내와 사찰 습의를 배우는 시간
+일정 및 장소 안내와 사찰 습의를 배우는 시간 
 오리엔테이션은 원활한 템플스테이 진행을 위한 프로그램 일정 및 장소 안내와 습의를 배우는 시간입니다.
 습의(習儀)는 사찰에서 지켜야할 기본적인 예절을 말하는데 템플스테이 오리엔테이션에서는 법당에서 삼배하는 법, 스님을 만났을 때 반배하는 법 등 1박 2일 템플스테이 진행하는 동안 지켜야할 간단한 습의를 배우게 됩니다.
 
-
-
 대강당(문화원 2층)
-
-
 
 일정 및 장소 안내
 
-
-
 사찰 습의
 
-
-
 사찰 안내
-
 
 	일정 : 10:30~11:00(30분)
 	장소 : 템플스테이 문화원
 	진행 : 지도법사 혜아스님
-
 
 불교의 전통과 문화를 느끼는 시간
 사찰안내는 단순히 불교사찰을 방문해 보는 것이 아니라 살아 숨쉬는 불교의 전통과 문화를 느끼고 배우는 불교 전통문화 순례의 길이 될 것입니다. 사찰의 구조와 건축, 조각, 공예, 단청 등 각종 불교 문화재들은 부처님의 가르침과 민족의 전통을 오롯이 간직하고 있기에 사찰순례를 통하여 이러한 의미와 아름다움을 음미해 보는 경험을 해보는 것입니다.
@@ -2747,145 +2234,80 @@ table tr td, table tr th, .summary, .info ul li{
 석조비로자나불좌상(유형문화재258호) → 모전석탑(문화재자료241호) → 군위 아미타여래삼존 석굴(국보109호) → 비로전(毘盧殿)
 비로전(毘盧殿)에서는 오리엔테이션에서 배운 법당 참배 예절을 배웁니다.
 
-
-
 석조비로자나불좌상(유형문화재258호)
-
-
 
 모전석탑(문화재자료241호)
 
-
-
 군위 아미타여래삼존 석굴(국보109호)
-
-
 
 비로전(毘盧殿)
 
-
-
 타종 체험
-
 
 	일정 : 11:00~11:30(30분)
 	장소 : 법성루
 	진행 : 지도법사 혜아스님
-
 
 모든 생명체의 평안을 기원하는 시간
 불전사물이란 소리로써 모든 중생(衆生)에게 부처님의 가르침을 전하고 번뇌에서 벗어나게 해탈로 이끌기 위한 도구입니다. 이 네 가지 사물은 예불 시간에 맞춰 울리며, 각기 다른 존재들을 구원하는 의미를 담고 있습니다.
 이 중 범종(梵鐘)은 천상과 지옥의 중생을 구제하고 모든 번뇌에서 벗어나게 해주는 소리입니다.
 범종은 새벽 예불에는 28번, 저녁 예불에는 33번의 종을 치는데 타종 체험을 통해 나를 포함한 모든 생명체의 평안을 기원해 보시기 바랍니다.
 
-
-
 법성루
-
-
 
 타종 체험
 
-
-
 공양
-
 
 	일정 : 11:30~12:30(60분)
 	장소 : 공양간(템플스테이 문화원 1층)
 	진행 : 지도법사 혜아스님
-
 
 수행자의 지혜가 담긴 사찰음식 공양
 사찰에서는 식사를 공양이라고 합니다. 공양이란 “부처님 전에 음식을 올린다” 라는 의미인데 단순히 음식을 먹는 이상의 의미가 있습니다.
 사찰에서는 음식이 우리에게 오기까지 수고로움을 아끼지 않은 수많은 이들에 대한 고마움과 자연에 대한 감사의 마음 그리고 쌀 한 톨도 낭비하지 않겠다는 절약의 정신을 강조합니다.
 또한 사찰음식은 생명 존중을 실천하기 위해 육류를 사용하지 않고 마음을 산란하게 하는 다섯가지 채소인 오신체(五辛菜)도 사용하지 않습니다.
 
-
-
 공양간(문화원 1층)
-
-
 
 공양
 
-
-
 개인 공양
 
-
-
 삼존석굴 108배
-
 
 	일정 : 12:30~14:00(90분)
 	장소 : 아미타여래삼존 석굴
 	진행 : 지도법사 혜아스님
-
 
 몸과 마음을 다스리는 절 수행, 108배
 경주 석굴암보다 100년 앞선 우리 역사 최초의 석굴사원인 아미타여래삼존 석굴은 국보 제109호입니다. 평소에는 문화재 보존을 위해 일반인에게는 개방하지 않으며 템플스테이 참가자들에게만 특별히 개방하여 108배를 할 수 있는 기회를 제공하고 있습니다.
 108배는 108가지 번뇌를 참회하고 씻기 위한 수행법으로 절을 할 때마다 108번뇌도 하나씩 내려놓으면서 자신의 어리석음을 반성합니다. 고로 108배 시간은 내 몸을 낮춤으로써 겸손을 배우고, 새로운 마음을 채우는 시간이기도 합니다.
 
-
-
 삼존석굴(국보109호)
-
-
 
 삼존석굴 전경
 
-
-
 걷기 명상
-
 
 	일정 : 12:30~14:00(90분)
 	장소 : 아미타여래삼존 석굴
 	진행 : 지도법사 혜아스님
 
-
 걷는 동안 온전히 나에게 집해 보세요
 바쁜 일상 속, 온전히 나에게 집중하는 시간이 필요하신가요? 걷기 명상은 몸과 마음을 동시에 깨우는 가장 쉬운 명상법입니다.
 땅을 딛는 한 걸음마다 발바닥의 감각에 집중하고, 불어오는 바람, 스치는 햇살을 온전히 느껴보세요. 복잡한 생각은 잠시 멈추고, 발소리마저 명상이 되는 순간을 경험하게 됩니다. 걷는 동안 오롯이 나 자신과 연결되며, 맑은 정신과 평온함을 되찾을 수 있습니다.
 
-
-
 스님과의 차담
-
 
 	일정 : 12:30~14:00(90분)
 	장소 : 대강당(템플스테이 문화원 2층)
 	진행 : 지도법사 혜아스님
 
-
 따뜻한 위로가 담긴 차 한 잔으로 마음을 나누는 시간
 일반적인 생활과 달리 수행을 하는 스님과 마주앉아 대화를 나누는 것은 템플스테이가 주는 아주 특별한 경험 중의 하나입니다. 우리나라 전통문화의 보고인 불교 문화에 대한 궁금증뿐만 아니라 살아가면서 겪게 되는 고민과 갈등에 대해 특별한 주제 없이 편안하게 이야기를 나눌 수 있습니다. 스님과 함께 차 한 잔을 나누는 차담은 템플스테이에서도 가장 의미 있는 시간이기도 합니다.
 
-
-
-☎️ 예약 문의 010-6770-2001
-
-  document.addEventListener(''DOMContentLoaded'', function() {
-    // 이제 DOM이 확실히 생성되었습니다.
-    const area = document.querySelector(''.reserveArea'');
-    if (area) {
-        area.id = ''reserve'';
-        console.log("아이디가 성공적으로 추가되었습니다.");
-    }
-
-    const target = document.querySelector(''.place > h3'');
-
-    if (target) {
-        // 2. 추가할 새로운 div 생성
-        const newDiv = document.createElement(''div'');
-        newDiv.className = ''templestay-part''; // 클래스 추가
-        newDiv.innerHTML = ''당일형'';
-
-        // 3. 타겟 요소 바로 위에 삽입
-        target.before(newDiv);
-    }
-});', '1일차;10:00~10:30 사찰 예절;10:30~11:00 사찰 안내;11:00~11:30 타종 체험;11:30~12:30 점심 공양(식사);12:30~14:00 선택 프로그램(삼존석굴 108배, 걷기 명상, 스님과의 차담)', '원활한 프로그램 참여를 위해 편한 신발(운동화 등), 편한 복장으로 오시길 추천 드립니다.
+☎️ 예약 문의 010-6770-2001', '1일차;10:00~10:30 사찰 예절;10:30~11:00 사찰 안내;11:00~11:30 타종 체험;11:30~12:30 점심 공양(식사);12:30~14:00 선택 프로그램(삼존석굴 108배, 걷기 명상, 스님과의 차담)', '원활한 프로그램 참여를 위해 편한 신발(운동화 등), 편한 복장으로 오시길 추천 드립니다.
 	계절별로 차이가 있으나 산사는 시내 보다 추우므로 이를 감안하여 옷을 준비해 오시기 바랍니다.', 40000, '당일', '2026-01-05', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '길상사'), '108 염주로 이어가는 108배 이야기', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/12/14/20251214030055591_1_S.webp', '자신을 낮추는 108배를 하며, 108배의  깊은 의미를 배우는 시간입니다.
 한알 한알 108 염주를 꿰며  마음을 정화하고 평온을 찾아가는 행복한 시간 되세요.
@@ -2938,7 +2360,8 @@ table tr td, table tr th, .summary, .info ul li{
 
 
 -', '1일차;10:30~11:00 오리엔테이션 및 사찰안내;11:30~12:30 점심공양;12:30~13:30 프로그램(다도체험& 연꽃등만들기);13:30~14:00 후기작성 회향', '개인 세면도구, 수건, 조끼에 받쳐 입을 상의, 여벌옷, 운동화(편한 신발), 양말, 개인 물통 등', 0, '당일', '2026-06-21', '2026-09-30', 20, FALSE, 0, 0),
-     사찰안내. 사찰식 점심공양. 선명상. 스님과의 차담 등을 선택하실 수 있습니다.
+    ((SELECT temple_id FROM TEMPLE WHERE name = '도선사'), '도선사 [백세행복] 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/11/20260611041841777_1_S.webp', '■  도선사 당일형(Daily) 템플스테이 프로그램은 양로원 및 어르신 단체 등을 대상으로 2 ~ 4시간 동안 진행되며,
+          사찰안내. 사찰식 점심공양. 선명상. 스님과의 차담 등을 선택하실 수 있습니다.
 
 ■  일정, 프로그램 및 진행시간은 사전에 전화(010-3157-3161)로 상의하시길 바랍니다.
 
@@ -3165,6 +2588,7 @@ Listen to my heart for a moment at the beautiful Mt. Seorak!
 *재료비 포함 2만원
 *이 프로그램은 환불과 연기가 불가능합니다.
 ** 참가일 2일 전까지 미입금시 자동 취소됩니다.**', '1일차;10:00~10:20 템플스테이 도착;10:30~12:00 사찰음식 체험관에서 맛보는 점심& 뒷정리;12:00~13:00 스님과 차 한 잔', '개인 행주 2장', 20000, '당일', '2026-05-10', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '백련사(강진)'), '(당일-단체, 다도체험) 다산의 차맛은 어떨까? (10인 이상)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '* 본 프로그램은 당일형 단체를 위한 다도체험 프로그램입니다.
 * 개인은
    (당일-체험형, 다도체험)  <다산의 차맛은 어떨까?(1인 이상)>
     에서 등록해 주세요.
@@ -3269,6 +2693,7 @@ Listen to my heart for a moment at the beautiful Mt. Seorak!
 - 물병, 간단한 소지품 가방(하절기)
 - 산사는 일교차가 심합니다. 여벌 옷을 준비해 주시면 좋을 것 같습니다.
 - 사찰의 특성상 산이여서 운동화를 신으셔야 하고 신발을 벗고 실내에 들어가야 하는 경우가 많으므로 양말을 꼭 착용하시길 부탁드립니다.', 10000, '당일', '2025-07-29', '2026-11-28', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '용주사'), '[공익] 당일 맞춤형(단체)', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/2/27/20250227060504489_1_S.webp', '당일 맞춤형(단체) 템플스테이 중 
 공익 단체 및 부처님의 자비를 실천하는 단체를 위한
 프로그램입니다.
 
