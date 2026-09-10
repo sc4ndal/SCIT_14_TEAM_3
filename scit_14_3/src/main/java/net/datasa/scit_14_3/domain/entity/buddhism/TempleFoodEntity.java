@@ -14,9 +14,6 @@ import lombok.Setter;
 
 /*
 	사찰음식 추천 1건.
-	DB에 레시피 참고 링크용 별도 컬럼이 없어서(recipe_url 컬럼 추가는 팀 DB 마이그레이션 필요),
-	recipe 텍스트 마지막 줄에 "참고 레시피: <url>" 형식으로 함께 저장한다.
-	TempleFoodService.toDto()가 이 마지막 줄을 파싱해서 recipe 본문과 recipeUrl로 분리한다.
  */
 @Entity
 @Table(name = "TEMPLE_FOOD_RECOMMENDATION")
@@ -38,9 +35,11 @@ public class TempleFoodEntity {
 	@Column(name = "description")
 	private String description;
 
-	// 마지막 줄에 "참고 레시피: <url>"이 포함될 수 있음 - TempleFoodService 참고
 	@Column(name = "recipe")
 	private String recipe;
+
+	@Column(name = "recipe_url", length = 255)
+	private String recipeUrl;
 
 	@Column(name = "image_url", length = 255)
 	private String imageUrl;

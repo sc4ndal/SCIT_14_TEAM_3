@@ -206,12 +206,15 @@ INSERT INTO BUDDHISM_INFO (category, title, content) VALUES
 --   남긴 분(또는 그 가르침이 담긴 전통적 화두/경전)을 적었습니다.
 --
 -- TEMPLE_FOOD_RECOMMENDATION
---   TEMPLE_FOOD_RECOMMENDATION에는 레시피 참고 링크 전용 컬럼이 아직 없어서(팀 DB
---   마이그레이션 필요 - buddhist-site-schema.sql의 TODO 주석 참고), recipe 텍스트
---   마지막 줄에 "참고 레시피: <url>" 형식으로 함께 넣습니다.
---   TempleFoodService.toDto()가 이 마지막 줄을 파싱해서 recipe 본문과 recipeUrl로 나눠 보여줍니다.
---   -> 새 음식을 추가할 때도 이 형식을 지켜야 화면에 참고 링크 버튼이 뜹니다.
---   아래 링크는 한국사찰음식문화체험관(templefood.or.kr) 대표 주소로 통일해뒀습니다 -
+--   ⚠ 2026-09-10 기준 이 섹션은 사용하지 않습니다 - 아래 INSERT문들은 recipe_url
+--   컬럼 없이 만들어진 예전 버전(참고 링크가 전부 templefood.or.kr 대표 주소로 뭉뚱그려짐)
+--   입니다. 지금은 docs/sql/temple-food-seed.sql로 대체됐습니다 - 음식마다 만개의레시피
+--   (10000recipe.com)에서 실제로 매칭한 레시피를 recipe_url 컬럼에 따로 저장합니다.
+--   새 DB를 세팅할 땐 아래 블록은 건너뛰고 temple-food-seed.sql을 실행하세요.
+--
+-- (아래는 예전 방식 기록용으로만 남겨둠) recipe 텍스트 마지막 줄에
+--   "참고 레시피: <url>" 형식으로 넣던 방식이었고, TempleFoodService.toDto()가
+--   이 줄을 정규식으로 파싱해서 recipe 본문과 recipeUrl로 나눠 보여줬습니다 -
 --   음식별 상세 페이지가 있다면 그 주소로 바꿔서 써도 됩니다.
 -- ============================================================
 

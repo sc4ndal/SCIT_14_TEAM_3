@@ -339,6 +339,8 @@ CREATE TABLE TEMPLE_EVENT (
     description   TEXT         NULL COMMENT '행사 소개',
     start_date    DATE         NOT NULL COMMENT '행사 시작일',
     end_date      DATE         NOT NULL COMMENT '행사 종료일',
+    -- 2026-09-10 추가: 행사 공식 페이지/기사 등 자세히 보기 링크 (없으면 NULL)
+    link_url      VARCHAR(255) NULL COMMENT '행사 상세/공식 페이지 링크',
     created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
     PRIMARY KEY (event_id),
     CONSTRAINT fk_event_temple
@@ -410,6 +412,9 @@ CREATE TABLE TEMPLE_FOOD_RECOMMENDATION (
     food_name          VARCHAR(50) NOT NULL COMMENT '음식명',
     description        TEXT        NULL COMMENT '설명',
     recipe             TEXT        NULL COMMENT '레시피',
+    -- 2026-09-10 추가: 레시피 참고 링크(만개의레시피 등) 전용 컬럼. 예전엔 recipe 텍스트
+    -- 마지막 줄에 "참고 레시피: <url>"로 함께 넣고 파싱해서 썼는데, 정식 컬럼으로 분리함.
+    recipe_url         VARCHAR(255) NULL COMMENT '레시피 참고 링크',
     image_url          VARCHAR(255) NULL COMMENT '사진',
     PRIMARY KEY (recommendation_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='사찰음식 추천';
