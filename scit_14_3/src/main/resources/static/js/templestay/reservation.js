@@ -471,7 +471,7 @@ function renderParticipantRows() {
       </div>
       <div class="form-item">
         <label for="participant-email-${i}">이메일</label>
-        <input type="email" id="participant-email-${i}" data-p-field="email" data-p-index="${i}" value="${pt.email}">
+        <input type="email" id="participant-email-${i}" data-p-field="email" data-p-index="${i}" value="${pt.email}" placeholder="예) abc123@example.com">
       </div>
     `;
     container.appendChild(row);

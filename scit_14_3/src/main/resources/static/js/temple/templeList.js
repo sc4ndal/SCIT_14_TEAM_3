@@ -319,7 +319,6 @@ kakao.maps.load(function () {
                 matchedTemples.push(temple); // 통과한 사찰은 목록에도 추가
             }
         });
-
         if (anyFilterActive) {
             showResultList(matchedTemples); // 필터/검색 중이면 목록 패널 갱신 + 열기
         } else {
@@ -327,5 +326,10 @@ kakao.maps.load(function () {
             updateResultPanelToggle();
         }
     }
+    // 지도 전체보기 - 필터/검색 조건은 그대로 두고, 지도 위치만 처음 상태로 되돌림
+    document.getElementById('reset-map-btn').addEventListener('click', function () {
+        map.setLevel(13);
+        map.setCenter(new kakao.maps.LatLng(35.9, 127.7));
+    });
     window.refreshFavoriteFilter = applyFilters;
 });

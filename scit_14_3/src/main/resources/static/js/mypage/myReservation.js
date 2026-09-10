@@ -123,7 +123,7 @@
     });
   }
 
-  function showDetail(reservationId) {
+  async function showDetail(reservationId) {
     const r = RESERVATIONS.find(x => x.reservationId === reservationId);
     if (!r) return;
     selectedReservationId = reservationId;
@@ -163,6 +163,18 @@
     // 리뷰 작성/수정/삭제 버튼: 이용완료 상태에서만 노출. 이미 작성한 리뷰가 있으면
     // "리뷰 작성" 대신 "리뷰 수정"+"리뷰 삭제"로 바뀐다.
     updateReviewButtons(r);
+
+    // 참가자 정보 (대표자 포함, 대표자만 "(대표)" 표시)
+    const participantEl = document.getElementById('detail-participants');
+    participantEl.textContent = '불러오는 중...';
+    try {
+        const res = await fetch(`/reservationparticipants/reservation/${reservationId}`);
+        const participants = await res.json();
+        participantEl.textContent = participants.length ? participants.map((p, i) => i === 0 ? `${p.name}(대표)` : p.name).join(', ') : '참가자 정보 없음';
+    } catch (err) {
+        console.error('참가자 정보를 불러오지 못했습니다.', err);
+        participantEl.textContent = '참가자 정보를 불러오지 못했습니다.';
+    }
   }
 
   async function updateReviewButtons(r) {
