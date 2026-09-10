@@ -41,10 +41,13 @@ public class DailyQuoteService {
 		return toDto(quotes.get(index), favoritedIds(loginId));
 	}
 
-	public DailyQuoteDTO getRandomQuote(String loginId) {
-		return dailyQuoteRepository.findRandomOne()
-				.map(quote -> toDto(quote, favoritedIds(loginId)))
-				.orElse(null);
+	/** "다른 한마디 보기"를 누를 때마다 서버까지 왕복하지 않도록, 페이지 로드 시 전체 한마디(30건
+	    내외라 부담 없음)를 한 번에 내려준다 - 클라이언트가 이 안에서 랜덤으로 골라 화면만 바꾼다. */
+	public List<DailyQuoteDTO> getAllQuotes(String loginId) {
+		Set<Long> favorited = favoritedIds(loginId);
+		return dailyQuoteRepository.findAllByOrderByQuoteIdAsc().stream()
+				.map(quote -> toDto(quote, favorited))
+				.toList();
 	}
 
 	public List<DailyQuoteDTO> getFavorites(String loginId) {
@@ -63,8 +66,11 @@ public class DailyQuoteService {
 			return false;
 		}
 
-		DailyQuoteEntity quote = dailyQuoteRepository.findById(quoteId)
-				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 한마디입니다."));
+		// quoteId는 항상 서버가 이미 렌더링해둔 목록에서 온 값이라 존재를 다시 확인할 필요가 없음 -
+		// findById 대신 getReferenceById(프록시, 쿼리 안 나감)로 원격 DB 왕복 한 번을 줄인다.
+		// (없는 id를 억지로 넘기면 이 시점이 아니라 insert 시 FK 위반으로 늦게 걸림 - 정상 흐름에서는
+		// 발생하지 않는 경우라 감수함)
+		DailyQuoteEntity quote = dailyQuoteRepository.getReferenceById(quoteId);
 		favoriteQuoteRepository.save(FavoriteQuoteEntity.builder()
 				.loginId(loginId)
 				.quote(quote)

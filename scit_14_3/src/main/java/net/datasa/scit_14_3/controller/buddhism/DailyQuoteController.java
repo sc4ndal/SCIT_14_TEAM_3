@@ -2,7 +2,6 @@ package net.datasa.scit_14_3.controller.buddhism;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.datasa.scit_14_3.domain.dto.buddhism.DailyQuoteDTO;
 import net.datasa.scit_14_3.security.AppUserDetails;
 import net.datasa.scit_14_3.service.buddhism.DailyQuoteService;
 import org.springframework.http.HttpStatus;
@@ -20,8 +19,9 @@ import java.util.Map;
 /*
 	알아보기 > 불교 정보 > 오늘의 불교 한마디
 
-	/info/quote         : 오늘의 한마디 화면
-	/info/quote/random  : "다른 한마디 보기" 버튼용 무작위 한마디(JSON)
+	/info/quote         : 오늘의 한마디 화면 - 전체 한마디 목록도 같이 내려줘서(allQuotes),
+	                       "다른 한마디 보기"를 눌러도 서버 왕복 없이 클라이언트에서 바로 바꾼다
+	                       (Aiven처럼 원격 DB일 때 클릭마다 왕복하면 체감 지연이 커서 바꿈).
 	/info/quote/{id}/favorite : 즐겨찾기 등록/해제 토글(JSON)
 
 	즐겨찾기는 로그인이 필요하지만 /info/**는 전체 공개 경로라(WebSecurityConfig 참고)
@@ -38,15 +38,10 @@ public class DailyQuoteController {
 
 	@GetMapping("/info/quote")
 	public String quote(@AuthenticationPrincipal AppUserDetails principal, Model model) {
-		model.addAttribute("quote", dailyQuoteService.getQuoteOfTheDay(loginIdOf(principal)));
+		String loginId = loginIdOf(principal);
+		model.addAttribute("quote", dailyQuoteService.getQuoteOfTheDay(loginId));
+		model.addAttribute("allQuotes", dailyQuoteService.getAllQuotes(loginId));
 		return "buddhism/quote";
-	}
-
-	@GetMapping("/info/quote/random")
-	@ResponseBody
-	public ResponseEntity<DailyQuoteDTO> random(@AuthenticationPrincipal AppUserDetails principal) {
-		DailyQuoteDTO quote = dailyQuoteService.getRandomQuote(loginIdOf(principal));
-		return quote != null ? ResponseEntity.ok(quote) : ResponseEntity.notFound().build();
 	}
 
 	@PostMapping("/info/quote/{quoteId}/favorite")

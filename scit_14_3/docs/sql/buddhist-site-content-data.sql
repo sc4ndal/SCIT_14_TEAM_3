@@ -31,9 +31,9 @@
 
 -- USE buddhist_site;   -- 사용 중인 스키마에 맞게 여세요
 
-DELETE FROM buddhism_info WHERE category = '용어';
+DELETE FROM BUDDHISM_INFO WHERE category = '용어';
 
-INSERT INTO buddhism_info (category, title, content) VALUES
+INSERT INTO BUDDHISM_INFO (category, title, content) VALUES
 
 -- ── 1. 기본교리 ────────────────────────────────────────────
 ('용어', '사성제', '부처가 깨달은 네 가지 진실입니다. 삶에는 괴로움이 있고(고), 그 괴로움에는 원인이 있으며(집), 원인을 없애면 괴로움도 사라지고(멸), 없애는 방법이 있다(도)는 순서로 이어집니다. 불교 가르침의 가장 기본이 되는 틀입니다.'),
@@ -121,7 +121,7 @@ INSERT INTO buddhism_info (category, title, content) VALUES
 -- (들여쓰기는 trim으로 무시되므로 자유롭게 넣어도 됩니다.)
 -- ============================================================
 
-DELETE FROM buddhism_info WHERE category = '예절가이드';
+DELETE FROM BUDDHISM_INFO WHERE category = '예절가이드';
 
 INSERT INTO BUDDHISM_INFO (category, title, content) VALUES
     ('예절가이드', '방문 준비',
@@ -217,10 +217,10 @@ INSERT INTO BUDDHISM_INFO (category, title, content) VALUES
 
 -- USE scit_14_3;   -- 사용 중인 스키마에 맞게 여세요
 
-DELETE FROM favorite_quote;
-DELETE FROM daily_quote;
+DELETE FROM FAVORITE_QUOTE;
+DELETE FROM DAILY_QUOTE;
 
-INSERT INTO daily_quote (content, source) VALUES
+INSERT INTO DAILY_QUOTE (content, source) VALUES
 ('모든 괴로움은 집착에서 비롯되니,\n집착을 놓는 그 자리에\n이미 평안이 있다.', '석가모니 (사성제)'),
 ('마음이 만들어낸 것이 세상이니,\n마음을 다스리면\n세상도 그와 함께 달라진다.', '원효대사 (일체유심조)'),
 ('사람의 마음을 있는 그대로 바로 보면\n그 자리에서 곧 부처를 본다.', '달마대사'),
@@ -232,10 +232,10 @@ INSERT INTO daily_quote (content, source) VALUES
 ('내가 지은 말과 행동, 생각은\n그대로 다시 나에게 돌아오니,\n오늘의 행동이 곧 내일의 나다.', '석가모니 (업)'),
 ('물들지 않는 연꽃처럼,\n흔들리되 뿌리내린 자리를 지켜라.', '숫타니파타');
 
-DELETE FROM favorite_food;
-DELETE FROM temple_food_recommendation;
+DELETE FROM FAVORITE_FOOD;
+DELETE FROM TEMPLE_FOOD_RECOMMENDATION;
 
-INSERT INTO temple_food_recommendation (food_name, description, recipe, image_url) VALUES
+INSERT INTO TEMPLE_FOOD_RECOMMENDATION (food_name, description, recipe, image_url) VALUES
 ('연근조림',
  '아삭한 식감과 은은한 단맛이 특징인 사찰음식의 기본 밑반찬입니다.',
  '1. 연근은 껍질을 벗겨 0.5cm 두께로 썬 뒤 식초물에 10분 담가 아린 맛을 뺀다.
@@ -303,7 +303,7 @@ INSERT INTO temple_food_recommendation (food_name, description, recipe, image_ur
 
 -- USE scit_14_3;   -- 사용 중인 스키마에 맞게 여세요
 
-INSERT INTO daily_quote (content, source) VALUES
+INSERT INTO DAILY_QUOTE (content, source) VALUES
 ('눈 덮인 들판을 걸어갈 때\n함부로 걷지 마라,\n오늘 남긴 발자국이 뒷사람의 길이 된다.', '서산대사 (답설야중거)'),
 ('청산은 나를 보고 말없이 살라 하고,\n창공은 나를 보고 티 없이 살라 하네,\n탐욕도 성냄도 내려놓고 살다 가라 하네.', '나옹선사'),
 ('평상시의 마음, 그것이 곧 도(道)이니\n애써 별다른 것을 찾아 헤매지 말라.', '마조도일선사 (평상심시도)'),
@@ -313,7 +313,7 @@ INSERT INTO daily_quote (content, source) VALUES
 ('남을 위해 눈물 흘려본 적 없다면,\n아직 자비를 안다고 말하지 말라.', '용성스님'),
 ('지금 이 순간의 숨 한 번이\n그대가 가진 전부임을 잊지 말라.', '틱낫한 스님');
 
-INSERT INTO temple_food_recommendation (food_name, description, recipe, image_url) VALUES
+INSERT INTO TEMPLE_FOOD_RECOMMENDATION (food_name, description, recipe, image_url) VALUES
 ('도토리묵무침',
  '탱글탱글한 도토리묵에 채소를 곁들여 새콤하게 무친 여름철 사찰음식입니다.',
  '1. 도토리묵은 굵게 채 썰어 끓는 물에 살짝 데친 뒤 찬물에 헹궈 물기를 뺀다.
@@ -376,7 +376,7 @@ INSERT INTO temple_food_recommendation (food_name, description, recipe, image_ur
 
 -- USE scit_14_3;   -- 사용 중인 스키마에 맞게 여세요
 
-INSERT INTO daily_quote (content, source) VALUES
+INSERT INTO DAILY_QUOTE (content, source) VALUES
 ('하나 안에 모든 것이 있고,\n모든 것 안에 하나가 있으니,\n너와 나는 본디 둘이 아니다.', '의상대사 (법성게)'),
 ('돼지의 눈에는 돼지만 보이고,\n부처의 눈에는 부처만 보이니,\n내가 무엇을 보든 그것이 곧 나의 마음이다.', '무학대사'),
 ('하늘을 이불 삼고 땅을 자리 삼아 누우니,\n산은 베개요 달은 촛불이라,\n온 세상이 본디 내 집 아님이 없다.', '진묵대사'),
@@ -390,7 +390,7 @@ INSERT INTO daily_quote (content, source) VALUES
 ('자기를 바로 봅시다,\n남을 이롭게 하는 것이 곧 나를 이롭게 하는 것입니다.', '성철스님 (신년법어)'),
 ('구하는 마음을 쉬면 그 자리가 곧 편안하니,\n따로 편안함을 구하러 다니지 말라.', '종범스님');
 
-INSERT INTO temple_food_recommendation (food_name, description, recipe, image_url) VALUES
+INSERT INTO TEMPLE_FOOD_RECOMMENDATION (food_name, description, recipe, image_url) VALUES
 ('시래기나물',
  '무청을 말려 불린 시래기를 들깨와 함께 볶아낸, 구수한 맛의 사찰 밑반찬입니다.',
  '1. 마른 시래기를 물에 충분히 불린 뒤 삶아 질긴 껍질을 벗기고 먹기 좋게 썬다.

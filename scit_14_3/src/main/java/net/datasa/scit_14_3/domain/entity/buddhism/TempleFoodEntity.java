@@ -19,7 +19,7 @@ import lombok.Setter;
 	TempleFoodService.toDto()가 이 마지막 줄을 파싱해서 recipe 본문과 recipeUrl로 분리한다.
  */
 @Entity
-@Table(name = "temple_food_recommendation")
+@Table(name = "TEMPLE_FOOD_RECOMMENDATION")
 @Getter
 @Setter
 @NoArgsConstructor

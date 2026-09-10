@@ -34,6 +34,9 @@
    ============================================================ */
 
 const I18N_SOURCE_LANG = 'ko';
+// 번역 중 로딩 오버레이에 "OO(으)로 번역하는 중..." 문구를 띄울 때 쓰는 언어명 -
+// 헤더 언어 버튼(commonIncludes)에 적힌 표기와 그대로 맞춤.
+const I18N_LANG_LABELS = { ko: '한국어', ja: '日本語', en: 'English' };
 let i18nCurrentLang = 'ko';
 const i18nTranslationCache = {}; // i18nTranslationCache[lang][원문] = 번역문
 let i18nOriginalTextNodes = null; // [{node, text}] - 최초 1회만 스냅샷
@@ -272,9 +275,11 @@ async function defaultOnLanguageChange(lang, btn){
     }
 
     // 최초 사용 시 번역 모델을 새로 내려받을 수 있어 시간이 걸림 - 버튼이 멈춘 것처럼
-    // 보이지 않도록 로딩 표시만 해두고, 실제 완료까지는 계속 기다림(강제 타임아웃으로
-    // 끊으면 다운로드 중이던 것도 같이 날아가서 오히려 더 오래 걸리게 됨).
+    // 보이지 않도록 로딩 표시만 해두고, 실제 완료까지는 계속 기다린다(강제 타임아웃으로
+    // 끊으면 다운로드 중이던 것도 같이 날아가서 오히려 더 오래 걸리게 됨). 전체화면
+    // 로딩 오버레이도 같이 띄워서 어떤 언어로 번역 중인지 보여준다.
     if(btn) btn.classList.add('i18n-loading');
+    showLoading((I18N_LANG_LABELS[lang] || lang) + '(으)로 번역하는 중...');
 
     try {
         const uniqueTexts = Array.from(new Set([
@@ -290,6 +295,7 @@ async function defaultOnLanguageChange(lang, btn){
         console.warn('[common.js] 번역 중 오류가 발생했습니다.', e);
     } finally {
         if(btn) btn.classList.remove('i18n-loading');
+        hideLoading();
     }
 }
 
@@ -364,3 +370,61 @@ document.addEventListener('DOMContentLoaded', function applySavedLanguage(){
 /* ===== 인증 드롭다운(auth-nav-fragment) 관련 코드는 여기 그대로 유지 =====
    (기존에 이미 작성해두신 openDropdown/closeDropdown 등은 이 파일에
    그대로 남겨두시면 됩니다 — 이번 수정과 무관합니다) */
+
+/* ===== 전체화면 로딩 오버레이 =====
+   서버(특히 원격 DB)에서 값 가져오는 동안 화면 전체를 반투명 회색으로 덮고
+   진행률 바(%) + 메시지를 보여준다. 오래 걸리는 fetch 앞뒤로 showLoading()/hideLoading()만
+   호출하면 됨 - 여러 군데서 동시에 불러도 카운터로 관리해서 먼저 끝난 쪽이 먼저 hideLoading()
+   해도 다른 쪽이 아직 안 끝났으면 오버레이가 사라지지 않는다.
+
+   %는 실제 다운로드 진행률이 아니라 흉내낸 값이다(fetch 응답이 압축되면 Content-Length를
+   못 믿어서 정확한 진행률 계산이 불가능함) - 90%까지 점점 느려지며 차오르다가, 실제로
+   끝나면(hideLoading) 100%를 잠깐 보여주고 닫힌다. */
+let _loadingCount = 0;
+let _loadingPercent = 0;
+let _loadingTimer = null;
+
+function _setLoadingBar(percent) {
+    const label = document.getElementById('loading-bar-percent');
+    if (label) label.textContent = Math.round(percent) + '%';
+}
+
+function showLoading(message) {
+    _loadingCount++;
+    let overlay = document.getElementById('loading-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'loading-overlay';
+        overlay.className = 'loading-overlay';
+        overlay.innerHTML =
+            '<div class="loading-spinner-wrap">' +
+                '<div class="loading-spinner"></div>' +
+                '<div class="loading-bar-percent" id="loading-bar-percent">0%</div>' +
+            '</div>' +
+            '<div class="loading-overlay-text">' + (message || '불러오는 중...') + '</div>';
+        document.body.appendChild(overlay);
+    } else {
+        overlay.querySelector('.loading-overlay-text').textContent = message || '불러오는 중...';
+        overlay.hidden = false;
+    }
+
+    _loadingPercent = 0;
+    _setLoadingBar(0);
+    clearInterval(_loadingTimer);
+    _loadingTimer = setInterval(function () {
+        _loadingPercent += (90 - _loadingPercent) * 0.05 + 0.3;
+        if (_loadingPercent > 90) _loadingPercent = 90;
+        _setLoadingBar(_loadingPercent);
+    }, 100);
+}
+
+function hideLoading() {
+    _loadingCount = Math.max(0, _loadingCount - 1);
+    if (_loadingCount > 0) return;
+    clearInterval(_loadingTimer);
+    _setLoadingBar(100);
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+        setTimeout(function () { overlay.hidden = true; }, 200);
+    }
+}

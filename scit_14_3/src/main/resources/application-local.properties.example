@@ -21,6 +21,13 @@
 # Gemini API (사찰 등록 문의 - 장소 유형 자동판별) - aistudio.google.com에서 무료 키 발급
 # gemini.api-key=CHANGE_ME
 
+# 팀 공유 DB (Aiven MySQL) - console.aiven.io 서비스 상세 페이지의 "Overview" 탭에서
+# Host/Port/User/Password/Default database 확인. useSSL=false로 두면 Aiven이 SSL을
+# 강제하는 포트라 연결 자체가 거부되니 true(+trustServerCertificate)로 둬야 함.
+# spring.datasource.url=jdbc:mysql://CHANGE_ME_HOST:CHANGE_ME_PORT/CHANGE_ME_DB?useSSL=true&requireSSL=true&serverTimezone=Asia/Seoul&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+# spring.datasource.username=CHANGE_ME
+# spring.datasource.password=CHANGE_ME
+
 spring.mail.username=temp@gmail.com
 spring.mail.password=tempPassword
 kakao.client-id=temp

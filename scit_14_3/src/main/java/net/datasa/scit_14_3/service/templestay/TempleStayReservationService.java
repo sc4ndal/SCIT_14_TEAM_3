@@ -13,6 +13,7 @@ import net.datasa.scit_14_3.repository.templestay.ReservationParticipantReposito
 import net.datasa.scit_14_3.repository.templestay.TempleStayProgramRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayReservationRepository;
 import net.datasa.scit_14_3.repository.user.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -55,6 +56,7 @@ public class TempleStayReservationService {
 	 * @param dto
 	 * @return
 	 */
+	@CacheEvict(value = {"programs", "programsByTemple"}, allEntries = true)
 	public TempleStayReservationDTO reserved(TempleStayReservationDTO dto) {
 
 		// login_id가 USER(회원) 테이블을 FK로 참조해서, 사찰/관리자 계정으로 예약을 시도하면
@@ -122,6 +124,7 @@ public class TempleStayReservationService {
 		}
 		return dtoList;
 	}
+	@CacheEvict(value = {"programs", "programsByTemple"}, allEntries = true)
 	public TempleStayReservationDTO canceledMyReservation(Long reservationId) {
 		TempleStayReservationEntity entity = tsrr.findById(reservationId).orElseThrow(() -> new EntityNotFoundException("해당되는 템플스테이 예약 번호가 존재하지 않습니다."));
 		
@@ -148,6 +151,7 @@ public class TempleStayReservationService {
 	 * 결제 실패/취소로 인한 자동 취소 - 사용자가 직접 누른 취소가 아니라서 24시간 컷오프 규칙을
 	 * 적용하지 않는다(결제가 안 됐으니 자리를 바로 비워줘야 다른 사람이 예약할 수 있음).
 	 */
+	@CacheEvict(value = {"programs", "programsByTemple"}, allEntries = true)
 	public void cancelUnpaid(Long reservationId) {
 		TempleStayReservationEntity entity = tsrr.findById(reservationId)
 				.orElseThrow(() -> new EntityNotFoundException("해당되는 템플스테이 예약 번호가 존재하지 않습니다."));
@@ -161,6 +165,7 @@ public class TempleStayReservationService {
 	 * 대신 이 예약이 진짜 본인 사찰 소속 프로그램인지는 반드시 확인한다(programId만 바꿔서
 	 * 남의 사찰 예약을 취소하지 못하도록).
 	 */
+	@CacheEvict(value = {"programs", "programsByTemple"}, allEntries = true)
 	public void cancelByTempleAdmin(Long reservationId, Long templeId) {
 		TempleStayReservationEntity entity = tsrr.findById(reservationId)
 				.orElseThrow(() -> new EntityNotFoundException("해당되는 예약이 존재하지 않습니다."));
