@@ -11,6 +11,8 @@ import net.datasa.scit_14_3.domain.entity.templestay.TempleStayProgramEntity;
 import net.datasa.scit_14_3.repository.temple.TempleRegistrationRequestRepository;
 import net.datasa.scit_14_3.repository.temple.TempleRepository;
 import net.datasa.scit_14_3.service.integration.CloudinaryService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,7 @@ public class TempleService {
 
 	/** 사찰 등록 요청 승인 시 호출. loginId/rawPassword는 컨트롤러가 무작위로 만들어서 넘기고,
 	    비밀번호 해싱은 UserService.registerLocal()과 동일하게 서비스 안에서 처리함. */
+	@CacheEvict(value = "temples", allEntries = true)
 	public TempleDTO register(TempleDTO dto, String loginId, String rawPassword) {
 		TempleEntity entity = TempleEntity.builder()
 				.name(dto.getName())
@@ -103,6 +106,10 @@ public class TempleService {
 				.build();
 	}
 
+	// 지도/사찰목록 화면에서 페이지 이동마다 호출되는데 Aiven(원격 DB) 왕복이 느려서 체감이 큼 -
+	// 사찰 정보는 관리자/사찰 본인이 수정할 때만 바뀌므로 캐싱하고, 그 수정 지점들(아래 register/
+	// updateAdmin/updateOwnInfo/removeImage/delete)에서 전체 무효화한다.
+	@Cacheable("temples")
 	public List<TempleDTO> getAll() {
 		List<TempleDTO> dtoList = new ArrayList<>();
 		List<TempleEntity> list = tr.findAll();
@@ -148,6 +155,7 @@ public class TempleService {
 
 	/** loginId/password/mustChangePassword는 여기서 안 건드림 - 계정 자체가 아니라 사찰 정보만 수정. */
 	@Transactional
+	@CacheEvict(value = "temples", allEntries = true)
 	public void updateAdmin(Long templeId, TempleDTO dto) {
 		TempleEntity entity = tr.findById(templeId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
 
@@ -172,6 +180,7 @@ public class TempleService {
 	    값이라 문제를 일으킬 여지가 없어서 자유롭게 수정 가능. specialNotice가 프로그램 상세의
 	    "유의사항"으로도 그대로 쓰임(별도 컬럼 안 둠). */
 	@Transactional
+	@CacheEvict(value = "temples", allEntries = true)
 	public void updateOwnInfo(Long templeId, String imageUrl, boolean supportEnglish, String refundPolicy, String specialNotice) {
 		TempleEntity entity = tr.findById(templeId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
 
@@ -189,6 +198,7 @@ public class TempleService {
 
 	/** 사찰 계정 본인이 등록된 대표 이미지를 삭제. Cloudinary에 올라간 실제 파일도 같이 지움. */
 	@Transactional
+	@CacheEvict(value = "temples", allEntries = true)
 	public void removeImage(Long templeId) {
 		TempleEntity entity = tr.findById(templeId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
 		if (cloudinaryService.isManagedUrl(entity.getImageUrl())) {
@@ -202,6 +212,7 @@ public class TempleService {
 	    TEMPLE 행 삭제 시 외래키 제약에 안 걸림. 프로그램/예약 등 다른 데이터가 남아있으면
 	    그건 그대로 실패시킴(무작정 같이 지우면 위험한 데이터라 관리자가 먼저 정리해야 함).*/
 	@Transactional
+	@CacheEvict(value = "temples", allEntries = true)
 	public void delete(Long templeId) {
 		TempleEntity entity = tr.findById(templeId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
 
