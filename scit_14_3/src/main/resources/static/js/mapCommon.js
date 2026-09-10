@@ -36,9 +36,9 @@ function createTempleMarker(map, temple) {
     var position = new kakao.maps.LatLng(temple.lat, temple.lng);
 
     // 2. 마커에 쓸 이미지 설정 (크기 40x40, 기준점은 이미지 하단 중앙)
-    var imageSize = new kakao.maps.Size(40, 40);
-    var imageOption = { offset: new kakao.maps.Point(20, 40) };
-    var markerImage = new kakao.maps.MarkerImage(temple.iconUrl, imageSize, imageOption);
+        var imageSize = new kakao.maps.Size(40, 40);
+        var imageOption = { offset: new kakao.maps.Point(20, 40) };
+        var markerImage = new kakao.maps.MarkerImage(temple.iconUrl, imageSize, imageOption);
 
     // 3. 마커 생성 및 지도에 표시
     var marker = new kakao.maps.Marker({
@@ -73,7 +73,19 @@ function createTempleMarker(map, temple) {
         '<div style="font-size:13px;white-space:nowrap;">' + temple.address + '</div>' +
         '<div style="margin-top:6px;white-space:nowrap;">' +
         '  <a href="/temple-detail/' + temple.templeId + '" style="font-size:12px;color:#2e86de;text-decoration:none;">상세보기</a>' +
+        '  <a href="#" class="zoom-detail-link" style="font-size:12px;color:#2e86de; text-decoration:none;margin-left:10px;">가까이 보기</a>' +
         '</div>';
+    // *. 위치 확대 기능
+    var zoomDetailLink = infoContent.querySelector('.zoom-detail-link');
+    zoomDetailLink.addEventListener('click', function (e){
+        e.preventDefault();
+
+        map.relayout();
+        map.setLevel(4);
+        map.setCenter(position);
+
+    })
+
 
     var favoriteBtn = infoContent.querySelector('.favorite-star-btn');
     var favoriteWrapper = infoContent.querySelector('.favorite-wrapper');

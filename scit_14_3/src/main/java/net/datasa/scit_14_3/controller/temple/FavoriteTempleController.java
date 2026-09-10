@@ -33,6 +33,7 @@ public class FavoriteTempleController {
 	// 지금 이 사찰이 즐겨찾기 상태인지 확인(정보창 열 때 별표 초기 모양 결정용) - 지도에 마커 찍을 때마다
 	// 호출되는 조회성 API라 로그인 필수로 막으면 비로그인 방문자는 마커마다 로그인페이지로 튕겨서
 	// JSON 파싱 에러가 남. 조회는 누구나 가능하게 열어두고, 비로그인이면 그냥 false로 응답한다.
+	@PreAuthorize("hasRole('USER')")
 	@GetMapping("/{templeId}")
 	public Map<String, Object> isFavorite(@AuthenticationPrincipal AppUserDetails user, @PathVariable Long templeId) {
 		boolean favorite = user != null && fts.isFavoriteTemple(user.getUsername(), templeId);
@@ -44,6 +45,7 @@ public class FavoriteTempleController {
 
 	// 로그인한 사람이 즐겨찾기한 사찰 id 목록 전체 (필터용) - 위와 같은 이유로 조회 자체는 공개,
 	// 비로그인이면 빈 목록 반환.
+	@PreAuthorize("hasRole('USER')")
 	@GetMapping
 	public List<Long> getMyFavoriteTempleIds(@AuthenticationPrincipal AppUserDetails user) {
 		if (user == null) {
