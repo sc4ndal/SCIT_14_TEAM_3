@@ -24,8 +24,8 @@
 		<a class="admin-tab" th:classappend="${tab == 'temple'} ? ' active'" th:href="@{/admin/manage(tab='temple')}">사찰관리</a>
 	</nav>
 
-	<p class="check-result" style="color:#2f6b5e; text-align:center; margin:16px 32px 0;" th:if="${manageSuccess}" th:text="${manageSuccess}"></p>
-	<p class="check-result" style="color:var(--destructive); text-align:center; margin:16px 32px 0;" th:if="${manageError}" th:text="${manageError}"></p>
+	<p class="admin-alert admin-alert--ok" th:if="${manageSuccess}" th:text="${manageSuccess}"></p>
+	<p class="admin-alert admin-alert--err" th:if="${manageError}" th:text="${manageError}"></p>
 
 	<!-- ===================== 회원관리 ===================== -->
 	<div th:if="${tab == 'user'}" class="admin-table-wrap" style="margin-top:16px;padding-bottom:32px;">

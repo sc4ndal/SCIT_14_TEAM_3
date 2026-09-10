@@ -104,7 +104,7 @@ public final class BuddhismIntroContent {
 
 	public static final List<NextCardDTO> NEXT_CARDS = List.of(
 			new NextCardDTO("사찰 예절 가이드", "가기 전에 딱 이것만 알고 가면 됩니다", "/info?category=예절가이드"),
-			new NextCardDTO("사찰 찾기", "가까운 절부터 지도에서 찾아보세요", "/temples"),
-			new NextCardDTO("체험하기", "템플스테이 프로그램을 둘러보세요", "/programs")
+			new NextCardDTO("사찰 찾기", "가까운 절부터 지도에서 찾아보세요", "/findtemple"),
+			new NextCardDTO("체험하기", "템플스테이 프로그램을 둘러보세요", "/templestayGuide")
 	);
 }

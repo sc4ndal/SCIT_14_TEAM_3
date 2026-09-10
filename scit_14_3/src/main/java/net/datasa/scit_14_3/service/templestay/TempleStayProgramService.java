@@ -11,6 +11,7 @@ import net.datasa.scit_14_3.domain.entity.templestay.TempleStayReservationEntity
 import net.datasa.scit_14_3.repository.temple.TempleRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayProgramRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayReservationRepository;
+import net.datasa.scit_14_3.service.integration.CloudinaryService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +27,7 @@ public class TempleStayProgramService {
 	private final TempleStayProgramRepository tspr;
 	private final TempleRepository templeRepository;
 	private final TempleStayReservationRepository tsrr;
+	private final CloudinaryService cloudinaryService;
 
 	private TempleStayProgramDTO toDto(TempleStayProgramEntity entity, int reservedCount) {
 		return TempleStayProgramDTO.builder()
@@ -122,7 +124,7 @@ public class TempleStayProgramService {
 	/**
 	 * 사찰 계정이 자기 사찰 소속으로 프로그램을 새로 등록.
 	 * support_english/latitude/longitude는 DB 트리거가 소속 TEMPLE 값으로 저장 시점에
-	 * 덮어쓰므로(docs/buddhist-site-schema.sql 참고) 여기서 안 채워도 됨.
+	 * 덮어쓰므로(docs/sql/buddhist-site-schema.sql 참고) 여기서 안 채워도 됨.
 	 */
 	public void register(TempleStayProgramDTO dto, Long templeId) {
 		TempleEntity temple = templeRepository.findById(templeId)
@@ -154,6 +156,13 @@ public class TempleStayProgramService {
 
 		validate(dto);
 
+		// 새 이미지로 교체된 경우에만 기존 Cloudinary 파일을 지움 - 같은 URL을 그대로 재사용한
+		// 경우(이미지 변경 안 함)까지 지우면 방금 저장한 사진이 같이 날아가버림
+		String oldImageUrl = entity.getImageUrl();
+		if (oldImageUrl != null && !oldImageUrl.equals(dto.getImageUrl()) && cloudinaryService.isManagedUrl(oldImageUrl)) {
+			cloudinaryService.delete(oldImageUrl);
+		}
+
 		entity.setTitle(dto.getTitle());
 		entity.setProgramType(dto.getProgramType());
 		entity.setImageUrl(dto.getImageUrl());
@@ -176,6 +185,9 @@ public class TempleStayProgramService {
 			tspr.flush();
 		} catch (DataIntegrityViolationException e) {
 			throw new IllegalStateException("이 프로그램에 연결된 예약이 있어 삭제할 수 없습니다.");
+		}
+		if (cloudinaryService.isManagedUrl(entity.getImageUrl())) {
+			cloudinaryService.delete(entity.getImageUrl());
 		}
 	}
 }

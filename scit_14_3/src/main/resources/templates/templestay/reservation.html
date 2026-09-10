@@ -295,6 +295,12 @@
           .program-card:hover { transform: none; }
         }
 
+        .program-card-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+        }
         .program-type-badge {
           display: inline-flex;
           align-self: flex-start;
@@ -321,6 +327,14 @@
           font-family: "Noto Serif KR", serif;
           font-size: 17px;
           font-weight: 700;
+          /* 전역 h1~h3에 text-wrap:balance가 걸려있는데, 카드 폭이 좁으면 balance가
+             단어를 이상한 지점에서 끊어서 줄바꿈함(예: "휴식형"의 "형"만 다음 줄로) -
+             제목은 기본 줄바꿈(끝까지 채우고 넘치면 다음 줄)으로 되돌림. */
+          text-wrap: wrap;
+          /* 제목이 1줄/2줄로 갈리면 카드마다 높이가 들쑥날쑥해짐 - 항상 2줄 자리를
+             미리 확보해서(짧은 제목은 아래에 여백만 남음) 카드 높이를 통일함. */
+          line-height: 1.4;
+          min-height: calc(1.4em * 2);
         }
         .program-temple-region {
           font-size: 13px;
@@ -343,8 +357,12 @@
         }
         .capacity-dot.open { background: var(--pine); }
         .capacity-dot.full { background: var(--red); }
-        .program-price {
+        .program-card-footer {
           margin-top: auto;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
         }
         .price-adult {
           font-family: "IBM Plex Mono", monospace;
@@ -401,7 +419,26 @@
           cursor: not-allowed;
           box-shadow: none;
         }
-        #go-to-reserve-btn { margin-top: 24px; }
+        #go-to-reserve-btn { margin-top: 24px; display: flex; margin-left: auto; }
+
+        /* 예약 신청 중복 클릭 방지용 로딩 스피너 - 서버 응답 올 때까지 버튼 비활성 + 원형 스피너 표시 */
+        #step2-submit-btn:disabled {
+          opacity: .75;
+          cursor: not-allowed;
+          transform: none;
+        }
+        .btn-spinner {
+          display: inline-block;
+          width: 15px;
+          height: 15px;
+          border: 2px solid rgba(255,255,255,.4);
+          border-top-color: #fff;
+          border-radius: 50%;
+          animation: btn-spin .7s linear infinite;
+        }
+        @keyframes btn-spin {
+          to { transform: rotate(360deg); }
+        }
 
         .btn-ghost, #step2-back-btn,
         #step3-back-to-list-btn, #go-to-my-reservations-btn {
@@ -747,14 +784,22 @@
             <!-- 프로그램 카드 (반복되는 구조, 예시 1개) -->
             <!-- 카드 자체를 클릭하면 선택됨(선택된 카드는 picked 클래스가 붙음), 상세보기 버튼만 예외 -->
             <article class="program-card" data-program-id="">
-                <span class="program-type-badge"><!-- 당일형/체험형/휴식형 --></span>
+                <div class="program-card-top">
+                    <span class="program-type-badge" data-type=""><!-- 당일형/체험형/휴식형 --></span>
+                    <p class="program-capacity">
+                        <span class="capacity-dot"></span>
+                        <!-- 예약인원 / 정원 -->
+                    </p>
+                </div>
                 <h3 class="program-title"><!-- 프로그램 title --></h3>
                 <p class="program-temple-region"><!-- 사찰명 · 지역 --></p>
-                <div class="program-price">
-                    <span class="price-adult"><!-- 성인 가격 --></span>
-                    <span class="price-minor"><!-- 미성년 가격 (있다면) --></span>
+                <div class="program-card-footer">
+                    <div class="program-price">
+                        <span class="price-adult"><!-- 성인 가격 --></span>
+                        <span class="price-minor"><!-- 미성년 가격 (있다면) --></span>
+                    </div>
+                    <button type="button" class="program-detail-btn">상세보기</button>
                 </div>
-                <button type="button" class="program-detail-btn">상세보기</button>
             </article>
 
             <!-- 프로그램 카드가 여기에 반복 렌더링됨 -->

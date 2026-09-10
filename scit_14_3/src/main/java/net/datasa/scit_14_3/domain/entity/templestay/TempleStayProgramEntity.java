@@ -65,7 +65,7 @@ public class TempleStayProgramEntity {
 	@Column(name = "max_participant", nullable = false)
 	private int maxParticipant = 20;
 	
-	// 아래 세 컬럼은 DB 트리거가 소속 TEMPLE의 값으로 저장 시점에 덮어씀 (docs/buddhist-site-schema.sql 참고)
+	// 아래 세 컬럼은 DB 트리거가 소속 TEMPLE의 값으로 저장 시점에 덮어씀 (docs/sql/buddhist-site-schema.sql 참고)
 	@Builder.Default
 	@Column(name = "support_english", nullable = false)
 	private boolean supportEnglish = false;

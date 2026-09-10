@@ -37,6 +37,7 @@
 /* 링크 밑줄 전역 제거 - common.css가 사실상 전 페이지에서 로드되니 여기 한 번만 두면 됨 */
 a {
     text-decoration: none;
+
 }
 
 /* ===== 헤더 (site-header) =====
@@ -56,6 +57,10 @@ a {
     background: rgba(248, 244, 239, 0.97);
 
     border-bottom: 1px solid transparent;
+
+    /* 페이지마다 body 기본 폰트가 달라서 헤더 글씨체가 페이지별로 들쭉날쭉했음 -
+       헤더 안 모든 텍스트는 페이지 상관없이 항상 이 폰트로 통일 */
+    font-family: "Noto Sans KR", sans-serif;
 
     transition:
             border-color .3s ease,
@@ -85,9 +90,36 @@ a {
 }
 
 .brand img {
-    padding : 40px;
-    height: 180px;
-    width: auto;
+    height: 80px;
+    width: 90px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+}
+
+.main-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.main-nav a {
+    font-family: "Noto Sans KR", sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: rgba(39, 33, 27, .42);
+}
+
+.main-nav a:hover {
+    opacity: .75;
+}
+
+.main-nav span {
+    color: rgba(39, 33, 27, .18);
+    font-size: 13px;
 }
 
 .brand-circle {
@@ -309,6 +341,23 @@ a {
 /* .btn-check(signup.css)의 위험 동작용 변형 - 색만 빨강으로 */
 .btn-check.btn-danger{border-color:var(--destructive);color:var(--destructive);}
 .btn-check.btn-danger:hover:not(:disabled){background:var(--destructive);color:#fff;}
+
+/* ===== 관리자 페이지 공용 알림 배너 =====
+   기존 .check-result(signup.css)는 회원가입 폼의 작은 유효성 텍스트용이라 성공/완료
+   안내로 쓰기엔 존재감이 없음(글자 색만 바뀌는 한 줄) - mypage/edit.css의
+   .form-alert--ok와 같은 톤으로 박스형 배너를 만들어 admin 페이지 전반에서 재사용. */
+.admin-alert{
+    margin:16px 32px 0;padding:12px 16px;
+    border-radius:6px;font-size:13.5px;line-height:1.5;
+}
+.admin-alert--ok{
+    background:#e7f4ec;color:#1b6b3a;
+    border:1px solid rgba(27,107,58,.28);
+}
+.admin-alert--err{
+    background:#fbe2e2;color:var(--destructive);
+    border:1px solid var(--destructive);
+}
 
 /* ===== 관리자 탭(회원관리/사찰관리) ===== */
 .admin-tabs{

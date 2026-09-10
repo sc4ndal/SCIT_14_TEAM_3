@@ -36,8 +36,9 @@ kakao.maps.load(function () {
     // 즐겨찾기에 추가한 데이터 활용 위한 데이터 저장
     var favoriteTempleIds = [];
     window.favoriteTempleIds = favoriteTempleIds; // window에도 같은 배열을 붙여둠.
-    // 로그인 유무 판단
-    var isLoggedIn = false;
+    // /api/favoritetemples는 비로그인이어도 200(빈 배열)을 내려주게 바뀌어서 이 fetch의
+    // 성공/실패로는 더 이상 로그인 여부를 못 가림 - #auth-info(서버 렌더 마커)로 직접 판단함.
+    var isLoggedIn = !!document.getElementById('auth-info');
     // null = 검색으로 제한된 게 없음(전체 대상), 배열이면 그 안의 templeId만 허용
     var searchMatchedIds = null;
 
@@ -47,14 +48,12 @@ kakao.maps.load(function () {
             return response.json();
         })
         .then(function (ids) {
-            isLoggedIn = true;      // 로그인이 되어있음
             favoriteTempleIds.length = 0;           // 기존 내용 비우고
             ids.forEach(function (id) {
                 favoriteTempleIds.push(id);         // 새 데이터 하나씩 채워 넣음
             })
         })
         .catch(function () {
-            isLoggedIn = false;
             favoriteTempleIds.length = 0;
         });
     fetch('/api/temples')
