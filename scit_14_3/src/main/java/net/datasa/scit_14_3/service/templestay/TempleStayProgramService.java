@@ -12,6 +12,8 @@ import net.datasa.scit_14_3.repository.temple.TempleRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayProgramRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayReservationRepository;
 import net.datasa.scit_14_3.service.integration.CloudinaryService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -87,13 +89,20 @@ public class TempleStayProgramService {
 	 * 전제조회
 	 * @return
 	 */
+	// 프로그램 목록 화면에서 페이지 이동마다 호출되는데 Aiven(원격 DB) 왕복 + 대용량 description
+	// 텍스트 전송이 겹쳐서 체감이 큼 - 캐싱하되, reservedCount(예약된 인원)가 섞여 있어서
+	// 예약 생성/취소로도 값이 바뀐다. 그래서 프로그램 등록/수정/삭제뿐 아니라
+	// TempleStayReservationService의 예약 생성/취소 지점들에서도 같은 캐시("programs")를 비운다.
+	// TODO: 로딩바 테스트를 위해 잠깐 꺼둠 - 확인 끝나면 주석 풀어서 다시 캐싱 켤 것
+	// @Cacheable("programs")
 	public List<TempleStayProgramDTO> getAll() {
-		return toDtoList(tspr.findAll());
+		return toDtoList(tspr.findAllWithTemple());
 	}
 
 	/** 사찰 계정 자신이 등록한 프로그램만 (마이페이지 > 사찰 프로그램 관리) */
+	@Cacheable(value = "programsByTemple", key = "#templeId")
 	public List<TempleStayProgramDTO> getByTemple(Long templeId) {
-		return toDtoList(tspr.findByTemple_TempleId(templeId));
+		return toDtoList(tspr.findByTemple_TempleIdWithTemple(templeId));
 	}
 
 	/** 수정 폼 진입용 - 본인 사찰 소속 프로그램인지 같이 확인 */
@@ -126,6 +135,7 @@ public class TempleStayProgramService {
 	 * support_english/latitude/longitude는 DB 트리거가 소속 TEMPLE 값으로 저장 시점에
 	 * 덮어쓰므로(docs/sql/buddhist-site-schema.sql 참고) 여기서 안 채워도 됨.
 	 */
+	@CacheEvict(value = {"programs", "programsByTemple"}, allEntries = true)
 	public void register(TempleStayProgramDTO dto, Long templeId) {
 		TempleEntity temple = templeRepository.findById(templeId)
 				.orElseThrow(() -> new EntityNotFoundException("사찰 계정을 찾을 수 없습니다."));
@@ -150,6 +160,7 @@ public class TempleStayProgramService {
 
 	/** 본인 사찰 소속 프로그램만 수정 가능 - programId만 바꿔서 남의 프로그램을 건드릴 수 없도록
 	    findByProgramIdAndTemple_TempleId로 소유 사찰까지 같이 확인. */
+	@CacheEvict(value = {"programs", "programsByTemple"}, allEntries = true)
 	public void update(Long programId, TempleStayProgramDTO dto, Long templeId) {
 		TempleStayProgramEntity entity = tspr.findByProgramIdAndTemple_TempleId(programId, templeId)
 				.orElseThrow(() -> new EntityNotFoundException("해당 프로그램을 찾을 수 없습니다."));
@@ -177,6 +188,7 @@ public class TempleStayProgramService {
 
 	/** 본인 사찰 소속 프로그램만 삭제 가능. 이미 예약이 걸린 프로그램은 외래키 제약으로 삭제가
 	    막히므로(TEMPLE_STAY_RESERVATION.program_id) 친절한 에러로 안내함. */
+	@CacheEvict(value = {"programs", "programsByTemple"}, allEntries = true)
 	public void delete(Long programId, Long templeId) {
 		TempleStayProgramEntity entity = tspr.findByProgramIdAndTemple_TempleId(programId, templeId)
 				.orElseThrow(() -> new EntityNotFoundException("해당 프로그램을 찾을 수 없습니다."));

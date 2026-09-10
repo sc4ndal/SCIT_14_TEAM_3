@@ -56,6 +56,7 @@ kakao.maps.load(function () {
         .catch(function () {
             favoriteTempleIds.length = 0;
         });
+    showLoading('사찰 정보를 불러오는 중...');
     fetch('/api/temples')
         .then(function (response) {
             if (!response.ok) {
@@ -88,6 +89,9 @@ kakao.maps.load(function () {
         })
         .catch(function (error) {
             console.error('사찰 목록을 불러오는 중 오류 발생:', error);
+        })
+        .finally(function () {
+            hideLoading();
         });
 
     // ------------------------- 검색 -------------------------
