@@ -46,6 +46,7 @@ const HOME_TRANSLATIONS = {
         modalPriceLabel: "참가비",
         modalDurationLabel: "체류기간",
         modalGoReserve: "예약하러 가기",
+        modalGoLink: "자세히 보기",
         modalClose: "닫기",
 
         footerText: "사찰 관계자이신가요?",
@@ -94,6 +95,7 @@ const HOME_TRANSLATIONS = {
         modalPriceLabel: "参加費",
         modalDurationLabel: "滞在期間",
         modalGoReserve: "予約しに行く",
+        modalGoLink: "詳しく見る",
         modalClose: "閉じる",
 
         footerText: "寺院関係者の方ですか？",
@@ -142,6 +144,7 @@ const HOME_TRANSLATIONS = {
         modalPriceLabel: "Price",
         modalDurationLabel: "Duration",
         modalGoReserve: "Go to Reservation",
+        modalGoLink: "View Details",
         modalClose: "Close",
 
         footerText: "Are you a temple representative?",
