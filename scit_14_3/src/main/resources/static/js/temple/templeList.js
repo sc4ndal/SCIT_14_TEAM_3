@@ -39,8 +39,6 @@ kakao.maps.load(function () {
     // /api/favoritetemples는 비로그인이어도 200(빈 배열)을 내려주게 바뀌어서 이 fetch의
     // 성공/실패로는 더 이상 로그인 여부를 못 가림 - #auth-info(서버 렌더 마커)로 직접 판단함.
     var isLoggedIn = !!document.getElementById('auth-info');
-    // 로그인 유무 판단
-    var isLoggedIn = false;
     // null = 검색으로 제한된 게 없음(전체 대상), 배열이면 그 안의 templeId만 허용
     var searchMatchedIds = null;
 

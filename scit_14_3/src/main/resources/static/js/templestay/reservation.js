@@ -195,19 +195,8 @@ function renderProgramList() {
     const full = remainingSeats(p) <= 0;
     return `
     <article class="program-card ${state.checkedProgramId === p.programId ? 'picked' : ''}" data-program-id="${p.programId}">
-      <span class="program-type-badge" data-type="${p.programType}">${p.programType}</span>
-      <h3 class="program-title">${p.title}</h3>
-      <p class="program-temple-region">${p.templeName} · ${p.region}</p>
-      <p class="program-capacity">
-        <span class="capacity-dot ${full ? 'full' : 'open'}"></span>
-        ${p.reservedCount || 0} / ${p.maxParticipant}명
-      </p>
-      <div class="program-price">
-        <span class="price-adult">${p.price.toLocaleString()}원</span>
-      </div>
-      <a class="program-detail-btn" href="/reservation/programs/${p.programId}">상세보기</a>
       <div class="program-card-top">
-        <span class="program-type-badge">${p.programType}</span>
+        <span class="program-type-badge" data-type="${p.programType}">${p.programType}</span>
         <p class="program-capacity">
           <span class="capacity-dot ${full ? 'full' : 'open'}"></span>
           ${p.reservedCount || 0} / ${p.maxParticipant}명

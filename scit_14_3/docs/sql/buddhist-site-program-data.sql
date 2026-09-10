@@ -1,685 +1,8 @@
 -- =====================================================================
--- 부울경 (불교 종합 사이트) DB 스키마
--- 팀명: 佛법을 선도하는 자들(불선자)
--- 대상 DBMS: MySQL 8.0
--- 총 17개 테이블 / BUDDHISM_INFO만 다른 테이블과 연결 없는 독립 테이블
---
--- 이번 정리에서 반영된 결정사항
---   1) TEMPLE_STAY_PROGRAM.program_type은 당일형/체험형/휴식형 3종 유지(변경 없음)
---   2) 진행 일수는 program_type에 종속된 고정 규칙:
---        당일형        -> 반드시 당일(1일) 프로그램
---        체험형/휴식형 -> 반드시 1박2일 프로그램
---      (규칙만 정해졌을 뿐, 이를 저장하는 별도 컬럼은 만들지 않음 - 아래 설명 참고)
---   3) TEMPLE_STAY_RESERVATION의 start_date/end_date는 항상 "둘 다 명시적으로" 저장.
---      end_date를 "start_date + 1일"으로 매번 계산하지 않는다 - 월말(예: 8/31 -> 9/1)
---      경계를 다루는 애플리케이션 로직 실수를 원천 차단하기 위함.
---      (참고: 원래 설계서에도 이미 start_date/end_date가 별도 컬럼으로 있었음 - 그대로 유지)
---   4) TEMPLE_STAY_PROGRAM에 대표 이미지 컬럼(image_url) 추가.
---   5) TEMPLE.api_place_id 제거, 대신 latitude/longitude(위도/경도)로 위치를 받음
---      (지도 API 장소 ID보다 좌표가 더 정확하다는 판단). TEMPLE_STAY_PROGRAM이 트리거로
---      상속받던 컬럼도 api_place_id -> latitude/longitude로 같이 바뀜(support_english와 동일한 방식).
---   6) TEMPLE에 대표 이미지 컬럼(image_url) 추가.
---   7) TEMPLE에 주소 컬럼(address) 추가.
---   8) TEMPLE_REGISTRATION_REQUEST(사찰 등록 요청) 테이블 추가 - 사찰 관계자가 회원가입
---      없이 홈 화면 "문의하기"로 제출하는 요청을 담는 별도 테이블. TEMPLE과 완전히 분리되어
---      있고(승인해도 이 행이 TEMPLE로 "승격"되지 않음), 관리자가 승인하면 별도로 새 TEMPLE
---      행을 생성한다. contact_email은 이 테이블에만 있고 TEMPLE에는 저장되지 않는다.
---   9) 환불 규정은 프로그램마다 다르지 않고 사찰마다 공통이라 TEMPLE_STAY_PROGRAM에서 빼고
---      TEMPLE.refund_policy로 옮김 - 사찰이 프로그램을 여러 개 등록해도 매번 다시 입력할
---      필요가 없도록. 유의사항은 이미 TEMPLE.special_notice(사찰별 개별 유의사항)가 같은
---      역할이라 별도 컬럼을 새로 안 만들고 그대로 재사용함(TEMPLE_STAY_PROGRAM에 있던
---      유의사항 컬럼만 제거). 대신 TEMPLE_STAY_PROGRAM에 프로그램 모집(운영) 기간(open_start_date/
---      open_end_date)을 추가함 - 기존에 빠져있던 값.
---  10) 이 스크립트가 DROP TABLE부터 시작하는 순수 초기화 스크립트라 재실행하면 데이터가
---      전부 사라짐 - 그래서 맨 끝에 초기 테스트 계정(사이트 관리자/일반회원/사찰) INSERT를
---      추가해서 재실행할 때마다 로그인 가능한 계정이 최소한으로 같이 생기도록 함.
+-- 템플스테이 프로그램 데이터 (TEMPLE_STAY_PROGRAM, 578건)
+-- buddhist-site-schema.sql로 테이블을 먼저 만든 뒤 이 파일을 실행하세요.
+-- (TEMPLE 테이블을 이름으로 참조하는 서브쿼리를 쓰므로 TEMPLE 데이터가 먼저 있어야 합니다.)
 -- =====================================================================
-use scit_14_3;
-set autocommit = 1;
-SET NAMES utf8mb4;
-SET FOREIGN_KEY_CHECKS = 0;
-
--- ---------------------------------------------------------------------
--- 기존 트리거/테이블 삭제 (재실행 대비)
--- ---------------------------------------------------------------------
-DROP TRIGGER IF EXISTS trg_program_inherit_before_insert;
-DROP TRIGGER IF EXISTS trg_program_inherit_before_update;
-DROP TABLE IF EXISTS TEMPLE_REGISTRATION_REQUEST;
-DROP TABLE IF EXISTS FAVORITE_FOOD;
-DROP TABLE IF EXISTS TEMPLE_FOOD_RECOMMENDATION;
-DROP TABLE IF EXISTS FAVORITE_QUOTE;
-DROP TABLE IF EXISTS DAILY_QUOTE;
-DROP TABLE IF EXISTS BUDDHISM_INFO;
-DROP TABLE IF EXISTS FAVORITE_EVENT;
-DROP TABLE IF EXISTS TEMPLE_EVENT;
-DROP TABLE IF EXISTS FAVORITE_TEMPLE;
-DROP TABLE IF EXISTS FAVORITE_REVIEW;
-DROP TABLE IF EXISTS TEMPLE_STAY_REVIEW;
-DROP TABLE IF EXISTS PAYMENT;
-DROP TABLE IF EXISTS RESERVATION_PARTICIPANT;
-DROP TABLE IF EXISTS TEMPLE_STAY_RESERVATION;
-DROP TABLE IF EXISTS TEMPLE_STAY_PROGRAM;
-DROP TABLE IF EXISTS TEMPLE;
-DROP TABLE IF EXISTS USER;
-
-SET FOREIGN_KEY_CHECKS = 1;
-
--- =====================================================================
--- 1. USER (회원)
--- =====================================================================
-CREATE TABLE USER (
-    login_id     VARCHAR(30)  NOT NULL COMMENT '로그인 아이디 (변경 불가, @ 시작 불가)',
-    password     VARCHAR(255) NULL     COMMENT '비밀번호 (카카오 회원은 NULL)',
-    nickname     VARCHAR(30)  NOT NULL COMMENT '법명 (마이페이지에서 본인 수정 가능, 관리자도 회원관리에서 수정 가능)',
-    name         VARCHAR(150) NOT NULL COMMENT '실명 (여권 영문 이름 형식, 본인 수정 불가 - 변경은 문의를 통해 관리자가 처리)',
-    phone        VARCHAR(20)  NULL     COMMENT '연락처',
-    email        VARCHAR(100) NULL     COMMENT '이메일 (일반회원은 필수, 사이트 관리자 계정은 불필요해서 NULL 허용)',
-    role         ENUM('USER','ADMIN') NOT NULL DEFAULT 'USER' COMMENT '일반/사이트 관리자',
-    login_type   ENUM('LOCAL','KAKAO') NOT NULL DEFAULT 'LOCAL' COMMENT '가입 경로',
-    PRIMARY KEY (login_id),
-    UNIQUE KEY uq_user_nickname (nickname),
-    UNIQUE KEY uq_user_email (email),
-    CONSTRAINT chk_user_login_id_no_at
-        CHECK (login_id NOT LIKE '@%'),
-    CONSTRAINT chk_user_login_id_kakao_prefix
-        CHECK (
-            (login_type = 'KAKAO' AND login_id LIKE 'kakao\_%')
-            OR
-            (login_type = 'LOCAL' AND login_id NOT LIKE 'kakao\_%')
-        ),
-    -- 일반회원(USER)은 이메일 필수, 사이트 관리자(ADMIN)는 예외 (관리자 계정은 회원가입 흐름을 안 거치고
-    -- 직접 INSERT로 만들어지므로 이메일 인증을 강제할 방법이 없음)
-    CONSTRAINT chk_user_email_required_unless_admin
-        CHECK (role = 'ADMIN' OR email IS NOT NULL)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='회원 정보(카카오 로그인 포함)';
-
--- =====================================================================
--- 2. TEMPLE (사찰)
--- =====================================================================
-CREATE TABLE TEMPLE (
-    temple_id        BIGINT       NOT NULL AUTO_INCREMENT COMMENT '사찰 고유 번호',
-    name              VARCHAR(100) NOT NULL COMMENT '사찰 이름',
-    image_url         VARCHAR(255) NULL COMMENT '사찰 대표 이미지 경로',
-    -- 지도 API 장소 ID(api_place_id) 대신 좌표를 직접 저장 - 장소 ID보다 정확함.
-    -- 위도(latitude) 범위 -90~90, 경도(longitude) 범위 -180~180, 소수점 7자리(약 1cm 오차) 기준.
-    latitude          DECIMAL(10,7) NOT NULL COMMENT '위도',
-    longitude         DECIMAL(10,7) NOT NULL COMMENT '경도',
-    address           VARCHAR(255) NOT NULL COMMENT '주소',
-    region            VARCHAR(20)  NOT NULL COMMENT '지역(시/도) 필터',
-    -- 장소 유형은 중복 가능(바다+도심 등)해서 ENUM 한 컬럼 대신 유형별 boolean으로 둠 (2026-08-31 변경)
-    support_sea       BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '바다 인근 여부',
-    support_mountain  BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '산 인근 여부',
-    support_river     BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '강 인근 여부',
-    support_urban     BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '도심 인근 여부',
-    support_english   BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '영어 지원 여부',
-    is_temple         BOOLEAN      NOT NULL DEFAULT TRUE COMMENT '실제 사찰 건물 여부',
-    -- special_notice가 곧 프로그램의 "유의사항" 역할도 겸함 - 이 사찰이 등록하는 모든
-    -- 프로그램에 공통 적용됨(프로그램마다 다시 입력 안 함). refund_policy도 같은 이유로
-    -- TEMPLE_STAY_PROGRAM이 아니라 여기 있음. 트리거로 프로그램에 복사해두지 않고, 프로그램
-    -- 조회 시 TEMPLE을 조인해서 그대로 보여준다(항상 최신값 유지).
-    special_notice    TEXT         NULL COMMENT '사찰별 개별 유의사항 (프로그램 상세의 유의사항으로도 그대로 쓰임)',
-    refund_policy     TEXT         NULL COMMENT '환불 규정 (사찰 공통, 프로그램 등록 폼에서 안 받고 여기서만 관리)',
-    login_id          VARCHAR(30)  NOT NULL COMMENT '사찰 관리자 계정 아이디 (@ 시작 고정)',
-    password          VARCHAR(255) NOT NULL COMMENT '사찰 관리자 계정 비밀번호(암호화)',
-    must_change_password BOOLEAN  NOT NULL DEFAULT FALSE COMMENT '관리자가 임시 비밀번호를 발급했으면 TRUE - 로그인 시 비밀번호 변경 페이지로 강제 이동',
-    PRIMARY KEY (temple_id),
-    UNIQUE KEY uq_temple_login_id (login_id),
-    CONSTRAINT chk_temple_login_id_at
-        CHECK (login_id LIKE '@%')
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='사찰 최소 정보 + 지도 필터 태그 + 관리자 계정';
-
--- =====================================================================
--- 3. TEMPLE_STAY_PROGRAM (템플스테이 프로그램)
--- =====================================================================
-CREATE TABLE TEMPLE_STAY_PROGRAM (
-    program_id        BIGINT       NOT NULL AUTO_INCREMENT COMMENT '프로그램 고유 번호',
-    temple_id         BIGINT       NOT NULL COMMENT '운영 사찰',
-    title             VARCHAR(100) NOT NULL COMMENT '프로그램명',
-    -- 당일형 = 반드시 당일(1일) 프로그램 / 체험형·휴식형 = 반드시 1박2일 프로그램 (고정 규칙)
-    program_type      ENUM('당일형','체험형','휴식형') NOT NULL COMMENT '유형 (당일형=1일, 체험형/휴식형=1박2일 고정)',
-    image_url         VARCHAR(255) NOT NULL COMMENT '프로그램 대표 이미지 경로 (필수)',
-    description       TEXT         NULL COMMENT '소개',
-    schedule          TEXT         NULL COMMENT '일정표',
-    required_items    TEXT         NULL COMMENT '준비물',
-    -- 환불 규정/유의사항은 사찰 공통이라 여기 없음 - TEMPLE.refund_policy/special_notice 참고.
-    price             INT          NOT NULL COMMENT '참가 비용(원, 1인 기준)',
-    duration          VARCHAR(20)  NOT NULL COMMENT '진행 기간 표기(예: 당일, 1박 2일) - 실제 체류 기간',
-    -- duration(체류 기간)과 다른 개념: 이 프로그램을 언제부터 언제까지 모집/운영하는지의 기간.
-    open_start_date   DATE         NOT NULL COMMENT '모집(운영) 시작일',
-    open_end_date     DATE         NOT NULL COMMENT '모집(운영) 종료일',
-    max_participant   INT          NOT NULL DEFAULT 20 COMMENT '최대 인원 (전 프로그램 공통 20명 고정)',
-    -- 아래 컬럼들은 관리자가 직접 입력해도 저장 시점에 트리거가 소속 TEMPLE의 값으로 덮어씀
-    -- (trg_program_inherit_before_insert / _before_update 참고).
-    -- 한국어는 항상 기본 지원이라 별도 컬럼 없음. 외국어는 영어만 지원 대상이라
-    -- support_japanese는 만들지 않음.
-    support_english   BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '영어 진행 여부. 트리거로 소속 TEMPLE.support_english 상속',
-    latitude          DECIMAL(10,7) NOT NULL COMMENT '위도. 트리거로 소속 TEMPLE.latitude 상속',
-    longitude         DECIMAL(10,7) NOT NULL COMMENT '경도. 트리거로 소속 TEMPLE.longitude 상속',
-    created_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
-    PRIMARY KEY (program_id),
-    CONSTRAINT fk_program_temple
-        FOREIGN KEY (temple_id) REFERENCES TEMPLE(temple_id),
-    CONSTRAINT chk_program_max_participant
-        CHECK (max_participant = 20),
-    CONSTRAINT chk_program_open_dates
-        CHECK (open_end_date >= open_start_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='템플스테이 프로그램 (한국어는 기본 지원, 외국어는 영어만 지원)';
-
--- ---------------------------------------------------------------------
--- TEMPLE_STAY_PROGRAM.support_english / latitude / longitude를 소속 사찰(TEMPLE)의
--- 현재 값과 항상 동일하게 유지하는 트리거. 프로그램 등록/수정 시 관리자가 이 값들을
--- 직접 입력하더라도, 저장되는 순간 사찰의 현재 값으로 덮어써진다.
--- (주의: TEMPLE 쪽 값이 "나중에" 바뀌어도 이미 등록된 프로그램들에는 자동으로
---  소급 반영되지 않는다 - 그 경우까지 필요하면 TEMPLE 쪽에 별도 트리거 추가 필요)
--- ---------------------------------------------------------------------
-DELIMITER $$
-
-CREATE TRIGGER trg_program_inherit_before_insert
-BEFORE INSERT ON TEMPLE_STAY_PROGRAM
-FOR EACH ROW
-BEGIN
-    DECLARE v_support_english BOOLEAN;
-    DECLARE v_latitude DECIMAL(10,7);
-    DECLARE v_longitude DECIMAL(10,7);
-    SELECT support_english, latitude, longitude INTO v_support_english, v_latitude, v_longitude
-      FROM TEMPLE WHERE temple_id = NEW.temple_id;
-    SET NEW.support_english = v_support_english;
-    SET NEW.latitude = v_latitude;
-    SET NEW.longitude = v_longitude;
-END$$
-
-CREATE TRIGGER trg_program_inherit_before_update
-BEFORE UPDATE ON TEMPLE_STAY_PROGRAM
-FOR EACH ROW
-BEGIN
-    DECLARE v_support_english BOOLEAN;
-    DECLARE v_latitude DECIMAL(10,7);
-    DECLARE v_longitude DECIMAL(10,7);
-    SELECT support_english, latitude, longitude INTO v_support_english, v_latitude, v_longitude
-      FROM TEMPLE WHERE temple_id = NEW.temple_id;
-    SET NEW.support_english = v_support_english;
-    SET NEW.latitude = v_latitude;
-    SET NEW.longitude = v_longitude;
-END$$
-
-DELIMITER ;
-
--- =====================================================================
--- 4. TEMPLE_STAY_RESERVATION (예약)
--- =====================================================================
-CREATE TABLE TEMPLE_STAY_RESERVATION (
-    reservation_id      BIGINT   NOT NULL AUTO_INCREMENT COMMENT '고유 번호',
-    login_id            VARCHAR(30) NOT NULL COMMENT '신청 대표 회원',
-    program_id          BIGINT   NOT NULL COMMENT '대상 프로그램',
-    -- start_date/end_date는 신청 시점에 애플리케이션이 둘 다 계산해서 그대로 저장한다.
-    -- (당일형 -> end_date = start_date / 체험형,휴식형 -> end_date = start_date + 1일)
-    -- 월말 경계(예: 8/31 시작 -> 9/1 종료) 문제를 피하기 위해 "저장 시점에 1회 계산 후 고정",
-    -- 조회할 때마다 start_date에 +1을 다시 계산하지 않는다.
-    start_date          DATE     NOT NULL COMMENT '이용 시작일',
-    end_date            DATE     NOT NULL COMMENT '이용 종료일 (계산 결과를 명시적으로 저장)',
-    participant_count   INT      NOT NULL COMMENT '신청 인원',
-    note                TEXT     NULL COMMENT '전달사항(비고)',
-    -- 사찰 관리자 승인 절차 없이 선착순으로 바로 확정하는 정책이라 '예약대기' 상태는 없음.
-    status              ENUM('예약확정','취소','이용완료') NOT NULL DEFAULT '예약확정' COMMENT '진행 상태',
-    canceled_at         DATETIME NULL COMMENT '취소일시',
-    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '신청일시',
-    PRIMARY KEY (reservation_id),
-    CONSTRAINT fk_reservation_user
-        FOREIGN KEY (login_id) REFERENCES USER(login_id),
-    CONSTRAINT fk_reservation_program
-        FOREIGN KEY (program_id) REFERENCES TEMPLE_STAY_PROGRAM(program_id),
-    CONSTRAINT chk_reservation_dates
-        CHECK (end_date >= start_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='템플스테이 예약';
-
--- =====================================================================
--- 5. RESERVATION_PARTICIPANT (예약 참가자)
--- =====================================================================
-CREATE TABLE RESERVATION_PARTICIPANT (
-    participant_id  BIGINT      NOT NULL AUTO_INCREMENT COMMENT '참가자 고유 번호',
-    reservation_id  BIGINT      NOT NULL COMMENT '소속 예약',
-    name            VARCHAR(50) NOT NULL COMMENT '이름(여권 영문 이름 형식)',
-    gender          ENUM('남성','여성') NOT NULL COMMENT '성별',
-    email           VARCHAR(100) NOT NULL COMMENT '참가자 이메일',
-    phone           VARCHAR(20) NULL COMMENT '연락처(대표자만 입력, 나머지는 NULL)',
-    PRIMARY KEY (participant_id),
-    CONSTRAINT fk_participant_reservation
-        FOREIGN KEY (reservation_id) REFERENCES TEMPLE_STAY_RESERVATION(reservation_id)
-        ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='예약 참가자별 인적사항';
-
--- =====================================================================
--- 6. PAYMENT (예약 결제)
--- =====================================================================
-CREATE TABLE PAYMENT (
-    payment_id       BIGINT      NOT NULL AUTO_INCREMENT COMMENT '결제 고유 번호',
-    reservation_id   BIGINT      NOT NULL COMMENT '결제 대상 예약(1예약=1결제)',
-    payment_method   ENUM('계좌이체','카카오페이') NOT NULL COMMENT '결제 방식',
-    amount           INT         NOT NULL COMMENT '결제 금액(원)',
-    status           ENUM('대기','완료','취소','환불') NOT NULL DEFAULT '대기' COMMENT '결제 상태',
-    depositor_name   VARCHAR(50) NULL COMMENT '입금자명(계좌이체 전용)',
-    kakao_tid        VARCHAR(100) NULL COMMENT '카카오페이 거래번호(카카오페이 전용)',
-    paid_at          DATETIME    NULL COMMENT '결제 완료 시각',
-    created_at       DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '결제 시도 등록일시',
-    PRIMARY KEY (payment_id),
-    UNIQUE KEY uq_payment_reservation (reservation_id),
-    CONSTRAINT fk_payment_reservation
-        FOREIGN KEY (reservation_id) REFERENCES TEMPLE_STAY_RESERVATION(reservation_id),
-    CONSTRAINT chk_payment_method_fields
-        CHECK (
-            (payment_method = '계좌이체' AND depositor_name IS NOT NULL AND kakao_tid IS NULL)
-            OR
-            (payment_method = '카카오페이' AND kakao_tid IS NOT NULL AND depositor_name IS NULL)
-        )
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='예약 결제';
-
--- =====================================================================
--- 7. TEMPLE_STAY_REVIEW (리뷰)
--- =====================================================================
-CREATE TABLE TEMPLE_STAY_REVIEW (
-    review_id       BIGINT   NOT NULL AUTO_INCREMENT COMMENT '리뷰 고유 번호',
-    reservation_id  BIGINT   NOT NULL COMMENT '대상 예약(1예약=1리뷰)',
-    login_id        VARCHAR(30) NOT NULL COMMENT '작성 회원',
-    rating          TINYINT  NOT NULL COMMENT '평점(1~5)',
-    content         TEXT     NOT NULL COMMENT '리뷰 내용',
-    image_urls      JSON     NULL COMMENT '첨부 이미지 목록',
-    like_count      INT      NOT NULL DEFAULT 0 COMMENT '추천 수 (캐시값)',
-    view_count      INT      NOT NULL DEFAULT 0 COMMENT '조회수',
-    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '작성일시',
-    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
-    PRIMARY KEY (review_id),
-    UNIQUE KEY uq_review_reservation (reservation_id),
-    CONSTRAINT fk_review_reservation
-        FOREIGN KEY (reservation_id) REFERENCES TEMPLE_STAY_RESERVATION(reservation_id),
-    CONSTRAINT fk_review_user
-        FOREIGN KEY (login_id) REFERENCES USER(login_id),
-    CONSTRAINT chk_review_rating
-        CHECK (rating BETWEEN 1 AND 5)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='템플스테이 리뷰';
-
--- =====================================================================
--- 8. FAVORITE_REVIEW (좋아요한 리뷰)
--- =====================================================================
-CREATE TABLE FAVORITE_REVIEW (
-    favorite_review_id  BIGINT   NOT NULL AUTO_INCREMENT COMMENT '좋아요 고유 번호',
-    login_id            VARCHAR(30) NOT NULL COMMENT '좋아요한 회원',
-    review_id           BIGINT   NOT NULL COMMENT '대상 리뷰',
-    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '좋아요 등록일시',
-    PRIMARY KEY (favorite_review_id),
-    UNIQUE KEY uq_favorite_review (login_id, review_id),
-    CONSTRAINT fk_favreview_user
-        FOREIGN KEY (login_id) REFERENCES USER(login_id) ON DELETE CASCADE,
-    CONSTRAINT fk_favreview_review
-        FOREIGN KEY (review_id) REFERENCES TEMPLE_STAY_REVIEW(review_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='좋아요한 리뷰 (중복 좋아요 방지 겸용)';
-
--- =====================================================================
--- 9. FAVORITE_TEMPLE (관심 사찰)
--- =====================================================================
-CREATE TABLE FAVORITE_TEMPLE (
-    favorite_id   BIGINT   NOT NULL AUTO_INCREMENT COMMENT '고유 번호',
-    login_id      VARCHAR(30) NOT NULL COMMENT '회원',
-    temple_id     BIGINT   NOT NULL COMMENT '사찰',
-    created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
-    PRIMARY KEY (favorite_id),
-    UNIQUE KEY uq_favorite_temple (login_id, temple_id),
-    CONSTRAINT fk_favtemple_user
-        FOREIGN KEY (login_id) REFERENCES USER(login_id) ON DELETE CASCADE,
-    CONSTRAINT fk_favtemple_temple
-        FOREIGN KEY (temple_id) REFERENCES TEMPLE(temple_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='관심 사찰';
-
--- =====================================================================
--- 10. TEMPLE_EVENT (사찰 행사)
--- =====================================================================
-CREATE TABLE TEMPLE_EVENT (
-    event_id      BIGINT       NOT NULL AUTO_INCREMENT COMMENT '행사 고유 번호',
-    temple_id     BIGINT       NOT NULL COMMENT '주최 사찰',
-    title         VARCHAR(150) NOT NULL COMMENT '행사명',
-    description   TEXT         NULL COMMENT '행사 소개',
-    start_date    DATE         NOT NULL COMMENT '행사 시작일',
-    end_date      DATE         NOT NULL COMMENT '행사 종료일',
-    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
-    PRIMARY KEY (event_id),
-    CONSTRAINT fk_event_temple
-        FOREIGN KEY (temple_id) REFERENCES TEMPLE(temple_id),
-    CONSTRAINT chk_event_dates
-        CHECK (end_date >= start_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='사찰 행사';
-
--- =====================================================================
--- 11. FAVORITE_EVENT (관심 행사)
--- =====================================================================
-CREATE TABLE FAVORITE_EVENT (
-    favorite_event_id  BIGINT   NOT NULL AUTO_INCREMENT COMMENT '고유 번호',
-    login_id           VARCHAR(30) NOT NULL COMMENT '회원',
-    event_id           BIGINT   NOT NULL COMMENT '행사',
-    created_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
-    PRIMARY KEY (favorite_event_id),
-    UNIQUE KEY uq_favorite_event (login_id, event_id),
-    CONSTRAINT fk_favevent_user
-        FOREIGN KEY (login_id) REFERENCES USER(login_id) ON DELETE CASCADE,
-    CONSTRAINT fk_favevent_event
-        FOREIGN KEY (event_id) REFERENCES TEMPLE_EVENT(event_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='관심 행사';
-
--- =====================================================================
--- 12. BUDDHISM_INFO (불교 정보 게시글) - 독립 테이블, 다른 테이블과 FK 없음
--- =====================================================================
-CREATE TABLE BUDDHISM_INFO (
-    post_id      BIGINT       NOT NULL AUTO_INCREMENT COMMENT '게시글 고유 번호',
-    category     VARCHAR(30)  NOT NULL COMMENT '로드맵/용어/체크리스트/예절가이드 등',
-    title        VARCHAR(150) NOT NULL COMMENT '제목',
-    content      TEXT         NOT NULL COMMENT '본문',
-    view_count   INT          NOT NULL DEFAULT 0 COMMENT '조회수',
-    created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '작성일시',
-    PRIMARY KEY (post_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='불교 정보 게시글';
-
--- =====================================================================
--- 13. DAILY_QUOTE (불교 한마디)
--- =====================================================================
-CREATE TABLE DAILY_QUOTE (
-    quote_id   BIGINT       NOT NULL AUTO_INCREMENT COMMENT '고유 번호',
-    content    TEXT         NOT NULL COMMENT '한마디 내용',
-    source     VARCHAR(100) NULL COMMENT '출처',
-    PRIMARY KEY (quote_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='불교 한마디';
-
--- =====================================================================
--- 14. FAVORITE_QUOTE (저장한 한마디)
--- =====================================================================
-CREATE TABLE FAVORITE_QUOTE (
-    favorite_quote_id  BIGINT   NOT NULL AUTO_INCREMENT COMMENT '고유 번호',
-    login_id           VARCHAR(30) NOT NULL COMMENT '회원',
-    quote_id           BIGINT   NOT NULL COMMENT '한마디',
-    created_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '저장일시',
-    PRIMARY KEY (favorite_quote_id),
-    UNIQUE KEY uq_favorite_quote (login_id, quote_id),
-    CONSTRAINT fk_favquote_user
-        FOREIGN KEY (login_id) REFERENCES USER(login_id) ON DELETE CASCADE,
-    CONSTRAINT fk_favquote_quote
-        FOREIGN KEY (quote_id) REFERENCES DAILY_QUOTE(quote_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='저장한 불교 한마디';
-
--- =====================================================================
--- 15. TEMPLE_FOOD_RECOMMENDATION (사찰음식 추천)
--- =====================================================================
-CREATE TABLE TEMPLE_FOOD_RECOMMENDATION (
-    recommendation_id  BIGINT      NOT NULL AUTO_INCREMENT COMMENT '고유 번호',
-    food_name          VARCHAR(50) NOT NULL COMMENT '음식명',
-    description        TEXT        NULL COMMENT '설명',
-    recipe             TEXT        NULL COMMENT '레시피',
-    image_url          VARCHAR(255) NULL COMMENT '사진',
-    PRIMARY KEY (recommendation_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='사찰음식 추천';
-
--- =====================================================================
--- 16. FAVORITE_FOOD (관심 사찰음식 즐겨찾기)
--- =====================================================================
-CREATE TABLE FAVORITE_FOOD (
-    favorite_food_id   BIGINT   NOT NULL AUTO_INCREMENT COMMENT '고유 번호',
-    login_id           VARCHAR(30) NOT NULL COMMENT '회원',
-    recommendation_id  BIGINT   NOT NULL COMMENT '음식',
-    created_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
-    PRIMARY KEY (favorite_food_id),
-    UNIQUE KEY uq_favorite_food (login_id, recommendation_id),
-    CONSTRAINT fk_favfood_user
-        FOREIGN KEY (login_id) REFERENCES USER(login_id) ON DELETE CASCADE,
-    CONSTRAINT fk_favfood_recommendation
-        FOREIGN KEY (recommendation_id) REFERENCES TEMPLE_FOOD_RECOMMENDATION(recommendation_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='관심 사찰음식 즐겨찾기';
-
--- =====================================================================
--- 17. TEMPLE_REGISTRATION_REQUEST (사찰 등록 요청)
---     - 사찰 관계자가 회원가입 없이 남기는 요청. TEMPLE과 분리되어 있고, 관리자가
---       승인하면 이 행이 아니라 완전히 새로운 TEMPLE 행이 생성된다(승격 아님).
---     - login_id/password/is_temple은 관리자 승인 시 시스템이 생성하는 값이라
---       여기 없다.
--- =====================================================================
-CREATE TABLE TEMPLE_REGISTRATION_REQUEST (
-    request_id         BIGINT       NOT NULL AUTO_INCREMENT COMMENT '요청 고유 번호',
-    name                VARCHAR(100) NOT NULL COMMENT '사찰 이름',
-    image_url           VARCHAR(255) NULL COMMENT '사찰 대표 이미지 경로',
-    latitude            DECIMAL(10,7) NOT NULL COMMENT '위도',
-    longitude           DECIMAL(10,7) NOT NULL COMMENT '경도',
-    address             VARCHAR(255) NOT NULL COMMENT '주소',
-    region              VARCHAR(20)  NOT NULL COMMENT '지역(시/도) 필터',
-    -- TEMPLE과 동일한 이유(중복 선택)로 boolean 4개 (2026-08-31 변경)
-    support_sea         BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '바다 인근 여부',
-    support_mountain    BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '산 인근 여부',
-    support_river       BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '강 인근 여부',
-    support_urban       BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '도심 인근 여부',
-    support_english     BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '영어 지원 여부',
-    special_notice      TEXT         NULL COMMENT '사찰별 개별 유의사항',
-    refund_policy       TEXT         NULL COMMENT '환불 규정',
-    contact_email       VARCHAR(100) NOT NULL COMMENT '요청자 연락 이메일 - 승인 시 계정정보 발송 대상 (TEMPLE엔 저장 안 됨)',
-    status              ENUM('대기','승인') NOT NULL DEFAULT '대기' COMMENT '처리 상태',
-    approved_temple_id  BIGINT       NULL COMMENT '승인 후 생성된 TEMPLE 행 추적용(승격이 아니라 별도 생성)',
-    created_at          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '요청 등록일시',
-    PRIMARY KEY (request_id),
-    CONSTRAINT fk_templereq_approved_temple
-        FOREIGN KEY (approved_temple_id) REFERENCES TEMPLE(temple_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='사찰 관계자가 제출한 사찰 등록 요청(관리자 승인 대기열)';
-
-CREATE TABLE INQUIRY (
-    inquiry_id   BIGINT       NOT NULL AUTO_INCREMENT COMMENT '고유 번호',
-    login_id     VARCHAR(30)  NOT NULL COMMENT '작성 회원',
-    title        VARCHAR(100) NOT NULL COMMENT '제목',
-    content      TEXT         NOT NULL COMMENT '문의 내용',
-    answer       TEXT         NULL COMMENT '관리자 답변',
-    status       ENUM('대기','답변완료') NOT NULL DEFAULT '대기' COMMENT '처리 상태',
-    created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '작성일시',
-    answered_at  DATETIME     NULL COMMENT '답변일시',
-    PRIMARY KEY (inquiry_id),
-    CONSTRAINT fk_inquiry_user
-        FOREIGN KEY (login_id) REFERENCES USER(login_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='일반회원이 사이트 관리자에게 남기는 1:1 문의';
-
--- =====================================================================
--- 초기 테스트 계정 (이 스크립트를 재실행해서 DB를 초기화할 때마다 같이 생성됨)
--- 비밀번호는 전부 BCryptPasswordEncoder로 해시된 값 - 아래는 원문 비밀번호 기록용 주석.
---   사이트 관리자: admin / admin1234!
---   일반 회원:     testuser1 / Test1234!, testuser2 / Test1234!
---   사찰 계정:     @templetest1 / Test1234!, @templetest2 / Test1234!
--- 템플스테이 프로그램 더미값도 테스트사찰/테스트사찰2 앞으로 하나씩 같이 생성됨.
--- =====================================================================
-INSERT INTO USER (login_id, password, nickname, name, phone, email, role, login_type) VALUES
-    ('admin', '$2a$10$TbOlPSKCFHWSjqp963flveOwYKYD6EueH1VxSE2Bm/wdB1NqN5fum', '사이트관리자', 'Admin', NULL, NULL, 'ADMIN', 'LOCAL'),
-    ('testuser1', '$2a$10$RlY25ofavPN8ENU81L7oCuOL8F8C7j5bmadGfY54aCAQO6pzZ3SEu', '일반회원테스트', '테스트', NULL, 'testuser1@example.com', 'USER', 'LOCAL'),
-    ('testuser2', '$2a$10$RlY25ofavPN8ENU81L7oCuOL8F8C7j5bmadGfY54aCAQO6pzZ3SEu', '일반회원테스트2', '테스트둘', NULL, 'testuser2@example.com', 'USER', 'LOCAL');
--- 전국 사찰 171곳 일괄 등록 (2026-09-07, 장소 유형 2차 검증 반영). templestay.com(한국불교문화사업단) 공식
--- 사찰 목록의 주소 기준으로 좌표를 지도에서 찾았고, support_english는 templestay.com 영문 사이트에 실제로
--- 올라와있는 사찰만 TRUE로 표시함(추측 아님).
---
--- 장소 유형(바다/산/강/도심)은 1차 등록 후 "범어사에 바다 태그가 잘못 들어감" 등 오류가 발견되어 재검증함.
--- 자동화 시도(지도 API 순회, LLM 5회 다수결)는 신뢰도 문제로 폐기하고, 아래 14곳만
--- 실제 검색/직접 지식으로 확인해서 고침 - 나머지는 확신 없는 자동 판정을 다시 자동 판정으로 덮어쓰느니
--- 원래 값(1차 등록 시점 판정) 그대로 둠. 정확도가 중요하면 아래 목록부터 우선 재검토할 것.
--- 수정 반영된 곳: 개암사, 건봉사, 골굴사, 금룡사, 내소사, 대흥사, 동화사, 범어사, 법륜사, 보경사, 봉은사, 수원사, 약천사, 조계사
---
--- 로그인 계정: 전부 임시 비밀번호 'Temple1234!' 공통 발급, must_change_password=TRUE라 로그인하면
--- 바로 비밀번호부터 바꿔야 함(기존 사찰 등록 승인 흐름과 동일한 패턴).
---
--- 주소/좌표를 못 찾아서 이번엔 등록 안 하고 뺀 사찰: 청춘사
--- (템플스테이 공식 사이트 자체에 주소가 "테스트 페이지 입니다"로 잘못 들어가있는 등 원본 데이터 문제 -
---  실제 위치를 찾으면 그때 별도로 추가할 것)
---
--- 좌표는 있지만 지도에서 정확히 이 이름의 장소로 확인은 안 된 곳(주소 좌표는 신뢰 가능, 이름 매칭만 불확실) - 실사용 전 확인 권장: 미타사, 이제사, 화암사
-INSERT INTO TEMPLE (name, latitude, longitude, address, region, support_sea, support_mountain, support_river, support_urban, support_english, is_temple, login_id, password, must_change_password) VALUES
-    ('감산사', 35.7666236, 129.3366913, '경상북도 경주시 외동읍 앞등길 117-20', '경북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple001', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('갑사', 36.3653593, 127.1873813, '충청남도 공주시 계룡면 갑사로 567-3', '충남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple002', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('개암사', 35.6623373, 126.6493239, '전라북도 부안군 상서면 개암로 248', '전북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple003', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('건봉사', 38.4021773, 128.3799855, '강원특별자치도 고성군 거진읍 건봉사로 723', '강원', FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, '@temple004', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('경국사', 37.6146726, 127.0049176, '서울특별시 성북구 보국문로 113-10', '서울', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple005', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('고운사', 36.4584468, 128.7503637, '경상북도 의성군 단촌면 고운사길 415', '경북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple006', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('골굴사', 35.8030449, 129.4055403, '경상북도 경주시 문무대왕면 기림로 101-5', '경북', FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple007', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('관문사', 37.4735911, 127.0220191, '서울특별시 서초구 바우뫼로7길 111', '서울', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple008', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('관음사(제주)', 33.4237461, 126.5579748, '제주특별자치도 제주시 산록북로 660', '제주', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple009', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('광제사', 36.5080718, 127.2917017, '세종특별자치시 모롱지로 94', '세종', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple010', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('구룡사', 37.3998195, 128.0499856, '강원특별자치도 원주시 소초면 구룡사로 500', '강원', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple011', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('구인사', 37.0318394, 128.4800605, '충청북도 단양군 영춘면 구인사길 73', '충북', FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple012', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('국제선센터', 37.5207743, 126.8700850, '서울특별시 양천구 목동동로 167', '서울', FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, '@temple013', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('귀정사', 35.5122843, 127.4556504, '전북특별자치도 남원시 산동면 대상2길 246', '전북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple014', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('금강정사', 37.4417982, 126.8728166, '경기도 광명시 설월로 58', '경기', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple015', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('금당사', 35.7577274, 127.3976135, '전라북도 진안군 마령면 마이산남로 217', '전북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple016', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('금룡사', 33.5538998, 126.7537599, '제주특별자치도 제주시 구좌읍 김녕로 148-11', '제주', TRUE, FALSE, FALSE, FALSE, FALSE, TRUE, '@temple017', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('금산사', 35.7232472, 127.0537163, '전라북도 김제시 금산면 모악15길 1', '전북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple018', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('금선사', 37.6205778, 126.9533792, '서울특별시 종로구 비봉길 137', '서울', FALSE, TRUE, FALSE, TRUE, TRUE, TRUE, '@temple019', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('금수암', 35.4084118, 127.8172542, '경상남도 산청군 금서면 새터길 57-98', '경남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple020', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('기림사', 35.8379542, 129.4034545, '경상북도 경주시 양북면 기림로 437-17', '경북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple021', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('길상사', 37.5988548, 126.9943511, '서울특별시 성북구 선잠로5길 68', '서울', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple022', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('낙산사', 38.1246156, 128.6280451, '강원특별자치도 양양군 강현면 낙산사로 100', '강원', TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple023', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('내소사', 35.6174534, 126.5873332, '전라북도 부안군 진서면 내소사로 243 내소사 템플사무국', '전북', FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple024', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('내원정사', 35.1264371, 129.0122784, '부산광역시 서구 엄광산로40번길 80', '부산', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple025', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('능가사', 34.6390610, 127.4143389, '전라남도 고흥군 점암면 팔봉길 21', '전남', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple026', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('대광사(성남)', 37.3463572, 127.1273243, '경기도 성남시 분당구 구미로185번길 30', '경기', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple027', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('대광사(창원)', 35.1284577, 128.7398399, '경상남도 창원시 진해구 진해대로 303', '경남', TRUE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple028', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('대승사', 36.7498958, 128.2719631, '경상북도 문경시 산북면 대승사길 283', '경북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple029', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('대원사(가평)', 37.8943842, 127.5025767, '경기도 가평군 북면 백둔로 21-162', '경기', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple030', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('대원사(보성)', 34.9612552, 127.1330300, '전라남도 보성군 문덕면 죽산길 506-8', '전남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple031', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('대원사(산청)', 35.3554923, 127.8069112, '경상남도 산청군 삼장면 대원사길 455', '경남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple032', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('대흥사', 34.4760080, 126.6163013, '전라남도 해남군 삼산면 대흥사길 400', '전남', FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple033', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('도갑사', 34.7527935, 126.6628574, '전라남도 영암군 군서면 도갑사로 306', '전남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple034', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('도리사', 36.2558861, 128.3982031, '경상북도 구미시 해평면 도리사로 526', '경북', FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, '@temple035', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('도림사(곡성)', 35.2671893, 127.2575367, '전라남도 곡성군 도림로 175', '전남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple036', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('도림사(대구)', 35.9495584, 128.7293807, '대구광역시 동구 인산로 242', '대구', FALSE, TRUE, FALSE, TRUE, TRUE, TRUE, '@temple037', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('도선사', 37.6554935, 126.9897725, '서울시 강북구 도선사길278', '서울', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple038', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('동화사', 35.9929105, 128.7039968, '대구광역시 동구 동화사1길 1 동화사 템플스테이', '대구', FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple039', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('마곡사', 36.5588530, 127.0121200, '충청남도 공주시 사곡면 마곡사로 966', '충남', FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple040', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('망경산사', 37.1577980, 128.6005180, '강원특별자치도 영월군 망경대산길 135-6', '강원', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple041', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('명주사', 37.2570289, 128.1287700, '강원특별자치도 원주시 신림면 물안길 62', '강원', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple042', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('묘각사', 37.5754233, 127.0187431, '서울특별시 종로구 종로63가길 31', '서울', FALSE, TRUE, FALSE, TRUE, TRUE, TRUE, '@temple043', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('묘적사', 37.6235389, 127.2611084, '경기도 남양주시 와부읍 수레로661번길 174', '경기', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple044', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('무각사', 35.1536315, 126.8564309, '광주광역시 서구 운천로 230', '광주', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple045', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('무량사', 36.3170158, 126.6930522, '충청남도 부여군 외산면 무량로 203', '충남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple046', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('무위사', 34.7384651, 126.6869062, '전라남도 강진군 성전면 무위사로 308(무위사)', '전남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple047', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('문수암', 35.2882051, 127.8537353, '경상남도 산청군 시천면 마근담길 173-17', '경남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple048', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('미륵대흥사', 36.8564422, 128.3475113, '충청북도 단양군 대강면 황정산로423', '충북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple049', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('미륵사', 34.9382950, 126.7813645, '전라남도 나주시 봉황면 세남로 408-64', '전남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple050', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('미타사', 36.9541388, 127.7315688, '충북 음성군 소이면 소이로 61번길 164', '충북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple051', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('미황사', 34.3828873, 126.5773481, '전라남도 해남군 송지면 미황사길 164', '전남', TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple052', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('반야사', 36.2805436, 127.9092579, '충청북도 영동군 황간면 백화산로 652', '충북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple053', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('백담사', 38.1651533, 128.3740948, '강원특별자치도 인제군 북면 백담로 746', '강원', FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, '@temple054', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('백련사(가평)', 37.7833158, 127.3501714, '경기도 가평군 상면 샘골길 159-50', '경기', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple055', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('백련사(강진)', 34.5877226, 126.7482083, '전라남도 강진군 도암면 백련사길 145', '전남', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple056', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('백양사', 35.4394999, 126.8833575, '전라남도 장성군 북하면 백양로 1239', '전남', FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple057', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('백제사', 33.4487759, 126.4242169, '제주특별자치도 제주시 애월읍 광령남6길 54', '제주', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple058', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('범어사', 35.2781147, 129.0734762, '부산광역시 금정구 상마1길 20', '부산', FALSE, TRUE, FALSE, TRUE, TRUE, TRUE, '@temple059', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('법륜사', 37.1695873, 127.2984987, '경기도 용인시 처인구 원삼면 농촌파크로 126', '경기', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple060', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('법주사', 36.5415497, 127.8331760, '충청북도 보은군 속리산면 법주사로 405', '충북', FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple061', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('보경사', 36.2522790, 129.3179490, '경상북도 포항시 북구 송라면 보경로 523', '경북', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple062', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('보광사(파주)', 37.7530657, 126.9197769, '경기도 파주시 광탄면 보광로474번길 87', '경기', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple063', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('보덕관음사', 37.2021400, 127.2651463, '경기도 용인시 처인구 운학로 187', '경기', FALSE, TRUE, FALSE, TRUE, TRUE, TRUE, '@temple064', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('보림사(장흥)', 34.8205779, 126.8910669, '전남 장흥군 유치면 보림사로 224', '전남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple065', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('보현사', 37.7368530, 128.7695405, '강원특별자치도 강릉시 성산면 보현길 396', '강원', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple066', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('봉녕사', 37.2915107, 127.0374719, '경기도 수원시 팔달구 창룡대로 236-54', '경기', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple067', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('봉선사', 37.7473501, 127.1836131, '경기도 남양주시 진접읍 봉선사길 32', '경기', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple068', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('봉은사', 37.5148520, 127.0573766, '서울특별시 강남구 봉은사로 531', '서울', FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, '@temple069', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('봉인사', 37.6620421, 127.2177665, '경기도 남양주시 진건읍 사릉로156번길 295', '경기', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple070', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('봉정사', 36.6532709, 128.6629033, '경상북도 안동시 서후면 봉정사길 222', '경북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple071', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('부석사', 36.7036581, 126.4124372, '충청남도 서산시 부석면 부석사길 243', '충남', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple072', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('불갑사', 35.2007754, 126.5498501, '전라남도 영광군 불갑면 불갑사로 450', '전남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple073', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('불국사', 35.7898804, 129.3318909, '경상북도 경주시 불국로 385', '경북', FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple074', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('불회사', 34.9084081, 126.8229434, '전라남도 나주시 다도로 1224-142', '전남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple075', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('붓다선원', 35.8766671, 127.8946302, '경상남도 거창군 웅양면 개화길 397-115', '경남', FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple076', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('사나사', 37.5381867, 127.5063078, '경기도 양평군 옥천면 사나사길 329', '경기', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple077', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('사성암', 35.1799672, 127.4807355, '전라남도 구례군 문척면 사성암길303', '전남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple078', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('삼운사', 37.8882819, 127.7414247, '강원특별자치도 춘천시 후석로441번길 12', '강원', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple079', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('삼화사', 37.4638354, 129.0143586, '강원특별자치도 동해시 삼화로 584', '강원', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple080', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('서고사', 35.8350797, 127.0850062, '전라북도 전주시 정여립로 1010-90', '전북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple081', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('서광사', 36.7915088, 126.4454870, '충청남도 서산시 부춘산1로 44', '충남', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple082', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('석불사', 37.5359621, 126.9447565, '서울특별시 마포구 마포대로4다길 23-6', '서울', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple083', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('석왕사', 37.4910410, 126.7936836, '경기도 부천시 원미구 소사로 367', '경기', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple084', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('석종사', 36.9482764, 127.9694412, '충청북도 충주시 직동길 271-56', '충북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple085', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('선본사', 35.9874659, 128.7393043, '경상북도 경산시 갓바위로 699', '경북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple086', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('선암사(부산)', 35.1769370, 129.0277633, '부산광역시 부산진구 백양산로 138', '부산', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple087', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('선암사(순천)', 34.9960451, 127.3304767, '전라남도 순천시 승주읍 선암사길 450', '전남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple088', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('선운사', 35.4969385, 126.5782255, '전북특별자치도 고창군 아산면 선운사로 250', '전북', FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple089', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('설악산신흥사', 38.1758427, 128.4845537, '강원특별자치도 속초시 설악산로 1137', '강원', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple090', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('성주사', 35.1768948, 128.7172793, '경상남도 창원시 성산구 곰절길 191', '경남', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple091', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('성흥사', 35.1478862, 128.7793645, '경남 창원시 진해구 대장로273', '경남', TRUE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple092', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('송광사(순천)', 35.0021207, 127.2758818, '전라남도 순천시 송광면 송광사안길 100', '전남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple093', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('송광사(완주)', 35.8855971, 127.2420789, '전라북도 완주군 소양면 송광수만로 255-16', '전북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple094', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('수국사', 37.6159229, 126.9050875, '서울특별시 은평구 서오릉로 23길 8-5', '서울', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple095', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('수덕사', 36.6630169, 126.6225493, '충청남도 예산군 덕산면 수덕사안길 79', '충남', FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple096', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('수원사', 37.2804508, 127.0189577, '경기도 수원시 팔달구 수원천로 300', '경기', FALSE, TRUE, TRUE, TRUE, FALSE, TRUE, '@temple097', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('수진사', 37.6716125, 127.2507780, '경기도 남양주시 천마산로 115-13', '경기', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple098', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('신광사', 34.8816806, 128.5035715, '경상남도 거제시 사등면 오량2길 108', '경남', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple099', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('신륵사', 37.2974985, 127.6615769, '경기도 여주시 신륵사길 73', '경기', FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, '@temple100', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('신안사', 36.1708537, 127.5826165, '충청남도 금산군 제원면 신안사로 970', '충남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple101', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('신흥사(완도)', 34.3073749, 126.7550106, '전라남도 완도군 완도읍 청해진남로 101-1', '전남', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple102', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('실상사', 35.4164166, 127.6354004, '전북특별자치도 남원시 산내면 실상사길 265', '전북', FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, '@temple103', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('심원사(성주)', 35.8004858, 128.1357910, '경상북도 성주군 수륜면 가야산식물원길 17-56', '경북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple104', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('심택사', 37.5972525, 126.9333064, '서울특별시 은평구 은평로20나길 5-23', '서울', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple105', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('쌍계사(하동)', 35.2324978, 127.6505776, '경상남도 하동군 화개면 쌍계사길 59', '경남', FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, '@temple106', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('쌍봉사', 34.8877203, 127.0606163, '전라남도 화순군 이양면 쌍산의로 459', '전남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple107', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('안국사', 35.9441966, 127.6916048, '전라북도 무주군 적상면 산성로 1050', '전북', FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, '@temple108', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('약수사', 37.4593530, 126.9343940, '서울특별시 관악구 약수암1길 28', '서울', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple109', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('약천사', 33.2461544, 126.4494597, '제주특별자치도 서귀포시 이어도로 293-28', '제주', TRUE, FALSE, FALSE, FALSE, FALSE, TRUE, '@temple110', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('연곡사', 35.2543175, 127.5886171, '전라남도 구례군 토지면 피아골로 774', '전남', FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, '@temple111', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('연등국제선원', 37.6721162, 126.4834358, '인천광역시 강화군 길상면 강화동로 349-60', '인천', TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple112', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('연운사', 37.6491117, 126.6493828, '경기도 김포시 양촌읍 석모로5번길 48-11', '경기', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple113', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('연주암', 37.4418617, 126.9653131, '경기도 과천시 자하동길 63', '경기', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple114', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('영국사', 36.1581457, 127.6105204, '충청북도 영동군 양산면 영국동길 225-35', '충북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple115', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('영랑사', 36.9124508, 126.5939678, '충청남도 당진시 고대면 진관로 142-52', '충남', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple116', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('영평사', 36.4733507, 127.2277683, '세종특별자치시 장군면 영평사길 124', '세종', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple117', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('옥천사', 35.0802900, 128.2623538, '경상남도 고성군 개천면 연화산1로 471-9', '경남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple118', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('옥천암', 37.5969852, 126.9542463, '서울특별시 서대문구 홍지문길 1-38', '서울', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple119', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('용문사(남해)', 34.7879899, 127.9233383, '경상남도 남해군 이동면 용문사길 166-11', '경남', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple120', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('용문사(양평)', 37.5501859, 127.5708230, '경기도 양평군 용문면 용문산로 782', '경기', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple121', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('용문사(예천)', 36.7313810, 128.3694867, '경상북도 예천군 용문면 용문사길 285-30', '경북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple122', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('용연사', 37.7899023, 128.7803711, '강원특별자치도 강릉시 사천면 중앙서로 961', '강원', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple123', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('용주사', 37.2120183, 127.0050520, '경기도 화성시 용주로 135-6', '경기', FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple124', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('용화사(청주)', 36.6416246, 127.4820829, '충청북도 청주시 서원구 무심서로 565', '충북', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple125', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('용화사(통영)', 34.8185644, 128.4155837, '경상남도 통영시 봉수로 107-82', '경남', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple126', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('용흥사', 35.3408912, 126.8890233, '전라남도 담양군 월산면 용흥사길 442', '전남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple127', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('운주사', 34.9254769, 126.8800382, '전라남도 화순군 도암면 천태로 91-44', '전남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple128', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('원효사', 35.1486369, 126.9857710, '광주광역시 북구 무등로 1514-35', '광주', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple129', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('월정사', 37.7319381, 128.5928851, '강원특별자치도 평창군 진부면 오대산로 374-8', '강원', FALSE, TRUE, TRUE, FALSE, TRUE, TRUE, '@temple130', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('육지장사', 37.7836853, 126.9439745, '경기도 양주시 백석읍 기산로471번길 190', '경기', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple131', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('은해사', 35.9918840, 128.7898188, '경상북도 영천시 청통면 은해사로 300', '경북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple132', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('이제사', 36.4908251, 127.0210092, '충남 공주시 사곡면 다복골길 73-6', '충남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple133', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('자비선사', 35.7941058, 128.2204364, '경상북도 성주군 수륜면 계정길 208', '경북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple134', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('장육사', 36.5987266, 129.3011138, '경상북도 영덕군 창수면 장육사1길 172', '경북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple135', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('전등사', 37.6317933, 126.4845478, '인천광역시 강화군 길상면 전등사로 37-41', '인천', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple136', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('정토사', 37.4264799, 127.0676894, '경기도 성남시 수정구 옛골로 42번길 3', '경기', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple137', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('정혜사', 35.0618370, 127.5141183, '전라남도 순천시 서면 정혜사길 32', '전남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple138', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('조계사', 37.5738369, 126.9822020, '서울특별시 종로구 우정국로 55', '서울', FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, '@temple139', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('죽림사', 35.9445006, 128.9163683, '경상북도 영천시 금호읍 죽방길 279-57', '경북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple140', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('죽림사(포항)', 36.0364582, 129.3576464, '경북 포항시 북구 탑산길 10번길 11-4', '경북', TRUE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple141', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('중흥사', 37.6460584, 126.9766199, '경기도 고양시 덕양구 대서문길 393', '경기', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple142', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('증심사', 35.1287490, 126.9698984, '광주광역시 동구 증심사길 177', '광주', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple143', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('지장정사', 36.3299374, 127.1127405, '충청남도 논산시 노성면 화곡안길 103', '충남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple144', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('직지사', 36.1170395, 128.0044810, '경상북도 김천시 대항면 직지사길 95', '경북', FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple145', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('진관사', 37.6383876, 126.9464060, '서울특별시 은평구 진관길 73', '서울', FALSE, TRUE, FALSE, TRUE, TRUE, TRUE, '@temple146', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('천은사', 35.2737008, 127.4763333, '전라남도 구례군 광의면 노고단로 209', '전남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple147', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('천축사', 37.6942680, 127.0193006, '서울특별시 도봉구 도봉산길 92-2', '서울', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple148', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('청계사', 35.2151428, 127.8560792, '경남 하동군 옥종면 안계길 67-182', '경남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple149', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('청량사', 36.7894419, 128.9189913, '경상북도 봉화군 청량산길 199-152', '경북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple150', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('청련사', 37.7458555, 126.4485168, '인천광역시 강화군 강화읍 고비고개로 188번길 112(국화리)', '인천', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple151', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('청평사', 37.9858676, 127.8086468, '강원특별자치도 춘천시 북산면 오봉산길 810', '강원', FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, '@temple152', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('축서사', 36.9814412, 128.7999096, '경상북도 봉화군 물야면 월계길 739', '경북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple153', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('통도사', 35.4879503, 129.0643366, '경상남도 양산시 하북면 통도사로 108', '경남', FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple154', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('통합정보센터', 37.5738835, 126.9831643, '서울특별시 종로구 우정국로 56', '서울', FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, '@temple155', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('팔공산석굴암', 36.0477224, 128.6406409, '대구광역시 군위군 부계면 남산4길24(제2석굴암)', '대구', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple156', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('표충사', 35.5325933, 128.9605778, '경상남도 밀양시 표충로 1338', '경남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple157', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('학림사', 36.3649803, 127.2475716, '충청남도 공주시 반포면 제석골길 35-45', '충남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple158', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('한국문화연수원', 36.5654006, 127.0100239, '충청남도 공주시 사곡면 마곡사로 1065', '충남', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple159', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('해인사', 35.8011781, 128.0980980, '경상남도 합천군 가야면 해인사길 122', '경남', FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, '@temple160', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('향일암', 34.5916198, 127.8039319, '전라남도 여수시 돌산읍 향일암로 60', '전남', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple161', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('현덕사', 37.8592813, 128.7035153, '강원특별자치도 강릉시 연곡면 싸리골길 170', '강원', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple162', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('홍법사', 35.3035939, 129.1101843, '부산광역시 금정구 두구로33번길 202', '부산', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple163', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('화계사', 37.6326445, 127.0073066, '서울특별시 강북구 화계사길 117', '서울', FALSE, TRUE, FALSE, TRUE, TRUE, TRUE, '@temple164', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('화암사', 38.2268820, 128.4695206, '강원특별자치도 고성군 토성면 화암사길 100', '강원', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple165', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('화엄사', 35.2554686, 127.4972541, '전라남도 구례군 마산면 화엄사로 539', '전남', FALSE, TRUE, TRUE, FALSE, TRUE, TRUE, '@temple166', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('화운사', 37.2528180, 127.1620089, '경기도 용인시 처인구 동백죽전대로 111-14', '경기', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple167', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('회암사(양주)', 37.8505301, 127.1077265, '경기도 양주시 회암사길 281', '경기', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple168', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('흥국사(고양)', 37.6636889, 126.9399149, '경기도 고양시 덕양구 흥국사길 82', '경기', FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, '@temple169', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('흥국사(여수)', 34.8211501, 127.7002713, '전라남도 여수시 흥국사길 160', '전남', TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple170', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE),
-    ('희방사', 36.9199750, 128.4570280, '경상북도 영주시 풍기읍 죽령로1720번길 278', '경북', FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, '@temple171', '$2a$10$zFTFyr.64hSAp4DpV7G9hexZvBaDZfAIGemGyz0qVDkNUCoiykFcm', TRUE);
-
-
 
 -- 실제 수집 데이터 (templestay.com, 2026-09-08 기준 운영중 + 1박2일 전체일정) - 171개 사찰 전수조사
 -- TEMPLE_STAY_PROGRAM 실데이터 INSERT (templestay.com 수집, 2026-09-08 기준 운영중 + 1박2일 전체일정 프로그램만)
@@ -690,7 +13,6 @@ INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, desc
     ((SELECT temple_id FROM TEMPLE WHERE name = '감산사'), '내려놓고, 쉼 -휴식형 (1인 1실)1박2일', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/2/7/20260207102709140_1_S.webp', '► 남월산 감산사는 자연그대로 나를 반겨 주는 곳입니디. 통일신라성덕왕 18년의 자취를 느끼며, 내려놓고 쉼, 다양한 차를 마시면서 스님과 함께 시간을 가져보시기 바랍니다. ► 예약 후 입금이 되어야 "최종확정" 이 됩니다.감산사 템플스테이 프로그램은 고즈넉한 감산사 도량에서 예불, 공양, 운력 등 사찰에서 예절은 반드시 지키면서 ► 예약 후 3일 이내에 입금이 이루어지지 않을시에는 자동취소 됩니다. 참가자격은 다음사람에게 넘어갑니다. 이점을 양지 해 주시기 바랍니다. ► 예약완료 이후, 날짜 변경은 1회 가능하며, 날짜 변경 후 취소 시 환불 불가합니다 ► 임산부는 참여를 금 합니다. ► 반려동물과 동반 참가는 불가 합니다. ► 컵라면, 또는 간식은 절대 지참 하시면 안됩니다. ► 프로그램 일정은 사찰의 사정에 따라 변경될 수 있습니다.', '1일차;14:30~15:00 감산사 도착 및 접수;15:20~16:00 오리엔테이션 및 사찰안내;16:00~16:50 호미길 걷기 or 저수지 포행;16:50~17:30 저녁공양;18:00~20:50 온전한 쉼;20:50~21:00 취침준비 및 취침;2일차;05:00~06:00 새벽예불 - 자율;06:30~07:00 아침 공양;07:25~08:30 건강체조후 스님과 다정한 차담시간;08:30~09:10 온라인설문조사(QR) 및 단주만들기(체험형) 체험비 1만원 추가;09:10~10:20 방사정리 및  소감문 작성 그리고 온전한 쉼;10:30~11:20 점심 공양;11:20~11:30 회향(집으로)', '개인 세면도구(삼푸,비누 등), 수건, 칫솔, 여벌옷, 운동화(편한 신발), 양말, 개인물병, 동절기에는 개인 방한용품 준비하세요.', 150000, '1박 2일', '2026-01-01', '2026-12-01', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '감산사'), '내려놓고, 쉼-휴식형 (2인 이상)1박2일', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/4/9/20260409052701427_1_S.webp', '► 남월산 감산사는 자연그대로 나를 반겨 주는 곳입니다. 통일신라 성닥왕 18년에 자취를 느끼며, 내려놓고 쉼, 스님과의 차담시간을 가져보시기 바랍니다. ► 예약 후 입금이 되어야 "최종확정" 이 됩니다. ► 예약 후 3일 이내에 입금이 이루어지지 않을시 자동으로 취소됩니다. 참가자격은 다음사람에게 넘어 갑니다. 이점을 양지해 주시기 바랍니다. ► 예약완료 이후, 날짜 변경은 1회 가능하며, 날짜 변경 후 취소 시 환불 불가합니다 ► 1인참가자는 1인프로그램에서 예약해 주시기 바랍니다. ► 임산부는 참여를 금 합니다 ► 반려동물과 동반 참가는 불가 합니다 ► 컵라면, 또는 간식은 절대 지참하시면 안됩니다 ► 프로그램 일정은 사찰의 사정에 따라 변경될 수 있습니다.', '1일차;14:30~15:00 감산사 도착 및 접수;15:20~16:00 오리엔테이션 및 사찰안내;16:00~16:30 호미길 걷기;16:50~17:30 저녁공양;18:00~20:50 온전한 쉼;20:50~21:00 취침준비 및 취침;2일차;05:00~06:00 새벽예불 - 자율;06:30~07:00 아침 공양;07:25~08:20 건강체조 후 스님과 다정한 차담시간;08:20~09:10 온라인설문조사(QR) 및 단주만들기(체험형)1만원 추가비용;09:10~10:20 방사정리 및 소감문 작성 그리고 온전한 쉼;10:30~11:20 점심 공양;11:20~11:30 회향(집으로)', '개인 세면도구(삼푸,비누 등), 수건, 칫솔, 여벌옷, 운동화(편한 신발), 양말, 개인물병, 동절기에는 개인 방한용품 준비하세요.', 80000, '1박 2일', '2026-01-01', '2026-12-01', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '감산사'), '내마음 봄 (1인 1실)1박2일', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/4/20/20260420010524396_1_S.webp', '► 감산사 체험형 템플스테이 프로그램은 예불, 공양, 운력 등 사찰에서 지켜야 하는 기본예절은 반드시 지키면서 탑돌이, 108배하기, 호미길걷기명상, 스님과 차담 등 프로그램이 준비되어 있습니다. ► 호젓한 분위기의 감산사에서 스님들과 함께 진행되는 체험형 템플스테이 프로그램에 참가하여 좋은 에너지를 듬뿍 담아 가시기 바랍니다. ► 예약 후 입금이 되어야 "최종확정"이 됩니다. ► 예약 후 3일 내에 입급이 이루어지지 않을시 자동취소 됩니다. 침가 자격은 다음사람에게 넘어 갑니다. 이점을 양지 해주시기 바랍니다. ► 예약완료 이후, 날짜 변경은 1회 가능하며, 날짜 변경 후 취소 시 환불 불가합니다 ► 임산부는 참여를 금 합니다. ► 반려동물과 동반 참가는 불가 합니다. ► 컵라면, 또는 간식 은 절대 지참하시면 안됩니다. ► 프로그램 일정은 사찰의 사정에 따라 변경될 수 있습니다.', '1일차;14:30~15:00 감산사 도착 및 접수;15:20~16:00 오리엔테이션 및 사찰안내;16:00~16:30 호미길 걷기;16:50~17:30 저녁공양;18:00~19:00 저녁 예불(대적광전)및 108배 체험(자율);19:00~20:50 온전한 쉼;20:50~21:00 취침준비 및 취침;2일차;05:00~06:00 새벽 예불(자율);06:30~07:00 아침 공양;07:25~08:30 건강체조 후 스님과 다정한 차담시간;08:30~09:10 염주(단주)만들기(체험비 1만원);09:10~10:20 방사정리 및 온라인설문조사(QR) 및 소감문 작성;10:30~11:20 점심 공양;11:20~11:30 회향 (집으로)', '개인 세면도구(삼푸,비누 등), 수건, 칫솔, 여벌옷, 운동화(편한 신발), 양말, 개인물병, 동절기에는 개인 방한용품 준비하세요.', 150000, '1박 2일', '2025-01-01', '2026-12-01', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '감산사'), '내마음 봄 (2인 이상)1박2일', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/4/9/20260409053053445_1_S.webp', '► 감산사 체험형 템플스테이 프로그램은 예불, 공양, 운력 등 사찰에서 지켜야 하는 기본예절은 반드시 지키면서 탑돌이, 108배하기, 호미길걷기명상, 스님과 차담 등 프로그램이 준비되어 있습니다. ► 호젓한 분위기의 감산사에서 스님들과 함께 진행되는 체험형 템플스테이 프로그램에 참가하여 좋은 에너지를 듬뿍 담아 가시기 바랍니다. ► 예약 후 입금이 되어야 "최종확정"이 됩니다. 예약후 3일 내에 입금이 이루어지지 않을시 자동취소 됩니다. 참가자격은 다음사람에게 넘어갑니다. 이점을 양지 해 주시기 바랍니다. ► 예약완료후 날짜 변경은 1회 가능하며, 날짜 변경 후 취소 시 환불 불가합니다 ► 1인참가자는 1인프로그램에서 예약해 주시기 바랍니다. ► 임산부는 참여를 금 합니다. ► 반려동물과 동반 참가는 불가 합니다. ► 컵라면, 또는 간식 은 절대 지참하시면 안됩니다. ► 프로그램 일정은 사찰의 사정에 따라 변경될 수 있습니다.', '1일차;14:30~15:00 감산사 도착 및 접수;15:20~16:00 오리엔테이션 및 사찰안내;16:00~16:30 호미길 걷기;16:50~17:30 저녁공양;18:00~19:00 저녁 예불(대적광전)및 108배 체험;19:00~20:50 온전한 쉼;20:50~21:00 취침준비 및 취침;2일차;05:00~06:00 새벽 예불(자율);06:30~07:00 아침 공양;07:25~08:20 건강체조 후 스님과 다정한 차담시간;08:20~09:00 온라인설문조사(QR)   및 염주(단주)만들기(체험비 1만원);09:00~10:20 방사정리 및 소감문 작성 그리고 온전한 쉼;10:20~11:20 점심 공양;11:20~11:30 회향 (집으로)', '개인 세면도구(삼푸,비누 등), 수건, 칫솔, 여벌옷, 운동화(편한 신발), 양말, 개인물병, 동절기에는 개인 방한용품 준비하세요.', 80000, '1박 2일', '2025-01-01', '2026-12-01', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '갑사'), '[갑사] 주말(토~일) 체험형 템플스테이(운영중단/휴식형으로 신청가능)', '체험형', 'https://ts-cdn.com/ups/old/RsImage/L_2372_S.webp', '용의 기운을 품은 명산! 계룡산 갑사는 계룡산의 정기 받아 당당한 삶을 꿈꾸고 희망을 안고 살아가자는 뜻의 ''용솟음 템플스테이'' 이라는 주제로 계획된 일정에 따라 자율적으로 프로그램 참여가 가능합니다. 일요일마다 ''여의보주 만들기''시간에는 스님과의 대화가 가능합니다.', '1일차;15:00~17:30 사찰예절 및 갑사투어;17:30~18:00 몸이 건강해 지는 저녁공양;18:20~18:30 나를 깨우는 타종체험;18:30~19:30 불.법.승 삼보를 예경하는 산사문화체험(저녁예불);19:30~21:00 좌선요가 및 선명상 실참;21:00~04:00 세면 및 취침;2일차;04:00~05:00 불.법.승 삼보를 예경하는 산사문화체험(새벽예불);05:00~05:30 몸이 건강해지는 아침공양;05:30~08:30 일출 후 갑사 및 계룡산 기운 느껴보기;08:30~10:30 스님과 함께하는 108여의보주 만들기, 선명상 실참, 즉문즉답;11:00~11:30 감사한 마음으로 점심공양;11:30~12:00 머문자리 아름답게 방사 정리 후 회향', '1. 세면도구(수건, 치약, 칫솔, 비누 등) - 수건과 칫솔은 필참 입니다. 2. 운동화 또는 등산화 3. 휴대용 개인물통 4. 한여름을 제외하고는 평소보다 따뜻한 옷으로 입고 오세요', 70000, '1박 2일', '2025-05-03', '2027-12-26', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '개암사'), '천년의 숲, 나를 안아주는 개암사', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/6/25/20260625041145189_10_S.webp', '울금바위 아래, 천년의 평온함이 머무는 곳에서 나를 위한 진정한 휴식을 시작하세요! 복잡한 생각을 비우고, 내면의 소리에 귀 기울이는 특별한 여정, 지금 개암사에서 시작됩니다.', '1일차;15:00~16:00 도착 및 방사안내;16:00~17:00 차담 및 오리엔테이션;17:00~18:00 저녁 공양;18:00~18:30 저녁예불(자율선택);19:00~21:00 휴식 및 취침;2일차;04:00~05:00 새벽예불;07:00~08:00 아침공양;08:00~10:00 숲길 산책(자율선택);10:00~11:00 방사정리 및 소감문 작성;11:00~12:00 또 만나요!!', '두명 이상 오시는 분들은 팀별로 방사배정이 됩니다.(2인~4인) 혼자 오시는 분들은 다른 분과 함께 사용 개인 세면도구(수건포함, 삼푸, 린스), 충전기, 등산화 또는 운동화. 음식물은 냄새 안나는 간단한 간식. 개인 텀블러 준비.', 70000, '1박 2일', '2026-06-25', '2026-09-30', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '건봉사'), '누구나 괜찮아! ( 체험형)', '체험형', 'https://ts-cdn.com/ups/templePrg/2025/3/9/20250309015142647_1_S.webp', '건봉사 템플스테이는 때론 힘들고 흔들렸어도 잘 살아왔던 나를 위로합니다. 나를 꼭 껴안아 주는 금강산의 품에서 수고했다, 고맙다, 괜찮다며 ''나''와 이야기 나눕니다. 가족, 친구, 개인 누구나! 참가 가능한 1박2일 체험휴식형 일정 템플스테이 입니다.', '1일차;15:00~15:30 도착 및 방사 배정 ,환복;15:30~16:10 사찰안내  ,  치아사리친견;16:10~17:00 예절습의 ,  (108배 수행;발원주 만들기);17:30~18:00 저녁공양;18:30~19:00 저녁예불;21:00~21:30 나에게쓰는 엽서;달보고 별보며 하루마무리 , 취침(소등);2일차;04:00~04:30 새벽예불(자율 선택);06:00~06:30 아침공양;08:00~08:50 경내포행 (장군샘, 왕소나무);09:00~10:00 스님과의 차담;10:30~11:30 방사정리 및  (소감문작성);회향', '개인세면도구 ( 칫솔,치약 수건필수지참) 샴푸,비누제공. 여벌옷(외투), 운동화(편한 신발), 양말, 개인(보온)물통. 수련복 제공해 드립니다!', 50000, '1박 2일', '2025-02-24', '2026-09-30', 20, FALSE, 0, 0),
@@ -707,7 +29,6 @@ INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, desc
     ((SELECT temple_id FROM TEMPLE WHERE name = '국제선센터'), '[1박2일 선명상] 내 마음에 선함: "연등/염주念珠 - 마인드컨트롤"', '체험형', 'https://ts-cdn.com/ups/templePrg/2025/3/6/20250306013732805_2_S.webp', '도심 속 국제선센터에서 일상을 잠시 멈추고 마음에 쉼을 주는 1박2일 선명상 프로그램. 선명상(수식관), 연꽃등·염주 만들기, 108배와 염주꿰기, 스님과의 차담 등으로 구성됩니다.', '1일차;14:00~14:30 방사 배정 및 체험복 환복;1일차;14:30~14:50 오리엔테이션 및 사찰습의;1일차;14:50~15:30 법당참배·안내;1일차;15:30~16:00 연꽃등 만들기: 마음을 밝히는 일상의 소품;1일차;16:00~16:30 합장주 만들기: 서원을 기억하기 위하여;1일차;17:00~17:30 저녁공양;1일차;18:30~19:40 선명상(수식관): 자세.방법.집중.알아차림;1일차;21:00~00:00 소등 & 취침;2일차;04:10~04:30 새벽예불;2일차;04:30~05:20 108배, 나를 되돌아 보는 시간 with 염주꿰기;2일차;06:00~06:30 아침공양;2일차;06:30~08:40 독서, 차한잔, 여유, 쉼 (자유시간);2일차;08:40~09:30 스님과의 차담 (Q&A session);2일차;09:30~10:00 소감문 작성, QR 설문조사 & 방 청소 및 정리', '개인 세면도구, 수건, 여벌옷, 양말, 개인 물병(컵), 가벼운 외투 등 (동절기 방한용품)', 90000, '1박 2일', '2025-04-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '국제선센터'), '[1박2일 선명상] 내 마음에 선함: "필사筆寫/염주 - 디지털디톡스"', '체험형', 'https://ts-cdn.com/ups/templePrg/2025/10/5/20251005095806213_1_S.webp', '도심 속 국제선센터에서 진행하는 1박2일 선명상 프로그램. 선명상(수식관), 아크릴무드등/압화캘리/합죽선 필사, 합장주 만들기, 108배와 염주꿰기, 스님과의 차담으로 구성된 디지털디톡스 템플스테이입니다.', '1일차;14:00~14:30 방사 배정 및 체험복 환복;1일차;14:30~14:50 오리엔테이션 및 사찰습의;1일차;14:50~15:30 법당참배·안내;1일차;15:30~16:10 마음에 쉼을 주는 글귀 새기기 (아크릴무드등;압화캘리;합죽선);1일차;16:10~16:40 합장주 만들기;1일차;17:00~17:30 저녁 공양;1일차;18:30~19:40 선명상(수식관): 자세.방법.집중.알아차림;1일차;21:00~00:00 소등 & 취침;2일차;04:10~04:30 새벽 예불;2일차;04:30~05:20 108배, 나를 되돌아 보는 시간 with 염주꿰기;2일차;06:00~06:30 아침 공양;2일차;08:40~09:30 스님과의 차담 (Q&A session);2일차;09:30~10:00 소감문 작성, QR 설문조사 & 방 청소 및 정리', '개인 세면도구, 수건, 여벌옷, 양말, 개인 물병(컵) 등 (동절기 방한용품)', 90000, '1박 2일', '2025-05-09', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '국제선센터'), '미니멀리즘 인 템플스테이 (주말)', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/3/26/20260326032457286_1_S.webp', '단순한 공간에서 몸과 마음의 쉼에 집중하도록 기획된 미니멀리즘 템플스테이(주말 운영). 단독방사와 좌식 책상을 제공하며, 저녁 선명상을 통해 생각과 감정으로부터 쉬는 연습을 합니다.', '1일차;14:00~14:30 방사 배정 및 체험복 환복;1일차;14:30~14:50 오리엔테이션 및 사찰습의;1일차;14:50~15:00 법당 참배·안내;1일차;15:00~17:00 첫번째 쉼: 일상으로부터 자유로움의 시작 (자유시간);1일차;17:00~17:30 저녁 공양;1일차;18:00~18:20 저녁 예불;1일차;18:30~19:40 두번째 쉼: 생각에 따라가지 않는 연습 - 선명상;1일차;19:40~21:00 세번째 쉼: 하루의 정리 (자유시간);1일차;21:00~00:00 네번째 쉼: 소등 & 취침;2일차;04:10~04:30 새벽 예불 (자율참석);2일차;06:00~06:30 아침 공양;2일차;06:30~08:40 독서, 차한잔, 여유 쉼 (자유시간);2일차;08:40~09:30 스님과의 차담(Q&A Session);2일차;09:30~10:00 소감문 작성, QR 설문조사 & 방 청소 및 정리', '개인 세면도구, 수건, 여벌옷, 양말, 개인 물병(컵)', 100000, '1박 2일', '2026-04-01', '2026-12-31', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '국제선센터'), '미니멀리즘 인 템플스테이', '체험형', 'https://ts-cdn.com/ups/templePrg/2025/8/29/20250829034115842_1_S.webp', '단순한 공간에서 몸과 마음의 쉼에 집중하도록 기획된 미니멀리즘 템플스테이(화/수/목/금/토 운영). 단독방사와 좌식 책상을 제공하며, 요일별로 다른 저녁 선명상 프로그램(선명상 또는 사띠클럽)을 진행합니다.', '1일차;14:00~14:30 방사 배정 및 체험복 환복;1일차;14:30~14:50 오리엔테이션 및 사찰습의;1일차;14:50~15:00 법당 참배·안내;1일차;15:00~17:00 첫번째 쉼: 일상으로부터 자유로움의 시작 (자유시간);1일차;17:00~17:30 저녁 공양;1일차;18:00~18:20 저녁 예불;1일차;18:30~19:40 두번째 쉼: 생각에 따라가지 않는 연습 - 선명상 (요일별 시간 상이);1일차;19:40~21:00 세번째 쉼: 하루의 정리 (자유시간);1일차;21:00~00:00 네번째 쉼: 소등 & 취침;2일차;04:10~04:30 새벽 예불 (자율참석);2일차;06:00~06:30 아침 공양;2일차;06:30~08:40 독서, 차한잔, 여유 쉼 (자유시간);2일차;08:40~09:30 스님과의 차담(Q&A Session);2일차;09:30~10:00 소감문 작성, QR 설문조사 & 방 청소 및 정리', '개인 세면도구, 수건, 여벌옷, 양말, 개인 물병(컵)', 100000, '1박 2일', '2025-09-05', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '국제선센터'), '쉼. 멈춤. 비우기. (1인실)', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/3/29/20260329030630441_1_S.webp', '도심 속 국제선센터에서 1인실에 머물며 온전히 쉬어가는 휴식형 템플스테이. 별도 체험 프로그램 없이 자유시간, 저녁 예불, 스님과의 차담으로 구성되어 몸과 마음을 재충전합니다.', '1일차;14:00~14:30 방사 배정 및 체험복 환복;1일차;14:30~14:50 오리엔테이션 및 사찰안내;1일차;14:50~15:00 사찰예절;법당 참배·안내;1일차;15:00~17:00 독서, 차한잔, 여유, 쉼 - 내 마음 들여다보기 (자유시간);1일차;17:00~17:30 저녁 공양;1일차;18:00~18:20 저녁 예불;1일차;18:20~21:00 독서, 차한잔, 여유, 쉼 - 내 마음 들여다보기 (자유시간);1일차;21:00~00:00 소등 & 취침;2일차;04:10~04:30 새벽 예불 (자율참석);2일차;06:00~06:30 아침 공양;2일차;06:30~08:40 독서, 차한잔, 여유, 쉼 (자유시간);2일차;08:40~09:30 스님과의 차담 (Q&A session);2일차;09:30~10:00 소감문 작성;QR 설문조사;방 청소 및 정리', '개인 세면도구, 수건, 여벌옷, 양말, 개인 물병(컵), 가벼운 외투 등 (동절기 방한용품)', 100000, '1박 2일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '국제선센터'), '(★한국소비자원 연계 대상자만 예약 가능) 마음 힐링 템플스테이', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/4/18/20260418030914574_1_S.webp', '한국소비자원 소속 민원 업무 전담 직원만 참여 가능한 휴식형 템플스테이. 자유시간, 저녁 예불, 스님과의 차담 등으로 구성됩니다.', '1일차;14:00~14:30 방사 배정 및 체험복 환복;1일차;14:30~14:50 오리엔테이션 및 사찰습의;1일차;14:50~15:00 법당 참배·안내;1일차;15:00~17:00 독서, 차한잔, 여유, 쉼 (자유시간);1일차;17:00~17:30 저녁 공양;1일차;18:00~18:20 저녁 예불;1일차;18:20~21:00 독서, 차한잔, 여유, 쉼 (자유시간);1일차;21:00~00:00 소등 & 취침;2일차;04:10~04:30 새벽 예불 (자율참석);2일차;06:00~06:30 아침 공양;2일차;06:30~08:40 독서, 차한잔, 여유, 쉼 (자유시간);2일차;08:40~09:30 스님과의 차담 (Q&A session);2일차;09:30~10:00 소감문 작성;QR 설문조사;방 청소 및 정리', '개인 세면도구, 수건, 여벌옷, 양말, 개인 물병(컵), 가벼운 외투 등 (동절기 방한용품)', 50000, '1박 2일', '2026-04-18', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '귀정사'), '그저 ''쉼'' 1인 1실 템플스테이 (휴식형)', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/9/3/20260903043906247_2_S.webp', '넉넉한 산사의 품에서 이틀 동안 휴식을 통해 몸과 마음을 재충전하는 1박2일 쉼 프로그램. 귀정사 템플스테이 전용관 ''청락당''의 1인 1실 숙소를 사용하며, 산책, 저녁 예불과 공양, 자유시간으로 구성됩니다.', '1일차;15:00~15:30 접수 및 방사배정;1일차;15:30~16:30 생활안내;1일차;16:30~17:30 마음 돌봄 (산책 및 휴식);1일차;17:30~18:00 저녁예불;1일차;18:00~19:00 저녁공양;1일차;19:00~22:00 산사의 밤 안에서 온전한 휴식갖기;1일차;22:00~00:00 취침;2일차;09:00~12:00 마음 돌봄 (산책 명상, 예불);2일차;10:00~11:00 사시예불;2일차;11:00~12:00 후기작성 및 숙소정리;2일차;12:00~13:00 점심공양 및 집으로', '수건, 개인 세면도구(샴푸,바디워시 등), 개인컵, 드라이기, 손전등', 80000, '1박 2일', '2026-09-03', '2030-12-31', 20, FALSE, 0, 0),
@@ -719,7 +40,6 @@ INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, desc
     ((SELECT temple_id FROM TEMPLE WHERE name = '금선사'), '금요일, 토요일 / 싱잉볼 명상 그리고 스님과의 차담', '체험형', 'https://ts-cdn.com/ups/templePrg/2025/11/1/20251101074415280_1_S.webp', '아름다운 싱잉볼 명상과 스님과의 차담으로 생각을 비우고 다시 한번 도약합니다. 프로그램 참여는 자율적으로 선택할 수 있습니다.', '1일차;14:30~15:00 입재(접수) 및 방사 안내;15:30~17:30 사찰예절 및 도량안내, 싱잉볼명상;17:30~18:10 저녁공양;18:10~18:50 법고, 타종체험, 저녁예불;19:00~20:00 스님과의 차담;20:00~21:30 자율수행;21:30~취침;2일차;04:40~05:00 도량석;05:00~05:20 아침예불(자율);07:00~07:30 아침공양;07:30~10:00 자율수행;10:00~10:30 방사정리;10:30 회향', '개인 텀블러, 개인 세면도구, 수건, 여벌 옷(외투), 운동화(편한 신발), 양말', 80000, '1박 2일', '2025-02-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '금수암'), '"숨" 체험 템플스테이', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/4/15/20260415014357622_1_S.webp', '지리산에 위치한 금수암은 공기 좋고 물 맑은 곳으로 산세가 뛰어난 곳입니다. 1박 2일 체험하면서 맛있는 밥도 먹고 다양한 체험도 하며 마음을 쉬어가는 프로그램입니다. 첫날 저녁은 사찰음식 전문점(자연바루)에서 연잎밥 정식을 제공합니다.', '1일차;15:00~15:30 도착, 수련복 지급, 방사안내;16:00~17:00 사찰안내, 습의, 오리엔테이션;17:00~18:30 저녁공양 후 자유시간;18:30~20:30 108배, 염주만들기;별보기;21:30~06:00 취침;2일차;05:00~05:20 기상(선택);05:20~06:20 새벽예불(선택);07:30~08:30 아침공양(발우);08:30~09:30 스님과 차담;10:00~10:50 소감문 작성, 설문조사, 방사정리;10:50~11:00 퇴소', '세면도구(수건, 칫솔, 드라이기 등), 물병 또는 텀블러, 모자, 운동화, 양말 등 단정한 차림', 100000, '1박 2일', '2026-01-07', '2026-10-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '기림사'), '푹 쉬어가는 기림사 템플스테이(1인 개인 독방) - 1박2일', '휴식형', 'https://ts-cdn.com/ups/old/RsImage/L_24431_S.webp', '일상의 번뇌와 스트레스를 잠시 잊고 휴식을 통해 자신의 마음을 다스려 보는 시간으로, 공양 및 예불(자율) 시간을 지키며 자유시간을 가지는 1인 독방 프로그램입니다. 본 프로그램은 최대 1박 2일만 예약 가능합니다.', '1일차;15:00 도량 안내 및 방사 배정(2인 이상 프로그램과 동일 진행);16:30~17:00 저녁공양;17:00~18:30 자유시간;18:30~19:00 저녁예불(대적광전);2일차;04:10~04:40 새벽예불(대적광전);06:00~06:30 아침공양;10:00~11:00 사시예불(대적광전);11:30 방사 정리 및 퇴소 후 점심공양', '개인 세면도구, 수건, 여벌옷, 양말, 운동화, 개인 텀블러(물병) (수련복은 조끼와 바지만 지급)', 90000, '1박 2일', '2025-04-01', '2026-10-31', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '기림사'), '푹 쉬어가는 기림사 템플스테이(2인 이상 예약시) - 1박2일', '휴식형', 'https://ts-cdn.com/ups/old/RsImage/L_24431_S.webp', '일상의 번뇌와 스트레스를 잠시 잊고 휴식을 통해 자신의 마음을 다스려 보는 시간으로, 공양 및 예불(자율) 시간을 지키며 자유시간을 가지는 프로그램입니다. 본 프로그램은 최대 1박 2일만 예약 가능합니다.', '1일차;15:00 도량 안내 및 방사 배정(정시 입소 필수);16:30~17:00 저녁공양;17:00~18:30 자유시간;18:30~19:00 저녁예불(대적광전);2일차;04:10~04:40 새벽예불(대적광전);06:00~06:30 아침공양;10:00~11:00 사시예불(대적광전);11:30 방사 정리 및 퇴소 후 점심공양', '개인 세면도구, 수건, 여벌옷, 양말, 운동화, 개인 텀블러(물병) (수련복은 조끼와 바지만 지급)', 70000, '1박 2일', '2025-04-01', '2026-10-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '길상사'), '(★한국소비자원 연계 대상자만 예약 가능) 마음 힐링 템플스테이 - 하룻밤 무소유', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/4/16/20260416094810175_1_S.webp', '하룻밤, 무소유 – 길상사 1박 2일 명상 수련. 도심 속 고요한 숲, 길상사에서 말을 멈추고, 생각을 멈추고, 집착을 내려놓고 ''진짜 나''를 마주하는 깊은 명상의 시간. 묵언 수행, 108배 명상, 선 명상, 마당 쓸기, 스님과의 차담, 1인 텐트에서의 하룻밤. 108배가 어려운 경우 참여가 제한될 수 있음.', '1일차;15:00 등록 및 접수; 15:30 오리엔테이션(템플스테이 안내 및 예불문 강의); 16:50 길상사 도량이야기; 18:00 저녁공양; 19:00 선(禪)명상; 21:00 세면 및 취침준비; 22:00 취침;2일차;03:00 기상 및 세신; 04:00 새벽예불; 04:40 108배(나를 만나는 명상 수행); 06:00 아침공양; 07:00 도량청소; 07:40 나와의 대화; 09:00 명상과 요가; 11:00 점심공양; 12:30 스님과 차담; 14:30 소감문 작성 및 회향', '흰색 티셔츠(필수), 개인 세면도구(수건, 칫솔, 치약), 양말(흰색&회색), 개인 컵(텀블러), 여벌 흰색 면티', 50000, '1박 2일', '2026-04-16', '2026-09-30', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '내소사'), '[체험형]직소폭포 트레킹- 9/5, 9/19, 10/17, 11/7, 11/21', '체험형', 'https://ts-cdn.com/ups/templePrg/2025/8/15/20250815103805310_1_S.webp', '매달 첫째주 직소폭포트레킹. 천년고찰의 정기가 살아 숨쉬는 내변산탐방지원센터에서 직소폭포를 지나 내소사까지 3시간 트레킹 코스. 완만한 길로 누구나 참여 가능. 사찰안내, 전나무숲걷기, 사찰음식체험, 스님과의 차담(목,금). 기후 악화 또는 최소인원(3명) 미달 시 요가와 선명상으로 대체.', '1일차;14:00 도착;방사안내; 15:00 선택형 체험 프로그램(자율); 16:20 사찰예절 및 사찰안내; 17:30 저녁공양; 18:30 저녁예불(자율); 19:00 스님과의 차담(목,금); 22:00 취침;2일차;04:00 기상; 04:20 새벽예불(필참); 06:40 아침공양; 07:00 트레킹준비;출발; 07:10 직소폭포 트레킹; 10:30 리뷰작성;방사 정리 및 퇴실', '세면도구, 수건, 머리끈, 물병(텀블러), 손수건, 계절에 맞는 여벌옷, 긴바지, 티셔츠, 양말, 속옷 / 트레킹 참가자: 등산화, 소형 백팩(제공), 스틱(선택)', 90000, '1박 2일', '2026-05-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '내소사'), '(★한국소비자원 연계 대상자만 예약 가능) 마음 힐링 템플스테이', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/4/13/20260413042648915_3_S.webp', '한국소비자원 소속 ''민원 업무 전담 직원''만 예약 가능한 사회공익 프로그램. 잘 쉬려면 먼저 멈추어야 한다는 취지의 휴식형 템플스테이. 전나무숲걷기, 사찰음식체험, 사찰안내, 종소리 듣기, 스님과 차담(목,금,토에만 진행).', '1일차;14:00 수련복 지급 및 입실 안내; 15:30 선택형 체험 프로그램(자율); 16:40 저녁공양; 18:30 저녁예불(자율); 19:00~22:00 자유시간; 22:00 취침;2일차;04:00 기상; 04:30 새벽예불(필참); 06:40 아침공양; 08:00 전나무숲길 걷기(자율);자유시간; 11:00 리뷰작성; 11:10 환복; 방사정리; 퇴실', '세면도구(수건 포함), 개인컵, 개인 여벌옷(티셔츠), 운동화(필수), 개인물품', 40000, '1박 2일', '2026-04-20', '2026-12-31', 20, FALSE, 0, 0),
@@ -727,7 +47,6 @@ INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, desc
     ((SELECT temple_id FROM TEMPLE WHERE name = '내원정사'), '[행복하소] _ 힐링의 숲 [사찰문화 체험]', '체험형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '부산 도심 속 내원정사에서 편안한 휴식과 사찰문화 체험. 나를 돌아보고 내려놓고 알아가는 프로그램. 사찰 둘러보기(포행), 소원종등 및 합장주 만들기(신청자), 108배, 요가명상 체험, 자율정진(사경).', '1일차;13:30 등록 및 방배정; 14:00 사찰 및 템플 안내; 14:30 사찰 둘러보기(포행);소원종등&합장주 만들기(신청자); 16:02 108배; 17:00 저녁공양; 18:00 저녁예불;요가명상 체험; 19:30 자율정진(사경) 및 취침;2일차;04:00 새벽예불;자율정진; 07:30 아침공양 및 휴식; 09:00 차담(자율참여);자율정진; 10:00 방사정리 및 자율 회향', '개인 세면도구(칫솔,치약,샴푸,폼클렌징 등), 수건(미지급), 양말(법당 출입시 필요), 편한 신발, 우천시 우산, 개인 방한용품', 70000, '1박 2일', '2021-01-06', '2026-12-28', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '내원정사'), '[집중수행] 위빳사나', '체험형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '위빳사나 명상 집중수행 프로그램. 몸과 마음의 현상에 대한 알아차림을 통해 무상.고.무아를 꿰뚫어보는 위빳사나 수행. 좌선, 걷기명상, 자비명상, 법문 등으로 구성.', '1일차;13:30 접수;수련복 및 방사배정; 14:00 위빠사나 명상 설명 및 실습; 15:00 좌선; 16:00 걷기명상(실내); 17:00 간식(오후불식) 및 휴식; 18:00 저녁예불;걷기명상; 19:00 좌선; 20:00 걷기명상;자비명상; 21:00 휴식 및 취침;2일차;04:30 기상; 05:00 아침예불 및 좌선; 06:00 걷기명상 및 휴식; 07:00 아침공양; 08:00 걷기명상; 09:00 좌선; 10:00 법문; 11:00 회향', '개인 세면도구(칫솔,치약,샴푸,폼클렌징 등), 수건(미지급), 양말, 우천시 우산, 개인 물병, 개인 방한용품', 60000, '1박 2일', '2018-11-17', '2026-12-21', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '대광사(성남)'), '내마음 주인되기 선명상 템플스테이', '체험형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '빠른 속도에 익숙해진 일상에 지쳐 자신에게 집중하고 싶은 이들을 위한 ''내마음 주인되기'' 명상 템플스테이. 108배, 주지스님과의 일문일답, 염불명상, 새벽예불, 불곡산 포행명상, 마음챙김 명상 등으로 구성. 초, 중학생은 부모 동반 필수(고등학생은 사전 동의 후 단독 참가 가능).', '1일차;13:30 방사 배정;절복 지급; 14:00 사찰 안내; 14:40 오리엔테이션;사찰 예절; 15:30 주지스님과의 일문일답; 16:30 나를 찾아 떠나는 108배;저녁예불; 18:00 저녁공양; 19:00 염불명상; 19:30 자유시간; 22:00 취침;2일차;03:30 새벽예불;향공양;경행명상(희망자); 07:50 아침공양; 08:30 불곡산 포행명상(희망자); 10:00 사시예불(희망자); 10:50 마음챙김 명상;생각정리; 12:00 점심공양; 12:30 방사정리;회향', '수건, 개인 위생용품(치약,칫솔), 텀블러(정수기 사용), 양말(법당 출입시), 물병, 귀마개(선택), 두꺼운 외투(동절기)', 70000, '1박 2일', '2018-07-29', '2026-09-27', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '대광사(성남)'), '(자원봉사형) 내마음 주인되기 선명상 템플스테이', '체험형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '1박2일 ''내마음 주인되기'' 명상 템플스테이 프로그램을 마친 뒤, 점심공양 후 2시간 자원봉사(숙소 정리, 청소, 세탁 등)를 진행하는 봉사형 프로그램. 참가비를 50% 할인 받는 대신 봉사활동에 참여. 늦어도 오후 3시까지 마무리.', '1일차;13:30 방사 배정;절복 지급; 14:00 사찰 안내; 14:40 오리엔테이션;사찰 예절; 15:30 주지스님과의 일문일답; 16:30 나를 찾아 떠나는 108배;저녁예불; 18:00 저녁공양; 19:00 염불명상; 19:30 자유시간; 22:00 취침;2일차;03:30 새벽예불;향공양;경행명상(희망자); 07:50 아침공양; 08:30 불곡산 포행명상(희망자); 10:00 사시예불(희망자); 10:50 마음챙김 명상;생각정리; 12:00 점심공양; 이후 2시간 자원봉사(숙소정리, 청소, 세탁 등, 오후 3시까지)', '수건, 개인 위생용품(치약,칫솔), 텀블러(정수기 사용), 양말(법당 출입시), 물병, 귀마개(선택), 두꺼운 외투(동절기)', 35000, '1박 2일', '2021-12-25', '2026-09-20', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '대광사(성남)'), '(★한국소비자원 연계 대상자만 예약 가능) 마음 힐링 템플스테이', '체험형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '한국소비자원 연계에 따른 특정 대상자만 참여 가능한 ''내마음 주인되기'' 명상 템플스테이. 108배, 주지스님과의 일문일답, 염불명상, 새벽예불, 불곡산 포행명상, 마음챙김 명상 등으로 구성.', '1일차;13:30 방사배정;수련복 지급; 14:00 사찰 안내; 14:40 오리엔테이션;사찰 예절; 15:30 주지스님과의 일문일답; 16:30 나를 찾아 떠나는 108배;저녁예불; 18:00 저녁공양; 19:00 염불명상; 19:30 자유시간; 22:00 취침;2일차;03:30 새벽예불;향공양;경행명상(희망자); 07:50 아침공양; 08:30 불곡산 포행명상(희망자); 10:00 사시예불(희망자); 10:50 마음챙김 명상;생각정리; 12:00 점심공양;회향', '수건, 개인 위생용품(치약,칫솔), 텀블러(정수기 사용), 양말(법당 출입시), 물병, 귀마개(선택), 두꺼운 외투(동절기)', 50000, '1박 2일', '2026-04-04', '2026-12-27', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '능가사'), '[체험형 숙박] 온전히 나에게 집중하는 시간, 선명상 템플스테이', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/3/31/20260331042053830_1_S.webp', '부처님의 지혜가 담긴 호흡법 아나빠나사띠(Ānapānasati)로 오롯이 나를 만나는 시간. 스님의 안내에 따라 숨과 쉼에 집중하며 마음을 ''지금'' ''이곳''에 두어 걱정과 고민으로부터의 긴장감을 내려놓고 현재의 나를 돌볼 수 있도록 하는 명상 프로그램. 날씨나 상황에 따라 대법당/능엄루/편백숲 중 한 곳에서 선명상 진행. 추가 자율형 프로그램(컬러카드, 마음질문지)과 사찰정원/법성도 걷기명상, 편백숲 걷기명상 자율 진행 가능. 스님과의 차담, 타종체험은 희망자에 한해 진행.', '1일차;15:00-15:30 방사안내;16:00-17:00 사찰안내(선택);17:00-17:30 저녁공양;17:45-18:20 타종체험 및 저녁예불(선택);18:30-19:30 스님과 차담(선택);19:40-20:30 선명상 체험;21:00-21:30 취침;2일차;05:00-05:30 새벽예불(선택);06:00-06:30 아침공양;07:00-09:00 선명상 체험;11:00-11:30 숙소정리;11:40-12:10 점심공양;12:30-13:00 집으로', '세면도구(수건, 칫솔, 치약 등), 여벌 옷, 개인 물병, 운동화(편한신발) 등. 템플 조끼·바지 제공. 동절기에는 개인 방한용품 준비.', 100000, '1박 2일', '2026-08-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '능가사'), '[체험형 숙박] 바다명상 템플스테이 (매달 첫째주만 운영)', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/5/26/20260526103823322_13_S.webp', '고흥의 맑은 바다에서 마음을 비워내고 기운은 채워가는 시간. 능가사에서 차량으로 함께 이동하며 고흥의 풍경과 바다를 모두 경험. 남쪽바다의 맑은 기운을 느끼며 걷기명상 진행. 추가 자율형 프로그램(컬러카드, 마음질문지) 및 사찰정원/법성도, 편백숲 걷기명상 자율 진행.', '1일차;15:00-15:50 방사안내;16:00-16:50 사찰안내(선택);17:00-17:30 저녁공양;17:45-18:20 저녁예불 및 범종체험(선택);18:30-20:30 스님과의 차담(선택);21:00-00:00 취침;2일차;04:50-05:20 새벽예불(선택);06:00-06:20 아침공양;07:00-09:00 바다명상;09:30-10:50 자유시간(자율형 프로그램);11:00-11:30 소감문 작성 및 방사정리;11:40-12:10 점심공양;12:50-13:00 퇴실', '세면도구(수건, 칫솔, 치약 등), 개인 물병, 운동화(편한신발), 여벌옷 등. 템플 조끼·바지 제공. 동절기 개인 방한용품 준비.', 120000, '1박 2일', '2025-05-02', '2026-12-31', 20, FALSE, 0, 0),
@@ -743,7 +62,6 @@ INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, desc
     ((SELECT temple_id FROM TEMPLE WHERE name = '대원사(보성)'), '🧘9월 3주차 템플스테이 (1박2일) 「대원사 티벳박물관 죽음체험 프로그램」', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/5/28/20260528011832514_1_S.webp', '티벳불교의 『사자의 서』와 바르도(중음) 사상을 바탕으로 죽음 이후의 세계와 삶의 의미를 성찰하는 수행형 프로그램. 유언장 쓰기, 입관(관 체험), 바르도 명상 등 진행.', '1일차;14:00-14:30 도착, 방사배정과 일정안내;17:30-18:00 사찰예절 배우기;18:00-18:30 저녁공양;19:00-19:30 타종명상 및 저녁예불(자율);20:00-21:30 스님과 차담;21:30-05:00 취침;2일차;05:00-06:00 새벽예불과 108배 체험(자율);07:00-07:30 아침공양;08:00-09:00 스님과 함께하는 꽃과 나무이야기;09:00-12:00 티벳박물관 관람(죽음체험, 유서쓰기, 바르도명상);12:00-12:30 점심공양;12:30-13:00 흔적지우기', '개인 세면도구(비누/치약/칫솔), 수건, 여벌 옷(외투), 운동화, 양말, 물통이나 텀블러, 계절용 방한 의복, 드라이기 등', 70000, '1박 2일', '2026-09-01', '2026-09-30', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '대원사(보성)'), '🔔「9월 4주차 (1박 2일)프로그램 ''은하수 선생님과 함께하는 싱잉볼 & 공(Gong) 치유 명상''」', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/7/23/20260723024213786_1_S.webp', '싱잉볼과 공(Gong)의 깊은 울림과 진동을 통해 몸과 마음의 이완과 균형을 찾는 사운드 힐링 명상 프로그램.', '1일차;14:00-16:00 도착, 방사배정;16:00-17:00 티벳박물관 관람;17:30-18:00 사찰예절;일정안내;18:00-18:30 저녁공양;19:00-19:30 타종명상 및 저녁예불(자율);19:30-21:30 싱잉볼&공 명상;21:30-05:00 침묵수행 및 취침;2일차;05:00-06:00 새벽예불과 108배 체험(자율);07:00-07:30 아침공양;08:00-09:00 스님과 차담;09:30-11:00 싱잉볼&공 명상;11:00-12:00 어린왕자 선문학관 관람;12:00-12:30 점심공양;12:30-13:00 흔적지우기;후기작성', '개인 세면도구(비누/치약/칫솔), 수건, 여벌 옷(외투), 운동화, 양말, 물통이나 텀블러, 계절용 방한 의복, 드라이기 등', 70000, '1박 2일', '2026-09-01', '2026-09-30', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '대원사(보성)'), '(★한국소비자원 연계 대상자만 예약 가능) 마음 힐링 템플스테이', '휴식형', 'https://ts-cdn.com/ups/templePrg/2025/4/15/20250415053358729_4_S.webp', '한국불교문화사업단이 템플스테이를 통해 사회공익적 가치를 확대하고자 운영하는 할인 프로그램. 한국소비자원 연계에 따른 특정 대상자만 참여 가능.', '1일차;16:00-17:00 도착 및 일정안내;18:00-18:30 저녁공양;19:00-20:00 타종명상 및 저녁예불(자율);19:30-21:30 고요히 나를 만나기(자유시간);21:30-22:00 취침준비;2일차;05:00-07:00 새벽예불과 아침산책(자율);07:00-07:30 아침공양;08:00-12:00 새소리 들으며 산책과 명상(자유시간);12:00-12:30 점심공양;12:30-13:00 흔적지우기', '개인 세면도구(비누/치약/칫솔), 수건, 여벌 옷(외투), 운동화, 양말, 물통이나 텀블러, 계절용 방한 의복', 30000, '1박 2일', '2026-04-26', '2026-11-30', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '대원사(산청)'), '*지리산에서 하룻밤 * (체험형, 2인 이상일때) - (10명 이상 단체는 전화문의 먼저 해주세요 )', '체험형', 'https://ts-cdn.com/ups/old/RsImage/L_30407_S.webp', '나이·종교·성별·국적 관계없이 누구나 참여 가능한 체험형 프로그램. 체험형은 1박2일만 가능(2박 이상 원할 경우 1박은 체험형, 나머지는 휴식형으로 별도 예약). 스님과의 차담, 명상(3인 이상시 진행), 108염주 만들기, 계곡탐방 등 진행.', '1일차;14:50-15:20 도착, 방사배정 및 환복;15:20-16:00 사찰안내, 사찰예절 OT;16:00-17:00 스님과의 대화(차담);17:00-18:30 저녁공양 및 산사즐기기;18:00-18:30 저녁예불(자율);18:30-19:00 명상(3인 이상시 진행);19:00-19:30 저녁예불(자율);19:30-21:00 개인시간, 자유소등;2일차;04:30-05:00 새벽예불(자율);06:20-08:30 아침공양, 자유시간(일출명상);08:30-10:00 108염주만들기, 팔찌염주만들기;10:00-11:20 계곡탐방, 소감문쓰기 및 퇴실준비;11:20-12:20 점심공양, 하산', '개인세면용품(칫솔,치약,수건,개인물병,운동화). 샤워용품·드라이기 비치. 여름철 여벌옷·모자·선글라스·텀블러·양말, 겨울철 방한용품 추가 준비.', 75000, '1박 2일', '2026-06-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '대원사(산청)'), '나만을 위한 템플스테이(체험형,1인 참가자) -1인1실', '체험형', 'https://ts-cdn.com/ups/old/RsImage/L_24627_S.webp', '혼자 떠나고 싶을 때 떠나는 1인 전용 체험형 템플스테이(1인 1실). 체험형은 1박2일 예약만 가능(2박 이상 원할 경우 1박은 체험형, 나머지는 휴식형 최대 6일까지 별도 예약). 스님과의 차담, 108염주 만들기, 계곡산책 등 진행.', '1일차;14:50-15:20 방사배정 및 환복;15:20-16:00 사찰안내, 사찰예절 OT;16:00-17:00 스님과의 대화(차담);17:00-18:30 저녁공양, 자유시간;18:30-19:00 명상(3인 이상시 진행);19:00-19:30 저녁예불(선택);19:30-20:00 108배(선택);20:00-21:00 개인시간, 자유소등;2일차;04:30-05:00 새벽예불(자율);06:20-08:30 아침공양, 자유시간;08:30-09:30 108염주만들기, 팔찌염주만들기;09:30-10:30 계곡산책, 산사즐기기;11:20-12:00 점심공양;12:00-12:20 참가복 반납, 집으로', '개인세면용품(칫솔,치약,수건,개인물병,운동화). 샤워용품·드라이기 비치. 여름철 여벌옷·모자·선글라스·텀블러·양말, 겨울철 방한용품 추가 준비.', 95000, '1박 2일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '대흥사'), '[디디고 체험형 템플스테이] "스님~ 차담도 하고, 절이나 불교에 대해 알고 싶어요~"_1명 이상 진행(1박2일)', '체험형', 'https://ts-cdn.com/ups/old/RsImage/L_188_S.webp', '대흥사 디디고 템플스테이의 콘셉트는 두륜(새싹)의 이미지를 집결하여 오늘의 나를 디디고 내일의 희망을 갖자는 것으로, 예불·공양·울력 3근을 실시하며 저녁시간에 나의 핵심감정 찾기를 통해 현재의 감정상태를 알아보고 내려놓는 방법을 알아가는 프로그램. 새벽시간에는 오감명상을 통해 오롯이 나를 들여다본다. 기본 4인 1실이며 1인실 원할 경우 개별방사비 2만원 추가.', '1일차;15:00~16:00 접수 및 방사배정, 수련복 지급;16:00~17:00 사찰예절습의, 사찰안내;17:00~17:10 저녁공양;18:00~18:30 저녁예불;18:30~21:00 연꽃등 만들기;21:00~04:00 취침;2일차;04:00~04:15 기상,세면;04:15~05:00 새벽예불(자율);06:00 아침공양;07:00~10:00 북미륵암 산행;10:00~11:00 스님과 차담;11:00~11:30 소감문, 방사정리;11:30~11:40 점심공양, 회향', '개인 세면도구, 수건, 여벌옷, 운동화나 등산화(편한 신발), 양말, 개인(보온,보냉)물통, 렌턴, 모자, 우산. 겨울 참가시 보온용 외투, 내의, 방한용품 및 아이젠 등', 100000, '1박 2일', '2022-07-16', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '대흥사'), '[디디고 휴식형 템플스테이] "스님~ 오늘은 그냥 쉬고 싶습니다~"_1명 이상 진행(1박2일)_화장실, 샤워실, 매트, 에어컨 함께 있습니다^^', '휴식형', 'https://ts-cdn.com/ups/old/RsImage/L_23081_S.webp', '현대인들이 받는 스트레스를 고즈넉한 산사에서 수행자의 삶을 비추어 보면서 예불, 공양, 울력을 통해 감사와 공경의 마음을 가지며 온전한 쉼의 바다에서 자신을 비추어보고 쉴 수 있는 자율형 시간을 많이 주는 템플스테이. 화장실·샤워실·에어컨이 방 안에 갖추어져 있고 매트 2개 비치. 기본 4인 1실.', '1일차;15:00~16:00 도착,방사안내,수련복지급;16:30~17:00 사찰예절습의, 사찰안내;17:00~17:20 저녁공양;18:00~18:30 저녁예불;18:30~19:30 자율정진;21:00~04:00 취침;2일차;04:00~04:15 기상 및 세면;04:15~04:50 새벽예불;06:00 아침공양;08:00~09:00 숲길걷기(자율);11:00~11:30 소감문 쓰기, 정리정돈;11:30~12:30 점심공양 및 회향', '수건, 세면도구, 속옷, 양말, 갈아입을 옷, 조끼 안에 입을 티셔츠, 양말, 개인 물통(방에 물이 없음), 드시는 약, 렌턴/손전등, (우천 시) 우산. 동절기 방한용품(장갑, 목도리, 모자)', 80000, '1박 2일', '2022-06-30', '2026-12-31', 20, FALSE, 0, 0),
@@ -786,7 +104,6 @@ INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, desc
     ((SELECT temple_id FROM TEMPLE WHERE name = '무위사'), '[체험형] 무위사 내려놓음의 시간: 차 한잔, 한 호흡', '체험형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '천년 고찰 월출산 무위사에서 내 안의 고요를 찾아서 명상과 다담을 중심으로 함께하는 템플스테이. 월출산 바람결 명상과 따뜻한 차 한잔.', '1일차;15:00~16:00 방사배정, 사찰안내;16:00~17:00 웰컴티 타임(차담);17:00~18:00 저녁공양;18:00~19:00 저녁예불;19:00~21:00 참선(명상);21:00~05:00 취침;2일차;05:00~05:30 아침예불;05:30~07:00 자율정진(참선, 108배);07:00~08:00 아침공양;08:00~10:00 월출산 녹차밭 다녀오기;10:00~11:00 스님과 차담', '템플스테이 수련복(조끼, 바지) 지급, 퇴소시 반납. 양말(법당 출입시 필수), 개인 세면도구, 운동화(슬리퍼 금지), 개인 물병, 헤어드라이기, 환절기 겉옷. 현금 지참 권장(성전터미널 시외버스 현금만 가능).', 120000, '1박 2일', '2025-11-24', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '문수암'), '바보여행 - 지리산에서 하룻밤, 그저 바라보는 여행자로 살아보기', '휴식형', 'https://ts-cdn.com/ups/old/RsImage/L_10635_S.webp', '나는 바보행자입니다. 우리는 늘 생각을 만들어내고 과거와 미래를 오가며 분별망상을 만들어 냅니다. 무언가를 있는 그대로 보는 것이 진실된 수행의 목적입니다. 지리산 문수암에서 하룻밤, 그저 바라보는 수행자로 살아보는 프로그램.', '1일차;15:00~16:00 도착_방사배정_오리엔테이션;16:00~17:00 스님과의 첫만남;17:00~17:30 저녁공양;17:30~18:30 휴식;18:30~19:30 저녁예불;19:30~21:00 나를 찾아가는 108배 명상;21:00~00:00 취침;2일차;05:30~06:00 새벽예불(자율);07:00~07:30 아침공양;07:30~07:50 휴식;08:00~10:30 바보숲길 걷기명상;10:30~11:00 소감문 및 운력(방청소);11:00~11:30 점심공양;11:30~12:00 스님과의 차담후 회향', '세면도구(치약, 칫솔, 수건 등), 간편화(산행용 편한신발), 개인 물병, 우산(우비), 양말 등.', 80000, '1박 2일', '2025-04-30', '2026-12-01', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '문수암'), '바보여행(바라보기여행)', '체험형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '우리 생에서 가장 먼 여행은 머리에서 가슴까지의 여행이라고 합니다. 모든 것을 분별없이 받아들일 수 있는 낮은 곳으로의 여정으로 초대하는 바보여행 프로그램.', '1일차;15:00~15:30 도착, 숙소안내;15:30~16:00 오리엔테이션;16:00~16:50 스님과의 첫만남;17:00~17:30 저녁공양;18:30~19:30 저녁예불 & 108배;19:30~20:00 참선 및 명상;21:00~00:00 취침;2일차;05:00~05:30 새벽예불;07:00~07:30 아침공양;07:30~08:00 휴식;08:00~10:30 바보숲길 걷기명상;10:30~11:00 방정리 및 아름다운 마무리;11:00~11:30 점심공양;11:30~12:00 스님과의 차담 및 회향', '세면도구(치약, 칫솔, 수건 등), 간편화(산행용 편한신발), 개인 물병, 우산(우비), 양말 등. 동절기 따뜻한 의류.', 80000, '1박 2일', '2025-04-30', '2026-12-01', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '미륵대흥사'), '[2~3인실]물처럼 바람처럼(휴식형)', '휴식형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '자율적으로 몸과 마음의 휴식을 취하고 편안하게 자기 자신만의 시간을 갖는 프로그램입니다. 공양시간 외의 모든 일정은 자율 참석이며, 맑은 날 밤 별을 바라보는 것을 추천합니다.', '1일차;14:30~15:00 사찰도착 및 템플복수령, 방사배정;15:00~16:00 오리엔테이션 및 사찰안내;16:00~17:00 산책 또는 자율휴식;17:30~18:30 저녁공양;18:00~18:30 저녁예불(자율);18:30~21:00 자율수행 및 별보기, 숲길산책;21:00~04:30 소등 및 취침;2일차;04:30~05:00 기상 및 정리;05:00~05:50 아침예불(자율);06:30~07:30 아침공양 및 휴식;07:30~10:00 개인별 포행 및 미륵전 숲길 산책;10:00~11:10 사시예불(자율, 소감문작성);11:10~12:00 점심공양 및 회향과 자율퇴실', '세면도구, 수건(필참), 칫솔(필참), 운동화(편한 신발), 개인 물병 등. 템플복은 조끼와 바지만 지급. 환절기 방한용품, 등산화 권장.', 70000, '1박 2일', '2017-02-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '미륵대흥사'), '[2~3인실]힐링을 위한, 잠시 모든 것을 내려놓고(체험형)', '체험형', 'https://ts-cdn.com/ups/old/RsImage/L_25994_S.webp', '산사에서 들려오는 풍경소리를 벗삼아 스님과 대화하며 참 나를 찾아가는 프로그램입니다. 미륵전으로 물따라 바람따라 자연명상을 체험하고 108배 수행을 실참하여 스트레스를 내려놓고 행복한 삶을 찾아가도록 돕습니다.', '1일차;14:30~15:00 사찰도착 및 템플복 수령, 방사안내;15:00~16:00 오리엔테이션 및 사찰안내;16:00~17:00 자율휴식 또는 산책;17:30~18:10 저녁공양 및 휴식;18:30~19:00 저녁예불(자율);18:30~20:00 스님과의 차담;20:00~21:00 자율명상 및 별보기;21:00~04:30 소등 및 취침;2일차;04:30~05:00 기상 및 정리정돈;05:00~05:50 새벽예불(자율);06:30~07:30 아침공양 및 휴식;07:30~09:00 108배 수행 및 염주만들기;09:00~10:00 미륵전 숲길포행 또는 자율 휴식;10:00~11:10 사시예불(자율, 소감문 작성);11:10~12:00 점심공양 및 회향과 자율퇴실', '세면도구, 수건(필참), 칫솔(필참), 운동화(편한 신발), 개인 물병 등. 템플복은 조끼와 바지만 지급. 환절기 방한용품, 등산화 권장.', 90000, '1박 2일', '2025-02-01', '2030-01-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '미륵대흥사'), '[1인독실]물처럼 바람처럼(휴식형)', '휴식형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '자율적으로 몸과 마음의 휴식을 취하고 편안하게 자기 자신만의 시간을 갖는 프로그램입니다. 방사를 1인 혼자서 사용하며 공양시간 외 모든 일정은 자율 참석입니다.', '1일차;14:30~15:00 사찰도착 및 템플복수령, 방사배정;15:00~16:00 오리엔테이션 및 사찰안내;16:00~17:00 산책 또는 자율휴식;17:30~18:30 저녁공양;18:00~18:30 저녁예불(자율);18:30~21:00 자율수행 및 별보기, 숲길산책;21:00~04:30 소등 및 취침;2일차;04:30~05:00 기상 및 정리;05:00~05:50 아침예불(자율);06:30~07:30 아침공양 및 휴식;07:30~10:00 개인별 포행 및 미륵전 숲길 산책;10:00~11:10 사시예불(자율, 소감문작성);11:10~12:00 점심공양 및 회향과 자율퇴실', '세면도구, 수건(필참), 칫솔(필참), 운동화(편한 신발), 개인 물병 등. 템플복은 조끼와 바지만 지급. 환절기 방한용품, 등산화 권장.', 90000, '1박 2일', '2025-07-24', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '미륵대흥사'), '[1인독실]힐링을 위한,잠시 모든 것을 내려놓고(체험형)', '체험형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '산사에서 들려오는 풍경소리를 벗삼아 스님과 대화하며 참 나를 찾아가는 프로그램입니다. 방사를 1인 혼자 사용하며 미륵전으로 물따라 바람따라 자연명상을 체험하고 108배 수행을 실참합니다.', '1일차;14:30~15:00 사찰도착 및 템플복 수령, 방사안내;15:00~16:00 오리엔테이션 및 사찰안내;16:00~17:00 자율휴식 또는 산책;17:30~18:30 저녁공양 및 휴식;18:00~18:30 저녁예불(자율);18:30~20:00 스님과의 차담;20:00~21:00 자율명상 및 별보기;21:00~04:30 소등 및 취침;2일차;04:30~05:00 기상 및 정리정돈;05:00~05:50 새벽예불(자율);06:30~07:30 아침공양 및 휴식;07:30~09:00 108배 수행 및 염주만들기;09:00~10:00 미륵전 숲길포행 또는 자율 휴식;10:00~11:10 사시예불(자율, 소감문작성);11:10~12:00 점심공양 및 회향과 자율퇴실', '세면도구, 수건(필참), 칫솔(필참), 운동화(편한 신발), 개인 물병 등. 템플복은 조끼와 바지만 지급. 환절기 방한용품, 등산화 권장.', 110000, '1박 2일', '2025-07-24', '2026-12-31', 20, FALSE, 0, 0),
@@ -820,11 +137,9 @@ INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, desc
     ((SELECT temple_id FROM TEMPLE WHERE name = '보덕관음사'), '[선명상 체험형] 선으로 가는 첫걸음 1박2일', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/5/6/20260506104230653_1_S.webp', '선(禪)명상, 알아차림으로 마음의 평화를 찾는 여정. 운학산 둘레길 걷기 명상과 알아차림을 경험. 선명상 체험형 운영: 매월 2·4주 토~일(1박2일).', '1일차;15:00~16:00 입실(방사 배정);수련복 받기; 17:00~17:30 사찰 안내; 17:30~18:30 저녁공양; 18:30~20:00 선명상 배워보기와 나를 위한 108배; 20:00~21:00 주지스님과의 차담; 21:00~22:00 마무리;소등;2일차;05:00~05:30 새벽 예불(필수); 05:30~06:30 선명상 둘째날;마당에 눕고 앉고 명상 체험; 06:40~07:30 아침 공양; 09:00~10:00 나만의 합장주 만들기; 10:00~10:30 소감문 작성; 10:30 정리 후 퇴실', '양말(필수, 맨발 금지, 슬리퍼 금지, 크록스 가능), 개인물품, 상비약, 계절옷. 조끼와 바지 수련복 지급.', 80000, '1박 2일', '2026-01-15', '2026-10-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '보현사'), '(＃한국소비자원 연계 대상자만 예약 가능) 마음 힐링 템플스테이', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/4/15/20260415045222851_1_S.webp', '한국소비자원 - 기관연계 마음 힐링 템플스테이. 한국소비자원 연계에 따른 특정 대상자만 참여 가능한 프로그램입니다. 대관령 산 중턱, 굽이굽이 산길을 따라 고요한 자연의 소리만 들으며 한옥에서의 하루를 보내며 마음의 건강과 힐링을 챙기는 프로그램.', '1일차;14:00~14:30 어서오세요; 14:30~15:30 오리엔테이션; 15:30~17:30 나만의 여유 즐기기; 17:30~18:10 저녁공양; 18:10~18:30 저녁예불; 18:30~21:00 나만의 여유 즐기기; 21:00 소등 취침;2일차;04:30~05:00 새벽예불; 06:00~06:30 아침공양; 06:30~11:00 자유시간; 11:00 체크아웃', '개인물병, 양말, 수건, 세면도구', 30000, '1박 2일', '2026-04-15', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '보현사'), '(★ 체험형 ) 쉬º라º마 소중한 나, 행복찾기 休 & 休', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/8/13/20260813125310541_1_S.webp', '내 삶에 쫓기듯 살아온 나를 위해 잠시나마 여유를 가져보는 체험형 프로그램. 싱잉볼 명상, 문화유산 스템프투어 산책명상, 스님과의 차담, 108배·108염주 만들기 등을 체험. 체험형이지만 원할 경우 휴식 위주로도 참여 가능.', '1일차;14:00~14:30 방사안내;수련복 갈아입기; 14:30~15:00 싱잉볼 명상; 15:00~15:30 오리엔테이션; 15:30~17:00 문화유산 스템프투어 산책명상; 17:30~18:10 저녁공양; 18:10~18:30 저녁타종 및 저녁예불; 18:30~19:30 스님과의 차담; 19:30~21:00 느리게 가는 우체통;자유시간; 21:00 소등 및 취침;2일차;04:30 새벽예불; 06:00 아침공양; 06:30~08:00 나만의 여유 즐기기; 08:00~09:00 108배·108염주 만들기; 09:00~11:00 방사정리 후 퇴실', '수건, 세면도구(샴푸,바디워시,치약,칫솔 등), 양말, 여벌 옷, 편안한 신발, 개인 물병', 70000, '1박 2일', '2025-09-01', '2030-12-31', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '보현사'), '[♧2인이상 휴식형 ] 쉬엄쉬엄 쉬어가는 휴&휴', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/9/7/20260907030733685_1_S.webp', '프로그램이 없는 완전한 휴식을 위한 템플스테이. 산사에서의 하루, 자연이 주는 선물과 계절에 따라 변화하는 풍경 속에서 여유를 찾는 프로그램. 남녀 참가자는 각각 1인실 방사 사용 (부부는 방사 공동사용 가능, 증빙 필요).', '1일차;15:00~15:30 숙소배정;템플복 갈아입기; 15:30~16:00 오리엔테이션; 16:00~17:30 오직 ''나''만을 위한 시간; 17:30~18:10 저녁공양; 18:10~18:30 저녁예불; 18:30~21:00 느리게가는우체통;여유즐기기; 21:00 소등 취침;2일차;04:30~05:00 새벽예불; 05:00~06:00 자유산책; 06:00~06:30 아침공양; 06:30~11:00 여유즐기기; 11:00 체크아웃', '수건, 세면도구, 양말, 여벌 옷, 편안한 신발, 개인 물병', 60000, '1박 2일', '2020-09-02', '2027-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '보현사'), '{♧ 1인 휴식형 } 쉬엄쉬엄 쉬어가는 휴&휴', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/3/27/20260327120459020_1_S.webp', '1인(1인실사용) 참가자만 예약하는 코너. 프로그램이 없는 혼자만의 완전한 휴식을 위한 템플스테이. 타인과 방사 배정이 어려운 여건이라 1인실 별도 신청.', '1일차;15:00~15:30 숙소배정;템플복 갈아입기; 15:30~16:00 오리엔테이션; 16:00~17:30 오직 ''나''만을 위한 휴식; 17:30~18:10 저녁공양; 18:10~18:30 저녁예불; 18:30~21:00 느리게가는 우체통;여유즐기기; 21:00 소등 취침;2일차;04:30~05:00 새벽예불; 06:00~06:30 아침공양; 06:30~11:00 여유 즐기기;방사정리; 11:00 체크아웃', '수건, 세면도구, 양말, 여벌 옷, 편안한 신발, 개인 물병(보온 물병), 방한용품. 드라이기 없음.', 80000, '1박 2일', '2026-01-03', '2028-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '봉선사'), '비밀의 숲 선명상 + 연잎밥 체험(주말 체험형)', '체험형', 'https://ts-cdn.com/ups/templePrg/2025/8/20/20250820064444547_1_S.webp', '매주 주말에 운영하는 체험형 템플스테이. 봉선사 소개, 예불, 108배 명상 및 108염주만들기, 연잎밥 체험, 스님과의 차담, 사찰음식, ''유네스코 생물권보존지역'' 광릉숲 걷기명상.', '1일차;14:00~14:40 도착;방배정;수련복 지급; 15:00~16:00 OT 및 사찰 안내; 17:00~17:40 저녁 공양; 18:10~18:30 타종체험; 19:00~20:30 108배 명상 및 108염주 만들기; 21:00 소등 및 취침;2일차;05:20~06:00 새벽 예불; 06:00~06:30 아침 공양; 08:00~09:00 비밀의숲 산책 명상; 09:30~10:00 방 정리;수련복 반납; 10:00~11:20 스님과 티타임; 11:30~12:30 연잎밥 체험 및 시식', '개인 세면도구, 수건, 칫솔, 갈아입을 옷, 개인물병(보온병 추천), 운동화, 우천시 우산. 겨울철 아이젠/미끄럼방지 신발 권장.', 100000, '1박 2일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '봉선사'), '산사를 거닐다 (1인실)', '휴식형', 'https://ts-cdn.com/ups/templePrg/2025/8/20/20250820063759901_1_S.webp', '사찰의 주요 일정인 예불과 공양(식사)을 포함하여 모든 일정을 자율적으로 보낼 수 있는 휴식형 프로그램. 1인실 사용 희망자용 코너 (1인실은 참가비 할인 및 체험권 지원 불가).', '1일차;14:00~14:30 도착;방 배정;수련복 지급; 15:00~16:20 OT 및 사찰안내; 17:00~17:40 저녁공양; 18:30~19:00 저녁예불; 21:00 소등 및 취침;2일차;05:20~06:00 새벽예불; 06:00~06:30 아침공양; 08:00~09:00 스님과의 차담(희망시); 09:30~10:30 방 정리;수련복 반납; 10:30~11:00 퇴실', '개인 세면도구, 수건, 칫솔, 갈아입을 옷, 개인물병(보온병 추천), 운동화, 우천시 우산', 100000, '1박 2일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '봉선사'), '산사를 거닐다', '휴식형', 'https://ts-cdn.com/ups/templePrg/2025/8/19/20250819053905491_1_S.webp', '사찰의 주요 일정인 예불과 공양(식사)을 포함하여 모든 일정을 자율적으로 보낼 수 있는 휴식형 프로그램. 동행자끼리는 방을 같이 사용하며, 개인참가자는 타인과 방을 같이 사용(2인~5인).', '1일차;14:00~14:30 도착;방 배정;수련복 지급; 15:00~16:20 OT 및 사찰안내; 17:00~17:40 저녁공양; 18:30~19:00 저녁예불; 21:00 소등 및 취침;2일차;05:20~06:00 새벽예불; 06:00~06:30 아침공양; 08:00~09:00 스님과의 차담(희망시); 09:30~10:30 방정리;수련복 반납; 10:30~11:00 퇴실', '개인 세면도구, 수건, 칫솔, 갈아입을 옷, 개인물병(보온병 추천), 운동화, 우천시 우산', 70000, '1박 2일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '봉은사'), '차 한잔 템플스테이 [1박2일, 토~일]', '체험형', 'https://ts-cdn.com/ups/templePrg/2025/11/27/20251127035309202_1_S.webp', '사찰에서 1박 2일 동안, 맑은 목탁소리, 은은한 향, 건강한 사찰음식을 음미하며 ''지금, 여기'' ''내''가 느끼는 감각에 집중해보세요. 사찰 예절을 배울 수 있는 저녁 예불과 새벽 예불, 차 한잔의 여유 등 자유시간을 여유롭게 봉은사의 정취를 느껴보세요.', '1일차;13:50~14:15 방사 배정, 수련복 입기;14:15~15:00 오리엔테이션(사찰예절);15:00~16:00 사찰안내;16:00~17:00 휴식;17:00~17:40 저녁공양;17:40~18:20 사물관람·저녁예불;18:20~21:00 자유시간;21:00~04:00 소등 및 취침;2일차;04:00~04:20 (자율)기상 및 법당 이동;04:20~04:50 (자율)아침예불;04:50~06:00 휴식;06:30~07:00 (자율)아침공양;07:00~09:00 (자율)명상길 산책 및 휴식;09:00~10:00 차담의 시간;10:00~10:30 방사 청소·세탁물 정리·쓰레기 수거;10:30~11:00 설문지작성·기념품배부·회향', '수련복(조끼·바지) 제공, 양말·외투 등 여벌옷, 수건·치약·칫솔·샴푸 등 개인 세면용품(휴지·드라이어는 제공), 물병/텀블러, 우산, 개인 상비약, 개인 충전기', 100000, '1박 2일', '2025-05-10', '2026-10-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '봉인사'), '맑은 호수에서 명상하고 고민 상담 및 코칭', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/1/17/20260117115619261_1_S.webp', '유럽 오스트리아 호수처럼 맑은 호수 위에서 명상하고 상담하며 치유의 시간을 갖는 프로그램. 국가대표 멘탈 코칭·명상 코칭으로 알려진 강사가 개개인의 고민을 상담해준다.', '1일차;15:00~15:30 방사안내;16:00~17:00 명상과 고민 상담;17:00~17:30 저녁 식사;20:00~21:00 고구마 구워먹기;21:00~22:00 블랙 신라면 먹고 대화;2일차;06:20~06:50 아침 식사;09:00~09:30 아름다운 호수로 이동(20분);09:30~11:30 호수 바라보며 명상과 상담 코칭;12:00~13:00 점심 식사', '개인 세면도구(비누/치약/칫솔 등), 수건(필수), 여벌 옷, 모자, 개인물품', 100000, '1박 2일', '2026-01-20', '2026-10-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '봉인사'), '힐링의 숲(광릉 수목원)에서 선명상 템플스테이', '체험형', 'https://ts-cdn.com/ups/templePrg/2025/4/23/20250423041810243_1_S.webp', '유네스코 힐링 숲인 광릉수목원에서 명상을 통해 자연과 신체의 조화를 경험하며 휴식과 평온함을 제공하는 프로그램. 전나무 숲길을 걸으며 경락센터와의 조화를 통한 힐링을 안내한다.', '1일차;14:30~15:00 접수 및 방사배정;15:00~15:30 사찰 안내 및 자비 명상;15:30~16:30 전망 좋은 산길 산책(here and now 명상);17:30~18:00 저녁 공양;19:00~20:30 스님과의 차담;2일차;04:00~04:30 기상(새벽 예불 자율 참여);06:30~07:00 아침 공양;08:00~08:30 광릉 수목원 이동;08:30~11:20 광릉 수목원 숲속 힐링 명상;12:00~12:30 점심 공양;12:30~14:00 방사 청소 및 귀가', '개인 세면도구, 수건(필수), 여벌 옷(외투), 운동화(편한 신발), 덧버선(새벽예불시), 개인 물통, 방한용품 등', 110000, '1박 2일', '2025-09-06', '2026-11-29', 20, FALSE, 0, 0),
@@ -855,7 +170,6 @@ INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, desc
     ((SELECT temple_id FROM TEMPLE WHERE name = '석종사'), '[지역연계형] 충주 반값여행 연계 - 충주 호암지 생태공원을 거닐다', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/5/26/20260526040348727_1_S.webp', '석종사 템플스테이에서 충주 반값여행과 연계한 1박2일 체험형 프로그램. ''5분만 바라봐'' 체험 프로그램과 충주에서의 먹거리, 볼거리를 즐길 수 있는 기회.', '1일차;15:00~15:30 접수 및 방사안내;15:30~17:10 용서자비 사경;사찰안내;17:20~17:50 저녁공양;18:30~19:20 사물(타종)관람;저녁예불;19:30~20:20 참나를 찾는 108배(단주팔찌만들기);21:00~03:20 취침;2일차;03:20~03:50 기상;세면;03:50~04:20 새벽예불;04:30~05:50 휴식;자율시간;06:00~06:30 아침공양;06:30~07:30 스님과의 차담;차명상;07:30~09:00 자율시간, 소감문 작성;숙소정리;09:00~11:00 호암지 생태공원 탐방;마무리', '편한 복장(여벌옷 필수), 세면도구, 양말, 개인 물병, 모자, 편안한 운동화, 어르신 돋보기 안경(사경시). 동절기 개인 방한용품.', 80000, '1박 2일', '2026-06-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '석종사'), '행복으로 가는 선명상 템플스테이', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/1/7/20260107023826987_1_S.webp', '지금 여기 지금 이순간, 나는 깨어 있는가? 나는 누구인가? 참선과 명상, 혜국 큰스님 법문(또는 선명상)을 통해 스스로 깨어있음을 자각하는 시간.', '1일차;15:00~15:30 접수 및 방사안내;15:30~17:10 용서자비 사경;사찰안내;선명상 소개;17:20~17:50 저녁공양;포행;18:30~19:20 사물명상;저녁예불;19:20~20:10 법문 및 강의(휴강시 선명상);21:00~03:20 취침;2일차;03:20~03:45 기상;세면;03:50~04:10 새벽예불;04:10~04:20 걷기명상;04:30~05:30 선명상(요가명상);06:00~07:50 아침공양;포행;09:00~10:00 선명상(좌선명상);10:00~10:30 느낌 나누기;소감문 작성;10:30~11:00 숙소정리;퇴실', '편한 복장(여벌옷 필수), 세면도구, 양말, 개인 물병, 모자, 편안한 운동화, 어르신 돋보기 안경(사경시). 하절기 벌레약/모기약, 동절기 방한용품.', 80000, '1박 2일', '2025-07-31', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '석종사'), '5분만 바라봐(1박2일, 주말 체험형)', '체험형', 'https://ts-cdn.com/ups/old/RsImage/L_29250_S.webp', '지금 여기 지금 이순간, 나는 깨어 있는가? ''5분만 바라봐'' 체험 프로그램을 통해 스스로 깨어있고 존재를 자각하는 시간. 단체가 아닌 개인/소규모가 주말에 이용하는 프로그램.', '1일차;15:00~15:30 접수 및 방사안내;15:30~17:10 용서자비 사경;사찰안내;17:20~17:50 저녁공양;18:30~19:20 사물관람;저녁예불;19:30~20:20 참나를 찾는 108배(단주팔찌만들기);21:00~03:20 취침;2일차;03:50~04:20 새벽예불;04:30~05:50 휴식;자율시간;06:00~06:20 아침공양;06:30~08:20 화엄공원 포행;휴식;08:30~09:30 차명상;스님과의 차담;09:30~11:00 소감문 작성;숙소정리 및 퇴실', '편한 복장(여벌옷 필수), 세면도구, 양말, 개인 물병, 모자, 편안한 운동화, 어르신 돋보기 안경(사경시). 동절기 방한용품.', 80000, '1박 2일', '2024-06-25', '2026-12-31', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '석종사'), '5분만 바라봐(1박2일, 10인 이상 단체 체험형)', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/1/7/20260107025717149_2_S.webp', '지금 여기 지금 이순간, 나는 깨어 있는가? ''5분만 바라봐'' 체험 프로그램의 10인 이상 단체용 버전. 단체 접수 후 담당자와 협의하여 세부 진행.', '1일차;15:00~15:30 접수 및 방사안내;15:30~17:10 용서자비 사경;사찰안내;17:20~17:50 저녁공양;18:30~19:20 사물관람;저녁예불;19:30~20:20 참나를 찾는 108배(단주팔찌만들기);21:00~03:20 취침;2일차;03:20~03:50 기상;세면;04:30~05:50 휴식;자율시간;06:00~06:20 아침공양;06:30~08:20 화엄공원 포행;휴식;08:30~09:30 차명상;스님과의 차담;09:30~11:00 소감문 작성;숙소정리 및 퇴실', '편한 복장(여벌옷 필수), 세면도구, 양말, 개인 물병, 모자, 편안한 운동화, 어르신 돋보기 안경(사경시). 동절기 방한용품.', 80000, '1박 2일', '2024-06-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '석종사'), '따오기(따뜻한 오늘의 기분) - 휴식형(1박2일, 주중에 운영)', '휴식형', 'https://ts-cdn.com/ups/old/RsImage/L_28597_S.webp', '내 안의 나를 찾아 떠나는 여행. 예불 및 공양 시간 외에는 자유롭게 쉴 수 있는 휴식형 프로그램(참선/명상/차담 미포함). 주중 운영.', '1일차;15:00~15:30 접수;방사안내;15:30~17:10 용서자비작성;사찰안내;17:20~17:50 저녁공양;18:30~19:20 사물관람;저녁예불;19:30~21:00 자율시간;21:00~03:20 취침;2일차;03:20~03:50 기상;세면;03:50~04:20 새벽예불;04:30~06:00 자율시간;06:00~06:20 아침공양;06:20~09:00 화엄공원 포행;자율시간;09:00~10:00 소감문 작성;10:00~11:00 숙소정리;퇴실', '편한 복장(여벌옷 필수), 세면도구, 양말, 개인 물병, 모자, 편안한 운동화, 어르신 돋보기 안경(사경시). 동절기 방한용품.', 70000, '1박 2일', '2024-06-15', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '선본사'), '달아 달아 밝은 달아 갓바위 부처님과 놀던 달아 ~~~ 추석 템플스테이', '체험형', 'https://ts-cdn.com/ups/old/RsImage/L_19184_S.webp', '추석 명절을 팔공산의 정기가 가득한 선본사 갓바위에서 달맞이하는 프로그램. 갓바위 부처님을 친견하며 자유로이 산책, 독서, 기도, 산행하는 템플스테이.', '1일차;15:00~15:40 고불식;15:40~16:20 사찰안내 및 팔상성도 벽화 설명;17:00~17:30 저녁공양;18:00~18:10 사물 관람;18:10~20:00 갓바위 부처님 친견(자율);21:00~04:10 취침;2일차;04:30~04:50 기상;04:50~05:05 새벽예불;05:05~05:55 108배;06:00~06:20 고요함 찾기(선명상);06:20~07:00 차담;07:10~07:40 아침공양;08:00~09:00 3층 석탑 다녀오기;09:00~10:00 방사 정리;10:00~11:00 퇴실', '수건, 칫솔, 텀블러, 속옷, 바람막이, 양말, 여벌옷, 우천시 우비/우산/슬리퍼, 운동화(산행용), 등산용 스틱, 개인상비약 등. 참가복(여름용) 지급.', 60000, '1박 2일', '2026-08-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '선본사'), '공익 (할인) - 대학생을 위한 선명상 템플스테이 - 전국 대학생 대상', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/9/1/20260901094013118_1_S.webp', '대학생을 위한 할인 선명상 템플스테이. 팔공산의 자연환경과 갓바위 부처님을 가까이 친견하며 선명상 전문 스님과 함께 명상, 108배, 걷기명상 등을 체험.', '1일차;14:30~14:50 방사배정 및 수련복 지급;15:00~15:20 고불식;15:20~16:00 사찰안내;16:30~17:00 저녁공양;17:20~19:20 갓바위 부처님 참배;19:30~20:30 명상;20:40~21:30 취침준비;21:30~05:00 취침;2일차;새벽예불(하;동절기 시간 다름), 108배와 염주 만들기;새벽 선명상;스님과 차담;07:10~07:40 아침공양;08:00~10:00 3층 석탑 또는 갓바위 다녀오기(선택);10:30~10:50 방사정리;11:00 퇴실', '수건, 칫솔, 텀블러, 속옷, 바람막이, 양말, 여벌옷, 우의/우산, 운동화(산행용), 등산용 스틱, 무릎보호대, 방한용품(마스크/핫팩/귀도리/장갑/목도리). 참가복(겨울용) 지급.', 50000, '1박 2일', '2025-01-01', '2027-12-31', 20, FALSE, 0, 0),
@@ -887,9 +201,7 @@ INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, desc
     ((SELECT temple_id FROM TEMPLE WHERE name = '수국사'), '나에게 주는 선물1박2일', '휴식형', 'https://ts-cdn.com/ups/old/RsImage/L_25876_S.webp', '프로그램이 없는 1박2일 자율형 휴식 템플스테이. 복잡한 도심을 떠나 사찰에서 몸과 마음을 내려놓는 시간. 평일과 주말 예약 가능, 2박 이상은 전화 문의.', '1일차;14:00~14:30 입소(종무소-수련복 환복); 15:00~15:30 사찰 예절 및 도량 안내; 16:00~17:00 길따라 마음따라(자율산책-봉산둘레길); 17:00~17:20 저녁공양(먹기명상); 17:30~21:00 자유시간(별빛 명상); 21:00~00:00 취침시간;2일차;05:00~05:30 새벽예불(황금법당,자율참석); 07:00~07:20 아침공양(먹기명상); 07:30~10:00 자유시간(내려놓기); 10:00~10:30 방사정리 및 일상으로', '편한신발(운동화 등), 편한 복장, 개인물통, 수건(비치되지 않음, 샴푸 미제공)', 70000, '1박 2일', '2025-06-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '수덕사'), '산사에서 한가위 맞이 템플스테이에 여러분을 초대 합니다.', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/8/23/20260823035750186_1_S.webp', '고즈넉한 산사에서 한가위 명절을 맞이하는 템플스테이. 보름달을 보며 소원을 빌고 성불도 게임으로 행복을 만들어가는 프로그램.', '1일차;14:30~15:00 도착 및 숙소안내; 15:20~16:00 사찰예절;안내 OT; 16:00~17:00 스님과 차담; 17:25~18:00 저녁공양; 18:25~19:00 사물관람; 저녁예불; 19:10~21:00 성불도 게임; 21:00~03:30 세면 및 취침;2일차;03:30~04:10 새벽예불; 05:00~05:40 스님과 함께 합동차례; 05:45~06:20 아침공양; 06:30~08:00 정혜사 숲길 산책(자율); 10:00~10:30 퇴실; 10:00~11:00 합동차례; 11:25~12:00 점심공양', '개인 세면도구, 수건, 트레킹화(미끄러지지 않는 신발), 개인 물병(텀블러), 모자, 양말', 80000, '1박 2일', '2026-09-01', '2026-09-30', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '수덕사'), '''일없는일''(휴식형) - 1인실 (일~금)', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/4/12/20260412112129722_1_S.webp', '주중 1인실 사용을 위한 휴식형 템플스테이. 입실 오후 2시30분~3시, 퇴실 10시30분. 미성년자·80세 이상 고령자는 보호자 동반시 신청 가능, 5세 이하 아동은 참가 불가.', '1일차;14:30~15:00 입실&방사안내;템플복받기; 15:30~16:10 오리엔테이션; 17:30~18:00 저녁공양; 18:30~19:00 예불; 19:00~21:00 자율 및 취침;2일차;03:25~04:00 예불; 04:10~05:00 싱잉볼 명상과 참선; 05:45~06:20 아침공양; 06:20~10:00 자율; 10:00~10:30 방사정리 및 퇴실; 11:25~12:00 점심공양', '개인 세면도구, 수건, 트레킹화(미끄러지지 않는 신발), 개인 물병(텀블러)', 90000, '1박 2일', '2026-04-13', '2026-10-31', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '수덕사'), '''일없는일''(휴식형) - 2인이상 예약시 (일~금)', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/4/12/20260412120835044_1_S.webp', '주중 2인실 이상 사용을 위한 휴식형 템플스테이. 방사배정시 2~6인까지 다인실 사용 가능. 입실 오후 2시30분~3시, 퇴실 10시30분.', '1일차;14:30~15:00 입실&방사안내;템플복받기; 15:30~16:10 오리엔테이션; 17:30~18:00 저녁공양; 18:30~19:00 예불; 19:00~21:00 자율;2일차;03:25~04:10 예불; 04:10~05:00 싱잉볼 명상과 참선; 05:45~06:20 아침공양; 06:20~10:00 자율; 10:00~10:30 방사정리 및 퇴실; 11:25~12:00 점심공양', '개인 세면도구, 수건, 트레킹화(미끄러지지 않는 신발), 개인 물병(텀블러)', 70000, '1박 2일', '2021-01-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '수덕사'), '''길없는길''(체험형) - 1인실 (토~일)', '체험형', 'https://ts-cdn.com/ups/old/RsImage/L_17703_S.webp', '주말 1인실 사용을 위한 체험형 템플스테이. 입실 오후 2시30분~3시, 퇴실 10시30분.', '1일차;14:30~15:00 입실&방사안내;템플복받기; 15:30~16:10 오리엔테이션; 16:10~17:00 스님과의 차담; 17:25~18:00 저녁공양; 18:30~19:00 예불; 19:00~21:00 자율 및 취침;2일차;03:25~04:00 예불; 04:10~05:00 싱잉볼 명상과 참선; 05:45~06:20 아침공양; 06:20~08:00 정혜사 탐방; 09:00~10:00 프로그램; 10:00~10:30 숙소정리 및 퇴실; 11:25~12:00 점심공양', '개인 세면도구, 수건, 트레킹화(미끄러지지 않는 신발), 개인 물병(텀블러)', 100000, '1박 2일', '2023-07-01', '2026-12-31', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '수덕사'), '''길없는길''(체험형) - 2인이상 예약시 (토~일)', '체험형', 'https://ts-cdn.com/ups/old/RsImage/L_2318_S.webp', '주말 2인실 이상 사용을 위한 체험형 템플스테이. 일행끼리 같은 방사로 배정되며 방사배정시 2~6인까지 다인실 사용 가능. 입실 오후 2시30분~3시, 퇴실 10시30분.', '1일차;14:30~15:00 입실&방사안내;템플복받기; 15:30~16:10 오리엔테이션; 16:10~17:00 스님과의 차담; 17:25~18:00 저녁공양; 18:30~19:00 저녁예불; 19:00~21:00 자율 및 취침;2일차;03:25~04:00 예불; 04:10~05:00 싱잉볼 명상과 참선; 05:45~06:20 아침공양; 06:20~08:30 정혜사; 숲길 산책(자율); 09:00~10:00 걷기 명상; 10:00~10:30 숙소정리 및 퇴실; 11:25~12:00 점심공양', '개인 세면도구, 수건, 트레킹화(미끄러지지 않는 신발), 개인 물병(텀블러)', 80000, '1박 2일', '2025-02-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '수덕사'), '(★한국소비자원 연계 대상자만 예약 가능) 마음 힐링 템플스테이', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/4/25/20260425102229472_1_S.webp', '한국소비자원 연계에 따른 특정 대상자만 참여 가능한 프로그램 없는 휴식형 템플스테이. 예불 및 공양은 자율.', '1일차;14:30~15:00 입실&방사안내;템플복 받기; 15:30~16:00 오리엔테이션; 17:30~18:00 저녁공양; 18:30~19:00 저녁예불; 19:00~21:00 자율 및 취침;2일차;03:25~04:00 새벽 예불; 05:45~06:20 아침공양; 06:20~10:30 자율 및 퇴실; 11:25~12:00 점심공양', '개인 세면도구, 수건, 트레킹화(미끄러지지 않는 신발), 개인 물병(텀블러)', 50000, '1박 2일', '2026-04-01', '2026-11-30', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '수원사'), '(★한국소비자원 연계 대상자만 예약 가능) 마음 힐링 템플스테이', '휴식형', 'https://ts-cdn.com/ups/templePrg/2025/10/4/20251004092431300_1_S.webp', '한국소비자원 연계에 따른 특정 대상자만 참여 가능한 템플스테이. 스님과 함께 차 한잔 나누며 휴식과 새로운 열정을 담아가는 프로그램.', '1일차;15:00~15:30 등록 및 접수; 16:10~17:00 사찰안내 및 3배 체험; 17:00~17:50 저녁공양; 18:00~18:20 저녁예불; 18:20~19:00 나만의 108염주 만들기; 19:00~21:00 휴식; 21:00~22:00 소등 및 취침;2일차;05:00~06:00 새벽예불(자율); 07:00~08:00 아침공양; 08:30~10:00 스님과의 차담; 10:00~10:50 소감문 작성 및 청소; 10:50~11:00 퇴소', '편한 옷과 개인 세면도구, 수건, 긴바지, 편안한 신발, 양말, 개인물병, 우산 등', 50000, '1박 2일', '2026-05-01', '2026-10-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '수원사'), '고요속에 나를 만나다. 휴식형', '휴식형', 'https://ts-cdn.com/ups/templePrg/2025/10/5/20251005125337373_1_S.webp', '사찰에 머물면서 몸과 마음의 휴식을 위해 편안하고 자율적인 시간을 갖는 휴식형 템플스테이. 모든 프로그램 참여는 자율.', '1일차;15:00~15:30 사찰도착 및 접수; 16:00~17:00 사찰안내 및 사찰습의; 18:00~18:15 저녁 예불; 18:20~19:00 나만의 108염주 만들기(자율); 19:00~21:00 휴식; 21:00~22:00 소등 및 취침;2일차;07:00~08:00 아침 공양; 08:30~10:30 스님과의 차담; 10:30~11:00 숙소정리 및 소감문 작성; 11:00~11:30 퇴소', '개인 세면도구(수건, 칫솔 필수), 긴바지, 편안한 신발, 양말, 개인 물병, 우산 등', 80000, '1박 2일', '2025-12-09', '2026-12-27', 20, FALSE, 0, 0),
@@ -915,14 +227,12 @@ INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, desc
     ((SELECT temple_id FROM TEMPLE WHERE name = '쌍계사(하동)'), '대학생 30% 특별할인 템플스테이', '휴식형', 'https://ts-cdn.com/ups/old/RsImage/L_30438_S.webp', '화개 벚꽃 십리길을 지나, 화개천 계곡을 따라 걸으면 어느덧 최치원 선생이 새겨놓은 쌍계사 석문에 들어서게 된다. 쳇바퀴 도는 듯 반복되는 일상은 뒤로 한 발자국 물러나고, 또 다른 나와의 여행이 시작된다.', '1일차;15:00~16:00 도착 및 방사배정;16:00~16:30 오리엔테이션;16:30~17:00 자유시간;17:00~17:30 저녁공양;18:00~18:45 사물의식 및 저녁예불(자율);19:00~20:30 스님과의 차담(자율);2일차;04:00~04:20 일어나기(자율);04:20~05:00 새벽예불(자율);06:00~06:30 아침공양(자율);06:30~10:30 자율산행 및 휴식;10:30~11:00 방사 정리 및 퇴실', '개인 세면도구(치약, 샴푸), 수건, 개인 속옷, 양말, 여벌옷, 방한용품(모자,장갑), 방한복, 우산(우천시), 운동화, 개인 비상약 등', 42000, '1박 2일', '2025-01-09', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '쌍계사(하동)'), '[체험형] 야생차 티클래스(티소믈리에 템플스테이)', '체험형', 'https://ts-cdn.com/ups/old/RsImage/L_30739_S.webp', '차의 본고장 하동에서 즐기는 야생차 티클래스. 온도에 따른 차의 맛과 제다 방법에 따른 차의 다른 맛 보기 체험, 차를 통한 명상을 통해 특별한 시간을 가지시기 바랍니다.', '1일차;13:00~13:30 도착 및 방사배정;13:30~14:00 티클래스 교육장 이동;14:00~15:30 제다 방법에 따른 차의 다른맛 보기 체험과 명상;16:00~16:30 오리엔테이션;16:30~17:00 자유시간;17:00~17:30 저녁공양;18:00~18:45 사물의식 및 저녁예불(자율);19:00~20:30 스님과의 차담(자율);2일차;04:00~04:20 일어나기(자율);04:20~05:00 새벽예불(자율);06:00~06:30 아침공양(자율);06:30~10:30 자율산행 및 휴식;10:30~11:00 방사정리 및 퇴실', '개인세면도구(샴푸,치솔,수건), 운동화, 여벌티 및 바지(속옷), 우산(우천시), 필기도구(노트,연필)', 90000, '1박 2일', '2024-07-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '쌍계사(하동)'), '[휴식형] 혼자 즐기는 템플스테이(1인1실)', '휴식형', 'https://ts-cdn.com/ups/old/RsImage/L_11746_S.webp', '혼자 즐기는 템플스테이. 함께라는 사회를 가족들로부터 배워왔지만, 그래도 가끔은 혼자이고 싶어 - 함께여도 좋고 혼자여도 좋은 여행, 혼자여서 더 좋은 여행을 쌍계사 템플스테이에서 만들어 보자.', '1일차;15:00~16:00 도착 및 방배정;16:00~16:30 오리엔테이션;16:30~17:00 자유시간;17:00~17:30 저녁공양;18:00~18:45 사물의식 및 저녁예불(자율);19:00~20:30 스님과의 차담(자율);2일차;04:00~04:20 일어나기(자율);04:20~05:00 새벽예불(자율);06:00~06:30 아침공양(자율);06:30~10:30 자율산행 및 휴식;10:30~11:00 방사정리 및 퇴실', '개인 세면도구(치약,칫솔,샴푸,수건), 물병(개인텀블러), 개인 속옷과 여벌 옷(환절기 외투), 양말, 우산, 운동화, 개인 비상약, 불일폭포 산행 시 가벼운 등산화', 80000, '1박 2일', '2023-02-20', '2027-12-31', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '쌍계사(하동)'), '[휴식형] ''수류화개'' 물흐르고 꽃피네(2인이상)', '휴식형', 'https://ts-cdn.com/ups/old/RsImage/L_16994_S.webp', '수류화개는 ''정좌처 다반향초, 묘용 시 수류화개''에서 따온 말로 ''선다일여''의 경지를 표현한 것입니다. 지리산 맑은 물이 양쪽 계곡으로 흐르는 쌍계사에서 일상에 지친 심신을 쉬고 부처님의 가르침을 느껴보세요.', '1일차;15:00~16:00 도착 및 방사 배정;16:00~16:30 오리엔테이션;16:30~17:00 자유시간;17:00~17:30 저녁공양(자율);18:00~18:45 사물의식 및 저녁예불(자율);19:00~20:30 스님과의 차담(자율);2일차;04:00~04:20 일어나기(자율);04:20~05:00 새벽예불(자율);06:00~06:30 아침공양(자율);06:30~10:30 자율산행 및 휴식;10:30~11:00 방사정리 및 퇴실', '개인 세면도구(치약,칫솔,샴푸,수건), 물병(개인텀블러), 개인 속옷과 여벌 옷, 양말, 우산, 운동화, 개인 비상약, 불일폭포 산행 시 가벼운 등산화', 60000, '1박 2일', '2021-01-01', '2027-08-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '쌍봉사'), '사찰 일상 체험 1박2일', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/7/8/20260708052435774_1_S.webp', '나를 향한 한 걸음 쌍봉사 템플스테이', '1일차;15:00~15:30 쌍봉사 도착, 방사안내, 수련복 지급;16:30~17:00 사찰안내;17:00~17:10 저녁공양;18:00~18:30 저녁예불(범종 타종 체험);18:30~19:30 자율 정진;21:00~04:10 취침;2일차;04:10~04:20 기상;04:30~05:30 새벽예불;07:00~07:10 아침공양;09:00~10:00 스님과 차담;10:00~10:30 소감문 쓰기, 만족도 조사;11:50~12:00 점심공양 후 회향', '개인 세면도구(칫솔,치약,샴푸,바디워시 등), 물병, 운동화, 따뜻한 옷, 간편복, 슬리퍼, 헤어드라이어, 우산 등', 80000, '1박 2일', '2026-07-08', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '약천사'), '휴식 나를 돌아보는 시간', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/6/29/20260629095730358_1_S.webp', '일상에 지친 현대인들이 사찰에 머물면서 휴식을 취하고 자신을 돌아보며 진정한 자아를 찾아보는 프로그램. 휴식형은 자율적으로 참여하고 쉬어가는 프로그램입니다.', '1일차;16:00~16:30 접수 및 방사안내;16:30~17:00 사찰예절 및 사찰안내(선택);17:50~18:20 저녁공양;18:00~18:30 저녁예불(자율);18:50~19:50 황금노을 요트체험(자율, 추가비용);20:00~20:30 달포행(자율);20:30~21:00 세면, 취침준비;2일차;05:00~05:20 기상,세면;05:20~06:00 새벽예불 및 명상(필수 참가);06:00~07:20 도량 산책(자율);07:30~08:10 아침공양;10:00~11:30 사시 예불(자율);11:50~12:20 점심공양;12:20~12:30 정리정돈후 퇴실', '개인 세면도구(칫솔,치약,샴푸 등), 수건, 동절기 방한용품, 하절기 반팔티셔츠/양말 (참가복은 사찰 제공, 방에 드라이기 구비)', 50000, '1박 2일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '약천사'), '비움으로 행복 채우기', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/6/29/20260629103839667_1_S.webp', '체험형 프로그램으로 불교 문화체험과 불교 수행체험의 다양한 체험을 통해 자신을 성찰하는 소중한 1박2일이 될 것입니다.', '1일차;15:00~15:30 접수 및 방사안내;15:30~16:30 사찰안내;16:30~17:50 108배 체험;17:50~18:20 저녁공양;18:00~18:30 저녁예불;18:50~19:50 황금노을 요트체험(자율, 추가비용);20:00~20:30 달빛포행;20:30~21:00 세면및 취침;2일차;05:00~05:20 기상,세면;05:20~05:30 범종 타종 명상;05:20~06:00 새벽예불;06:20~07:20 무념무상 일출런닝(자율, 3km);07:30~08:10 아침공양;09:00~10:00 108염주체험, 소감문 작성;10:00~11:30 사시예불;11:50~12:20 점심공양;12:20~12:30 정리정돈,퇴실', '개인 세면도구(칫솔,치약,샴푸 등), 수건, 동절기 방한용품, 하절기 반팔티셔츠/양말 (참가복은 사찰 제공, 방에 드라이기 구비)', 70000, '1박 2일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '약천사'), '참나 를 찾아가는 행복한 선명상', '체험형', 'https://ts-cdn.com/ups/templePrg/2025/7/22/20250722025012954_1_S.webp', '약천사 선 명상은 아름다운 자연속에서 일상에 지친 현대인들에게 참다운 자신을 찾아가는 길을 제시함과 동시에 참가자들의 오감을 만족시키는 힐링명상이 될 것입니다.', '1일차;16:00~17:20 접수,프로그램안내,사찰예절;17:50~18:20 저녁공양 및 휴식;19:00~20:00 이완명상(몸감각이완,호흡이완,바디스캔이완);20:00~20:30 호흡관찰명상;20:30~21:00 달빛포행(자율);21:00~00:00 세안및 취침;2일차;05:00~05:10 기상,도량석;05:20~05:30 소리명상(범종);05:30~07:20 새벽예불;07:30~08:10 아침공양;08:00~11:30 바다와 함께하는 걷기명상;11:50~12:20 점심공양;12:30~ 아름다운 마무리, 퇴실', '개인세안도구, 수건, 편한신발, 양말 등', 120000, '1박 2일', '2025-11-01', '2026-10-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '연곡사'), '주지스님과함께 법화경 철야독송', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/4/4/20260404052238932_1_S.webp', '지리산 피아골 천년고찰 청정기도 도량 연곡사에서 주지스님이 집전하시는 철야기도를 체험해보고 부처님의 가피를 받아보는 프로그램. 밤 9시부터 새벽 3시40분까지 대적광전에서 법화경 철야독송을 진행한다.', '1일차;15:00~16:00 방사안내;복장지급;도량안내; 17:00~17:30 저녁공양; 18:00~19:00 저녁예불; 21:00 법화경 독송 시작(다음날 4시까지 이어짐);2일차;03:00~03:40 법화경독송 마무리; 05:00~06:00 새벽예불; 07:00 아침공양; 08:00~09:00 주지스님과 차담(자율); 11:00 퇴실', '개인 세면도구, 수건, 칫솔, 개인물병 (각 방사마다 샤워시설·에어컨·전기포트·드라이기 완비)', 100000, '1박 2일', '2026-04-04', '2027-04-24', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '연곡사'), '마음쉬는 피아골 [1인 1실]', '휴식형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '고요히 자신을 돌아보며 쌓였던 스트레스와 부담감을 덜어내고 자기 자신에게 주는 휴식과 안정의 시간. 사찰의 기본 규칙을 지키며 자유롭고 편안하게 머무는 1인실 휴식형 프로그램. 각 방마다 개별 화장실과 에어컨이 있다.', '1일차;15:00~15:30 방사배정;복장지급;도량안내; 16:00~17:00 동승탑·북승탑 걷기(자율); 17:00~17:30 저녁공양; 18:00~18:30 저녁예불(자율); 18:30~21:00 자유시간; 21:00 취침;2일차;05:00~06:00 새벽예불(자율); 07:00~07:30 아침공양; 08:00~09:00 스님과의 차담(자율); 10:00~11:00 사시불공(자율); 11:00 방사 뒷정리 및 퇴실', '개인 세면도구, 수건, 칫솔, 개인물병 (각 방사마다 샤워시설·에어컨, 전기포트·드라이기 완비)', 80000, '1박 2일', '2023-01-01', '2027-12-31', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '연곡사'), '마음쉬는 피아골', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/1/30/20260130023624798_1_S.webp', '2인 이상 신청 프로그램. 고요히 자신을 돌아보며 스트레스와 부담감을 덜어내고 자신에게 주는 휴식과 안정의 시간으로 평안한 마음을 회복하는 기회. 지리산 피아골의 절경과 고즈넉한 연곡사에서 지친 마음을 쉬어간다.', '1일차;14:00~15:30 방사배정;복장지급;도량안내; 16:00~17:00 동승탑·북승탑 걷기(자율); 17:00~17:30 저녁공양; 18:00~18:40 저녁예불(자율); 21:00 취침;2일차;05:00~06:00 새벽예불(자율); 07:00~07:30 아침공양; 08:00~09:00 스님과의 차담(자율); 10:00~11:00 사시불공(자율); 11:00 방사 뒷정리 및 퇴실', '개인 세면도구, 수건, 칫솔, 개인물병 (각 방사마다 샤워시설·에어컨, 전기포트·드라이기 완비)', 60000, '1박 2일', '2025-01-01', '2027-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '연곡사'), '(★한국소비자원 연계 대상자만 예약 가능) 마음 힐링 템플스테이', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/4/16/20260416115925277_1_S.webp', '한국소비자원 연계에 따라 특정 대상자만 참여 가능한 템플스테이. 지리산 피아골의 절경과 고즈넉하고 아늑한 연곡사에서 지친 마음을 쓰다듬으며 삶의 질을 향상하기 위해 잠시 쉬어가는 프로그램.', '1일차;14:00~15:30 방사배정;복장지급;도량안내; 17:00~17:30 저녁공양; 18:00~18:40 저녁예불(자율); 19:00~21:00 자유시간; 21:00 취침;2일차;05:00~06:00 새벽예불; 07:00~07:30 아침공양; 08:00~09:00 주지스님과 차담(자율); 11:00 방사정리 및 퇴실', '개인 세면도구, 수건, 칫솔, 개인물병 (각 방사마다 샤워시설·에어컨, 전기포트·드라이기 완비)', 50000, '1박 2일', '2026-04-16', '2026-11-30', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '연등국제선원'), '"마음의 문고리를 잡다" 선명상 템플스테이 (체험형)', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/3/27/20260327072110448_1_S.webp', '선명상, 예불, 사찰음식, 포행, 스님과의 차담을 통해 1박2일 동안 산사체험을 하는 정규 프로그램. 강화도에 위치한 국제 수행 도량 연등국제선원에서 한국의 선(禪)을 체험한다.', '1일차;16:00~16:30 등록;방사배정; 17:00~17:55 오리엔테이션; 18:00~18:30 저녁공양; 19:00~19:20 저녁예불; 19:30~20:30 선명상; 21:00 소등;취침;2일차;04:00~04:45 새벽예불; 05:00~06:00 자율명상; 06:30~07:00 아침공양; 07:15~08:00 걷기명상(포행); 09:30~10:30 스님과 차담; 11:00~11:30 방사청소 및 퇴실', '세면도구, 수건(필수, 선원 미제공), 편한 옷과 신발, 양말, 개인물병(필수) — 침구류·법복은 선원 제공', 70000, '1박 2일', '2025-05-01', '2026-11-30', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '연등국제선원'), '<9월 할인/ 참가비 3만원> "마음의 문고리를 잡다" 선명상 템플스테이', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/8/21/20260821100327405_1_S.webp', '정규 템플스테이 프로그램(선명상, 예불, 사찰음식, 포행, 스님과의 차담, 1박2일)을 9월 한 달간 할인 이벤트로 진행하는 프로그램. 환불 불가 조건이 있어 신중한 예약이 필요하다.', '1일차;16:00~16:30 등록;방사배정; 17:00~17:55 오리엔테이션; 18:00~18:30 저녁공양; 19:00~19:20 저녁예불; 19:30~20:30 선명상; 21:00 소등;취침;2일차;04:00~04:45 새벽예불; 05:00~06:00 자율명상; 06:30~07:00 아침공양; 07:15~08:00 걷기명상(포행); 09:30~10:30 스님과 차담; 11:00~11:30 방사청소 및 퇴실', '세면도구, 수건(필수, 선원 미제공), 편한 옷과 신발, 양말, 개인물병(필수) — 침구류·법복은 선원 제공', 30000, '1박 2일', '2026-09-01', '2026-09-30', 20, FALSE, 0, 0),
@@ -942,7 +252,6 @@ INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, desc
     ((SELECT temple_id FROM TEMPLE WHERE name = '옥천사'), '(체험형) 있는 그대로의 나를 찾다!', '체험형', 'https://ts-cdn.com/ups/old/RsImage/L_21218_S.webp', '자방루에 앉아 물소리, 바람소리와 하나가 되는 시간을 통해 있는 그대로의 나를 발견하는 체험형 프로그램. 마음의 무게를 내려놓는 소중한 시간을 갖는다.', '1일차;15:00~15:30 사찰도착;15:30~16:30 사찰안내;17:00~17:30 저녁공양;18:30~19:00 타종체험 및 저녁예불;19:00~20:00 스님과의 차담;20:00~21:00 자유시간;21:00~21:30 취침준비 및 취침;2일차;04:00~05:00 예불;05:00~06:00 백팔 소원주 만들기;06:00~06:30 아침공양;07:30~08:30 편백숲길 걷기명상;09:00~10:00 소감문 작성 및 방사정리;10:00~10:30 집으로', '개인 세면도구, 수건, 운동화(편한 신발), 우의/우산, 개인 물통, 계절에 맞는 여벌 옷과 양말 등(여름: 벌레 기피제, 겨울: 방한용품 및 아이젠).', 70000, '1박 2일', '2026-07-10', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '옥천사'), '(휴식형) 쉼을 통해 나를 찾다!', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/7/10/20260710125936344_1_S.webp', '소나무와 편백나무 숲길을 걸으며 무거운 마음을 내려놓고 오로지 나만을 위한 휴식의 시간을 갖는 프로그램. 새소리, 물소리, 목탁소리를 들으며 삶을 되돌아본다.', '1일차;15:00~16:00 방사 안내 및 사찰 소개;16:00~17:00 도량 둘러보기 및 자율 산책;17:00~18:30 저녁공양 및 자유시간;18:30~21:00 저녁 예불 및 자율 정진;2일차;04:00~05:00 예불;05:00~05:30 기도정진 및 아침명상;06:00~07:00 아침공양;07:00~09:00 숲길걷기;09:00~10:00 방사정리 및 소감문 작성', '개인 세면용품(칫솔, 치약, 수건, 개인물병, 운동화), 샤워용품(샴푸, 헤어컨디셔너, 바디워시). 드라이기는 대여 가능. 여름철 여벌옷, 모자, 선글라스 등.', 60000, '1박 2일', '2023-06-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '용문사(남해)'), '나홀로 템플스테이 (1인 1실)', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/6/5/20260605111111681_1_S.webp', '천년고찰 지장기도도량 용문사에서 나홀로 쉬어가는 휴식형 1인 템플스테이. 부처님의 품속에서 충분한 휴식과 기도로 내 안의 또 다른 나를 들여다보는 시간.', '1일차;15:00~15:30 방사안내;16:00~17:00 도량안내;17:30~18:00 저녁공양;18:30~19:00 저녁예불;2일차;04:03~05:30 새벽예불;07:00~07:30 아침공양;07:30~08:30 스님과의 차담;09:30~10:00 소감문 작성 및 설문조사;10:00~11:00 사시예불;11:00~11:10 퇴실;11:30~12:00 점심공양 후 귀가', '개인 세면도구(칫솔, 샴푸 외), 수건, 여벌 옷(외투), 운동화(편한 신발), 개인 물병. 겨울 참가 시 개인 방한용품.', 90000, '1박 2일', '2026-06-01', '2026-10-31', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '용문사(남해)'), '내마음의 보물찾기(2인이상)', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/5/19/20260519112416777_1_S.webp', '천년의 향기를 머금은 남해 용문사에서 바다와 별빛, 차나무 숲길을 느끼며 자연이 주는 쉼의 선물을 경험하는 프로그램.', '1일차;15:00~15:30 입실 및 방사안내;16:00~17:00 사찰안내;17:30~18:00 저녁공양;18:30~19:00 저녁예불;21:00~21:30 소등;2일차;04:20~05:00 새벽예불;07:00~07:30 아침공양;07:40~09:00 스님과의 차담;09:00~09:30 소감문 및 설문조사 작성;10:00~11:00 사시예불;11:00~11:10 퇴실;11:30~11:50 점심공양 후 퇴실', '개인 세면도구(칫솔, 샴푸 외), 수건, 여벌 옷(외투), 운동화(편한 신발), 개인 물병. 겨울 참가 시 개인 방한용품.', 60000, '1박 2일', '2026-06-01', '2026-10-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '용문사(남해)'), '만70세 이상 실버 어르신들을 위한 템플스테이(2인 이상)', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/6/5/20260605110642755_1_S.webp', '70세 이상 어르신을 위해 마련한 템플스테이. 남해 천년지장도량에서 여행과 기도로 편안한 휴식의 시간을 갖는다.', '1일차;15:00~15:30 방사안내;16:00~17:00 도량안내;17:30~18:00 저녁공양;18:30~19:00 저녁예불;2일차;04:20~05:30 예불;07:00~07:30 아침공양;07:30~08:30 스님과의 차담;10:00~11:30 사시예불;11:00~11:10 퇴실;11:30~12:00 점심공양 후 귀가', '개인 세면도구(칫솔, 샴푸 외), 수건, 여벌 옷(외투), 운동화(편한 신발), 개인 물병. 겨울 참가 시 개인 방한용품.', 30000, '1박 2일', '2026-06-01', '2026-10-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '용문사(남해)'), '"가족과 함께 아이들 행복 템플스테이"', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/6/28/20260628100630749_1_S.webp', '초·중·고등학생을 둔 가정을 위한 가족형 템플스테이. 가족과 이웃이 함께하는 삶의 행복을 느끼게 하는 프로그램.', '1일차;14:00~15:00 입실, 방사안내;15:00~16:00 용문사를 만나다;16:00~17:30 숲속 친구들과 대화;17:30~18:00 저녁공양;18:30~19:00 저녁예불;19:30~21:00 가족과 함께 휴식;21:00~21:30 취침 준비;2일차;04:20~05:00 새벽예불;07:00~07:30 아침공양;07:30~08:30 스님과 차담;09:30~10:00 염주 만들기;10:00~11:00 사시예불;11:00~11:10 퇴실;11:30~12:00 점심공양 후 귀가', '개인 세면도구(칫솔, 샴푸 외), 수건, 여벌 옷(외투), 운동화(편한 신발), 개인 물병. 겨울 참가 시 개인 방한용품.', 60000, '1박 2일', '2026-04-23', '2026-10-24', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '용문사(양평)'), '(주중-휴식형)_나를 쉬어가다', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/3/23/20260323015036874_1_S.webp', '지쳐서 아무 것도 하고 싶지 않을 때, 혼자만의 시간을 갖고 싶을 때 산사에서 길을 묻는 주중 휴식형 템플스테이. 예불 등 프로그램 참여는 자율.', '1일차;15:00~16:00 도착 및 방사배정;17:30~18:00 사찰예절과 사찰안내 & 명상;18:00~18:30 저녁공양;19:00~19:15 저녁예불;22:00~04:00 소등, 취침;2일차;04:00~04:20 기상;04:20~04:40 새벽예불;05:50~06:20 아침공양;06:40~11:00 자유시간;11:00~11:30 방사정리 및 퇴실;11:40~12:10 점심공양(자율) 및 회향', '개인 세면도구, 수건, 개인(냉온)물병, 벌레 퇴치용품. 여름용 수련복만 제공되어 개인 티셔츠/외투 준비 필요. 고무신 비치.', 70000, '1박 2일', '2025-02-01', '2026-10-31', 20, FALSE, 0, 0),
@@ -990,7 +299,6 @@ INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, desc
     ((SELECT temple_id FROM TEMPLE WHERE name = '전등사'), '[선명상] "내안에 나를 마주하다" 전등사 "맞-선" 템플스테이(명상+하타요가)[취향당-개별화장실/샤워부스]', '체험형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '1700년 한국불교의 전통 수행인 선(禪)을 통하여 바쁜 일상을 사는 현대인들이 생활속에서 나이,종교를 떠나 누구나 쉽게 수행할 수 있도록 선명상 템플스테이를 진행합니다. 맞-선 템플스테이는 명상,요가,차담 등 다양한 프로그램을 통해 지쳤던 일상을 벗어나 내 안에 "나를 마주할 수" 있는 시간을 제공하고자 합니다. 방사는 취향당(개별화장실/샤워부스) 옵션입니다.', '1일차;13:30~14:00 사찰도착 및 방사 배정;15:40~16:00 일정안내;16:00~17:00 사찰안내 및 사찰예절습의;17:00~17:30 저녁공양;17:50~18:10 사물의식(타종체험);18:10~18:30 저녁 예불;18:45~19:30 선명상;19:30~20:00 108배;21:00~04:00 세면 및 취침;2일차;04:00~04:30 도량석;04:30~05:00 새벽 예불;06:00~06:55 발우 공양;07:00~07:30 운력;08:00~10:00 몸과 마음을 알아차리는 하타요가;10:00~10:50 방청소 및 수련복, 시트 반납;11:00~11:30 일요법회;11:30~12:00 점심공양;12:00~12:30 회향', '개인 티셔츠(민소매 불가, 조끼/바지는 지급), 개인 칫솔·수건(샴푸·린스·비누·치약·드라이기 비치), 여벌 속옷과 양말, 운동화(슬리퍼 불가), 개인 물병, 작은 우산, 긴팔 옷, 배낭(캐리어 불가)', 100000, '1박 2일', '2026-03-01', '2026-10-18', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '전등사'), '[선명상] "내안에 나를 마주하다" 전등사 "맞-선" 템플스테이(명상+하타요가)[월송요-개별화장실/샤워부스]', '체험형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '1700년 한국불교의 전통 수행인 선(禪)을 통하여 바쁜 일상을 사는 현대인들이 생활속에서 나이,종교를 떠나 누구나 쉽게 수행할 수 있도록 선명상 템플스테이를 진행합니다. 맞-선 템플스테이는 명상,요가,차담 등 다양한 프로그램을 통해 지쳤던 일상을 벗어나 내 안에 "나를 마주할 수" 있는 시간을 제공하고자 합니다. 방사는 월송요(개별화장실/샤워부스) 옵션입니다.', '1일차;13:30~14:00 사찰도착 및 방사 배정;15:40~16:00 일정안내;16:00~17:00 사찰안내 및 사찰예절습의;17:00~17:30 저녁공양;17:50~18:10 사물의식(타종체험);18:10~18:30 저녁 예불;18:45~19:30 선명상;19:30~20:00 108배;21:00~04:00 세면 및 취침;2일차;04:00~04:30 도량석;04:30~05:00 새벽 예불;06:00~06:55 발우 공양;07:00~07:30 운력;08:00~10:00 몸과 마음을 알아차리는 하타요가;10:00~10:50 방청소 및 수련복, 시트 반납;11:00~11:30 일요법회;11:30~12:00 점심공양;12:00~12:30 회향', '개인 티셔츠(민소매 불가, 조끼/바지는 지급), 개인 칫솔·수건(샴푸·린스·비누·치약·드라이기 비치), 여벌 속옷과 양말, 운동화(슬리퍼 불가), 개인 물병, 작은 우산, 긴팔 옷, 배낭(캐리어 불가)', 120000, '1박 2일', '2026-02-14', '2026-10-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '정토사'), '(휴식형 1~2인실)마음을 쉰다', '휴식형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '사찰에서 자율적으로 편안하게 몸의 휴식을 취하고 잠시만이라도 자기 자신을 내려놓고 번잡했던 마음을 쉬어 가고자 하는 분들께 좋은 일정입니다. 공양과 예불 등 사찰 기본생활과 예절을 지키며 자유롭게 머무시면 됩니다. 미성년자는 부모 동반시에만 참여가능하며, 방사는 남녀 구분하여 배정합니다(미성년자는 예외). 방사에 화장실과 샤워실이 완비되어 있습니다.', '1일차;15:00~15:30 도착 및 오리엔테이션;16:00~16:30 법당 참배 사찰 예절;16:30~18:00 개별 정진;17:50~18:30 저녁 공양;18:45~20:00 스님과의 차담;20:00~21:00 취침준비 및 휴식;21:00~05:00 취침;2일차;05:00~06:00 새벽 예불;06:30~07:30 아침 공양;07:00~08:00 개별 정진;08:00~10:00 둘레길 포행(자율);10:00~11:00 방사 정리 정돈;11:00 소감문 작성 후 회향', '세면도구(수건, 칫솔, 샴푸 포함), 개인위생용품, 여벌 옷, 개인 물병, 운동화, 개인의약품(수건 꼭 지참, 동절기 방한용품 준비)', 70000, '1박 2일', '2025-01-01', '2026-12-31', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '정토사'), '(휴식형 3~4인실)마음을 쉰다', '휴식형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '사찰에서 자율적으로 편안하게 몸의 휴식을 취하고 잠시만이라도 자기 자신을 내려놓고 번잡했던 마음을 쉬어 가고자 하는 분들께 좋은 일정입니다. 공양과 예불 등 사찰 기본생활과 예절을 지키며 자유롭게 머무시면 됩니다. 방사는 참여 신청자(신청자 포함 2인 이상) 우선 배정하며, 남녀 2인 참여는 불가합니다(부부 또는 부모와 이성 자녀 동반시 가능). 1인 참가자는 1~2인실로 신청해야 합니다.', '1일차;15:00~15:30 도착 및 오리엔테이션;16:00~16:30 법당 참배 사찰 예절;16:30~18:00 개별 정진;17:50~18:45 저녁 공양;18:45~20:00 스님과의 차담;20:00~21:00 취침준비 및 휴식;21:00~05:00 취침;2일차;05:00~06:00 새벽 예불;06:30~07:30 아침 공양;07:00~08:00 개별 정진;08:00~10:00 둘레길 포행(자율);10:00~11:00 방사 정리 정돈;11:00 소감문 작성 후 회향', '세면도구(수건, 칫솔, 샴푸 포함), 개인위생용품, 여벌 옷, 개인 물병, 운동화, 개인의약품 등(수건 꼭 지참, 동절기 방한용품 준비)', 60000, '1박 2일', '2025-01-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '정토사'), '(사회공익)경기도 성남시 전통문화특화프로그램 체험템플스테이', '체험형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '배려계층을 위한 정토사 특화 프로그램으로, 템플스테이를 통해 바쁜 일상에서 잠시나마 삶의 여유를 느껴보고 가족이 함께하는 시간을 통해 서로 소통하며 마음치유를 도모하기 위해 진행합니다. 주요 프로그램은 기본예절, 목탁체험, 호흡명상, 마음액자 만들기, 다도체험 등입니다.', '1일차;15:00 오리엔테이션;16:00 사찰안내;17:00 차수업;18:00 저녁공양;19:00 별빛명상 캠프파이어;2일차;05:00 기상;06:00 아침공양;08:00 숲길 걷기명상;09:00 마음 액자 만들기;11:00 정리;11:30 회향(소감문 작성)', '세면도구(수건, 칫솔, 샴푸 포함), 개인위생용품, 여벌 옷, 개인 물병, 운동화, 개인 의약품 등(동절기 방한용품 준비)', 70000, '1박 2일', '2025-09-01', '2027-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '정토사'), '(가족 체험형) 사(寺)랑해 템플스테이(미취학 및 초등대상)', '체험형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '가족과 함께 청계산 정토사에서 특별한 체험을 경험하는 1박2일 프로그램입니다. 가족이 다같이 108배를 하며 가족만의 염주를 만들고, 새벽 예불로 사찰에서의 수행자 생활을 잠시 경험하며, 스님과 차담을 나누는 시간을 갖습니다.', '1일차;15:00~15:30 도착 및 오리엔테이션;16:00~16:30 법당 참배 사찰 예절;16:30~17:30 아빠 엄마와 함께 108배 염주 만들기;17:50~19:00 저녁 공양;19:00~20:00 스님과의 차담;20:00~21:00 휴식 및 취침 준비;21:00~05:00 취침;2일차;05:00~06:00 새벽 예불;06:30~07:30 아침 공양;07:00~09:00 개별정진 및 휴식;09:30~10:30 숲해설 체험(4월부터 시행);11:00 소감문 작성 후 회향', '세면도구(수건, 칫솔, 샴푸 포함), 개인위생용품, 여벌 옷, 개인 물병, 운동화, 개인의약품 등(수건 꼭 지참, 동절기 방한용품 준비)', 80000, '1박 2일', '2025-07-01', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '조계사'), '[차 한잔의 시간] 체험형 다도명상 템플스테이', '체험형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '서울 한복판, 당신에게 필요한 건 ''차 한잔의 시간''입니다. 외국인 대상의 인기 프로그램의 내국인 전용 다도명상 프로그램으로, 사찰 예절과 안내, 연꽃컵등 만들기, 다도 전문 강사의 정통 행다법과 차예절, 대웅전 예불과 108배를 체험합니다.', '1일차;13:00~13:30 입실 및 수련복 착용;13:30~14:10 O.T 및 예절 습의;14:10~14:50 연꽃컵등만들기;14:50~15:50 다도명상;15:50~16:30 사찰안내;16:30~17:55 저녁공양, 휴식;17:55~18:20 사물관람, 저녁예불(자율);18:20~19:00 108배(자율);19:00~21:00 야경감상, 휴식;21:00~04:00 취침;2일차;04:00~04:25 도량석, 사물관람(자율);04:25~05:00 새벽 예불;05:00~07:00 휴식;07:30~08:00 아침공양;08:30~09:00 포행(자율), 설문지 작성 및 퇴실 준비;09:00~10:00 세탁물 반납, 퇴실', '템플스테이 조끼와 바지(진행중 착용), 간단한 세면도구(샴푸, 바디워시, 로션 등), 편한 신발, 여벌옷, 양말 등(비누, 수건, 드라이기 비치)', 100000, '1박 2일', '2026-06-12', '2026-10-31', 20, FALSE, 0, 0),
@@ -1019,7 +327,6 @@ INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, desc
     ((SELECT temple_id FROM TEMPLE WHERE name = '청량사'), '계정혜 체험_1박2일', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/6/9/20260609011030413_1_S.webp', '청량사는 산중에 자리한 사찰로, 사찰에서 생활하며 정해진 수행 일정에 직접 참여하는 방식으로 진행됩니다. 계정혜 체험은 팔관재계를 유연하게 수지하며 수행의 깊이를 경험하는 과정입니다. 오후에는 떡과 과일로 단출하게 절제하며 청정한 하루를 보냅니다. 예약 전 반드시 문자(SMS)로 먼저 연락(010-2683-6704) 필요.', '1일차;15:00 도착 및 방 배정;15:00~15:30 템플복 착용 및 시설 안내;15:30~16:00 오리엔테이션;16:00~17:00 팔관재계 설명 및 수계식;17:00~17:30 사물 체험;17:30~18:00 오후 절제(떡·과일);18:25~18:50 사물 관전 및 자비관 명상;18:55~19:15 저녁 예불 동참;19:20~20:00 낭독 108배;20:00~21:20 스님과 차담;21:20~21:40 탑전 별 보기;21:40 취침;2일차;04:00~04:30 도량석;04:50~05:15 새벽 예불;05:15~06:10 스트레칭+명상(선택);06:30~07:30 아침공양(죽);07:30~08:30 운력;08:30~11:30 오전 자유 수행(선택) 및 방사정리;11:30~12:30 점심공양;12:30~13:30 스님과 소감 나눔;14:00 퇴실', '치약은 사찰 비치. 칫솔, 수건, 개인수건, 물통(텀블러) 필수. 편안한 복장, 운동화·양말(민소매·반바지 불가). 개인상비약. 얇은 겉옷. 수련복은 조끼만 지급.', 90000, '1박 2일', '2026-06-15', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '청량사'), '계정혜 정진_1박2일', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/6/10/20260610082936649_1_S.webp', '보다 진지하고 깊이 있는 수행을 원하시는 분께 권해 드리는 프로그램입니다. 팔관재계 여덟 가지를 모두 완전히 수지하며, 오후에는 일체 음식을 드시지 않습니다. 참여 희망자는 프로그램 내용을 모두 읽고 확인 후 예약 전 반드시 전화(010-2683-6704)로 연락 필요.', '1일차;15:00 도착 및 방 배정;15:00~15:30 템플복 착용 및 시설 안내;15:30~16:00 오리엔테이션;16:00~17:30 팔관재계 설명 및 수계식(오후 불식 서약);17:30~18:00 사물 체험;18:25~18:50 사물 관전 및 자비관 명상;18:55~19:15 저녁 예불 동참;19:20~20:00 낭독 108배;20:00~21:20 스님과 차담;21:20~21:40 탑전 별 보기;21:40 취침;2일차;04:00~04:30 도량석;04:50~05:15 새벽 예불;05:15~06:10 스트레칭+명상(선택);06:30~07:30 아침공양(죽);07:30~08:30 운력;08:30~11:30 오전 자유 수행(선택) 및 방사정리;11:30~12:30 점심공양;12:30~13:30 스님과 소감 나눔;14:00 퇴실', '치약은 사찰 비치. 칫솔, 수건, 개인수건, 물통(텀블러) 필수. 편안한 복장, 운동화·양말(민소매·반바지 불가). 개인상비약. 얇은 겉옷. 수련복은 조끼만 지급.', 100000, '1박 2일', '2026-06-15', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '청련사'), '하루의 기적, 선무도 템플스테이_禪武道 Temple Stay [2인실/개별욕실]', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/7/2/20260702084548804_1_S.webp', '움직이는 명상으로 몸을 깨우고, 마음을 비우는 하루. 선무도는 호흡, 움직임, 명상이 하나가 되는 움직이는 명상으로, 한국의 전통 수행법 선무도(禪武道)를 통해 몸과 마음의 균형을 되찾는 프로그램. 모든 객실은 개인실(타인과 동실 없음).', '1일차;15:00 접수 및 안내;15:30~16:00 첫 인사 및 자유로운 질의응답;16:00~17:30 선무도 기초 수련;17:30~18:30 차담 및 자유시간;21:00~21:30 취침 준비;2일차;07:30~08:00 아침공양;08:00~10:30 차담 및 자유시간(운력, 트래킹, 명상, 휴식);10:30~11:30 사시예불;11:30~12:00 체험 소감문 작성;12:00~12:30 집으로(점심 공양 가능)', '수련복(조끼, 바지) 제공. 개인 칫솔, 수건(샴푸·린스·비누·치약 제공). 운동화 필수(트래킹용). 개인 물병. 작은 우산. 긴팔 옷 1벌 필수. 개인 상비약, 필기도구, 이어플러그 등.', 125000, '1박 2일', '2026-07-02', '2026-09-30', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '청련사'), '하루의 기적, 선무도 템플스테이_禪武道 Temple Stay [2인실/공용욕실]', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/7/2/20260702092838386_1_S.webp', '움직이는 명상으로 몸을 깨우고, 마음을 비우는 하루. 선무도는 호흡, 움직임, 명상이 하나가 되는 움직이는 명상으로, 한국의 전통 수행법 선무도(禪武道)를 통해 몸과 마음의 균형을 되찾는 프로그램. 모든 객실은 개인실(타인과 동실 없음), 욕실은 공용.', '1일차;15:00 접수 및 안내;15:30~16:00 첫 인사 및 자유로운 질의응답;16:00~17:30 선무도 기초 수련;17:30~18:30 차담 및 자유시간;21:00~21:30 취침 준비;2일차;07:30~08:00 아침공양;08:00~10:30 차담 및 자유시간;10:30~11:30 사시예불;11:30~12:00 체험 소감문 작성;12:00~12:30 집으로', '수련복(조끼, 바지) 제공. 개인 칫솔, 수건(샴푸·린스·비누·치약 제공). 운동화 필수. 개인 물병. 작은 우산. 긴팔 옷 1벌 필수. 개인 상비약, 필기도구, 이어플러그 등.', 105000, '1박 2일', '2026-07-02', '2026-10-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '청련사'), '무위 캠핑스테이 : 無爲 Camping Stay', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/4/5/20260405053517030_5_S.webp', '아무것도 하지 않는 시간, 그 자체로 충분한 머묾. 고려산 자락 청련사에서 자연 속에 머물며 나를 내려놓는 시간을 경험하는, 정해진 프로그램을 따라가지 않는 수행형 캠핑스테이. 텐트에서 머물며 사찰의 하루 흐름에 조용히 함께함. 텐트 및 캠핑 장비는 개인 준비(백패커형 캠핑).', '1일차;14:30~16:30 도착 및 텐트 설치;16:30~17:30 사찰 안내 및 예절 교육;17:30~18:30 저녁공양;18:30~21:00 자유시간(산책, 명상, 휴식);21:00~21:30 취침 준비;2일차;07:30~08:00 아침공양;08:00~10:30 자유시간(운력, 트래킹, 명상, 휴식);10:30~11:30 텐트 정리 및 주변 정리;11:30~12:00 체험 소감문 작성;12:00~12:30 집으로', '텐트, 팩/팩망치, 침낭 또는 이불, 매트/에어매트(필수), 랜턴/헤드랜턴, 보조배터리, 긴팔 옷, 여벌 옷, 양말, 운동화, 개인 물병, 캠핑용 물티슈(샤워 대체), 개인 상비약, 이어플러그 등.', 45000, '1박 2일', '2026-04-05', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '청련사'), '무심 템플스테이 : 無心 Temple Stay [2인실/공용욕실]', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/3/22/20260322080540365_3_S.webp', '아무것도 하지 않아도 되는 시간. 바쁘게 살아온 당신에게 잠시 멈출 수 있는 시간을 드리는 휴식형 템플스테이. 일정에 쫓기지 않고 하고 싶은 것만 하거나 아무것도 하지 않고 쉴 수 있음. 모든 객실은 개인실(타인과 동실 없음), 욕실은 공용.', '1일차;15:00~15:30 사찰 도착 및 안내;15:30~17:30 자유시간;17:30~18:00 저녁 공양;18:00~21:00 자유 시간;21:00~21:30 취침 준비;2일차;07:30~08:00 아침공양;08:00~10:30 자유시간;10:30~11:30 사시예불(자율);11:30~12:00 퇴실 및 소감문 작성;12:00~12:30 점심공양;12:30 집으로', '개인 칫솔, 수건(샴푸·린스·비누·치약 제공). 운동화 필수. 개인 물병. 작은 우산. 긴팔 옷 1벌 필수. 개인 상비약, 필기도구, 이어플러그 등.', 75000, '1박 2일', '2026-07-15', '2026-10-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '청평사'), '휴식형 템플스테이 ''나를 위한 쉼표,''', '휴식형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '나를 위한 쉼표, 아름다운 소양호와 신령스런 오봉산의 정기로 천년의 숨결을 간직한 청평사. 고즈넉한 산사가 주는 평온한 마음, 청량하고 맑은 공기, 아름다운 별빛과 달빛을 벗 삼을 수 있는 곳. 아름다운 자연·역사·문화가 살아있는 산사에서 자신의 진정한 아름다움을 발견하고 소통을 통해 관계를 회복하는 행복여행.', '1일차;15:00~16:00 어서오세요~;16:30~17:20 사찰예절습의;17:30~18:00 저녁 공양;18:30~19:00 저녁 예불(자율선택);19:00~19:40 108배(자율선택);21:00 취침;2일차;04:30~05:00 새벽 예불(자율선택);07:00~07:30 아침 공양;10:00~11:00 소감문 작성 및 방사 정리;11:00 또 만나요~(퇴소)', '참가복(조끼) 제공. 세면도구(수건 포함). 여름철 반팔티셔츠 필수(민소매 불가). 겨울철 방한용품 권장. 양말, 운동화(맨발 불가). 개인물병 필수. 개인용품(여성용품), 개인 비상약품. 우산 등.', 60000, '1박 2일', '2026-09-01', '2026-10-31', 20, FALSE, 0, 0),
@@ -1028,8 +335,6 @@ INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, desc
     ((SELECT temple_id FROM TEMPLE WHERE name = '축서사'), '(★한국소비자원 연계 대상자만 예약 가능) 마음 힐링 템플스테이', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/4/21/20260421021530162_1_S.webp', '한국불교문화사업단의 ''기관 연계 나눔 템플스테이''를 통해 지원받는 프로그램. 선지식이 머무는 청정도량 축서사에서 아름다운 가람과 장인의 예술 조각을 감상하며 특별한 하루를 보내는 프로그램. 평일은 쉼 템플스테이, 토요일은 주말이 행복해지는 선명상 일정대로 운영.', '1일차;15:00~16:00 입산 및 방사배정;16:20~17:10 사찰 안내 및 해설;17:30~18:10 저녁 공양;19:00~20:00 저녁 예불(선택);20:00~21:00 휴식 및 취침;2일차;04:30~05:30 새벽 예불 및 108배(선택);06:00~06:30 아침 공양;07:00~09:00 포행 혹은 휴식;09:00~10:00 스님과의 차담;10:30~11:00 방사 정리 후 회향', '개인 세면도구, 수건, 칫솔, 여벌 옷, 운동화(편한 신발), 양말, 개인(보온) 물통(컵)', 20000, '1박 2일', '2026-04-27', '2026-10-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '통도사'), '국가유산 방문 캠페인 산사의 길 템플스테이 (차량소지자만 가능)', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/8/3/20260803024335595_1_S.webp', '2026년 국가유산 방문 캠페인과 함께하는 산사의 길 템플스테이(휴식형, 1박2일). 숙소가 멀어 차량을 가지고 오는 분만 접수하며 공양과 법당 이동 시에도 차량을 이용해야 함. 휴식형이라 별도 일정 없이 방사·공양 안내만 제공.', '1일차;14:00~21:00 입방;사찰안내;저녁공양;사물관람 및 저녁예불(자율);2일차;04:00~10:00 새벽예불(자율);아침공양;방정리 및 퇴방', '개인세면도구일체(수건), 운동화&등산화, 개인약, 텀블러, 편안한 개인 옷(외투,양말필수). 방에는 침구, 전기포트 외 없음.', 50000, '1박 2일', '2026-08-01', '2026-09-30', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '통도사'), '쉼 그리고 비움(휴식형-일월당1-2인실)', '휴식형', 'https://ts-cdn.com/ups/templePrg/2025/10/1/20251001084726308_1_S.webp', '휴식형이라 아무런 일정이 없으며, 조용한 산사에서 쉬어 가는 프로그램. 방사 안내만 제공되며 그 외 일정(예불참석, 식사이용)은 자율적으로 진행. 1박2일만 가능, 당일과 전날 예약 불가(당일형·장기투숙 불가).', '1일차;13:30~14:00 입방;17:00~18:00 공양간;18:30~19:10 사물관람;저녁예불(자율적);2일차;04:30~05:10 새벽예불(자율적);06:00~06:50 공양간;09:30~10:00 방정리 및 퇴실', '개인세면도구일체(수건), 운동화&등산화, 개인약, 텀블러, 편안한 개인 옷(외투,양말필수)', 100000, '1박 2일', '2025-09-01', '2026-11-30', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '통도사'), '쉼 그리고 비움(휴식형-국제템플관 -1인실/2인실-차량소지자만 가능)', '휴식형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '휴식형이라 아무런 일정이 없으며, 조용한 산사에서 쉬어 가는 프로그램. 숙소가 멀어 차량 소지자만 접수. 1박2일만 가능, 당일과 전날 예약 불가(장기투숙 불가).', '1일차;13:30~14:00 입방;17:00~18:00 공양간;18:30~19:10 사물관람;저녁예불(자율적);2일차;04:30~05:10 새벽예불(자율적);06:00~06:50 공양간;09:30~10:00 방정리 및 퇴실', '개인세면도구일체(수건), 운동화&등산화, 개인약, 텀블러, 편안한 개인 옷(외투,양말필수)', 100000, '1박 2일', '2026-09-01', '2026-11-30', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '통도사'), '쉼 그리고 비움 (휴식형 -국제템플스테이관 3~4인실 - 차량소지자만 가능-)', '휴식형', 'https://ts-cdn.com/ups/templePrg/2025/10/1/20251001084807911_1_S.webp', '휴식형이라 아무런 일정이 없으며, 조용한 산사에서 쉬어 가는 프로그램. 3인 이상 한가족 또는 동성 지인 대상(3인 이하 예약 불가), 차량 소지자만 접수. 1박2일만 가능(장기투숙 불가).', '1일차;14:00~21:00 사찰안내, 공양, 사물관람, 저녁예불;2일차;04:00~10:00 새벽예불, 공양', '개인세면도구일체(수건), 운동화&등산화, 개인약, 텀블러, 편안한 개인 옷(외투,양말필수)', 80000, '1박 2일', '2026-09-01', '2026-11-30', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '통도사'), '(★한국소비자원 연계 대상자만 예약 가능) 마음 힐링 템플스테이', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/4/17/20260417101347240_1_S.webp', '한국소비자원 소속 ''민원 업무'' 전담 직원(100명) 대상으로 진행하는 휴식형 템플스테이. 차량 소지자만 접수. 휴식형이라 별도 일정 없이 방사·공양 안내만 제공, 1박2일만 가능(장기투숙 불가).', '1일차;14:00~21:00 입방;사찰안내;저녁공양;사물관람 및 저녁예불(자율);취침;2일차;04:00~10:00 새벽예불;아침공양;방정리 및 퇴방', '개인세면도구일체(수건), 운동화&등산화, 개인약, 텀블러, 편안한 개인 옷(외투,양말필수)', 50000, '1박 2일', '2026-04-17', '2026-12-01', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '팔공산석굴암'), '지금, 여기 어때?', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/1/3/20260103113910327_1_S.webp', '경주 석굴암보다 100년 앞선 최초의 석굴사원(국보 제109호) 팔공산 석굴암에서의 체험형 템플스테이. 1일차는 사찰의 여유를, 2일차는 삼존석굴 108배·걷기 명상·스님과의 차담 등 수행자의 일상을 경험. 매주 토~일 운영(1박2일).', '1일차;15:30~16:00 오리엔테이션 및 사찰안내;16:00~16:30 걷기명상;16:30~17:00 타종체험 및 삼존석굴 참배;17:00~17:30 저녁 예불;17:30~18:00 저녁 공양;18:30~20:00 108배;21:00~00:00 취침;2일차;05:00~05:30 새벽 예불;05:30~07:00 자유 시간;07:00~07:30 아침 공양;09:00~10:00 스님과의 차담;10:00~11:00 방사 정리', '편한 신발(운동화 등), 편한 복장, 개인 컵/용기, 세면 용품(수건 등). 수련복은 지급됨.', 80000, '1박 2일', '2026-01-17', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '팔공산석굴암'), '나에게 주는 선물 1박2일', '휴식형', 'https://ts-cdn.com/ups/templePrg/2026/1/5/20260105102714281_1_S.webp', '나만의 속도로 머무는 시간, 휴식형 템플스테이. 지도법사 없이 모든 일정을 자율로 진행하며 국보 제109호 삼존석굴 참배 등을 자유롭게 즐길 수 있음. 특별한 일정이 없는 한 상시 운영(요일 제한 없이 매일 운영, 체류 기간 자체는 1박2일 고정).', '1일차;15:30~16:00 오리엔테이션;16:00~16:30 사찰 안내 및 삼존석굴 참배;16:30~17:00 타종 체험;17:00~17:30 저녁 예불;17:30~18:00 저녁 공양;18:00~21:00 자유 시간;21:00~00:00 취침;2일차;05:00~05:30 새벽 예불;05:30~07:00 자유 시간;07:00~07:30 아침 공양;07:30~10:30 자유 시간;10:30~11:00 방사 정리', '편한 신발(운동화 등), 편한 복장, 개인 컵/용기, 세면 용품(수건 등). 수련복은 지급됨.', 70000, '1박 2일', '2026-01-05', '2026-12-31', 20, FALSE, 0, 0),
@@ -1038,7 +343,6 @@ INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, desc
     ((SELECT temple_id FROM TEMPLE WHERE name = '표충사'), '★ 내면의 이끌림-참선반 1박2일 ★', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/6/29/20260629035748612_1_S.webp', '효봉선사가 주석했던 참선사찰 표충사에서 재가 불자들이 바른 선수행을 할 수 있도록 개편한 참선 프로그램. 참선 강의, 좌선, 행선으로 구성.', '1일차;14:00~15:00 도착 및 방사안내;15:30~16:30 도량안내 및 기본예절 안내;16:30~17:30 휴식;17:40~18:00 저녁공양;18:30~19:00 저녁예불(필수);19:00~19:30 참선;20:00~22:00 취침(소등);2일차;04:20~05:00 새벽예불(자율);06:20~07:00 아침공양;07:00~08:00 휴식;08:00~09:00 스님과의 차담;09:30~10:00 소감문작성;10:00~10:30 방사정리및 회향(퇴실)', '세면도구(칫솔, 치약, 비누, 수건, 샴푸 등), 여벌 옷, 헤어 드라이기, 편한 신발(운동화, 경등산화), 개인 물병(텀블러), 모자', 70000, '1박 2일', '2023-04-12', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '학림사'), '[학림사 디지털디톡스테이] 스마트폰을 잠시 내려놓고, 본래의 나를 만나는 참선 선명상과 함께', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/4/2/20260402105800309_1_S.webp', '계룡산 학림사에서 디지털디톡스(디지털디톡스+템플스테이)를 하며 디지털 기기 사용을 잠시 멈추고 집중과 재충전의 시간을 갖는 프로그램. 1박2일 동안 휴대폰을 사무실에 보관하고 사용할 수 없음.', '1일차;16:00~16:20 사찰 도착 및 숙소 배정;16:20~17:00 안내 및 참선 습의;17:00~18:00 저녁 공양;18:00~19:00 행선 및 포행;19:00~20:00 저녁예불 및 참선;20:00~21:00 연꽃무늬 컵받침 만들기;21:00~00:00 취침;2일차;03:00~04:00 새벽예불 및 참선(좌선);04:00~05:00 참선(자율);05:00~06:00 행선 및 포행;06:00~07:00 아침 공양;07:00~08:00 산책 또는 청소;09:00~09:30 108배;09:30~10:30 스님과의 차담;10:30~11:00 방사정리;11:00~12:00 점심 공양 및 소감문 작성, 귀가', '개인 세면/샤워용품, 수건, 우산, 개인 물병 또는 컵, 개인 상비약, 양말(법당 출입 필수), 편한 신발(운동화 등, 슬리퍼 불가), 여분의 옷', 80000, '1박 2일', '2025-09-19', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '학림사'), '"나는 무엇인가?" (주중 1박2일, 선명상 템플스테이)', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/4/3/20260403085442825_1_S.webp', '참선을 통해 나 자신을 확인하고 마음의 번뇌·망상을 제거하는 선명상 템플스테이. 주중에 진행되는 1박2일 회차.', '1일차;16:00~16:20 사찰 도착 및 숙소 배정;16:20~17:00 안내 및 참선 습의;17:00~18:00 저녁 공양;18:00~19:00 행선 및 포행;19:00~20:00 저녁예불 및 참선;20:00~21:00 참선(자율);21:00~00:00 취침;2일차;03:00~04:00 새벽예불 및 참선(좌선);04:00~05:00 참선(자율);05:00~06:00 행선 및 포행;06:00~07:00 아침 공양;09:00~10:00 단주 만들기;10:00~10:30 108배;10:30~11:00 방사 정리;11:00~12:00 점심 공양 및 소감문 작성, 귀가', '개인 세면/샤워용품, 수건, 우산, 개인 물병 또는 컵, 개인 상비약, 양말(법당 출입 필수), 편한 신발(운동화 등, 슬리퍼 불가), 여분의 옷', 80000, '1박 2일', '2025-07-11', '2026-12-31', 20, FALSE, 0, 0),
-    ((SELECT temple_id FROM TEMPLE WHERE name = '학림사'), '"나는 무엇인가?"(토일, 수련형 선명상 템플스테이)', '체험형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '참선을 통해 나 자신을 확인하고 마음의 번뇌·망상을 제거하는 선명상 템플스테이. 토요일 입소, 일요일 퇴소하는 수련형 회차로 야간 참선 위주로 구성.', '1일차;(토): 16:00~16:30 도착 및 숙소배정;16:30~17:00 안내 및 참선 습의;17:00~18:00 저녁 공양;20:00~21:00 대원 큰스님 법문;21:00~22:00 다과 및 자율시간;22:00~23:00 참선;23:00~00:00 참선(좌선, 자율);2일차;(일): 00:00~03:00 참선(좌선, 자율);03:00~04:00 새벽예불 및 참선(자율);06:00~07:00 아침 공양;07:20~09:00 소참법문;10:00~10:30 108배;10:30~11:00 방사정리;11:00~12:00 점심 공양 및 소감문 작성, 귀가', '개인 세면/샤워용품, 수건, 우산, 개인 물병 또는 컵, 개인 상비약, 양말(법당 출입 필수), 편한 신발(운동화 등, 슬리퍼 불가), 여분의 옷', 80000, '1박 2일', '2025-05-03', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '학림사'), '휴식 템플스테이', '휴식형', 'https://ts-cdn.com/ups/templePrg/2025/4/26/20250426035836252_1_S.webp', '일상에서 벗어나 계룡산 품안에서 학림사 스님들의 일상을 같이 체험하며 몸과 마음을 쉬는 휴식형 프로그램.', '1일차;16:00~16:20 접수 및 숙소안내;16:20~17:00 사찰안내 및 습의;17:00~18:00 저녁공양;18:00~19:00 저녁예불(자율);19:00~21:00 자율시간;21:00~00:00 취침;2일차;03:30~04:00 새벽예불(자율);06:00~07:00 아침공양;07:00~09:00 자율시간(포행 or 독서);10:00~11:00 방사정리;11:00~12:00 점심공양 후 귀가', '개인 세면/샤워용품, 수건, 우산, 개인 물병 또는 컵, 개인 상비약, 양말(법당 출입 필수), 편한 신발(운동화 등, 슬리퍼 불가), 여분의 옷', 80000, '1박 2일', '2017-03-15', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '해인사'), '주말 체험형', '체험형', 'https://ts-cdn.com/ups/templePrg/2026/6/15/20260615021943130_1_S.webp', '[나를 알아가는 팔만가지 이야기] 매주 토요일부터 1박 2일간 해인사에 머물면서 사찰의 일상을 체험해보는 프로그램. 세계문화유산 팔만대장경 인경체험, 사찰 안내, 108배 염주만들기, 새벽예불 등을 통해 진정한 나를 찾아가는 시간. 2025년 3월 29일부터 국가사업으로 주말 장경판전 내부순례는 잠정 통제 중. 일요일은 참가자를 받지 않음.', '1일차;14:00~14:30 입실 접수;14:30~15:00 오리엔테이션;15:30~16:30 팔만대장경 인경체험;16:30~17:30 사찰 안내;17:35~18:00 저녁공양;18:08~18:30 불전사물 참관(자율);18:30~19:00 저녁예불(자율);21:30~00:00 취침;2일차;03:10~04:00 새벽예불;06:00~06:20 아침공양;09:00~10:00 108배 염주 만들기;10:00~10:20 차 한잔 & 후기작성;11:00 방사정리 및 퇴실', '법복 제공(성인 조끼+바지, 어린이 조끼만), 수건/치약/칫솔 등 세면도구, 샤워용품, 개인물병 또는 텀블러, 양말(법당 출입 시 필수), 편한 신발(운동화, 슬리퍼·샌들 불가), 여벌 옷, 우천시 우산', 100000, '1박 2일', '2025-01-18', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '해인사'), '주 중 (월-금) 휴식형', '휴식형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '주중(월~금)에 운영되는 휴식형 템플스테이. 천년고찰 해인사의 장경판전과 팔만대장경을 둘러보고, 백련암·희랑대·홍제암 등 암자길 걷기와 ''소리길'' 걷기를 통해 자연 속에서 나를 돌아보는 힐링의 시간을 갖는 프로그램. 일요일은 참가자를 받지 않음.', '1일차;14:00~14:30 입실;15:30~16:00 오리엔테이션;16:30~17:30 사찰안내;17:30~18:00 저녁공양;18:08~18:30 불전사물(자율);18:30~19:00 저녁예불(자율);21:30~00:00 취침;2일차;03:10~04:00 새벽예불;06:00~06:30 아침공양;09:30~10:30 108배 염주만들기 또는 전통노트+인경체험(신청자);11:00 방사정리 및 퇴실', '법복 제공(성인 조끼+바지, 어린이 조끼만), 수건/치약/칫솔 등 세면도구, 샤워용품, 개인물병 또는 텀블러, 양말(법당 출입 시 필수), 편한 신발(운동화, 슬리퍼·샌들 불가), 여벌 옷, 우천시 우산', 70000, '1박 2일', '2025-01-01', '2027-01-01', 20, FALSE, 0, 0),
@@ -1073,3 +377,3071 @@ INSERT INTO TEMPLE_STAY_PROGRAM (temple_id, title, program_type, image_url, desc
     ((SELECT temple_id FROM TEMPLE WHERE name = '흥국사(여수)'), '(★한국소비자원 연계 대상자만 예약 가능) 마음 힐링 템플스테이', '휴식형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '한국소비자원 연계에 따른 특정 대상자만 참여 가능한 프로그램. 고려 명종 25년(1195년) 보조국사 지눌스님에 의해 창건된 호국사찰 흥국사에서 합장주 만들기와 차담을 통해 내면의 심신을 다스리고 번뇌를 잠시 내려놓는 프로그램.', '1일차;14:30~15:00 입실 및 방사배정 및 환복;15:00~16:00 문화해설사에게 듣는 해설사 이야기;17:00~17:30 저녁공양;18:00~19:30 합장주 만들기와 차담;19:30~21:00 자율시간;21:00~00:00 취침;2일차;05:00~05:30 새벽예불;06:00~06:30 아침공양;07:30~08:30 108 돌탑 자율포행;09:00~10:00 소감문 작성 및 방사정리;10:00~10:30 환복 및 퇴실', '개인 세면도구(수건, 칫솔, 치약, 비누, 샴푸, 머리빗 등), 여벌옷, 운동화, 양말, 개인 보온물병(헤어드라이기 비치, 참가복 바지 제공), 동절기 방한용품', 40000, '1박 2일', '2026-04-27', '2026-10-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '흥국사(여수)'), '108염주 만들기 , 다도체험(1박2일 체험형)', '체험형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '천년 고찰 흥국사에서 문화 해설사가 들려주는 흥국사 문화재(보물 11점)에 얽힌 이야기와 해설로 불교 문화의 예술과 역사 문화적인 의미를 이해. 108염주를 만들고 108배를 체험하며 자신의 내면의 소리를 들어보는 프로그램. 다도 체험 포함(흥국사 템플스테이 체험자에게 여수시 낭만버스 무료 탑승권 증정).', '1일차;15:00~15:30 방사배정 환복;15:30~16:00 문화해설사에게 듣는 흥국사;16:00~16:50 휴식;17:00 저녁공양;17:30~18:30 염주 만들기, 다도(차담) 또는 108배 선택;21:00~00:00 취침;2일차;05:00~05:30 아침예불(자율);06:00 아침 공양;08:00~09:00 백팔돌탑포행(자율);10:00~11:00 소감문작성 퇴실', '개인 세면도구(수건, 칫솔, 치약, 비누, 샴푸, 머리빗 등), 여벌옷, 운동화, 양말, 개인 보온물병(헤어드라이기 비치, 참가복 조끼·바지 제공), 동절기 방한용품', 80000, '1박 2일', '2022-10-29', '2026-12-31', 20, FALSE, 0, 0),
     ((SELECT temple_id FROM TEMPLE WHERE name = '흥국사(여수)'), '호국사찰에서 하룻밤(휴식형)', '휴식형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '흥국사 휴식형 템플스테이는 모든 일정이 자율입니다. 천년의 유구한 역사를 몸과 마음으로 느낄 수 있고, 숲과 계곡 돌탑이 어우러져 발길 닿는 곳마다 자연과 하나가 되는 프로그램(흥국사 템플스테이 체험자에게 여수시 낭만버스 무료 탑승권 증정).', '1일차;14:30~15:00 오리엔테이션(사찰 예절, 주의사항);15:00~16:00 사찰안내;17:00 저녁공양;18:00 저녁 예불(자율);21:00~21:30 취침준비 및 취침;2일차;04:30~05:00 새벽예불(자율);06:00 아침공양;08:00~10:00 108돌탑길 명상(자율);10:00~10:30 방사정리 및 회향', '개인 세면도구(수건, 칫솔, 치약, 비누, 샴푸, 머리빗 등), 여벌옷, 운동화, 양말, 개인 보온물병(헤어드라이기 비치, 참가복 바지만 제공), 동절기 방한용품', 60000, '1박 2일', '2017-01-23', '2027-02-01', 20, FALSE, 0, 0);
+
+-- 당일형 프로그램 221건 (templestay.com 2026-09-10 기준 당일형 카테고리 전체 수집)
+INSERT INTO temple_stay_program (temple_id, title, program_type, image_url, description, schedule, required_items, price, duration, open_start_date, open_end_date, max_participant, support_english, latitude, longitude) VALUES
+    ((SELECT temple_id FROM TEMPLE WHERE name = '심택사'), '싱잉볼 명상 & 사찰음식 체험', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/3/20250303124906157_1_S.webp', '♦ 전통 불교문화, 명상, 사찰음식 등으로 사찰 문화 체험을 원하시는 분, 시간이 부족하신 분,
+   몸과 마음의 휴식이 필요하신 분은 도심 속 힐링 전통사찰 심택사로 오세요!
+♦ ''사찰음식 체험'' & ''싱잉볼 소리 명상''을 체험하며 소중한 추억을 만들어 보세요!
+
+► 단체 예약은 010-2463-6008, 010-7471-4509로 문의하시면 친절히 상담해 드립니다.
+►주말 단체 예약은 사전 협의하여 운영 가능합니다.
+► 프로그램 특성상 3인 미만인 경우 취소될 가능성이 있습니다. 그럴 경우 3일 전 연락드리겠습니다.
+► 당일 참가자 5인 미만인 경우 싱잉볼 명상 대신 지도법사 스님과의 대화 및 차담시간을 진행합니다.', '1일차;11:00~11:30 첫인사 및 도량안내;11:30~12:30 자작나무와 함께 하는 사경 또는 단주 만들기;12:30~13:00 사찰 음식 체험 및 공양하기;13:00~15:00 싱잉볼 명상 및 스님과의 대화;15:00~15:30 체험 후기 작성 후 회향', '♦ 활동하기 편한 복장으로 오시기 바랍니다.
+♦ 개인물병 있으면 좋습니다.(개인 선택사항)
+♦ 사찰에서는 조끼만 제공합니다.', 50000, '당일', '2026-09-12', '2026-09-12', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '조계사'), '가을 산사의 공양- 뿌리와 열매로 만나는 사찰음식', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/28/20260828044448688_1_S.webp', '뿌리와 열매로 만나는 사찰음식, 일반인을 위한 입문형 시식회
+
+함께하는 맛, 함께하는 마음
+"음식은 몸과 마음을 만드는 일"
+음식은 몸을 키우고, 마음을 맑게 하는 수행의 시작입니다.
+
+행사 개요
+장소: 조계사 관음전
+일시: 2026년 9월 19일(토)
+강연: 선재스님 - 사찰음식의 정신과 가을 제철 재료
+시식: 7품 1음청 천천히 음미하며 맛보기
+
+행사의 세 가지 목표
+- 사찰 음식이 단순한 채식이 아니라, 생명 존중과 절제, 공양의 문화임을 전달합니다.
+- 도심 사찰을 찾은 일반 관람객이 쉽게 맛보고 이해할 수 있는 입문형 시식회를 운영합니다.
+- 선재 스님의 강연과 음식 시식을 연결하여, 음식은 몸과 마음을 만드는 일이라는 메시지를 확산합니다.
+
+차 시음 행사 개요
+장소: 조계사 대웅전 마당
+일시: 2026년 9월 19일(토)
+주관: 현명원T아트문화원 안연춘 원장', '1일차;13:00~15:30 차(茶) 시음;13:00~14:00 선재 스님 강연;14:00~15:00 시식 행사', '없음', 10000, '당일', '2026-09-19', '2026-09-19', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '관음사(제주)'), 'OIBFF "산사에서 영화의 밤" [The Cup]+"어린이연극"[관음사이야기]', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/15/20260815115502848_1_S.webp', '🎬가족과 함께 모기장 안에서 "산사, 영화의 밤"🎬
+
+제주 관음사에서는 한라산의 품안에서
+함께 할 수 있는 영화의 밤을 준비하고 있습니다.
+가족과 연인 또는 친구 등 소중한 분들과 함께 오셔서
+한편의 영화로 마음을 나누고,
+내면을 성찰 할수 있는 기회를 갖으시길 바랍니다.
+
+      "자연 속, 작은 영화관에
+                         초대합니다."
+
+- 일정 : 2026년 9월 13일(일) 오후 6시 30분
+- 장소 : 제주 관음사 평화대불
+- 입장료 : 무료
+- 상영영화 : The Cup(키엔체 노르부 감독)
+- 프로그램 내용
+ 1) 아미헌 발표회<부처를 찾아 떠나는 여행> 17:30 ~ 18:00
+- 어린이 연극놀이 프로그램 결과 발표 (음료 무료)
+ 2) 야외 영화상영 <The Cup> 18:30 ~ 20:00
+-자연 속, 모기장 안에서 영화를 함께 관람하는 특별한 야외 영화
+
+*어린이 연극<부처를 찾아 떠나는 여행>을 보실 분들은 오후 5시 30분까지 "아미헌"으로 와주시면 됩니다.
+*영화만 관람하실 분들은 오후 6시 30분까지 "통일(평화)대불" 앞으로 오시면 됩니다.
+
+🎬 더 컵 (The Cup,1999)
+
+감독: 키엔체 노르부
+장르: 드라마 / 스포츠 / 코미디 | 상영시간: 93분
+
+📖 영화 소개 및 줄거리
+〈The Cup〉(1999, 감독 키엔체 노르부)는 히말라야 의 한 불교 수도원을 배경으로, 1998년 프랑스 월드컵 결승전을 꼭 보고 싶어 하는 어린 소년 승려들이 TV를 들여오려 하면서 벌어지는 소동을 그린 작품이다.
+전통적인 수행 공간인 수도원과 현대 대중문화(축구)가 충돌하면서도 유머와 따뜻함 속에서 공존하는 모습을 담아내며, 실제 승려들이 출연해 사실감을 더한다. 영화는 순수한 열정과 공동체의 이해, 변화하는 시대 속
+전통의 유연함을 소박하고 담백한 시선으로 보여주는 것이 특징이다.
+
+🏆 주요 수상 및 초청
+-1999 칸 영화제 감독주간(Directors’ Fortnight) 초청 상영
+- 토론토 국제영화제(TIFF) 초청 상
+- 1999 방콕 국제영화제 최우수 작품상
+-여러 국제영화제 관객상 및 신인감독상 수상
+-부탄 최초의 국제적 주목을 받은 장편영화로 평가', '1일차;17:30~18:00 관음사 어린이 연극 발표회/ 아미헌;18:30~20:00 야외 영화상영<The Cup>/ 평화대불', '텀블러, 담요, 모기약, 간식 등', 1, '당일', '2026-09-13', '2026-09-13', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '성흥사'), '사찰에서의 목공체험 템플스테이  2회차  ( 9월 19일 당일)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/9/7/20260907113106198_1_S.webp', '나만의 찻상 만들기 2회차  (9월 19일  당일)
+
+1회차 : 나만의 도마와 찻받침 만들기
+2회차:  나만의 디자인 찻상 만들기
+
+몸과 마음을 다듬는 소중한 시간.
+
+누구나  소중한 것이 있습니다.
+삐뚤 삐뚤,  울퉁불퉁 하지만 내 정성과 마음이 들어간 작품은 다릅니다.
+산사에서 목공체험은 소중한 기억이 될 것입니다.
+
+>트레이로 쓰셔도 되고 식탁 위 데코레이션으로 활용하셔도 좋은 크기입니다.
+
+
+프로그램
+사찰 및 템플스테이 안내
+목공 재료와 도구 사용법 배우기
+나만의 찻상 만들기
+작품 마무리 및 정리
+산사에서의 휴식과 마음 나누기
+
+이런 분께 추천합니다
+일상에서 벗어나 조용한 휴식이 필요한 분
+목공을 처음 경험해 보고 싶은 분
+가족·친구와 특별한 추억을 만들고 싶은 분
+자연과 사찰에서 마음을 쉬어가고 싶은 분
+
+참가비 : 60,000원
+※ 목공 재료비 및 체험비 포함
+나무를 다듬는 손길마다 마음도 차분해지는 시간,
+천년고찰 불모산 성흥사에서 특별한 목공 템플스테이를 만나보세요.', '1일차;13:00~13:30 오리엔테이션 (사찰안내 및 예절);13:40~15:00 나만의 찻상 만들기 2회차 목공체험;15:10~15:30 너와 숲길 걷기명상;15:30~16:00 감상 및 마무리 만족도 조사, 회향', '간단한 복장  앞치마   손장갑 등등', 60000, '당일', '2026-09-19', '2026-10-13', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '송광사(완주)'), '【 송광사 완주】2026 송광백련 나비채 만찬과 음악회 (2026년 9월19일 토요일-무료)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/20/20260820101506643_1_S.webp', '(본 행사는 사찰음식 만찬과 나비채 음악회 공연으로 진행되며
+모든 프로그램은 무료로 진행됩니다.
+예약하고 참가하시는 분께는 참가 기념품을 드립니다.)
+
+2026 송광백련 나비채음악회에 당신을 초대합니다.
+뜨거웠던 여름이 서서히 자리를 거두고, 산사의 숲과 뜰에 맑고 서늘한 가을 기운이 깃들 무렵,
+올해도 백화도량 종남산 송광사에 아름다운 음악의 향연이 펼쳐집니다.
+
+''나비채’라는 이름에는 나누고, 배우고, 채우는 삶의 뜻이 담겨있습니다. 자신이 가진 것을 이웃과 기꺼이 나누고, 서로의 다름과 아름다움 앞에서 겸허히 배우며, 비워낸 마음을 사랑과 자비, 지혜와 희망으로 채워가자는 뜻입니다.
+
+음악은 이러한 나비채의 정신을 가장 맑고 아름답게 드러내는 언어입니다. 연주자는 오랜 시간 갈고닦은 예술의 결실을 관객과 나누고, 우리는 서로 다른 악기와 선율이 조화를 이루는 모습에서 어울림의 지혜를 배우며, 그 깊고 따뜻한 울림으로 삶에 지친 마음을 다시 채웁니다.
+
+송광사의 고즈넉한 가을밤, 가족과 친구, 이웃과 동료의 손을 잡고 오시어 아름다운 음악을 함께 나누고, 그 깊은 울림에서 삶의 지혜를 배우며, 사랑과 희망으로 마음을 넉넉히 채우는 귀한 시간을 누리시기 바랍니다. 백화도량 종남산 송광사에서 펼쳐지는
+
+2026 송광백련나비채음악회」에 여러분을 정중히 초대합니다.
+
+2026년 9월
+
+송광사 주지 백강법진 합장', '1일차;16:00~17:00 주차장 도착, 송광사 경내 및 연지 자율 포행;17:30~19:00 사찰음식 만찬;19:00~21:30 나비채 음악회 공연 감상;21:30~22:00 귀가(이동)', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다.', 0, '당일', '2026-08-14', '2026-09-19', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '관음사(제주)'), '2026 OIBFF 세계일화국제불교영화제 "제주 관음사 어린이 「관음사 이야기」 연극놀이 프로그램"', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/11/20260811044127337_1_S.webp', '*** 9월 12일과 13일 모두 참여 가능하여야 합니다.!!(숙박아님)
+>>>>신중한 예약 부탁드립니다.', '1일차;10:30~11:00 어린이 법회;11:00~12:00 점심 공양;12:00~13:00 아이스 브레이킹 및 오리엔테이션;13:00~16:00 관음사 이야기 연극놀이 프로그램;2일차;13:00~16:00 관음사 이야기 연극놀이 프로그램;16:00~17:00 저녁 공양;17:00~18:00 연극 발표회;18:00~20:00 평화대불 야외 영화상영<The Cup>', '-개인 컵(텀블러),  운동화(편한신발), 모기약, 모자, 썬크림, 우천시 우비 또는 우산 등', 1, '당일', '2026-09-12', '2026-09-13', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '광제사'), '단체 당일체험 ''행복''', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/7/25/20260725014814810_1_S.webp', '향기로운 차 한잔과 마주하며, 참 나를 찾아가는 행복한 시간, 5인 이상 단체 당일 체험프로그램 입니다.
+프로그램 일정은 단체 일정에 맞춤 가능 합니다.
+전화 044-850-3190', '1일차;10:30~11:30 사찰(사찰문화)안내, 프로그램1;11:30~12:20 점심공양;12:20~13:00 프로그램2;13:00~14:00 회향', '단정한 복장', 25000, '당일', '2026-07-22', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '마곡사'), '[단체형] 사전 예약문의', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/7/15/20260715030718304_1_S.webp', '', '1일차;09:00~17:00 단체형은 당일형 또는 휴식형, 체험형 등 선택', '', 0, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '청련사'), '[움직이는 명상 선무도_ 禪武道]', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/26/20260626031648991_1_S.webp', '[움직이는 명상 선무도_ 禪武道]
+"몸을 움직여 마음을 깨우다"
+
+• 선무도(禪武道)는 몸과 마음을 함께 수련하는 한국의 전통 수행법입니다.
+• 가벼운 스트레칭부터 호흡, 선무도 기본 동작, 명상까지 누구나 쉽고 편안하게 참여할 수 있습니다.
+
+
+♦이런 분께 추천♦
+• 몸이 뻣뻣하고 피로가 쌓인 분
+• 스트레스와 긴장을 내려놓고 싶은 분
+• 운동과 명상을 함께 배우고 싶은 분
+• 몸과 마음을 건강하게 회복하고 싶은 분
+
+
+♦프로그램 구성♦
+
+
+	선무도 기본 수련
+	호흡 수행
+	선명상
+	선요가
+	기공
+	마음챙김
+
+
+
+♦수련 안내♦
+
+
+	일시 : 매주 토요일 오후 4시
+	장소 : 강화도 청련사
+	지도 : 현래(오현정) 법사(선무도 5단)
+	체험수련 가능 (사전 예약)', '1일차;15:00~15:30 접수 및  안내;15:30~16:00 첫 인사 및  자유로운 질의응답;16:00~17:30 선무도 기초 수련;17:30~18:30 저녁 공양 및 해산', '[준비물]
+
+	편안한 운동복 또는 활동하기 좋은 복장
+	개인 물병
+	수건
+
+※ 수련은 맨발로 진행합니다.
+※ 선무도 수련복은 별도 구매 가능합니다.
+※ 귀중품은 개인이 보관해 주시기 바랍니다.', 0, '당일', '2026-06-26', '2026-12-05', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '광제사'), '지혜를 찾는 ''반야심경'' 사경', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/5/31/20260531023422751_2_S.webp', '온갖 상념을 버리고 한글자 한글자 정성들여 지혜의 핵심인 반야심경을 필사 하면서 나를 찾아가길 바랍니다()
+약 한시간 동안 진행 되며 붓펜 또는 만년필로 필사 하는 프로그램 입니다.', '1일차;10:30~11:30 반야심경 사경', '사경종이, 붓펜 or만년필, 문진(종이누르는 돌) - 광제사에서 준비', 20000, '당일', '2026-06-05', '2026-12-25', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '보림사(장흥)'), '차 만들기 체험', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/5/12/20260512114940810_2_S.webp', '일상에 지친 몸과 마음을 구산선문 종찰인 보림사 비자 숲속에서 충만한 기운을 느끼며,  발효차를   만들며 여유를 즐길 수 있는 당일형 템 플스테이를 마련했습니다.
+ 보림사에서 준비한 프로그램을 따라 가다 보면 어느덧 내안에 숨어있는 일체의 부정적 에너지가 사라지고 맑은 기운으로 충만한 긍정적인 자신의 모습을 발견하게 됩니다.
+
+
+※체험 프로그램 진행은 참여인원이 10명 이상 접수하였을 때 진행되므로 접수 후
+   실제 진행여부를  확인해주세요.
+   불편하시더라도 자연의 야생차밭을 보호하는 조치이니 협조 부탁드립니다.
+※체험하신 단차는 체험 후 보림사에 귀속됩니다. 꼭~ 참고하세요.', '1일차;10:00~10:30 오리엔테이션 및 사칠안내;10:30~12:00 야생차밭 걷기  & 차담;12:00~13:00 점심공양;13:00~15:00 단차만들기 체험;15:00~15:30 소감문 작성;15:30~15:30 집으로', '■ 등산하기 좋은 편한 복장 (운동화, 긴팔옷 등) 개인물병, 일회용마스크,  모자,  비닐장갑', 50000, '당일', '2026-05-23', '2026-11-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '마곡사'), '[당일형] 사찰 음식 특별강좌', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/10/20260610015644878_1_S.webp', '이 프로그램은 발효 식품과 계절 밥상으로 사찰 음식을 준비하는 특강 프로그램 입니다.
+
+특강 일정과 모집 인원은 아래와 같습니다.
+6월 27일 토요일   선착순 24명
+7월 18일 토요일   선착순 24명
+8월 22일 토요일   선착순 24명
+9월 19일 토요일   선착순 24명
+10월 10일 토요일 선착순 24명', '1일차;12:30~13:00 사찰 기본 예절;13:00~13:30 사찰 안내;13:30~14:00 자유 시간;14:00~17:00 사찰 음식 특강;17:00~17:30 저녁 공양 준비;17:30~18:00 저녁 공양;18:00~18:20 자유 시간;18:30~19:00 타종 체험 및 저녁 예불 (자율) 후 회향', '안내 문자 참고해서 준비해오시기 바랍니다.', 50000, '당일', '2026-06-01', '2026-10-10', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '홍법사'), '하루의 선물 "템플라이프"', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/3/20/20260320021730507_1_S.webp', '바쁜일상속에서 소풍같은 하루를 스스로에게 선물하여
+도심속 사찰에서의 평온함과 담백한 느림의 시간을 가져보며,
+잠깐의 휴식과
+나와 마주하는 시간을 가져봄으로써
+새로운 도약을 향한 희망의 초안그리기!', '1일차;10:00~10:30 입소 및 오리엔테이션;10:30~11:00 도량안내;11:00~13:00 사찰음식 체험 및 점심공양;13:00~14:00 연꽃등 만들기;14:00~15:00 소감문 작성 및 퇴소', '개인 물품외 필요 의약품 등', 50000, '당일', '2026-04-01', '2030-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '내원정사'), '[사찰음식] 산사 미식투어', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/3/12/20260312100233720_1_S.webp', '★ 본 프로그램은 지역관광 활성화와 사찰음식 홍보를 위한 부산시 및 사찰지원 특별 프로그램 입니다.
+★ 일반인 참여는 사전상담이 필요 합니다.
+    치유와 힐링이 필요한 요즘 일상에서 잠시 벗어나 내원정사에서 편안한 휴식과 나를 돌아보는 프로그램입니다.', '1일차;10:00~10:30 OT 및 사찰안내;10:30~12:00 사찰음식 만들기 체험;12:00~13:00 점심 공양 _ 사찰음식;13:00~13:30 소원등 만들기 체험;13:30~14:00 108배 (자율참여);14:00~15:00 포행 및 회향', '간편복장', 80000, '당일', '2026-03-15', '2027-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '보림사(장흥)'), '비자숲 걷기', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/2/27/20260227035206790_1_S.webp', '• 일상에 지친 몸과 마음을 구산선문 종칠인 보림사 비자 숲속에서 충만한 기운을 느끼며, 혼자만의 호젓한 시간을 갖고, 마을을 여유롭게 하고 싶은 분들을 위하여 당일형 템플스테이를 마련했습니다.
+
+• 보림사에서 준비한 프로그램을 따라 가다 보면 어느덧 내안에 숨어있는 일체의 부정적 에너지가 사라지고 맑은 기운으로 충만한 긍적적인 자신의 모습을 발견하게 됩니다.', '1일차;10:00~10:30 사찰안내;10:30~12:00 비자숲 걷기;12:00~13:00 점심공양;13:00~13:30 소감문 작성;13:30~13:30 집으로', '• 등산하기 좋은 편안한 복장 (등산화 혹은 운동화) 개인물병', 20000, '당일', '2026-03-05', '2026-11-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '연운사'), '(당일형)반려견과 함께하는<멍플스테이>', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/3/4/20260304113955789_1_S.webp', '김포 연운사 멍플스테이 프로그램은 반려견과 함께하는 당일형 템플스테이 프로그램입니다.
+도심 속 사찰 김포 연운사에서 사랑하는 반려견과 함께 마음을 쉬어가는 특별한 시간을 마련했습니다.
+김포 연운사 멍플스테이는 사람과 반려견이 함께 머물며 평온함과 따뜻한 쉼을 느낄 수 있는 시간입니다.
+애견행동전문가의 상담, 마사지, 행동교정수업, 산책 등 반려견의 마음과 행동을 이해하고 사람과 반려견이 더 깊이 교감할 수 있도록 돕는 프로그램입니다.
+사랑하는 반려견과 함께하는 하루가 마음에 오래 남는 작은 쉼표가 되길 바랍니다.
+많은 관심과 참여 바랍니다.', '1일차;09:30~09:50 사찰도착 및 접수/ 사찰안내;09:50~10:50 반려견 산책 교육 및 행동 교정 프로그램;10:50~12:00 반려견 교감 마사지 교육 및 차담(다과) 시간;12:00~12:20 스님 인사말 및 마음나눔시간;12:20~12:30 템플스테이 체험후기 및 회향', '■ 사료 및 간식, 리드줄, 배변패드, 배변봉투, 물그릇(필요에 따라 매너밸트)', 35000, '당일', '2026-03-04', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '도선사'), '도선사 [마음순례] 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/2/26/20260226035201041_1_S.webp', '■  도선사 당일형(Daily) 템플스테이 프로그램은  개인, 학교, 회사, 단체 등을 대상으로 2 ~ 4시간 동안 진행되며,
+     사찰안내. 사찰식 점심공양. 선명상. 스님과의 차담 등을 선택하실 수 있습니다.
+
+■  일정, 프로그램 및 진행시간은 사전에 전화(010-3157-3161)로 상의하시길 바랍니다.
+
+-. 프로그램 일정은 사찰 사정으로 변경될수 있습니다.
+-. 참가 3일 전까지 입금이 확인되지 않는 경우 자동 취소됩니다.', '1일차;10:00~10:30 입소(템플 교육관), 참석자확인 및 수련복 착용;10:30~11:00 오리엔테이션 및 사찰예절;11:00~11:50 공양 및 휴식;12:00~12:50 차담 또는 연꽃컵등 만들기;12:50~13:30 사찰안내 및 불교문화해설;13:30~14:00 소감문 작성 및 회향', '■  편안한 복장으로 오시고 물병 또는 텀블러를 준비하시면 더욱 좋습니다.', 30000, '당일', '2026-02-26', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '성흥사'), '너와숲길 명상과 행운 목걸이 만들기 체험', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/15/20260815115711070_1_S.webp', '템플스테이 숲명상 프로그램
+
+편백나무 숲 길을 천천히 걸으며
+숨을 고르고 마음을 비웁니다.
+피톤치드 향 속에서 발걸음마다
+번뇌는 내려놓고, 새로운 기운을 맞이합니다.
+숲길을 걷고, 마음을 쉬며,
+나와 소중한 사람들의 안녕과 행운을 발원하는 시간.
+템플스테이 숲 명상은
+몸과 마음을 정화하고 일상으로 돌아갈 힘을 회복하는
+고요한 쉼의 여정입니다.
+
+- 흥미로운 체험  -
+
+숲 명상과 함께 고래 꼬리 목걸이 만들기
+
+고래 꼬리 목걸이는 옛 다이버와 해녀들이
+무사 귀환과 행운을 기원하며 지니던 마음에서 비롯되었습니다.
+오늘날에도 행운과 보호의 상징으로 사랑 받고 있습니다.
+넓은 바다를 자유롭게 헤엄치는 고래처럼!
+새로운 도전과 꿈을 향한 용기, 자유로운 삶을 의미하며
+졸업·취업·이직 등 인생의 전환점에 희망의 징표가 됩니다.
+
+고래 꼬리 목걸이를 만들어
+나의 행운을 넘어
+가족과 지인에게도 따뜻한 삶을 전하는
+마음의 시간을 만들고자 합니다.', '1일차;13:00~16:00 숲길 명상과 행운의 목걸이 만들기', '간편한 복장, 편안한신발, 개인컵(물병) , 양말을 꼭 챙겨주세요~~~', 30000, '당일', '2026-02-04', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '보덕관음사'), '[당일형] 명상 배우고 쉬면서 생각 내려놓기-당일형으로 추천합니다!!!!', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/20/20260620091355765_1_S.webp', 'span {
+    font-size: 16px !important;
+}
+
+table tr td, table tr th, .summary, .info ul li{
+    font-size: 16px !important;
+}
+
+.bold-color {
+    color: #b45213 !important;
+}
+
+.margin-top {
+    margin-top: 10px !important;
+}
+
+.summary {
+    font-weight: bold !important;
+}
+
+.title-imgage {
+    float: left !important;
+    width: 40% !important;
+    margin: 10px 30px 15px 0px !important;
+    box-shadow: 5px 5px 3px #666 !important;
+}
+
+.ul-display {
+    padding: 0px 0px 0px 25px !important;
+}
+
+.ul-display > li {
+    font-size: 16px !important;
+    list-style: disc !important;
+    text-align: left !important;
+}
+
+.ul-display > li > span, .program-content-1-2 > span, .font-weight-bold{
+    font-weight: bold !important;
+}
+
+/* 이미지 컨테이너 */
+.image-container {
+    display: flex !important;
+    flex-wrap: wrap !important; /* 줄바꿈 허용 */
+    justify-content: flex-start !important;
+    gap: 10px 2% !important; /* 상하 간격 30px, 좌우 간격 2% */
+    width: 100% !important;
+    margin-top: 20px !important;
+}
+
+/* 각 이미지 아이템 (이미지 + 텍스트) */
+.image-container > div {
+    flex: 0 0 32% !important; /* 한 줄에 3개 배치 */
+    text-align: center !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important; /* 이미지와 텍스트를 세로로 나열 */
+    margin-bottom: 10px !important; /* 아래 줄과의 추가 여백 */
+}
+
+.image-container img {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 3 / 2 !important; /* 이미지 비율을 통일시켜 정렬 유지 */
+    object-fit: cover !important;
+    border-radius: 4px !important;
+    display: block;
+    margin-bottom: 12px !important; /* 이미지와 바로 아래 글자 사이의 간격 */
+}
+
+/* 이미지 아래 글자 스타일 */
+.caption-text {
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+    font-weight: 500 !important;
+    color: #333 !important;
+    word-break: keep-all !important; /* 단어 단위 줄바꿈 */
+    text-align: center !important;
+}
+
+.program-title {
+    background-color: #b2a070 !important;
+    text-align: center !important;
+    font-size: 16px !important;
+    text-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3) !important;
+    color: white !important;
+    box-shadow: 5px 5px 3px #666 !important;
+    font-weight: bold !important;
+    padding: 10px !important;
+    margin: 20px 0px 10px 0px !important;
+}
+
+.program-content {
+    display: flex !important;
+    align-items: flex-start !important;
+    flex-wrap: wrap !important; /* 자식이 넘치면 다음 줄로 보냄 */
+    gap: 20px !important;       /* 자식 사이의 간격 */
+    width: 100% !important;
+    margin: 20px 0 !important;
+}
+
+.program-content-1-1 {
+    font-size: 18px !important;
+    font-weight: bold !important;
+    margin-bottom: 10px !important;
+}
+
+.program-content-1-2 {
+    font-size: 16px !important;
+}
+
+.program-content-copy {
+    margin-bottom: 10px !important;
+    display: inline-block !important;
+}
+
+.part-1 {
+    text-align: left !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+    margin-top: 40px !important;
+    margin-bottom: 10px !important;
+    clear: both !important;
+}
+
+.fixed-bottom-bar {
+    /* 하단 고정 및 여백 설정 */
+    position: fixed !important;
+    bottom: 0px !important;
+    left: 0px !important;
+    right: 0px !important;
+    max-width: 1280px !important;
+    margin: 0 auto !important;
+    /* 버튼 정렬을 위한 Flex 설정 */
+    display: flex !important;
+    gap: 15px !important; /* 버튼 사이의 간격 */
+    /* 시각적 스타일 */
+    background-color: white !important;
+    padding: 15px 20px !important;
+
+    z-index: 1000 !important;
+  }
+
+  .btn {
+    /* 버튼이 동일한 비율로 공간을 채우도록 설정 */
+    flex: 1 !important;
+    height: 50px !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+
+  }
+
+  .btn-secondary {
+    background-color: #b45213 !important;
+    color: white !important;
+    border: 0px !important;
+  }
+
+  .btn-primary {
+    background-color: white !important;
+    color: black !important;
+    border: 2px solid black !important;
+  }
+
+  /* 클릭 효과 */
+  .btn:active {
+    opacity: 0.8 !important;
+    transform: scale(0.98) !important;
+  }
+
+  .templestay-part {
+    background-color: #b45213 !important;
+    color: white !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+    border-radius: 15px !important;
+    display: inline-block !important;
+    padding: 5px 15px !important;
+    margin-bottom: 5px !important;
+  }
+
+
+/* [모바일용] 화면 너비가 768px 이하일 때 */
+@media screen and (max-width: 768px) {
+    .image-container > div {
+        flex: 0 0 100% !important; /* 한 줄에 1개씩 */
+
+    }
+
+    .image-container {
+        gap: 10px 0 !important;
+    }
+
+    .program-content-1 {
+        flex: 0 0 100% !important; /* 가로를 꽉 채우도록 설정 */
+    }
+
+    .title-imgage {
+        width: 100% !important;
+        margin-bottom: 20px !important;
+    }
+}
+
+무거운 마음은 두고, 가벼운 숨결만 채워가는 하루
+
+끝없이 이어지는 생각과 소음에서 잠시 로그아웃하세요. 산사의 맑은 공기를 마시며 걷고, 차 한 잔의 온기에 집중하며, 오직 나의 호흡만을 마주하는 시간. 단 하루의 여정이지만, 당신의 일상을 지탱할 깊은 고요를 선물합니다.
+우리만의 독립된 공간에서 더욱 깊이 있는 선명상과 차담을 경험하실 수 있습니다. 팀 빌딩, 동호회, 가족 모임 등 소중한 분들과 함께하는 고요한 여정을 예약해 보세요.
+
+* 예약 후 자동문자를 받으시더라도, 참가비 입금이 완료되어야 최종 예약완료가 됩니다.
+* 환불송금은 수수료를 제외한 금액을 환불해드립니다.
+
+😁 이용 안내
+
+
+	당일형 운영 : 8인 이상의 경우 단체신청도 가능합니다.
+	맞춤형 진행 : 단체의 성격과 선호에 맞춰 시작 시간 및 프로그램 구성을 자유롭게 조정해 드립니다.
+
+
+
+
+👍 당일형 템플스테이만의 특별한 혜택
+
+
+	전문성 : 지도법사 스님이 직접 프로그램 진행
+	편의 제공 : 수련복 지급 및 주차장 무료 이용
+
+
+
+
+👉 프로그램 시작 전 안내사항
+
+
+	도  착 시 간 : 원활한 준비를 위해 프로그램 시작 시간 10분 전까지 도착해 주시기 바랍니다.
+	주  차  안 내 : 사중 주차장을 무료로 이용하실 수 있습니다.
+
+
+
+
+🥣 풍경 맛집 보덕 관음사
+
+보덕 관음사의 멋진 풍경을 감상하세요.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+🔎 당일형 표준 프로그램 안내(변경 가능)
+
+입소 (수련복 받기)
+
+
+	일정 : 오후2시30분~3시분 도착
+	장소 :  템플관
+	진행 :  지도법사 또는 템플스테이 팀장
+
+
+
+
+불교의 전통과 문화를 느끼는 시간
+
+사찰안내는 단순히 불교사찰을 방문해 보는 것이 아니라 살아 숨쉬는 불교의 전통과 문화를 느끼고 배우는 불교 전통문화 순례의 길이 될 것입니다. 사찰의 구조와 건축, 조각, 공예, 단청 등 각종 불교 문화재들은 부처님의 가르침과 민족의 전통을 오롯이 간직하고 있기에 사찰순례를 통하여 이러한 의미와 아름다움을 음미해 보는 경험을 해보는 것입니다.
+사찰안내는 다음 코스로 진행됩니다.
+
+
+
+
+공양(사찰음식 맛보기)
+
+
+	일정 : 17:30~18:00(저녁공양)
+	장소 : 공양간
+	진행 : 템플스테이 실무자
+
+
+수행자의 지혜가 담긴 사찰음식 공양
+사찰에서는 식사를 공양이라고 합니다. 공양이란 “부처님 전에 음식을 올린다” 라는 의미인데 단순히 음식을 먹는 이상의 의미가 있습니다.
+사찰에서는 음식이 우리에게 오기까지 수고로움을 아끼지 않은 수많은 이들에 대한 고마움과 자연에 대한 감사의 마음 그리고 쌀 한 톨도 낭비하지 않겠다는 절약의 정신을 강조합니다.
+또한 공양주보살님의 정성이 가득 담긴 음식을 공양 받으실 수 있습니다.
+
+
+
+사찰안내 후 맛좋은 약수 맛보기
+
+
+	일정 : 17:00~17:30(사찰안내)
+	장소 : 대웅전(출발)
+	진행 : 지도법사 스님 또는 템플스테이 실무자
+
+
+
+걷는 동안 온전히 나에게 집해 보세요
+바쁜 일상 속, 온전히 나에게 집중하는 시간이 필요하신가요? 걷기 명상은 몸과 마음을 동시에 깨우는 가장 쉬운 명상법입니다.
+땅을 딛는 한 걸음마다 발바닥의 감각에 집중하고, 불어오는 바람, 스치는 햇살을 온전히 느껴보세요. 복잡한 생각은 잠시 멈추고, 발소리마저 명상이 되는 순간을 경험하게 됩니다. 걷는 동안 오롯이 나 자신과 연결되며, 맑은 정신과 평온함을 되찾을 수 있습니다.
+
+
+
+선명상 입문 체험 후 행복을 찾는 108배 염주 만들기
+
+
+	일정 : 15:00~16:00(60분)
+	장소 : 대웅전
+	진행 : 지도법사 스님과 템플스테이 실무자
+
+
+마음의 평화를 위한 선명상 배우기
+산사에서 마음을 밝히고, 선명상으로 나를 찿아 떠나는 시간 마음의 평안을 찿고, 쉬어보는 시간입니다. 자기 자신의 욕망과 타인과의 갈등과 대립을 해결하는 가장 지혜로운 방법은 인정하고 받아들이는 마음 입니다. 상쾌한 이른 아침 운학산 둘레길에서 걷기명상을 하거나, 일상에서 알아차림을 체험해 봅니다. 이 선명상 체험은 일상에서도 적용되어, 여러분의 마음에 평안을 줄 것입니다.
+
+
+
+스님과의 차담
+
+
+	일정 : 16:00~17:00(차담후 소감문 작성)
+	장소 : 차담실
+	진행 : 지도법사 스님
+
+
+따뜻한 위로가 담긴 차 한 잔으로 마음을 나누는 시간
+일반적인 생활과 달리 수행을 하는 스님과 마주앉아 대화를 나누는 것은 템플스테이가 주는 아주 특별한 경험 중의 하나입니다. 우리나라 전통문화의 보고인 불교 문화에 대한 궁금증뿐만 아니라 살아가면서 겪게 되는 고민과 갈등에 대해 특별한 주제 없이 편안하게 이야기를 나눌 수 있습니다. 스님과 함께 차 한 잔을 나누는 차담은 템플스테이에서도 가장 의미 있는 시간이기도 합니다.
+
+
+
+
+소원 풍경등 달기
+
+도자기 풍경에 12띠별로 참가자들의 작은바램과 소원을 적어 탑에 달아봅니다
+아름다운 풍경소리에 설레고 반짝반짝 빛을내며 우리를 비춰주듯 환하게 빛나고
+있는 풍경등에 마음까지 환해집니다.
+
+
+
+  단체문의(☎️031-339-6612)
+
+
+  document.addEventListener(''DOMContentLoaded'', function() {
+    // 이제 DOM이 확실히 생성되었습니다.
+    const area = document.querySelector(''.reserveArea'');
+    if (area) {
+        area.id = ''reserve'';
+        console.log("아이디가 성공적으로 추가되었습니다.");
+    }
+
+    const target = document.querySelector(''.place > h3'');
+
+    if (target) {
+        // 2. 추가할 새로운 div 생성
+        const newDiv = document.createElement(''div'');
+        newDiv.className = ''templestay-part''; // 클래스 추가
+        newDiv.innerHTML = ''체험형'';
+
+        // 3. 타겟 요소 바로 위에 삽입
+        target.before(newDiv);
+    }
+});', '1일차;14:30~14:50 입소 / 수련복 받기;14:50~16:00 5분 선명상 체험과  행복을 찾는 108배 염주 만들기;16:10~17:00 풍경등에 소원적어 달기 / 스님과의 차담;17:00~17:30 사찰소개(보덕관음사 알아보기);17:30~18:00 저녁공양후 퇴소(마침)', '수련복 조끼를 지급합니다.
+	양말을 꼭 준비해 주세요.(사찰 내에서는 맨발로 다니시면 안 됩니다)
+	슬리퍼도 안됩니다. (크록스 형태는 가능)
+	하절기에는 햇살이 뜨겁고 벌레가 많으니 필요한 물품과 상비약을 준비해오세요.
+	산사(山寺)는 하루의 일교차가 큰 편입니다. 추위와 더위에 필요한 옷을 챙겨 오시면 좋습니다.
+	프로그램 일정은 사찰사정에 의해 변경될 수 있습니다.', 50000, '당일', '2026-01-17', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '대광사(창원)'), '2026년 대광사(창원) 공익 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/1/8/20260108104412470_1_S.webp', '2026년 대광사에서 진행하는 공익- 힐링 템플스테이입니다.
+
+1. 대상 : 다문화, 독거노인, 이민가정, 저소득층, 청소년, 업무 중 산재 및 심신안정이 필요한 일반직, 특정직공무원 등
+2. 접수기관 : 공공기관, 지역 복지관, 관련 협회, 학교 등 기관 및 협회
+3. 기본 프로그램은 아래의 일정을 확인해주십시오. 세부일정은 협의 후 변경 가능 합니다.
+4. 본 프로그램은 단체프로그램입니다. 기관 또는 협회에서 지원 및 예약이 가능합니다.
+5. 일정조율 및 문의는 전화 055-545-9595 또는 메일 beae@templstay.com으로 해주시기 바랍니다.', '1일차;00:00~09:30 대광사 입소;10:00~12:00 창원 편백 치유의 숲 체험;12:00~12:30 점심공양;12:30~13:10 다도 - 차 한잔의 여유;13:10~14:00 사찰안내 및 사찰예절 체험;14:10~15:00 연꽃등 or 108염주 만들기;15:10~15:30 소감문작성 및 집으로', '1. 간편한 복장
+2. 텀블러', 10000, '당일', '2026-01-08', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '마곡사'), '[당일형] 선명상 체험하기[장소: 매화당 또는 수련 체험관]', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/15/20260815012507059_1_S.webp', '사찰에서 스님과 함께 선명상 입문 체험을 하는 프로그램입니다.
+
+장소는 날씨에 따라 마곡사 경내 매화당 또는 수련 체험관(상원암)에서 진행됩니다.
+
+
+
+
+일정은 변동이 생길수 있으니 참고하시고 자세한 문의는 문자 또는 전화 문의 바랍니다.', '1일차;09:00~11:20 장소 안내 및 선명상 진행;11:20~12:00 점심 공양;12:00~14:00 스님과의 집중 명상 후 회향', '개인 상비약, 물을 마실수 있게 개인 텀블러 준비해주세요.', 30000, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '성주사'), '해 질 녘 산사여행(저녁 당일형)', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/10/9/20251009064400854_1_S.webp', '해 질 녘 산사여행
+해 질 녘 고즈넉한 산사의 정취를 느끼며 자신을 돌아보는  저녁 당일형 프로그램
+430 오티
+5시 저녁공양. 자유 산책
+545  타종체험
+6시 저녁 예불 명상
+7시 탑돌이, 108배등', '1일차;430~730 타종체험 , 저녁 예불, 명상 ​​​​​​​,  탑돌이, 108배등', '편안한 복장. 개인컵 or 템블러', 40000, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '갑사'), '당일 템플스테이(10명 이상, 사전 연락 요함) 9월 운영 중지', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '1. 학교, 기업, 동호회, 모임 등 단체에서 진행하는 문화행사 일정의 일환으로 10명 이상의 참가자를 대상으로 당일 최소 2시간부터 최대 5시간 동안 사찰의 전통문화를 체험 할 수 있습니다. * 원하는 프로그램이 있으면 맞춤형으로 진행 가능 합니다. 2. 개별 참가를 원하시는 분들은 상시 체험형 첫째날 오후 프로그램 참여 가능 합니다. 3. 참가비는 3만원 입니다.', '1일차;10:00~11:00 사찰예절 및 안내;11:00~12:00 점심공양;12:30~14:00 용문폭포 걷기 명상;14:00~15:00 108 여의보주 만들기', '당일형 프로그램의 경우 별도의 준비물이 필요없습니다. 개인물병정도 준비하시면 됩니다.', 30000, '당일', '2026-06-24', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '보현사'), '[당일형]  강릉여행 보현사템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/6/23/20250623011837308_2_S.webp', '강릉여행  당일형 템플스테이
+
+
+잠시 쉬어가는 여유..
+
+
+    033-647-9455 보현사템플스테이', '1일차;10:00~10:30 오리엔테이션 / 싱잉볼 명상;10:30~11:30 행복을찾는 108배/ 108염주만들기;11:30~12:00 점심공양;12:00~13:00 스님과의 차담;13:00~00:00 안녕히 돌아가세요~', '개인물병, 편안한 복장, 양말필수', 30000, '당일', '2025-07-04', '2027-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '국제선센터'), '[오후·선명상] 내 마음에 선함: Afternoon Glow', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/5/1/20250501094153642_1_S.webp', '"고요하고 편안하되, 명료한 상태"
+
+<선명상>을 통해 생각과 마음을 다루어 가는 연습을 합니다.
+
+내면의 힘을 길러가는 <선명상>은 하고자 하는 일의 ''효율''은 높여주고, ''휴식''의 깊이는 더해줍니다.
+
+도심 속 쉼의 공간. 국제선센터 템플스테이에서 ''보이는 것, 들리는 것''에 따라다니는 마음을 안으로 거두어 봅니다.
+
+<선명상: INNER PEACE> - 명상의 바른 자세와 방법. 수식관
+★ 생각에 끌려다니지 않기 위하여 ★ 스스로를 괴롭히지 않기 위하여 ★ 내 마음을 알아가기 위하여
+<스님과의 차담>
+★ 따뜻한 차와 함께 ‘한 마음’ 쉬어가는 스님과의 Q&A 시간
+
+일상의 반복감에서 벗어나 지금 이 순간을 오롯이 느껴봅니다.
+도심 속 평온의 공간, 국제선센터에서 명상을 통해 일상의 고요한 마음자리를 찾아갑니다.
+진정한 휴식은 마음의 고요에서 비롯됩니다.
+쉬어진 마음으로, 일상을 다시 새로이 시작해봅니다.', '1일차;14:00~15:00 선명상: 자세.방법.실참.피드백;15:00~16:00 스님과의 차담: Q&A session', '편한 복장(명상참가자), 개인 컵(텀블러), 양말을 꼭 준비해주세요!', 20000, '당일', '2025-04-05', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '석왕사'), '매월 첫째주 - 108배 체험', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/25/20250325013827712_1_S.webp', '도심속의 전통사찰 석왕사에서 하루를 보내며 다양한 체험을 할 수 있는 기회를 부여합니다.
+매주 다르게 운영되며 원하는 체험이 있는 날짜에 참가 신청 할 수 있습니다.', '1일차;10:00~10:30 입소, 법복 착용;10:30~11:00 사찰예절 안내;11:00~12:00 석왕사 안내;12:00~13:00 점심 공양;13:00~13:30 휴식;13:30~14:30 108배 체험;14:30~15:00 명상 및 체험후기 작성 (우천 시 ''명상 → 컵등만들기'')', '당일형 프로그램의 경우 별도의 준비물이 없습니다.
+편한 신발을 준비해오시면 됩니다.
+*동절기에는 개인 방한용품을 준비하세요.', 30000, '당일', '2025-03-28', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '진관사'), '나만의 향기를 찾아서', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '1007년 고찰 津(나루진)寬(너그러울 관)寺에서 머무르며 찬란히 살아 있는 우리 문화를 느끼며 평온을 주는 아름다운 자연과 숨쉬며 나루터에서 잠시 쉬듯 삶을 잠시 내려 놓고 스님과의 다담을 통해 나를 너그럽게 바라 볼 수 있는 시간을 갖도록 합니다. 이 프로그램은 그룹(10명 이상)을 위한 프로그램이니 예약전에 실무자와 상담이 필요합니다. (개인은 신청 불가한 프로그램입니다.)
+
+전화 02-388-7999
+이메일 jintem359@naver.com', '1일차;14:30~14:40 행복접수(도착);14:40~15:00 사찰안내;15:00~16:00 행복다담;16:00~16:00 행복나누러가기(회향)', '당일형 프로그램의 경우 별도의 준비물이 필요없습니다. 개인물병정도 준비하시면 됩니다.', 30000, '당일', '2025-03-13', '2030-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '반야사'), '* 당일형 마음 쉼 *', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/15/20260615082803057_1_S.webp', '홀가분한 마음으로 발걸음 가볍게 떠나요!
+나를 찾아 떠나는 행복여행으로!
+아름다운 자연속에서 평안한 마음으로
+잠시 멈추어 내안을 봅니다!
+그리고 나에게 위로와 격려, 응원과 사랑을
+전합니다.
+
+★☆★  5명 ~ 20명 단체 예약 가능(화,수,목,금요일)
+          ♣♣♣   (예약후 입금요청 문자받으신후 입금해 주세요.)
+
+★  문의 : 반야사 템플스테이 010-5330-7722
+★  업무시간 : 오전 9시 ~ 오후 5시 /
+                      점심시간 : 오전 11시30분 ~ 오후 1시
+                      (업무시간에만 상담 가능합니다.)
+
+★ "사찰정보보기"를 클릭하시면 블로그,인스타그램 확인 가능합니다.
+● 블로그 : https://blog.naver.com/ydbys-7722
+● 인스타그램 : https://www.instagram.com/templestay_banyasa', '1일차;10:30~11:20 반야사 소개  및 숲길 명상;11:30~12:00 점심공양;13:10~14:00 차 한잔하며 마음나누기 or 나만의 단주만들기', '조끼만 준비됩니다.', 30000, '당일', '2021-04-08', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '장육사'), '청산은 나를 보고... (당일형)', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/29/20250329021105048_1_S.webp', '당일(Daily) 템플스테이는 평일 짧은 시간이지만 나를 찾는 시간여행입니다. 숲속을 거닐고 따뜻하고 향기로운 차 한잔과 마주하며 참나를 찾아가는 시간이 되시길 바랍니다.
+-당일 템플스테이 체험은 3인 이상 신청 가능합니다.
+-프로그램은 2~3시간 동안 진행되며 사찰 안내, 단주만들기, 스님과의 차담 등을 선택하실 수 있습니다.
+-참가 일정 및 시간, 프로그램 선택은 전화로 상담해 주세요.
+-프로그램 일정은 상담 후 조정 가능합니다.', '1일차;13:00~13:10 법당참배 안내;13:10~14:10 *연꽃등(마음을 밝히는 일상의 소품) *합장주(일상 속에서 서원을 기억하기) *108염주로 이어가는 108배 (3가지 자율선택);14:10~15:10 나옹왕사의 선수행길 (포행);15:10~16:10 스님과 차담;16:10~16:30 일상 속으로', '단정한 차림 및 물병', 0, '당일', '2026-03-31', '2026-09-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '무량사'), '무량한 자비심(플러스 원)', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/4/1/20250401032318607_1_S.webp', '학교, 회사 등 단체를 위한 프로그램으로 무량사에 2시간 ~ 4시간 정도 머물면서 사찰의 불교문화를 체험할수 있는 프로그램입니다. 단체의 가능한 시간에 따라 서로 협의하여 체험할수 있는 프로그램을 선택할 수 있습니다. ------------------------------- 충청남도 부여군 외산면 무량로 203 농협은행 351-0645-8493-13 (예금주/무량사) 템플스테이 문의 : 041)836-5066 www.muryangsa.net', '1일차;10:00~10:30 사찰안내;10:30~11:00 무량사 합장주 만들기;11:00~12:00 무량사 옛터 포행(자율);12:00~13:00 점심공양', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 개인 물병 정도만 준비하시면 됩니다.', 25000, '당일', '2017-01-06', '2026-12-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '성주사'), '2026년 나눔 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/3/12/20260312034849458_1_S.webp', '나눔과 휴식 템플스테이는 고요한 자연속에서 휴식을 누리며, 나눔의 가치를 실천하는 특별한 템플스테이 입니다.
+대상 : 외국인 노동자, 다문화 가정, 한부모 가정, 군인, 사회적약자
+비용: 무료', '1일차;11:00~11:50 곰숲길 걷기;11:50~13:00 맛있는 점심공양;13:00~14:00 소리명상(싱잉볼)', '개인 물통 or 텀블러,수건', 0, '당일', '2026-09-09', '2026-12-17', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '개암사'), '템플라이프', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '개암사의 역사문화와 자연, 차와 명상을 함께 하는 시간', '1일차;14:00~14:30 개암사 이야기;14:30~15:00 차 한잔의 여유와 명상의 시간', '당일형 프로그램의 경우 별도의 준비물이 필요없습니다. 개인물병정도 준비하시면 됩니다.', 20000, '당일', '2026-09-08', '2026-10-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '건봉사'), '[당일형]  고성여행 건봉사 템플스테이 (10월~12월)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/9/4/20260904015011126_1_S.webp', '고성여행 당일형 템플스테이 . . . .  .
+
+" 고성으로 떠나는 특별한 하루 " ,
+
+   여행하고 , 마음을 쉬다.
+
+ 고성의 아름다운 자연과
+ 천년고찰 건봉사의 고요함 속에서
+ 잠시 멈추어 나를 돌아보는 시간.
+
+ 여행은 몸을 움직이고,
+ 템플스테이는 마음을 쉬게 합니다.
+
+ 당신의 하루에 작은 쉼표하나 ,
+ 고성 건봉사에서 만나보세요.', '1일차;11:00~12:00 도착 , 오리엔테이션 / 점심공양;12:00~12:40 사찰안내 해설 , 치아사리친견;12:40~13:30 행복을찾는108배 / 108염주만들기;13:30~14:00 느린우체통(엽서보내기) , 봉서루소원등(소원지달기);14:00~14:30 스님께 인사하기 , 안녕히 돌아가세요.', '*** 상의조끼만 드립니다. ***
+
+개인물병 , 편안한복장 , 양말필수', 30000, '당일', '2026-10-04', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '불갑사'), '행복 마음 선(禪) 명상 템플라이프(2시간 명상 체험)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/9/4/20260904013746216_1_S.webp', '🌿 천년 고찰 불갑사에서 만나는 특별한 마음여행
+“잠시 멈추고, 내 마음을 들여다보는 시간”
+천년의 시간과 고즈넉한 자연이 머무는 불갑사에서 일상의 걱정을 잠시 내려놓아 보세요.
+이번 프로그램에서는 작은 걱정인형에 나의 걱정과 고민을 담아 마음을 표현하고,
+스님과 함께 따뜻한 차 한 잔을 나누며 삶과 마음에 관한 이야기를 편안하게 나눕니다.
+차의 따뜻한 온기와 은은한 향을 느끼며 천천히 호흡하고, 고요한 명상을 통해 복잡했던 마음을 잠시 쉬어갑니다.
+걱정을 없애려고 애쓰기보다
+“내가 무엇을 걱정하고 있었는지” 바라보고,
+그 마음을 따뜻하게 안아주는 시간.
+천년 고찰 불갑사에서
+걱정인형과 함께 마음의 짐을 내려놓고,
+스님과의 차 한 잔으로 마음을 나누며,
+명상으로 나 자신에게 온전히 집중해보세요.
+오늘의 나에게 선물하는 가장 따뜻한 쉼.
+🌿 불갑사에서, 마음을 쉬어가세요.🍵🧘‍♀️', '1일차;13:00~13:30 도착, 사찰예절,불갑사 알아보기,조끼 환복(설선당);13:30~14:00 명상;14:20~15:00 걱정인형 만들기(나에게 전하는 마음)', '*편한 복장', 20000, '당일', '2026-09-10', '2026-09-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '불갑사'), '불갑사 영농원과 함께하는 우리콩 네모 반듯 메주 만들기 체험(당일형)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/9/4/20260904100029620_1_S.webp', '*한달  숙성 후 숯,대추,고추,레시피 동봉하여 택배로 보내드립니다.*
+바쁜 일상에서 잠시 걸음을 멈추고,
+고즈넉한 사찰의 품에서 나와 내 마음을 돌아보는 특별한 1박 2일.
+**영광 불갑사 영농원과 함께하는 ‘네모 반듯 메주 만들기 체험’**은
+우리 전통의 맛과 지혜가 담긴 메주를 직접 빚어보며
+손으로 만들고, 마음으로 쉬어가는 사찰 체험 프로그램입니다.
+범종 소리를 들으며 사찰 예절을 배우고,
+영농원에서 정성껏 준비한 재료로 메주를 하나하나 빚어봅니다.
+투박하지만 정겨운 메주를 네모 반듯하게 만들어가는 과정 속에서
+우리 조상들의 지혜와 발효 음식의 소중함도 함께 느껴보세요.
+
+평소에는 쉽게 느끼지 못했던 ‘고요함’의 깊이를 경험해 보세요.
+네모 반듯한 메주 하나에 정성을 담고,
+복잡했던 마음에는 잠시 쉼표 하나를 찍는 시간.
+전통의 맛을 배우고, 자연을 걷고,
+사찰의 고요함 속에서 나를 돌아보는 1박 2일.
+영광 불갑사에서
+손끝에는 메주를, 마음에는 따뜻한 여운을 남겨보세요.
+***메주 만들기 기본은 2덩이(택비포함55,000) 이며 추가항목에 2덩이(50,000) ,4덩이(100,000)~ 원하는 수량 추가하실 수 있습니다.***
+*한달  숙성 후 숯,대추,고추,레시피 동봉하여 택배로 보내드립니다.*', '1일차;13:00~13:30 도착 ,조끼 환복(설선당);13:30~13:50 OT 따뜻한 차 한잔과 사찰 예절 알아보기;14:00~16:00 범종루 출발, 영농원에서 메주 빚기;16:00~16:00 회향', '*편한 복장', 65000, '당일', '2026-12-10', '2026-12-20', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '진관사'), '마음꽃 피우기-지화 만들기 체험', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/9/4/20260904090544152_1_S.webp', '한지를 여러 가지 색으로 물들이고 모양을 잡아 만드는 지화
+전통적인 도구와 제작기법으로 만들어지는 진관사 지화
+선조들이 물려준 유산인 한지와 함께
+전승 보존 되어야 할 우리의 소중한 문화유산입니다.
+
+진관사지화장엄연구소 스님께 직접 배워보는 지화만들기 체험입니다.', '1일차;14:00~15:30 지화만들기 체험;15:30~15:40 보물 태극기를 만나다;15:40~16:00 명상 or 느낌나누기', '1. 사찰에 적합한 편안한 바지와 양말 착용을 권장드립니다.', 20000, '당일', '2026-09-29', '2026-11-24', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '진관사'), '마음을 담은 한그릇 -사찰음식 체험', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/9/4/20260904074948682_1_S.webp', '천년고찰이며 사찰음식의 명소인 진관사에서 스님께 직접 사찰음식을 배우고 만들어 볼 수 있는 기회를 마련했습니다.
+
+09/15 콩국수
+10/13 연잎냉면(물/비빔)
+11/03 콩나물우엉잡채 / 우엉조림
+11/10 두부김밥  /  두부장아찌
+11/17 연잎밥
+12/01 버섯강정 / 버섯전
+
+* 위 일정은 사중상황에 따라 변동 될 수 있습니다.', '1일차;14:00~15:30 사찰음식 만들기 체험;15:30~15:40 보물 진관사 태극기 만나기;15:40~16:00 명상 or 느낌나누기', '1. 사찰에 적합한 편안한 바지와 양말 착용을 권장드립니다.', 50000, '당일', '2026-09-15', '2026-12-01', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '불갑사'), '2026년 외국인 영광불갑사 상사화  발우 공양 명상 템플 라이프', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/24/20260824022234333_2_S.webp', '불갑사는  간다라 마라난타 존자께서 영광 땅 법성포를 통해 백제에 불교를 전래 하고 최초로 창건한 사찰입니다.
+대표적인 성보는 보물로 지정된 대웅전(제830호)과 목조삼세불좌상(제1377호), 불복장전적(제1470호)이 있습니다.
+천연기념물 제112호인 참식나무 군락지와 전국최대의 상사화군락지가 있는 불갑산이 감싸 안고 있는 아름다운 천년 고찰입니다.
+불갑사 주변과 불갑산에는 각양각색의 야생화들이 철따라 아름답게 피어나고, 그 길 따라 깔끔하게 조성된 공원 산책로 및 등산로를 걷다보면,
+어느새 도시와 삶의 번잡함은 슬그머니 물러날 것입니다. _()_', '1일차;11:40~12:20 발우 공양(약식);12:30~13:10 스님과의 차담;13:20~14:00 스님과 불갑사 알아보기', '-개인 세면도구 및 수건, 샤워용품 챙기기
+-양말 및 여벌의 옷(봄,가을,겨울은 일교차가 심함)
+-등산화(등산을 하시는 분은 필수)
+-개인 텀블러나 물병 가져오기', 25000, '당일', '2026-09-19', '2026-09-19', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '연운사'), '(당일형)(나눔템플스테이) 지역연계 줌머인 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/31/20260831024739848_1_S.webp', '<줌머인연대와 함께하는 따뜻한 하루>
+
+지역사회와 함께 나누고 소통하는 연운사 지역연계 나눔템플스테이로, 줌머인연대 가족들이 사찰의 고즈넉한 공간에서 잠시 일상을 내려놓고 한국의 전통문화와 불교문화를 체험하며 서로의 마음을 나누는 프로그램입니다.
+
+특히 서로 다른 문화와 배경을 가진 참가자들이 사찰이라는 열린 공간에서 함께 웃고, 만들고, 이야기하며 자연스럽게 소통하는 시간에 의미를 두었습니다.
+
+
+주요 프로그램
+
+🪷 연운사 사찰 둘러보기 – 대웅전·삼성각 등 사찰 공간과 의미 알아보기
+🙏 불교문화 체험 – 합장·예절 등 사찰 기본예절 배우기
+🔔 법구 체험 – 목탁·범종 등 사찰의 전통문화 체험
+🏮 전통문화 체험 – 연등 만들기 등 함께하는 체험활동
+🍵 차 한 잔의 마음쉼 – 차를 마시며 편안하게 대화하고 휴식하기
+📸 연운사에서 추억 남기기 – 참가자 모두가 함께하는 기념촬영
+💝 나눔과 소통의 시간 – 서로의 문화를 이해하고 따뜻한 마음을 나누기', '1일차;10:10~10:25 도착 및 안내, 수련복 환복;10:30~11:30 불교문화체험(예불체험);11:30~12:30 점심공양;12:30~13:00 마음평안 선명상;13:00~13:30 나만의 단주 만들기;13:30~14:00 스님과의 차담;14:00~14:10 단체 사진 촬영;14:10~14:20 회향 및 체험후기 나누기', '편안한 템플스테이를 위해 아래 준비물을 챙겨주세요.
+
+👕 편안한 복장 — 활동하기 편한 옷
+🧦 양말 — 법당 및 사찰 공간 이용 시 필요
+👟 편안한 운동화 — 사찰 둘러보기 및 체험활동 시 착용', 30000, '당일', '2026-08-31', '2026-09-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '망경산사'), '[지역연계형] 코레일 힐링 기차여행 : 영월 망경산사 템플스테이 & 감성 로드 투어(당일형)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/23/20260823102104677_1_S.webp', '낭만 가득한 기차를 타고 청정 자연과 다채로운 즐거움이 살아 숨 쉬는 강원도 영월로 떠나보세요. 망경산사의 고즈넉한 쉼부터 영월의 숨은 명소까지 하루에 만나는 특별한 여정입니다.
+산사의 고요함과 영월의 활기찬 매력을 동시에 즐기는 알찬 하루, 지금 코레일과 함께 가벼운 마음으로 떠나보세요.
+예약은 코레일관광개발 홈페이지에서 가능합니다.
+(https://www.korailtravel.com/web/goods_view/index.asp?page_nm=goods_day&strApart=K&strBpart=Q&strCpart=08&goodsNum=21617)
+
+[주요 프로그램]
+- 망경산사 힐링 템플스테이: 정갈한 사찰 점심공양을 맛보고, 21ha 규모로 시원하게 뻗은 스트로브 잣나무 숲길을 걸으며 일상의 피로를 맑게 비워냅니다.
+- 영월 족욕체험: 산행과 여행으로 쌓인 발의 피로를 따스하게 풀어내는 편안한 치유의 시간.
+- 영월 서부시장: 메밀전병, 올챙이국수 등 영월 전통의 맛과 정겨운 시골 인심을 만나는 먹거리 탐방.
+- 하얀 눈꽃 메밀밭: 바람결을 따라 새하얗게 물결치는 메밀꽃 사이에서 남기는 인생 사진 한 컷.
+
+[전체 일정]
+[7:40] 서울역 출발- (청량리, 덕소, 양평, 서원주, 원주 경유예정)- 제천 09:30 도착
+[09:40] 연계차량 탑승 - 영월 망경산사 이동
+[10:40] ‘나’를 돌아보는 진짜 힐링, 망경산사 템플스테이 체험
+
+[망경산사 템플체험 일정]
+11:00~12:00｜사찰 소개 및 자연즐기기
+12:00~13:00｜점심공양(중식)
+13:00~14:30｜망경대산 스트로브 잣나무 숲길 걷기
+
+[14:40] 연계차량 탑승 - 예밀와이너리로 이동
+[15:00] [포도향에 발 담그고 힐링 쉼표, 예밀 와이너리 와인체험]
+– 따뜻한 와인 물에 족욕하며 몸과 마음까지 릴렉스
+– 오감으로 즐기는 특별한 와이너리 체험
+[16:00] 연계차량 탑승 - 서부시장으로 이동
+[16:30] [국내 유일! 동강 붉은 메밀꽃축제]
+- 가을의 정취가 완연한 10월, 영월 동강변에는 붉게 물든 메밀꽃이 장관을 이루며,동강붉은메밀꽃축제가 열립니다.
+- 동강의 기암괴석과 붉은 꽃밭이 어우러져 이색적인 명소이자 사진 찍기 좋은 곳으로 유명합니다.
+[17:30] 연계차량 탑승 - 서부시장으로 이동
+[17:40] [영월 서부시장 & 종합상가]
+- 영월에서 생산되는 각종 농산물, 특산물과 메밀전병, 메밀전, 닭강정 등 먹거리가 즐비한 전통시장!
+- 옛 느낌 나는 장보기로 지역 전통시장 활성화에 힘쓰는 행복한 저녁시간!
+- 자유식(개별부담)
+[18:50] 연계차량 탑승 - 제천역 또는 영월역 으로 이동
+[도착열차 - 팔도장터관광열차#0000] ※ 이용 열차에 따라 제천역 또는 영월역에서 하차 예정입니다.
+[19:40] 제천역 출발-(원주, 서원주, 양평, 덕소, 청량리)-서울역 21:30 도착', '1일차;07:40~09:30 서울역 출발', '세면도구(수건, 비누, 칫솔 등 필참), 운동화, 긴팔 옷, 모자, 우산(비), 개인 물병(보온)', 119000, '당일', '2026-10-03', '2026-10-10', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '보경사'), '[2026 당일형] 당일 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/14/20260814014800870_1_S.webp', '내연산 12폭포와 함께 보경사를 둘러보다', '1일차;15:00~15:30 접수', 'ㄴㄴ', 20000, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '영평사'), '짝꿍: 세종촌(世宗村)-, 함께하는 마음쉼표, 영평사 힐링 명상 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/12/20260812105157246_1_S.webp', '바쁜 업무와 반복되는 일상 속에서 잠시 멈춰 서서 나를 돌아보는 시간.
+
+「짝꿍: 세종촌」은 세종시청 선배와 후배가 함께하는 마음챙김 힐링 프로그램입니다.
+
+천년고찰 영평사의 고즈넉한 자연 속에서 정성껏 준비한 사찰음식을 나누고,
+스님과의 차담을 통해 일상의 긴장을 내려놓으며 서로의 마음을 이해하는 시간을 갖습니다.
+
+이어지는 치유의 방 명상에서는 호흡과 마음을 차분히 바라보며 자신에게 온전히 집중하는 경험을 하게 됩니다.
+마지막으로 직접 만드는 연꽃 키링은 오늘의 따뜻한 기억을 오래 간직할 수 있는 작은 선물이 되어 줄 것입니다.
+
+잠시 쉬어가는 하루가 더 깊은 공감과 건강한 조직문화를 만들어 갑니다.
+
+마음을 쉬게 하고, 사람을 이어주는 하루.
+
+영평사에서 함께하시기 바랍니다.
+잠시 멈추면 마음이 보입니다. 함께 쉬고, 함께 웃으며, 함께 성장하는 하루를 영평사에서 만나보세요.', '1일차;11:30~13:00 환복 및 활동 안내, 점심공양;13:00~14:30 스님과의 차담;14:30~15:30 연꽃키링 만들기;15:30~16:30 치유의 방 명상;16:30~17:30 환복 및 마무리(만족도 조사)', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 개인 칫솔이나 물병(텀블러) 정도 준비하시면 됩니다.', 40000, '당일', '2026-08-12', '2026-09-17', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '백담사'), '스님과 60분', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/11/20260811011217252_1_S.webp', '무슨 이야기를 해도 좋습니다.
+
+가족 이야기
+
+자녀 이야기
+
+부부 이야기
+
+직장 이야기
+
+돈 이야기
+
+죽음 이야기
+
+내 마음 이야기
+
+인생 돌아보기
+
+관계 내려놓기
+
+죽음과 삶에 대한 불교적 이해
+
+명상
+
+답을 얻으러 오지 않아도 됩니다.
+
+그냥 한번 이야기해 보십시오.
+
+
+
+백담사스님과 함께 고민해 봅시다', '1일차;14:00~15:00 스님과의 차담', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 개인 물병 정도 준비하시면 됩니다.', 10000, '당일', '2026-08-11', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '성흥사'), '3시간 짬  명상 즐기기', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/2/5/20260205105117368_2_S.webp', '우리는 10분도 나를 위해 시간을  내본 적이 없다.
+오롯이 나만 생각하고, 나와 대화를 나누고 , 나와 친구가 되어보는 시간
+3시간을 활용해 보자', '1일차;13:00~16:00 바람소리 들으며  편백나무 친구들과 만나 인사하기', '간편한 복장, 모자 , 운동화', 30000, '당일', '2026-08-02', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '보경사'), '2026년 운영사찰 추진 ''나눔 템플스테이''', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/7/25/20260725043917549_1_S.webp', '내연산 12폭포와 함께 보경사를 둘러보다', '1일차;10:00~10:10 보경사 도착;10:10~11:30 문화유산 해설, 보물찾기, 레크레이션;11:30~12:30 점심공양;12:30~15:00 인경체험;15:00~15:10 회향', '..', 0, '당일', '2026-07-01', '2026-10-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '연운사'), '(당일형)(개인)고요한 마음쉼, 예불체험 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/7/18/20260718023208188_1_S.webp', '「고요한 마음쉼, 예불체험」
+바쁜 일상 속, 잠시 멈춰 나를 위한 쉼을 선물해 보세요.
+법당의 고요함 속에서 두 손을 모아 마음을 쉬어가고,
+예불의 의미를 배우며 지금의 나를 조용히 돌아보는 시간을 가져봅니다.
+불교를 잘 몰라도 괜찮습니다.
+처음 사찰을 찾는 분도 부담 없이 참여할 수 있도록 쉽고 편안하게 진행됩니다.
+♦개인 예약 가능
+혼자 또는 가족, 친구와 함께 참여하실 수 있습니다.
+
+"오늘은 잘해야 하는 시간이 아니라, 잠시 쉬어가는 시간입니다.
+절을 잘 몰라도 괜찮습니다.
+그저 이 공간의 고요함을 편안히 느끼며 함께해 주세요.
+잠시 내 마음을 쉬게 하는 시간,
+연운사에서 함께 시작해 보겠습니다."
+♦ 연운사 템플스테이
+♦ 예약·문의 : 010-4145-5306
+※ 개인 예약 가능합니다.', '1일차;09:50~10:10 도착 및 수련복;10:10~10:30 자율참배 (사찰 둘러보기);10:30~11:30 고요한 마음쉼, 예불체험 (사시예불참석);11:30~12:30 나를 위한 작은 공양(점심공양);12:30~12:40 체험후기 및 마음나누기, 회향 (기념품선물)', '✔ 편안한 복장 (바지 권장, 긴 치마·짧은 옷 지양)
+✔ 양말 착용 (법당 출입 시 편안합니다)
+✔ 개인 물병 또는 텀블러
+✔ 편안한 마음 😊', 30000, '당일', '2026-07-18', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '연운사'), '(당일형) (나눔템플스테이) 반려견과 함께하는 멍플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/7/17/20260717115629626_1_S.webp', '(나눔 템플스테이) 김포시가족센터 연계 프로그램
+
+반려견과 함께하는 특별한 하루, 김포 연운사 멍플스테이
+
+본 프로그램은 김포시가족센터와 연계하여 진행하는 나눔 템플스테이로, 1인 가구와 반려견이 함께하는 당일형 템플스테이입니다.
+도심 속 사찰인 김포 연운사에서 사랑하는 반려견과 함께 잠시 일상을 내려놓고 몸과 마음을 쉬어가는 특별한 시간을 마련했습니다.
+멍플스테이는 단순한 체험을 넘어 사람과 반려견이 서로의 마음을 이해하고 더욱 깊이 교감할 수 있도록 돕는 프로그램입니다. 애견행동전문가와 함께하는 행동 상담 및 행동교정, 반려견 마사지, 함께하는 산책 등 다양한 프로그램을 통해 반려견의 마음과 행동을 이해하고, 건강한 반려 문화를 함께 만들어갑니다.
+특히 혼자 생활하는 1인 가구에게 반려견은 가족이자 가장 소중한 동반자입니다. 이번 나눔 템플스테이는 반려견과 함께 마음을 돌보고, 서로를 더욱 이해하며 따뜻한 위로와 휴식을 나누는 시간을 선물하고자 합니다.
+사랑하는 반려견과 함께하는 하루가 바쁜 일상 속에서 서로를 더욱 아끼고 이해하는 소중한 추억이자, 마음에 오래 남는 따뜻한 쉼표가 되기를 바랍니다.', '1일차;09:30~09:50 사찰도착 및 접수/ 사찰안내;09:50~10:50 반려견 산책 교육 및 행동 교정 프로그램;10:50~12:00 반려견 교감 마사지 교육 및 차담(다과) 시간;12:00~12:20 스님 인사말 및 마음나눔시간;12:20~12:30 템플스테이 체험후기 및 회향', '■ 사료 및 간식, 리드줄, 배변패드, 배변봉투, 물그릇(필요에 따라 매너밸트)', 35000, '당일', '2026-07-17', '2026-11-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '연운사'), '(당일형)(개인) 청정한 마음, 연꽃등에 담다(연꽃등에 담는 나의 발원)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/7/16/20260716083815509_1_S.webp', '청정한 마음, 연꽃등에 담다
+연꽃은 진흙 속에서도 맑고 아름다운 꽃을 피워내듯, 우리의 마음도 어떤 환경 속에서든 다시 밝아질 수 있다는 의미를 담고 있습니다.
+「청정한 마음, 연꽃등에 담다」는 나만의 연꽃등을 직접 만들며 현재의 마음을 돌아보고, 소망과 감사, 다짐을 한 장의 발원지에 담아보는 명상 체험 프로그램입니다.
+은은한 연꽃등에 불을 밝히는 순간, 바쁜 일상 속에서 잠시 멈추어 자신을 바라보고 마음을 비우는 시간을 갖습니다. 완성된 연꽃등은 희망의 빛이 되어 앞으로의 삶을 응원하는 작은 등불이 됩니다.
+
+⚫프로그램 내용⚫
+연꽃이 지닌 의미와 불교 이야기
+나만의 연꽃등 만들기
+발원지(소원·감사·다짐) 작성
+연꽃등 점등 및 묵상
+마음 나누기
+
+⚫프로그램 효과⚫
+마음의 안정과 치유
+스트레스 해소와 집중력 향상
+자신을 돌아보는 명상 시간
+희망과 감사의 마음을 되새기는 특별한 경험
+
+
+<연꽃 한 송이에 마음을 담고, 작은 등불 하나로 오늘의 나를 밝혀봅니다>
+
+
+
+	예약 안내
+	프로그램은 최소 4명 이상 신청 시 운영되며, 참가 인원이 4명 미만인 경우 프로그램이 취소되거나 일정이 변경될 수 있습니다.
+	참가 신청서를 작성하신 후 참가비 입금이 완료되어야 최종 예약이 확정됩니다.
+	신청 후 2일 이내 입금이 확인되지 않을 경우 예약이 자동 취소될 수 있습니다.
+	입금자명은 신청자 성함과 동일하게 부탁드립니다.
+	입금 확인 후 예약 확정 안내 문자를 발송해 드립니다.', '1일차;10:00~10:15 접수 및 차담;10:15~10:35 연운사 소개 및 연꽃이야기;10:35~11:35 연꽃등만들기;11:35~12:15 점심공양;12:15~12:35 내 마음 들여다보기 선명상;12:35~12:45 점등 의식;12:45~13:15 스님과의 차담;13:15~13:30 체험 후기 및 회향 , 기념촬영', '편안한 복장 및 활동하기 편한 신발
+개인 물병
+마음을 담아갈 열린 마음^^', 35000, '당일', '2026-07-16', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '신광사'), 'MOU체결 단체 힐링 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/7/4/20260704120751979_1_S.webp', '● 거제도 신광사에 MOU협약 템플스테이는 당일 머물면서 싱잉볼 or 아트테라피or 각종 만들기 체험을 진행할수 있는 프로그램입니다. ● 사찰의 기본 예절은 잘 지켜주시고, ● 예불, 공양시간은 잘 지켜주셔야 하며, 프로그램 진행에 맞춰서 참가해주시면 됩니다. ● 기본 당일 가능하고, 더 머물고 싶으시면 담당자와 협의하시면 됩니다. ● 미성년자 이하는 부모중 한분 동반을 원칙으로 합니다.  ● 프로그램 진행은 2인이상 신청이 가능합니다.', '1일차;13:30~14:00 사찰도착;14:00~14:30 사찰안내 및 종각 타종체험;14:30~15:30 스님과의 차담;15:30~16:00 경내산책;16:00~17:00 아트 테라피 체험 (백드롭 아트);17:00~17:20 휴식 및 간식;17:02~17:03 퇴소', '당일 체험은 특별히 준비물이 없습니다. 편안한 복장 착용하시면 됩니다.', 20000, '당일', '2026-07-04', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '봉녕사'), '홍대선원 외국인 참가자 봉녕사 전통문화체험 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/5/12/20260512064303619_1_S.webp', '외국인대상 특별 템플스테이 당일 프로그램입니다.
+
+아름답고 청정한 봉녕사 경내를 거닐며 한국전통사찰을 통하여
+한옥의 아름다움과 비구니 스님들의 수행공간을 살짝 엿보는 흥미가 있습니다.
+
+붓다볼명상을 통하여 소리와 내가 하나되어 느끼는 힐링은
+일상에 지친 몸과 마음이 위로받고 평화로움이 우주속으로 여행을 떠납니다.
+
+공양간에서 사찰음식을 먹어보면 사찰에서 먹는 음식 하나하나가
+내몸에 새옷을 입혀주는 느낌을 가져갈겁니다.
+
+소중한 경험과 추억이 되시길 두손 모읍니다', '1일차;09:00~10:00 사찰투어;10:00~11:00 문화행사 체험', '손수건, 편안한 개인복장(긴팔티/반팔티, 양말), 운동화, 개인 상비약', 40000, '당일', '2026-08-20', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '성주사'), '크리스탈볼과 함께하는 명상워크숍', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/28/20260628032922824_1_S.webp', '은은하게 퍼지는 소리는 긴장을 풀어줍니다. 고요한 산사의 자연속에서 내면의 평화와 휴식을 경험해 볼 수 있습니다.
+명상워크숍은 3인 이상 등록시 진행됩니다.', '1일차;10:20~10:20 도착;10:30~11:30 다담 & 마음나누기;11:30~13:00 점심공양 & 숲길산책과 힐링;13:00~14:00 크리스탈 싱잉볼 사운드 명상', '개인 물병 & 템블러 , 편한한 옷, 운동화 착용, 수건(맨발걷기후 사용), 모자', 40000, '당일', '2026-07-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '연운사'), '(나눔템플스테이 대상자) 김포시 가족센터 연계 가족템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/23/20260623023528262_1_S.webp', '<마음으로 함께 걷는 가족 템플스테이>
+– 김포시가족센터 연계 나눔 템플스테이 –
+「마음으로 함께 걷는 가족 템플스테이는 김포시가족센터와 연계하여 운영되는 가족 참여형 나눔 템플스테이로, 가족이 함께 사찰에서 머물며 서로의 마음을 이해하고 공감하는 특별한 시간을 만들어가는 프로그램입니다.
+고즈넉한 사찰의 자연 속에서 잠시 휴대폰을 내려놓고, 예불과 명상, 차담, 사찰 걷기, 전통문화 체험 등을 함께하며 가족 간의 소통과 정서적 유대감을 회복하는 시간을 가집니다. 서로에게 전하지 못했던 마음을 나누고, 함께 웃고 쉬며 가족이라는 소중한 인연의 의미를 다시금 돌아볼 수 있도록 돕습니다.
+특히 본 프로그램은 김포시가족센터와 협력하여 지역사회 가족들에게 건강한 여가와 치유의 기회를 제공하고, 가족 친화적 공동체 문화 확산을 위한 지역연계 나눔형 프로그램으로 운영됩니다.
+
+✔ 가족 소통 회복 – 부모와 자녀가 함께 참여하며 서로의 마음을 이해하는 시간
+✔ 쉼과 치유 – 자연 속 명상과 차담, 사찰 걷기를 통한 정서적 안정
+✔ 불교문화 체험 – 예불, 염주 만들기, 소원지 쓰기 등 전통문화 경험
+✔ 지역 상생 – 지역기관 협력을 통한 가족 복지 및 공동체 활성화
+
+가족이 함께 머물며 서로의 마음을 들어보는 시간
+잠시 휴대폰을 내려놓고, 서로를 바라보며 웃을 수 있는 하루
+사찰에서의 쉼이 가족의 기억이 되고, 관계의 온기가 되도록 합니다.', '1일차;09:20~09:40 환영인사 및 가족명찰만들기;09:40~10:00 사찰 한 바퀴 탐방 및 사찰예절배우기;10:00~10:40 우리 가족 소망 단주 만들기;10:40~11:20 연꽃컵등만들기;11:20~11:30 가족사진촬영;11:30~12:00 점심공양;12:00~12:20 행복을 찾는 선명상;12:20~12:40 우리가족 물고기 발원지 작성 및;12:40~13:00 체험후기 나누기 및 회향', '편안한 복장과 활동하기 편한 신발 착용 부탁드립니다.
+아이들은 별도의 법복이 준비되어 있지 않으므로 활동하기 편한 복장으로 와주시면 감사하겠습니다.', 30000, '당일', '2026-06-23', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '조계사'), '[단체] "마음산책" 당일형 템플스테이 (대상: ''내국인'' 10인 이상 단체)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/16/20260616024319869_1_S.webp', '* 신청 희망 시 전화 및 이메일 문의 부탁드립니다.
+
+사찰의 전통문화를 경험하고자 하는 내외국인을 위하여 2시간 동안 간소하게 체험하는 당일형 템플스테이입니다.
+
+◇ 사찰안내
+    절 안에서 만나는 건축물과 불교의식에 담긴 의미를 배웁니다.
+
+◇ 연꽃 만들기
+    연꽃 만들기를 통해 한국불교의 전통문화를 체험합니다.
+
+◇ 싱잉볼 명상
+    앉거나 누운 채로 소리에 집중하며 평온한 마음을 되찾는 쉬운 명상입니다.
+
+◇ 스님과의 대화
+    스님과 대화하며 불교문화를 배우고 삶의 길을 묻는 시간입니다.
+
+
+◆ 10명 이상의 단체 신청이 가능합니다.
+    단체 신청 시 별도공간에서 진행되며,
+    신청인원이 많을 경우 공간을 나누어 운영하고 있습니다
+    (10명보다 적은 인원 및 오후 시간 신청을 희망할 경우, 전화 문의 부탁드립니다. 전화: 02-768-8523)
+
+◆ 단체 예약의 경우, 전화상담으로 진행일정을 협의합니다.
+    (예약가능일자 캘린더상의 날짜 이외 진행 희망 시 전화 문의 바랍니다.)
+
+◆ 개인 또는 가족 단위 체험은
+    "올웨이즈" 당일형 템플스테이 프로그램을 이용하시면 됩니다.
+
+◆ 점심공양을 원하실 경우 프로그램 전후에 별도로 이용하실 수 있습니다.
+
+- 조계사 경내 대중공양간 : 만발공양간 (11:30-12:40) / 1인 5,000원 / 조계사 템플스테이 예약 시에 문의
+
+- 조계종 운영 사찰음식 레스토랑 : 발우공양(조계사 맞은편)
+  / 계절별 사찰음식 런치코스 30,000원~65,000원(월~토 11:30~13:00, 13:30~15:00)
+  / 사전 예약 : 02-733-2081
+   http://balwoo.or.kr/responsible_foodmenu_summer.php
+
+◆ 주차 관련 ◆
+경내 주차가 불가능하므로 대중교통 이용 부탁드립니다.
+관광버스는 조계사 앞 도로에서 승하차 가능하며 주차는 경복궁을 이용하시면 됩니다.
+
+- 프로그램 진행 중 사진 및 동영상 촬영이 이루어질 수 있으며, 촬영된 자료는 홍보 및 기록 목적으로 활용될 수 있습니다.', '1일차;10:00~10:10 일주문(조계사 정문) 왼쪽 옆 ''사찰안내소'' 집결;10:10~11:10 스님과의 차담, 명상;11:10~11:50 연꽃컵등 만들기;11:50~12:30 사찰안내', '사찰에 오실 때는 소매 없는 셔츠나 짧은 바지, 슬리퍼, 샌들보다는
+단정한 복장으로 오시는 것이 좋습니다.', 50000, '당일', '2026-06-01', '2026-10-31', 20, FALSE, 0, 0),
+
+사찰의 전통문화를 경험하고자 하는 내외국인을 위하여 2시간 동안 간소하게 체험하는 당일형 템플스테이입니다.
+
+◇ 사찰안내
+    절 안에서 만나는 건축물과 불교의식에 담긴 의미를 배웁니다.
+
+◇ 연꽃 만들기
+    연꽃 만들기를 통해 한국불교의 전통문화를 체험합니다.
+
+◇ 싱잉볼 명상
+    앉거나 누운 채로 소리에 집중하며 평온한 마음을 되찾는 쉬운 명상입니다.
+
+◇ 스님과의 대화
+    스님과 대화하며 불교문화를 배우고 삶의 길을 묻는 시간입니다.
+
+
+◆ 10명 이상의 단체 신청이 가능합니다.
+    단체 신청 시 별도공간에서 진행되며,
+    신청인원이 많을 경우 공간을 나누어 운영하고 있습니다.
+    (10명보다 적은 인원 및 오후 시간 신청을 희망할 경우, 전화 문의 부탁드립니다. 전화: 02-768-8523)
+
+◆ 단체 예약의 경우, 전화상담으로 진행일정을 협의합니다.
+    (예약가능일자 캘린더상의 날짜 이외 진행 희망 시 전화 문의 바랍니다.)
+
+◆ 개인 또는 가족 단위 체험은
+    "올웨이즈" 당일형 템플스테이 프로그램을 이용하시면 됩니다.
+
+◆ 점심공양을 원하실 경우 프로그램 전후에 별도로 이용하실 수 있습니다.
+
+- 조계사 경내 대중공양간 : 만발공양간 (11:30-12:40) / 1인 5,000원 / 조계사 템플스테이 예약 시에 문의
+
+- 조계종 운영 사찰음식 레스토랑 : 발우공양(조계사 맞은편)
+  / 계절별 사찰음식 런치코스 30,000원~65,000원(월~토 11:30~13:00, 13:30~15:00)
+  / 사전 예약 : 02-733-2081
+   http://balwoo.or.kr/responsible_foodmenu_summer.php
+
+◆ 주차 관련 ◆
+경내 주차가 불가능하므로 대중교통 이용 부탁드립니다.
+관광버스는 조계사 앞 도로에서 승하차 가능하며 주차는 경복궁을 이용하시면 됩니다.
+
+- 프로그램 진행 중 사진 및 동영상 촬영이 이루어질 수 있으며, 촬영된 자료는 홍보 및 기록 목적으로 활용될 수 있습니다.', '1일차;10:00~10:10 일주문(조계사 정문) 왼쪽 옆 ''사찰안내소'' 집결;10:10~11:10 스님과의 차담, 명상;11:10~11:50 연꽃컵등 만들기;11:50~12:30 사찰안내', '사찰에 오실 때는 소매 없는 셔츠나 짧은 바지, 슬리퍼, 샌들보다는
+단정한 복장으로 오시는 것이 좋습니다.', 50000, '당일', '2026-06-01', '2026-10-31', 20, FALSE, 0, 0),
+참가인원은 단체 최소 5인이상일 때에만 진행하며, 날짜 및 시간등 일정은 협의하여 조절 가능합니다.
+*날짜 예약은 전화로만 가능합니다. 미리 전화 부탁드립니다.
+
+10:00 ~  10:30 |  도착 및 오리엔테이션
+10:30 ~  11:00 |  법당 설명 사찰예절 목탁체험
+11:00 ~  12:00 |  108배 염주 만들기, 단주 만들기, 연꽃등 만들기(상황에 맞게 원하는 체험 가능)
+12:00 ~  13:00 |  점심 공양
+13:00 ~  14:00 |  스님과의 차담 후 회향', '1일차;10:00~10:30 도착 및 오리엔테이션;10:30~11:00 법당 설명 사찰예절;11:00~12:00 만들기 체험(상황에 맞게 원하는 체험 가능);12:00~13:00 점심공양;13:00~14:00 스님과의 차담 후 회향', '물병 정도면 충분합니다.
+절 방문 시 화려한 복장은 자제바라고, 법당 출입 시 양말 착용바랍니다.', 30000, '당일', '2026-06-15', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '대흥사'), '2026 대흥사 사찰음식_ 내가 만든 절밥(1차 08.08(토), 2차 08.09(일), 3차 09.12(토), 4차 09.13(일)-당일 체험, 사회공익 나눔 템플스테이,선...', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/6/20260606025800819_1_S.webp', '1. 프로그램 소개 : 사찰음식의 의미와 가치를 공유하고, 사찰음식종류와 특징 등을 듣고, 직접 음식을 준비, 완성된 음식으로 점심식사후 스님과 함께 산지승원 대흥사 산책
+
+2. 장   소 : 대흥사 사찰음식관
+
+3. 대   상 : 내.외국인 누구나(회당 25명~30명)
+
+4. 준비물 : 편한 복장, 신발
+
+5. 진행 자 일자 : 1차 8월8일(토)    2차 8월9일(일)    3차 9월12일(토)     4차 9월13일(일)
+
+6. 도착접수시간  9시30분~9시50분', '1일차;09:30~09:50 대흥사 도착, 접수;10:00~10:10 대흥사 소개 및 사찰음식의 의미와 가치 설명;10:10~12:00 체험 당일 만들 사찰음식 소개 및 사찰음식 만들기;12:00~12:30 완성된 사찰음식으로 점심 식사, 뒷정리;13:00~13:20 설문작성;13:20~14:00 산지승원 대흥사 산책;14:00~14:00 회향', '편한복장, 편한신발', 0, '당일', '2026-08-08', '2026-09-13', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '화계사'), '‘수요 머묾 템플스테이’', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/4/20260604013341901_1_S.webp', '바쁘게 흘러가는 한 주의 가운데,
+잠시 마음을 내려놓고 천천히 머물러 보는 수요일.
+
+‘수요 머묾 템플스테이 _ 손끝에 머무는 마음’은
+사경과 만들기 체험을 통해
+흩어진 마음을 차분히 모아가는 당일형 프로그램입니다.
+
+한 글자 한 글자 정성을 담아 써 내려가고,
+나만의 목탁을 만들며,
+손끝에 집중하는 시간 속에서
+어느새 마음도 함께 고요해집니다.
+
+잘 만들어야 하는 체험이 아니라,
+잠시 멈추어 나를 돌보는 시간.
+
+바쁜 일상 속,
+수요일 하루쯤은
+내 마음에도 머물러 보세요.', '1일차;13:00~14:00 오리엔테이션 및 사찰 안내;14:00~15:00 사경 & 나만의 목탁 만들기;15:00~16:00 스님과의 차담', '"크게 준비하지 않아도 됩니다. 잠시 머무를 마음이면 충분합니다."', 40000, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '광제사'), '스님과 차담 그리고 걷기명상', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/5/31/20260531052524703_1_S.webp', '누구나 참가 가능 하며, 스님과 맜있는 차 한잔 하고 광제사 주변 아름다운 산책길을 걸으며 명상의 즐거움을 느껴보세요
+아울러 광제사에서 내려다보이는 세종시의 야경과 밤하늘의 별빛 까지 자연스럽게 명상의 세계로 들어갑니다.', '1일차;19:00~20:30 스님과 차담 &걷기명상&별빛명상', '운동화와 편한복장', 20000, '당일', '2026-05-31', '2026-12-31', 20, FALSE, 0, 0),
+바쁜 일상 속 잠시 멈춤.
+법당의 고요함 속에서 두 손 모아 마음을 쉬어가고,
+예불의 의미를 배우며 나를 돌아보는 시간을 가져봅니다.
+
+단체만 신청 가능한 맞춤형 템플스테이
+학교·기관·복지센터·기업·가족모임 대상
+예불체험, 명상, 사찰문화체험을 통해 몸과 마음을 쉬어가는 시간
+
+“오늘은 잘해야 하는 시간이 아니라, 잠시 쉬어가는 시간입니다.
+절을 잘 몰라도 괜찮습니다. 그냥 이 공간의 고요함을 편안히 느끼며 함께해 주세요.
+잠시 내 마음을 쉬게 하는 시간, 연운사와 함께 시작해보겠습니다.”
+
+🌿 단체 맞춤형 템플스테이 운영
+예불체험 · 명상 · 사찰문화체험
+단체 일정 문의 ☎ 010-4145-5306', '1일차;09:50~10:10 반가운 맞이 & 차담;10:10~10:30 자율참배 (사찰 둘러보기);10:30~11:30 고요한 마음쉼, 예불체험 (사시예불참석);11:30~12:30 나를 위한 작은 공양(점심공양);12:30~12:40 마음 쉬는 선명상;12:40~13:00 회향 & 마음선물 (기념품선물)', '✔ 편안한 복장 (바지 권장, 긴 치마·짧은 옷 지양)
+✔ 양말 착용 (법당 출입 시 편안합니다)
+✔ 개인 물병 또는 텀블러
+✔ 편안한 마음 😊', 30000, '당일', '2026-05-27', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '통합정보센터'), '차명상 (일요일) AM 10:20~11:10', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/5/9/20260509024427215_1_S.webp', '체험비는 무료이며, 1회당 차담 참여 가능 인원은 최대 4명입니다.
+※ 특정 차에 대한 알레르기나 카페인에 민감하신 분들은 차담 시작 전에 스님께 말씀해주시기 바랍니다.
+
+[단체참가] 단체참가는 가이드 포함 최소 4명, 최대 10명까지 참여할 수 있습니다.
+※ 단체참가는 사전에 반드시 전화문의하여 예약 하시기 바랍니다.', '1일차;10:20~11:10 차명상', '없음', 0, '당일', '2026-05-09', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '회암사(양주)'), '[공익/무료]2026년 지역  나눔 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/5/7/20260507101215315_1_S.webp', '🌿 양주시 공익 나눔 템플스테이
+마음을 비우고, 나눔을 실천하는 특별한 시간
+회암사에서 진행되는 공익 나눔 템플스테이는 바쁜 일상 속에서 지친 몸과 마음을 치유하고,
+함께 살아가는 의미를 되새기는 프로그램입니다.
+
+🧘 대상
+이 템플스테이는 사회적 배려계층을 중심으로 운영됩니다.
+• 독거노인, 장애인, 다문화 가정, 저소득층 등 사회적 배려가 필요한 분들
+• 지역 복지기관 및 단체와 연계하여 참가자를 모집합니다
+• 개인 신청은 불가이며 10인이상 단체 신청만 가능합니다.
+
+📅 일정 및 문의
+일정과 프로그램은 협의 가능합니다.
+문의 및 참가 신청은 아래 번호로 연락 부탁드립니다.
+📞010-7508-0355
+
+
+프로그램 안내
+* 사찰 내 일정으로 프로그램이 변경, 취소 될 수도 있습니다.
+* 자세한 일정은 프로그램 일정표를 참고 부탁드립니다', '1일차;09:50~10:00 입소완료 (템플 사무실);10:00~12:00 사찰문화체험,싱잉볼명상체험;12:00~12:30 점심공양;12:30~13:00 걷기명상체험 또는 차담;13:00~13:10 소감문 또는 QR 작성 후 회향', '1. 편안한 옷과 양말 착용, 운동화를 신고 오세요.
+2. 개인 물병과 날씨 변화에 따른 외투 준비도 부탁드립니다.', 0, '당일', '2026-05-23', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '용주사'), '요가 명상 강좌', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/5/6/20260506093101478_1_S.webp', '바쁘게 흘러가는 일상 속에서 잠시 멈춰, 나에게 집중하는 시간을 가져봅니다. 이 프로그램은 요가와 명상을 통해 몸과 마음의 균형을 자연스럽게 회복할 수 있도록 구성되어 있습니다.
+부드러운 요가로 쌓인 긴장을 풀고, 호흡에 집중하는 명상을 통해 복잡했던 생각들을 천천히 내려놓습니다. 조용한 사찰의 분위기와 자연의 흐름 속에서 머무르며, 일상에서는 쉽게 느끼기 어려운 깊은 휴식과 안정감을 경험할 수 있습니다.
+특별한 준비나 경험이 없어도 누구나 편안하게 참여할 수 있으며, 나를 돌보고 싶었던 순간, 잠시 쉬어가고 싶었던 마음에 잘 어울리는 시간입니다. 바쁜 하루를 잠시 내려놓고, 몸과 마음을 가볍게 정리해보세요
+
+* 타종 체험 및 예불 참석은 자율입니다.(요가 수업부터 원하시는 참가자는 6시 30분까지 효행문화원 1층으로 오세요)
+* 한달 참여비용 5만원입니다  (매월 첫째주 토요일에 예약 가능)
+* 월 4회 진행(템플 내부 사정에 따라 월 5주가 있는 달은 4번만 진행)
+* 요가 다음에 있는 명상시간은 초등생은 참가 불가입니다.
+* 8월 1일은 내부행사로 인해 프로그램 진행하지 않고 8월 8일, 15일, 22일, 29일 요가명상 프로그램 진행합니다*
+(예약은 8월 8일로 하시면 됩니다)
+* 요가매트 준비되어 있습니다.', '1일차;17:30~17:50 도착 및 준비;18:00~18:30 타종체험 및 저녁예불;18:40~19:50 요가;20:00~21:00 명상;21:00~21:00 퇴실', '개인 요가 복장과 매트는 자율 지참(요가매트 준비되어 있습니다. 개인용 원하시면 가져오세요)
+
+* 사찰에서 음주,흡연,외부출입금지 및 배달음식 금지(위반시 퇴실조치 및 환불 되지 않습니다.)', 50000, '당일', '2026-06-05', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '정토사'), '(당일형)마음 비우기 템플스테이-단체', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/4/5/20260405105642446_2_S.webp', '사찰에 잠시 머무면서 생각을 내려 놓는 당일형 체험 템플스테이로 고요하고 청량한 청계산과 정토사 경내에서 본인이 수(修)놓는 템플스테이로 쉬면서 나를 돌아보고 삶의 에너지를 채워가는 프로그램입니다.
+참가인원은 최소 5인이상일 때에만 진행하며, 날짜 및 시간등 일정은 협의하여 조절 가능합니다.
+*날짜 예약은 전화로만 가능하고 참가비 입금은 전화상담 후 입금 바랍니다. 미리 전화 부탁드립니다.
+1. 희망날짜를 선택하고 예약 진행합니다.
+2. 입금전 전화상담 후 입금 바랍니다.(꼭 지켜주세요!!!)
+3. 참가인원이 적으면 취소 될 수 있습니다.', '1일차;10:00~10:30 도착 및 오리엔테이션;10:30~11:00 법당 설명 사찰예절 목탁체험;11:00~12:00 108배 염주 만들기, 단주 만들기, 연꽃등 만들기(상황에 맞게 원하는 체험 가능);12:00~13:00 점심 공양;13:00~14:00 스님과의 차담 후 회향', '물병 정도면 충분합니다.
+절 방문 시 화려한 복장은 자제바라고, 법당 출입 시 양말 착용바랍니다.', 40000, '당일', '2026-04-24', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '청련사'), '스님과 함께하는 선명상 & 차담', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/4/21/20260421030602473_1_S.webp', '「스님과 함께하는 선명상 & 차담」
+내 마음을 바로 보고, 고요함을 경험하는 하루
+
+[프로그램 개요]
+• 형태: 당일 체험형 (숙박 없음 / 사전 예약제)
+• 대상: 누구나 (초보자 가능)
+• 구성: 선명상 · 차담 · 점심 공양
+
+[참가 안내]
+• 참가비: 1인 50,000원
+• 포함 내용: 선명상 · 차담 · 공양
+• 형태: 당일 체험 프로그램 (사전 예약제)
+
+[예약 안내 (필수)]
+※ 본 프로그램은 사전 예약제입니다.
+  반드시 신청 전, 청련사 템플스테이 사무국으로 전화하여
+  참여 가능한 날짜와 시간을 먼저 확인 후 신청해 주시기 바랍니다.
+
+*중요 안내*
+※ 본 프로그램은 숙박이 포함되지 않은 당일 프로그램입니다.
+※ 청련사에서 하룻밤 머물며 깊은 휴식을 원하시는 분은
+   별도의 ‘휴식형 템플스테이’ 프로그램을 신청해 주시기 바랍니다.
+
+[프로그램 목적]
+• 복잡한 생각을 내려놓고 지금 이 순간의 나를 알아차리는 경험
+
+[선명상이란?]
+ 지금 이 순간을 있는 그대로 알아차리는 명상
+• 생각 · 감정 · 몸의 느낌을
+  판단 없이 바라보는 연습
+• 과거와 미래가 아닌
+  지금의 나에게 집중하는 수행
+
+[프로그램 구성]
+① 몸과 마음 준비
+    편안하게 앉아 자세를 바로 잡고,
+    호흡을 천천히 느끼며 긴장을 풀어줍니다.
+   “지금 이 자리에 내가 있다”는 감각을 느낍니다
+② 호흡 명상 (기초 선명상)
+   숨의 흐름을 관찰하며 마음을 가라앉힙니다.
+   잡생각이 올라오면
+  “생각이 올라왔구나” 하고 알아차립니다
+   억지로 멈추지 않고 그대로 바라봅니다
+③ 알아차림 명상 (일상형 선명상)
+   감정이 올라올 때
+  “화가 나는구나”
+  “마음이 복잡하구나”
+   이렇게 이름 붙이며 관찰합니다
+   판단 없이 알아차리는 연습
+④ 자비 · 감사 명상
+   나 자신에게: “나는 평안하기를”
+   가까운 사람에게: “그 사람이 행복하기를”
+   모든 존재에게: “모든 생명이 편안하기를”
+   마음을 부드럽게 확장합니다
+⑤ 차 명상 (차담)
+   차를 천천히 마시며
+   색 · 향 · 맛 · 온기를 느낍니다
+   한 모금씩 음미하며
+   지금 이 순간에 집중합니다
+   차를 마시는 행위 자체가 명상이 됩니다
+⑥ 스님과 차담
+  수행 경험을 나누고
+  삶에 대한 이야기를 편안하게 나누는 시간
+⑦ 점심 공양
+  감사하는 마음으로 식사하며
+  먹는 행위 자체를 알아차리는 수행
+
+[이런 분들께 추천합니다]
+• 마음이 복잡하고 지친 분
+• 명상을 처음 시작하는 분
+• 조용히 나를 돌아보고 싶은 분
+• 차분한 하루를 보내고 싶은 분', '1일차;10:00~12:00 선명상;12:00~12:30 점심공양;12:30~13:00 자유시간;13:00~15:00 차담(차명상)', '• 노출이 심한 옷은 삼가해 주세요.
+• 운동화 필수 (트래킹용)
+• 개인 물병
+• 작은 우산 (우천 대비)
+• 긴팔 옷 1벌 필수 (여름에도 아침·저녁은 쌀쌀할 수 있습니다)
+• 개인 상비약, 필기도구 (명상 기록용) 등', 0, '당일', '2026-07-15', '2026-09-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '통합정보센터'), '향기로운 명상 14:00~14:50', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/4/16/20260416014615120_1_S.webp', '침향, 훈향 명상
+향기를 통한 집중명상
+(침향차와 함께)
+
+훈향 명상은 향을 활용해 호흡·감각을 집중하고 마음을 가라앉히는 명상 입니다.
+향이 퍼지는 감각에 집중해 ''지금''에 머무르는 상태를 느껴보세요.', '1일차;14:00~14:50 향기로운 명상', '없음', 0, '당일', '2026-04-16', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '통합정보센터'), '향기로운 명상 AM10:00~10:50', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/4/16/20260416011825480_1_S.webp', '침향, 훈향 명상
+향기를 통한 집중명상
+(침향차와 함께)
+
+훈향 명상은 향을 활용해 호흡·감각을 집중하고 마음을 가라앉히는 명상 입니다.
+향이 퍼지는 감각에 집중해 ''지금''에 머무르는 상태를 느껴보세요.', '1일차;10:00~10:50 향기로운 명상', '없음', 0, '당일', '2026-04-16', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '신안사'), '신안사 휴休 프로젝트 <기왓장 그림그리기>', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/4/13/20260413112726880_1_S.webp', '당일 체험형 - 신안사 휴休 프로젝트
+
+몸과 마음이 편안해지는 신안사에서 다도 체험을 저렴한 비용으로 체험하는 프로그램입니다.
+토요일 신안사에서 점심 식사 후 약 4시간 진행됩니다. 기왓장 그림 그리기를 통해 전통 기와 위에 나만의 색을 입혀 보세요. 완성된 작품은 신안사의 기운을 담아 댁으로 가져 가실 수 있습니다.
+
+STEP 1 비움 : 경순왕의 길
+​​​​신안사 경내를 산책하며 사찰 문화유산 탐구하는 시간
+
+STEP 2 채움: 문화유산 체험
+기왓장 그림 그리기를 통하여 전통 문화의 가치를 습득해보는 시간
+
+STEP 3 나눔 : 차담, 소감나누기
+​​​차와 간식을 나누며 일정 경험에 관한 소감을 함께 나누는 시간
+
+자세한 일정은 일정표를 확인해주세요 !
+
+
+
+
+
+
+[ 안내 사항 ]
+- 모든 체험활동의 기본 재료는 신안사에서 미리 준비합니다.
+- 체험활동비는 20,000원 입니다.
+- 12시까지 신안사에 도착하시면 점심을 제공합니다.
+- 오시고 나가시는 시간에 시내버스가 없으므로 자가용 또는 금산터미널에서 택시를 이용하셔야 합니다.
+- 참석자 명부에 기본적인 인적 사항과 서명을 받습니다.
+- 75세 이상은 보호자 동반 시 참가 가능합니다.
+- 원활한 체험 진행을 위해 보호자를 동반한 고등학생 이상부터 참가 가능합니다.
+- 입실 시간보다 늦을 경우 미리 연락주시길 당부드립니다.', '1일차;12:00~13:00 점심공양;13:00~13:10 참가자 접수, 오리엔테이션;13:10~13:30 사찰 경내, 송림산책, 사찰 문화재 탐구;13:30~15:10 기왓장 그림 그리기;15:10~15:40 차담, 소감 나누기;15:40~16:00 설문지 작성, 기념 촬영 등 마무리', '편한 복장과 즐거운 마음 !', 20000, '당일', '2026-04-13', '2026-10-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '신안사'), '신안사 휴休 프로젝트 <목공예>', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/4/13/20260413112307299_1_S.webp', '당일 체험형 - 신안사 휴休 프로젝트
+
+몸과 마음이 편안해지는 신안사에서 목공예를 저렴한 비용으로 체험하는 프로그램입니다.
+토요일 신안사에서 점심 식사 후 약 4시간 진행됩니다. 목공예 체험을 통해 나무의 결을 느끼며 천천히 사포질해보세요. 거친 면이 매끄러워질 때 마음의 잡념도 함께 사라집니다.
+(플레이팅 도마 만들기로 진행됩니다.)
+
+STEP 1 비움 : 경순왕의 길
+​​​​신안사 경내를 산책하며 사찰 문화유산 탐구하는 시간
+
+STEP 2 채움: 문화유산 체험
+목공예를 통하여 전통 문화의 가치를 습득해보는 시간
+
+STEP 3 나눔 : 차담, 소감나누기
+​​​차와 간식을 나누며 일정 경험에 관한 소감을 함께 나누는 시간
+
+자세한 일정은 일정표를 확인해주세요 !
+
+
+
+
+
+
+[ 안내 사항 ]
+- 모든 체험활동의 기본 재료는 신안사에서 미리 준비합니다.
+- 체험활동비는 20,000원 입니다.
+- 12시까지 신안사에 도착하시면 점심을 제공합니다.
+- 오시고 나가시는 시간에 시내버스가 없으므로 자가용 또는 금산터미널에서 택시를 이용하셔야 합니다.
+- 참석자 명부에 기본적인 인적 사항과 서명을 받습니다.
+- 75세 이상은 보호자 동반 시 참가 가능합니다.
+- 원활한 체험 진행을 위해 보호자를 동반한 고등학생 이상부터 참가 가능합니다.
+- 입실 시간보다 늦을 경우 미리 연락주시길 당부드립니다.', '1일차;12:00~13:00 점심공양;13:00~13:10 참가자 접수, 오리엔테이션;13:10~13:30 사찰 경내, 송림산책, 사찰 문화재 탐구;13:30~15:10 목공예 체험;15:10~15:40 차담, 소감 나누기;15:40~16:00 설문지 작성, 기념 촬영 등 마무리', '편한 복장과 즐거운 마음 !', 20000, '당일', '2026-04-13', '2026-10-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '신안사'), '신안사 휴休 프로젝트 <다도>', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/4/13/20260413111530711_1_S.webp', '당일 체험형 - 신안사 휴休 프로젝트
+
+몸과 마음이 편안해지는 신안사에서 다도 체험을 저렴한 비용으로 체험하는 프로그램입니다.
+토요일 신안사에서 점심 식사 후 약 4시간 진행됩니다. 다도체험을 통해 차를 우려내는 기다림의 미학을 즐겨보세요! 따뜻한 찻잔의 온기가 온몸으로, 온마음으로 퍼지는 것을 느껴봅니다.
+
+STEP 1 비움 : 경순왕의 길
+​​​​신안사 경내를 산책하며 사찰 문화유산 탐구하는 시간
+
+STEP 2 채움: 문화유산 체험
+전통차 다도를 통하여 전통 문화의 가치를 습득해보는 시간
+
+STEP 3 나눔 : 차담, 소감나누기
+​​​차와 간식을 나누며 일정 경험에 관한 소감을 함께 나누는 시간
+
+자세한 일정은 일정표를 확인해주세요 !
+
+
+
+
+
+
+[ 안내 사항 ]
+- 모든 체험활동의 기본 재료는 신안사에서 미리 준비합니다.
+- 체험활동비는 20,000원 입니다.
+- 12시까지 신안사에 도착하시면 점심을 제공합니다.
+- 오시고 나가시는 시간에 시내버스가 없으므로 자가용 또는 금산터미널에서 택시를 이용하셔야 합니다.
+- 참석자 명부에 기본적인 인적 사항과 서명을 받습니다.
+- 75세 이상은 보호자 동반 시 참가 가능합니다.
+- 원활한 체험 진행을 위해 보호자를 동반한 고등학생 이상부터 참가 가능합니다.
+- 입실 시간보다 늦을 경우 미리 연락주시길 당부드립니다.', '1일차;12:00~13:00 점심공양;13:00~13:10 참가자 접수, 오리엔테이션;13:10~13:30 사찰 경내, 송림산책, 사찰 문화재 탐구;13:30~15:10 전통차 다도;15:10~15:40 차담, 소감 나누기;15:40~16:00 설문지 작성, 기념 촬영 등 마무리', '편한 복장과 즐거운 마음 !', 20000, '당일', '2026-04-13', '2026-10-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '무각사'), '청년들을 위한 성장 템플데이-공익 프로그램', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/4/6/20260406051124144_1_S.webp', '성장하기 위한 아픔의 그 시간을 지나는 당신의 청춘을 응원하고 위로하며
+언제든지 찾아와 마음자락 열어보여 슬픔 고통 기쁨도 함께 나누는 시간되길 바랍니다
+일상의 패턴을 잠시 멈추고 스스로를 바라보는 시간을 무각사에서 마련했습니다.
+
+* 이 프로그램은 단체 프로그램입니다.
+기관 및 협회를 통해 예약 가능한 프로그램입니다.', '1일차;14:00~14:30 오리엔테이션;14:30~15:00 다도 및 차 명상;15:00~15:30 사찰 안내;15:30~16:00 절명상( 단주꿰기) - 마음 보기 명상;16:00~16:30 명상;16:30~17:00 마음 나누기 및 회향', '간편한 복장
+양말은 필수, 편한 신발, 우천시(작은우산)을 준비합니다.', 30000, '당일', '2026-04-07', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '대광사(창원)'), '[당일형]사찰문화 체험 템플스테이 - 단체템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/9/2/20250902022302008_1_S.webp', '당일형템플스테이
+
+단체템플스테이입니다.
+전화 상담 후 예약 가능하며 여러가지 불교문화(다도, 108배, 명상 등)를 경험하실 수 있습니다.
+오전 9시 ~ 오후 5시 사이 전화주시기 바랍니다.', '1일차;09:40~10:00 사찰도착 및 안내;10:00~12:00 사찰문화체험;12:00~12:30 점심공양;13:00~14:00 소감문작성 및 집으로', '텀블러(정수기사용)', 0, '당일', '2026-03-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '무각사'), '2026년 광주지역 공익 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/4/1/20260401054705266_1_S.webp', '2026년 무각사에서 진행하는 공익- 힐링 템플스테이입니다.
+
+1. 대상 : 다문화, 독거노인, 이민가정, 저소득층, 청소년, 업무 중 산재 및 심신안정이 필요한 일반직, 특정직공무원 , 기관 및 센터등
+2.기본 프로그램은 아래의 일정을 확인해주십시오. 세부일정은 협의 후 변경 가능 합니다.
+3. 본 프로그램은 단체프로그램입니다.
+4. 일정조율 및 문의는 전화 062-383-0107 또는 메일 mugak108@daum.net으로 해주시기 바랍니다.', '1일차;14:00~14:30 사찰 안내 및 사찰 예절 체험;14:30~15:00 절 하며 염주꿰기;15:00~15:30 명상;15:30~16:00 다도 및 회향', '간편한 복장', 30000, '당일', '2026-04-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '연운사'), '(당일형) 108배, 마음을 꿰다.', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/3/14/20260314032302264_1_S.webp', '108배와 함께하는 염주꿰기 체험은 한 배 한 배 절을 올리며
+자신의 마음을 돌아보고,
+그 마음을 한 알 한 알 염주에 담아보는 수행 프로그램입니다.
+
+108번의 절을 통해 번뇌를 내려놓고,
+이어서 직접 염주를 꿰며 마음을 고요히 가다듬는 시간을 가집니다.
+완성된 염주는 오늘의 수행과 다짐을 기억하는 소중한 인연으로 간직하실 수 있습니다.', '1일차;10:00~10:20 도착 및 접수, 법복환복;10:20~10:30 간단사찰안내;10:30~11:30 108배 및 108염주꿰기;11:30~12:30 점심공양;12:30~12:50 소원지 및 고민적어 내려놓기;12:50~13:00 체험후기 작성 및 마무리', '■ 당일형 템플스테이는 별도의 준비물이 필요하지 않습니다.
+■ 사찰에서는 일회용품 사용을 줄이기 위해 개인 텀블러 지참을 권장합니다.
+■ 또한 108배 수행이 가능하도록 움직이기 편하면서도 예의에 어긋나지 않는 단정한 복장으로 참석해 주시기 바랍니다.', 35000, '당일', '2026-03-14', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '연운사'), '(당일형)마음 쉼 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/6/20260606022346949_2_S.webp', '바쁜 일상 속에서 잠시 멈추어
+나를 돌아보는 시간을 가져보세요.
+차 한 잔의 여유와 고요한 명상,
+그리고 스님과 나누는 따뜻한 차담을 통해
+지친 마음을 쉬어가는 특별한 시간을 경험하실 수 있습니다.
+
+● 마음 글쓰기
+● 마음 내려놓기
+● 나의 마음 담아보기
+● 스님과의 차담
+
+도심 속 작은 사찰에서
+온전히 나를 위한 3시간을 선물해 보세요.
+잠시 멈추는 그 순간,
+마음이 한결 가벼워집니다.', '1일차;09:30~10:00 접수 및 사찰안내 및  프로그램 안내;10:00~10:40 단주만들기(나만의 단주 만드는 시간);10:40~11:30 연꽃등만들기;11:30~12:10 점심공양;12:10~12:40 마음의 평화 선명상;12:40~13:10 스님과의 차담 및 고민내려놓기 (고민지 작성, 추후 소전);13:10~13:20 정리 및 체험후기나누기, 회향', '당일형 프로그램의 경우 별도의 준비물이 필요없습니다. 개인물병 정도 준비하시면 됩니다.', 35000, '당일', '2026-03-13', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '도림사(곡성)'), '[원효]사회공익템플스테이 - (복)보문복지회 곡성노인맞춤돌봄', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/2/10/20260210113120796_1_S.webp', '지역주민 누구에게나 열린 공간으로 프로그램을 마련하여 소통의 기회를 제공하고,
+지역주민과의 연계활동을 통한 지역공동체성의 회복을 지원하기 위해
+사회공익템플스테이를 운영합니다.', '1일차;13:00~13:10 사찰도착;13:20~14:00 사찰안내 및 자기 소개;14:10~15:00 스님과 차담(주지스님 일정으로 다른 프로그램 대체할 수도 있음);15:10~16:00 지도법사스님과 숲속 자애명상;16:10~17:00 크리스탈싱잉볼로 당일형은 마무리', '■ 운동화 등 편안한 복장으로 오세요', 0, '당일', '2026-02-20', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '증심사'), '셀프 힐링 명상 원데이클래스(3h)만원', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/2/3/20260203112014074_1_S.webp', '※ 운영: 2주 토요일, 4주 일요일 ※
+
+7월 26일 이후 신청 부터 만원 받습니다.
+
+
+
+
+
+마음이 마음처럼 되지 않아서 힘든가요?
+세상살이가 만만치 않아서 괴로운가요?
+
+
+불교는 ‘삶은 고통’라는 전제에서 태어났습니다.
+
+괴로운 세상을 어떻게 살아가볼까?
+괴로운 마음을 어떻게 다스려볼까?
+
+지금 이 시대 현대인이 하는 고민을
+2600년 전의 사람들도 고민했습니다.
+그들이 종교와 철학으로 정리해온
+힌트를 함께 알아가는 시간을 제안합니다.
+
+
+삶의 철학이나 태도로써의 불교,
+혹은 더욱 가볍게
+삶의 처세술로써의 불교를 만나보세요.
+
+
+*셀프힐링 원데이는 허심탄회한 고민상담, 편안한 명상을 지향합니다.
+‘마음’에 관심이 있는 남녀노소 누구나 환영합니다.
+
+** 매월 네 번째 일요일 2시부터 5시까지
+편히오셔서 명상하고 가세요!
+
+
+*** 일정표
+
+
+
+			회차
+			일정
+
+
+			2주차 토요일
+			4주차 일요일
+			(주지스님 지도)
+
+			14:00 - 14:40
+			셀프힐링 핵심 강의
+
+			14:40 - 16:20
+			오감 차명상, 요가 움직임명상, 좌선, 싱잉볼 소리명상
+
+			16:20 - 17:00
+			스님과의 대화, 질의응답
+
+
+
+
+
+*증심사 소식지와 인스타그램, 유튜브 채널에 참가자 모습을 촬영하여 소식용으로 올리고 있습니다. 촬영이 부담스러우신 분은 현장에서 말씀해주세요.', '1일차;00:00~00:00 소개창 참조', '앉고, 눕고, 서서 몸을 움직이는 시간이 포함되어 있습니다. 가급적 편안한 복장을 권장합니다. 사찰이므로 노출이 심하거나 짧은 반바지 차림은 지양 바랍니다.', 10000, '당일', '2026-03-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '도림사(곡성)'), '[원효] 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/1/29/20260129023846860_1_S.webp', '[원효] 템플스테이
+심청 스토리가 남아 있는 곡성은 효의 고장이며, 도림사는 원효스님 창건 스토리가 전해지는 사찰입니다.
+도림사 템플스테이는 원효스님의 큰 뜻을 따라서
+원은 여러가지 의미가 있는데
+소원을 이루는 원(願)이기도 하고, 불교에서 말하는 공(空)이기도 합니다.
+과거에도 없고, 현재에도 없는 마음을 채우기도 하고, 비우기도 합니다.
+효는 심청 설화에 담긴 아버지에 대한 효를 바탕으로 작게는 내 부모님께 효를 다하는 마음과 크게는 대중들에 대한 효까지 커질 수 있습니다.
+도인이 숲을 이룬다는 도림사 텅 빈 방에서 [원효]라는 큰 뜻으로 스스로 알아차림을 얻을 수 있는 시간을 가져보시길 바랍니다.
+
+------------------------------------------------
+
+**  도림사 숲해설, 걷기명상, 크리스탈 싱잉볼 명상, 스님과의 차담, 108배 체험 등의 프로그램입니다.
+     5인 이상 신청 가능 합니다
+** 사전에 일정 조율을 하셔야하니 미리 전화[010-5427-3500] 주세요', '1일차;14:00~14:00 사찰도착;14:30~14:50 사찰안내;15:00~16:00 숲해설, 및 걷기명상;16:10~17:10 크리스탈 싱잉볼 명상', '■ 운동화 등 편안한 복장으로 오세요', 0, '당일', '2026-01-29', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '미황사'), '오늘은 여기! (당일형 예불, 사찰안내, 점심공양, 산책 및 차담)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/1/27/20260127062417218_1_S.webp', '* 오늘은 여기! (당일형 예불, 사찰안내, 점심공양, 산책 및 차담)
+*참가자가  5인 이상 시 진행합니다. )', '1일차;09:00~09:50 등록및사찰소개(불교알기);10:00~11:10 사시예불;11:30~12:00 점심공양;12:00~12:40 달마고도걷기;12:50~13:20 차담;13:30~14:00 회향', '편안한 옷과 신발/ 텀블러', 30000, '당일', '2026-01-28', '2026-09-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '약천사'), '사찰에서의 빛나는 하루 (3인 이상 예약 가능)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '* 본 프로그램은 예약 가능 여부를 확인한후 승인이 가능합니다. 입금요청 문자를 받으면 입금하시기 바랍니다.
+아름다운 사찰에서 찬란한 한국 전통불교 문화 체험 템플스테이에 참가하고 싶지만 사찰에서 하루동안 머무는 것이 여의치 않은 사람들이 3~4시간 짧은 시간 틈을 내 한국의 불교문화를 체험할 수 있도록 구성한 프로그램 입니다 사찰안내, 사찰예절,사찰공양, 108 염주와 합장주 체험에 참가하실수 있습니다
+*프로그램은 상황에 따라 변경 될수 있습니다.', '1일차;11:00~11:50 사찰예절및사찰안내;11:50~12:20 사찰한끼 공양;12:40~13:30 약천사 바다명상 체험길(108배 체험으로 대체할 수 있음);13:30~14:00 108염주체험;14:00~14:30 합장주체험', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다.', 40000, '당일', '2026-01-27', '2026-11-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '대광사(창원)'), '2026년 찾아가는 템플스테이 - 세화여고 파라미타', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/1/8/20260108100251180_1_S.webp', '-"찾아가는 템플스테이"-세화여고(파라미타)-
+매 달 1~2회 대광사에서 진해세화여고에 방문하여 학교에서 진행하는 템플스테이 입니다.', '1일차;14:00~16:00 염주만들기 or 사경 or 각종 불교 문화체험', '-', 0, '당일', '2026-01-08', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '도갑사'), '도갑사 역사 한바퀴', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '천년고찰 월출산 도갑사의 역사와 성보박물관 탐방까지
+
+들을 수 없었던 이야기를 문화해설과 함께 들으며 도갑사를 한바퀴 걸어보세요', '1일차;13:00~14:00 사찰순례(안내);14:00~15:00 성보박물관 탐방;15:00~16:00 차담 및 소감문 작성', '편한복장. 운동화. 개인불병.', 40000, '당일', '2025-12-23', '2026-10-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '영평사'), '지친 마음을 비우는 단 하나의 소리,  싱잉볼 선(禪)명상', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/11/22/20251122021420495_1_S.webp', '바쁜 삶 속에서 몸은 잠들어도 마음은 쉬지 못할 때가 있습니다.
+싱잉볼 선명상은 그 지친 마음을 위한 고요한 치유의 시간입니다.
+티베트에서 전해 내려온 싱잉볼의 공명과 울림은 신체와 뇌파의 진동 주파수와 맞닿아
+긴장 · 피로 · 불안 · 스트레스를 자연스럽게 풀어냅니다.
+울림을 듣는 것만으로도 얕은 호흡이 깊어지고, 흩어진 마음이 중심을 찾게 됩니다.
+어떤 수행이나 의지가 필요하지 않습니다.
+그저 소리가 머무르고 사라지는 과정을 함께 바라보는 것, 그것이 이 명상의 핵심입니다.
+지친 감각을 깨우고, 닫힌 마음을 열며, 삶의 속도를 조절하는 시간!
+싱잉볼 선명상으로 내면의 평온을 다시 설계해보십시오.
+
+지친 마음을 비우는 단 하나의 소리,  싱잉볼 선(禪)명상은
+매월 첫째 주에 시작해 총 4번 진행합니다.
+금요일반, 토요일반, 일요일반으로 구성되며 참가비는 1십만원입니다.
+* 첫째 주에 참여하지 못하시는 경우 1회, 2회 참가를 해도 강습비는 1십만원입니다.
+매월 첫째 주에 참여해주시길 부탁드립니다.
+* 원활한 안전 관리와 보험 적용을 위해 모든 예약은 실명으로 이루어져야 합니다.
+타인 명의 도용 등 허위 정보로 예약된 경우, 당 사찰은 시설 관리권에 의거하여 별도의 통보 없이 예약 취소 및 현장 퇴방 조치를 시행할 수 있습니다.', '1일차;10:00~12:00 Sing & Heal .... 울림이 치유가 되는 2시간 싱잉볼 선명상(금요일, 토요일, 일요일)', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 편한 옷차림으로 물병(텀블러) 정도 준비하시면 됩니다.', 25000, '당일', '2026-01-23', '2027-12-25', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '선본사'), '무료 (지역연계) - 갓바위 축제 행사시 지역민과 사찰런 참가자 위한  당일형 템플스테이 9/19,9/20', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/9/2/20260902102130456_1_S.webp', '무료 - 갓바위 축제일환으로 지역민들과 사찰런 행사참여자를 위해 무료 당일형 템플스테이를 마련했습니다. 소원단주만들기, 명상, 차담, 갓바위 산행(선택) 팔공산의 수려한 자연환경과 선본사템플스테이 당일형 프로그램으로 일상에서 잊고 살았던 소중한 내 꿈을 다시 알아차리고, 꿈을 이루기 위해 열심히 노력할 수 있는 에너지를 충전하는 프로그램입니다. *개인차량을 이용하시는 분들은 차량번호 (예시: 00 가 1234 )를 참가자 성함과 참여날짜도 함께 문자 남겨주세요.  * 소모임 또는 단체 신청 가능하며, 프로그램과 운영시간은 모임 성격에따라 맞춤진행가능합니다. * 010-2631-1868 (오전 09시 ~ 오후 5시)로 문의 전화 이후 시간은 문자 문의 주세요.', '1일차;11:40~12:10 점심공양(공양간);12:10~12:50 사찰안내;12:50~14:30 소원 단주만들기, 명상, 차담;14:30~16:30 갓바위 부처님 참배 후 집으로 귀가', '반바지, 치마, 민소매를 제외한 편안한 복장 으로 오시면 됩니다.', 0, '당일', '2026-09-19', '2026-09-20', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '회암사(양주)'), '【선명상】 “ 나와 마주하는 2시간 ” 일반인 (18세~80대)대상', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/7/25/20250725112820076_1_S.webp', '현대의 바쁜 일상 속에서 잠시 멈춰, 나 자신과 조용히 마주하는 시간을 가져보세요.
+매일 2시간 선명상 프로그램은 일반인과 청년 모두에게 열린 마음의 공간입니다.
+싱잉볼 명상
+소리에 집중하며 나를 깊이 바라보는 시간으로 마음을 내려놓고 우주의 맑고 밝은 에너지를 온몸으로 느껴봅니다.
+ 차 명상
+한잔의 차가 오기까지 수고로움과 감사함을 마음깊이 느끼며 사랑과 감사를 전하는 마음에 온전히 집중합니다.
+ 호흡명상
+숨을 들이쉬고 내쉬는 단순한 행위를 통해, 내면의 균형과 평온을 찾아갑니다. 그저 있는 그대로의 나를 마주하는 순간을 경험해보세요.
+
+이 모든 프로그램은 초보자도 어렵지 않게 따라올 수 있도록 구성되어 있으며, 조용하고 따뜻한 분위기 속에서 자신의 내면을 살피는 시간이 될 것입니다.
+
+당일형은 참가자인원 2인 이상시 진행됩니다.
+* 단체 문의는 010-7508-0355로 문의주세요.(프로그램은 상의후 변경 가능합니다)', '1일차;09:50~10:00 입소완료;10:00~11:00 호흡명상 ,차명상;11:00~11:50 싱잉볼 명상, 마음 나누기;11:50~12:00 소감문 작성 또는 QR 작성 후 회향', '1. 편안한 옷과 양말 착용, 운동화를 신고 오세요.
+2. 개인 물병과 날씨 변화에 따른 외투 준비도 부탁드립니다.', 20000, '당일', '2025-05-01', '2026-11-03', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '심원사(성주)'), '[사회공익]부처님 향해 한걸음 더(당일형)', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/7/22/20250722101738696_1_S.webp', '성주와 가야지역 사회와 연계하여
+위로와 격려가 필요한 이웃들과
+밝은 웃음을 나누는 시간을 가집니다.
+
+대구, 경북지역의 다문화가정, 한부모가정, 조손가정,
+ 외국인노동자, 지역어르신, 코끼리센터와
+사찰 문화를 체험합니다.
+
+단체로 참가하는 프로그램입니다.
+템플스테이 담당자에게 연락주시면
+참가신청에 도움드리겠습니다.', '1일차;10:00~10:30 도착 및 사찰소개;10:30~11:30 합장주만들기;11:30~12:30 점심공양;12:30~13:30 연등만들기(부채만들기): 계절에 따라 변경;13:30~14:00 회향', '* 편한 신발, 모자를 준비해주세요
+* 겨울에는 미끄럼방지되는 신발, 장갑, 핫팩 등 보온용품을 준비해주세요', 15000, '당일', '2025-07-22', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '통합정보센터'), '스님과의 차담 15:40~16:30', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/5/30/20250530104858396_1_S.webp', '따뜻한 차 한잔과 스님과의 대화를 통해 마음의 여유를 가져보시기 바랍니다. 체험비는 무료이며, 1회당 차담 참여 가능 인원은 최대 4명입니다.
+※ 특정 차에 대한 알레르기나 카페인에 민감하신 분들은 차담 시작 전에 스님께 말씀해주시기 바랍니다.
+
+[단체참가] 단체참가는 가이드 포함 최소 4명, 최대 10명까지 참여할 수 있습니다.
+※ 단체참가는 사전에 반드시 전화문의하여 예약 하시기 바랍니다.
+
+템플스테이 홍보관', '1일차;15:40~16:30 스님과의 차담', '없음', 0, '당일', '2025-06-08', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '건봉사'), '자랑스런 국군장병 당일형2주.4주일요일 /무료 [사회공익나눔템플스테이]', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/3/29/20260329105530606_7_S.webp', '건봉사군법회는 장병들의 정서 안정과 건전한 병영문화 조성을 위한
+나눔템플스테이 정기신행 프로그램입니다.
+법문과 기도, 명상을 통해 올바른 가치관과
+공동체 의식을 함양하도록 돕고 있습니다.
+민통선 지역 호국도량으로서
+경계의 땅에서 헌신하는 장병들에게
+위로와 힘이 되는 법회를 이어가고 있습니다.', '1일차;10:00~10:30 군법회예불;10:40~11:10 스님법문 ,명상 ,좌선;11:20~12:00 간식제공 및 담화;12:00~12:10 인원점검 , 퇴소', '*신분증필수지참 *', 0, '당일', '2025-04-27', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '석왕사'), '매월 둘째주 - 다도 체험', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/27/20250327124121130_1_S.webp', '도심속의 전통사찰 석왕사에서 하루를 보내며 다양한 체험을 할 수 있는 기회를 부여합니다.
+매주 다르게 운영되며 원하는 체험이 있는 날짜에 참가 신청 할 수 있습니다.
+2인 이상 신청 가능', '1일차;10:00~10:30 입소, 법복 착용;10:30~11:00 사찰예절 안내;11:00~12:00 석왕사 안내;12:00~13:00 점심 공양;13:00~13:30 휴식;13:30~14:30 다도 체험;14:30~15:00 명상 및 체험후기 작성 (우천 시 ''명상 → 컵등만들기'')', '당일형 프로그램의 경우 별도의 준비물이 없습니다.
+편한 신발을 준비해오시면 됩니다.
+*동절기에는 개인 방한용품을 준비하세요.', 30000, '당일', '2025-03-28', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '석왕사'), '매월 셋째주 - 108염주 만들기', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/27/20250327124139200_1_S.webp', '도심속의 전통사찰 석왕사에서 하루를 보내며 다양한 체험을 할 수 있는 기회를 부여합니다.
+매주 다르게 운영되며 원하는 체험이 있는 날짜에 참가 신청 할 수 있습니다.
+
+
+
+2026년 5월 17일(일)은
+석왕사 경내 행사(제19회 부천시민과 함께하는 다문화축제)가 진행됩니다.
+이에, 오후 일정은 다문화축제 참여로 대체됩니다.', '1일차;10:00~10:30 입소, 법복;10:30~11:00 사찰예절 안내;11:00~12:00 석왕사 안내;12:00~13:00 점심 공양;13:00~13:30 휴식;13:30~14:30 108염주 만들기;14:30~15:00 명상 및 체험후기 작성 (우천 시 ''명상 → 컵등만들기'')', '당일형 프로그램의 경우 별도의 준비물이 없습니다.
+편한 신발을 준비해오시면 됩니다.
+*동절기에는 개인 방한용품을 준비하세요.', 30000, '당일', '2025-12-20', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '석왕사'), '매월 넷째주 -  반야심경 사경', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/27/20250327124157638_1_S.webp', '도심속의 전통사찰 석왕사에서 하루를 보내며 다양한 체험을 할 수 있는 기회를 부여합니다.
+매주 다르게 운영되며 원하는 체험이 있는 날짜에 참가 신청 할 수 있습니다.', '1일차;10:00~10:30 입소, 법복 착용;10:30~11:00 사찰예절 안내;11:00~12:00 석왕사 안내;12:00~13:00 점심 공양;13:00~13:30 휴식;13:30~14:30 반야심경 사경;14:30~15:00 명상 및 체험후기 작성 (우천 시 ''명상 → 컵등만들기'')', '당일형 프로그램의 경우 별도의 준비물이 없습니다.
+편한 신발을 준비해오시면 됩니다.
+*동절기에는 개인 방한용품을 준비하세요.', 30000, '당일', '2025-03-28', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '석왕사'), '매월 다섯째주 - "나를 돌아보는 길" (원미산 둘레길 행선(行禪))', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/27/20250327124222531_1_S.webp', '도심속의 전통사찰 석왕사에서 하루를 보내며 다양한 체험을 할 수 있는 기회를 부여합니다.
+매주 다르게 운영되며 원하는 체험이 있는 날짜에 참가 신청을 할 수 있습니다.', '1일차;10:00~10:30 입소, 법복 착용;10:30~11:00 사찰예절 안내;11:00~12:00 석왕사 안내;12:00~13:00 점심 공양;13:00~13:30 휴식;13:30~14:30 나를 돌아보는 길 (원미산 둘레길 걷기);14:30~15:00 명상 및 체험후기 작성 (우천 시 ''명상 → 컵등만들기'')', '당일형 프로그램의 경우 별도의 준비물이 없습니다.
+편한 신발을 준비해오시면 됩니다.
+*동절기에는 개인 방한용품을 준비하세요.', 30000, '당일', '2025-03-28', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '법륜사'), '[당일형] 사찰에서 보내는 지금-여기의 시간', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/26/20250326024000174_1_S.webp', '당일형 프로그램은  *3인 이상 신청 시 에만 운영합니다
+(예약완료 알림톡을 받으신 후에 결제하시기 바랍니다.)
+
+하루의 쉼표
+
+용인 문수산 법륜사의 당일형 템플스테이는 짧은 시간 동안 핵심적인 불교 사찰 문화를 체험하고 마음을 정화할 수 있는 힐링 프로그램입니다.
+1박 2일이 부담스러운 당신을 위해 준비한 법륜사의 특별한 선물!
+맑은 공기 가득한 문수산 자락에서 건강한 사찰요리를 맛보고, 잠시 일상의 속도를 늦추고, 오롯이 나를 만나는 시간이 될 것입니다.
+
+■ 안내문자는 참가하는 주에 발송해드립니다. 상담가능 시간은 9시~17시까지이며 프로그램 진행 중에는 전화를 받지 못합니다.(문자 남겨주세요!)
+
+■ 각 프로그램은 사찰의 사정에 따라 조정될 수 있습니다.
+
+■ 계좌이체(무통장입금)의 경우 환불에 1주일 이상 소요될 수 있습니다. - 환불 수수료 500원이 있습니다.', '1일차;10:30~11:50 입소 및 사찰안내,;11:50~13:00 점심공양 및 휴식;13:00~13:30 사물체험;13:30~14:30 스님과의 차담 및 명상;14:00~14:30 체험후기 작성 및 회향', '준비물: 개인 물병,  에어컨 없음', 30000, '당일', '2025-04-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '진관사'), '내가 먹은 음식이 내 몸과 인격을 만든다', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '“내가 먹은 음식이 내 몸과 인격을 만든다”
+천년 고찰 진관사에서 마련한 사찰음식 체험은 몸과 마음을 살리는 특별한 시간입니다. 1010년의 역사를 지닌 진관사(津寬寺)에서, 평온을 주는 아름다운 자연과 숨 쉬듯 살아 있는 우리 문화를 느끼며, 자연을 담은 산사음식을 음미합니다. 현대적으로 재해석한 발우공양을 통해 조금 더 편안하게 사찰음식에 접근하고, 삶의 나루터에 잠시 쉬어 가듯, 일상을 내려놓고 나 자신을 너그럽게 바라보는 시간을 가져보세요.
+
+** 해당 프로그램은 한국어로 진행됩니다.
+(Please note that the program is conducted entirely in Korean and currently designed for Korean participants.)
+** 위 일정은 사중상황에 따라 변동 될 수 있습니다.
+** 15명 미만시 일정이 취소될 수 있습니다.', '1일차;10:30~10:40 도착;10:40~11:10 사찰예절 및 사찰안내;11:10~11:50 명상;12:00~12:50 점심공양;12:50~13:30 포행;13:30~14:00 스님과의 차담;14:00~14:00 행복나누러가기(회향)', '1. 사찰에 적합한 편안한 바지와 양말 착용을 권장드립니다.
+2. 법당 출입이 잦으므로 신고 벗기 편한 운동화를 신고 오세요', 80000, '당일', '2025-02-27', '2030-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '통합정보센터'), '스님과의 차담 14:30~15:20', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/1/20250301035219668_1_S.webp', '따뜻한 차 한잔과 스님과의 대화를 통해 마음의 여유를 가져보시기 바랍니다. 체험비는 무료이며, 1회당 차담 참여 가능 인원은 최대 4명입니다.
+※ 특정 차에 대한 알레르기나 카페인에 민감하신 분들은 차담 시작 전에 스님께 말씀해주시기 바랍니다.
+
+[단체참가] 단체참가는 가이드 포함 최소 4명, 최대 10명까지 참여할 수 있습니다.
+※ 단체참가는 사전에 반드시 전화문의하여 예약 하시기 바랍니다.', '1일차;14:30~15:20 스님과의 차담', '없음', 0, '당일', '2025-06-08', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '통합정보센터'), '스님과의 차담 13:20~14:10', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/1/20250301035035040_1_S.webp', '따뜻한 차 한잔과 스님과의 대화를 통해 마음의 여유를 가져보시기 바랍니다. 체험비는 무료이며, 1회당 차담 참여 가능 인원은 최대 4명입니다.
+※ 특정 차에 대한 알레르기나 카페인에 민감하신 분들은 차담 시작 전에 스님께 말씀해주시기 바랍니다.
+
+[단체참가] 단체참가는 가이드 포함 최소 4명, 최대 10명까지 참여할 수 있습니다.
+※ 단체참가는 사전에 반드시 전화문의하여 예약 하시기 바랍니다.', '1일차;13:20~14:10 스님과의 차담', '없음', 0, '당일', '2025-06-08', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '통합정보센터'), '스님과의 차담 AM10:20~11:10', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/1/20250301034735020_1_S.webp', '따뜻한 차 한잔과 스님과의 대화를 통해 마음의 여유를 가져보시기 바랍니다. 체험비는 무료이며, 1회당 차담 참여 가능 인원은 최대 4명입니다.
+※ 특정 차에 대한 알레르기나 카페인에 민감하신 분들은 차담 시작 전에 스님께 말씀해주시기 바랍니다.
+
+[단체참가] 단체참가는 가이드 포함 최소 4명, 최대 10명까지 참여할 수 있습니다.
+※ 단체참가는 사전에 반드시 전화문의하여 예약 하시기 바랍니다.', '1일차;10:20~11:10 스님과의 차담', '없음', 0, '당일', '2025-06-08', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '회암사(양주)'), '" 잠시 쉬어가는 시간 "', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '바쁜 일상에서 잠시 멈춰 서서, 자신의 마음을 돌아보고 내면의 평화와 쉼을 찾는 시간입니다.
+고요한 산사의 맑은 바람과 풍경 소리 속에서 마음을 정리하며 깊은 휴식을 경험하고, 온전히 나에게 집중하는 특별한 하루를 선물해 보세요
+하루 동안 짧은 여정이지만 그 안에서 얻는 고요와 충만함은 당신의 삶에 따뜻한 울림을 더해줄 것입니다.
+잠시 쉬어가는 시간— 당신의 하루를 가장 따뜻하고 의미 있는 휴식으로 채워드립니다.
+
+
+
+* 본 프로그램은 예약 가능 여부를 확인한 후 승인이 가능합니다.
+   입금요청 문자를 받으면 입금하시기 바랍니다.
+
+* 당일형은 참가자인원 2인 이상시 진행됩니다.
+* 단체 문의는 010-7508-0355로 문의주세요.(프로그램은 상의후 변경 가능합니다)', '1일차;09:50~10:00 입소 (템플사무실);10:00~12:00 사찰문화체험, 싱잉볼 명상 체험;12:00~12:30 점심공양;12:30~13:00 걷기명상체험 또는 차담;13:00~13:10 소감문 또는 QR 작성 후 회향', '1. 편안한 옷과 양말 착용, 운동화를 신고 오세요.
+2. 개인 물병과 날씨 변화에 따른 외투 준비도 부탁드립니다.', 30000, '당일', '2025-05-01', '2026-11-03', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '묘각사'), '마음 치유 템플스테이 "Where is your mind?"', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '**예약신청일 당일까지 입금하지 않으시면 자동취소처리됩니다. (입금계좌 : 우리은행 1005-701-062607 낙산묘각사)
+-성별을 정확하게 기입해주십시오.
+*외국인 예약의 경우, 영문사이트로 예약부탁드립니다.
+
+
+짧은 시간 동안 스님들의 삶을 체험할 수 있는 프로그램입니다.
+
+※초등학생은 보호자 동반 필수입니다.
+프로그램 시작일 3일 전까지 신청자가 5인 이하일 경우 취소됩니다. (취소될 경우 연락은 따로 드리겠습니다.)', '1일차;09:30~09:50 도착 & 참가복, 사물함, 방배정;10:00~10:20 오리엔테이션;10:20~11:20 108배 & 108 염주 만들기;11:20~12:00 명상;12:00~13:00 점심공양(식사);13:00~13:20 사찰투어;13:20~14:00 스님과의 다도', '-양말(프로그램 하실때 양말 꼭 신으셔야 합니다)', 50000, '당일', '2025-01-11', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '불회사'), '주지스님과 함께 하는 숲체험 및 비로약차 다례체험', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '불회사는 1천 7백년 전에 인도 마라난타 스님께서 나주 영산강을 통해 차씨와 부처님을 모시고 오셔서 창건했다는 스토리가 전해지는 사찰로 넓은 야생차밭을 보유하고 있습니다. 그리고 도량을 감싸고 있는 비자나무 숲은 국가 산림문화유산으로 지정되어 있습니다. 비로약차는 비자나무 아래서 이슬을 머금고 자란 찻잎을 불회사 스님들이 직접 만드십니다. 비로약차를 마시고, 비자나무 아래와 동백 숲길에서 걷기 명상을 통해 일상에서 지친 몸과 마음을 치유하시는 시간을 가지시길 바랍니다. ■ 예약 및 입금 안내 ▷ 참여인원은 10명~40명까지 신청 가능합니다.(문의 : 061-337-3440) ▷ 예약 신청 후 입금(결제)까지 완료하셔야 예약이 완료되며, 예약완료 문자를 발송해 드립니다. ▷ 날짜 변경: 예약완료 이후, 날짜 변경은 1회 가능하며, 날짜 변경 후 취소 시 환불 불가합니다. ■ 프로그램 일정은 사찰의 사정에 따라 변경될 수 있습니다.', '1일차;14:00~14:50 숲체험;14:50~15:00 휴식;15:00~16:00 다례체험', '간소한 복장', 10000, '당일', '2024-11-17', '2027-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '서고사'), '"마음 쉬어가기" - 사찰에서 한나절 (당일형)', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/10/25/20251025095619253_2_S.webp', '도심 속 아름다운 공간에서 ...
+
+                               잠시 마음을 내려놓고 가세요.~~
+
+
+
+^^ 7인 이상 참여 가능합니다.^^
+
+
+
+
+
+■ 예약 및 입금 안내 ▷ 예약 신청 후 입금(결제)까지 완료하셔야 예약이 완료되며, 예약완료 문자를 발송해 드립니다. ▷ 날짜 변경: 예약완료 이후, 날짜 변경은 1회 가능합니다.
+■ 프로그램 일정은 사찰의 사정에 따라 변경될 수 있습니다.', '1일차;13:00~14:00 OT 사찰예절 안내;14:00~15:00 스님과의 차담 혹은 108염주 꿰기 체험;15:00~16:00 황방산 숲길 체험(자율)', '■', 30000, '당일', '2024-03-05', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '선본사'), '선명상 템플스테이(소모임 , 단체) - 당일형', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '선명상(단체) 당일형 템플스테이를 팔공산 선본사 갓바위에서 운영합니다. 아래 프로그램중 사찰안내와 갓바위 부처님 참배는 기본이며 그외 1개 프로그램 선택가능 합니다 . 프로그램 :108 소원염주만들기, 에코백 만들기 , 연꽃등 만들기,소원 팔찌만들기 중 1개 프로그램 선택 후 차담과 명상을 진행 합니다. 사찰안내와 갓바위 부처님 께 가는 산행은 선택 입니다. 팔공산의 수려한 자연환경과 선본사템플스테이 당일형 프로그램으로 일상에서 잊고 살았던 소중한 내 꿈을 다시 알아차리고, 꿈을 이루기 위해 열심히 노력할 수 있는 에너지를 충전하는 프로그램입니다. 당일형은 5명 이상 되어야 운영되오니 인원이 모자랄시 취소 될수 있음에 양해 부탁드립니다. * 소모임 또는 단체 신청 가능하며, 프로그램, 시간은 모임 성격에따라 맞춤진행 가능합니다. * 개인차량을 이용하시는 분들은 차량번호 (예시: 00 가 1234 )를 참가자 성함과 참여날짜도 함께 문자 남겨주세요. 만일 차량통제 바가 자동으로 안 올라가면 버튼 누르신 후 연결 되면 템플스테이 참가자 라고 말씀하시면 통과 가능하십니 다. * 010-2631-1868 (오전 09시 ~ 오후 5시)로 문의 전화 주세요.', '1일차;12:30~13:00 도착;13:00~14:30 스님과 차담 또는 108소원염주만들기,연꽃등만들기 중 택 1;15:00~16:00 사찰안내(선택);15:00~17:00 갓바위 참배(선택);16:00~18:00 갓바위 부처님 참배 후 집으로 귀가', '* 운동화 또는 등산화, 생수, 등산스틱 ,우천시 우산 또는 우의', 30000, '당일', '2025-10-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '길상사'), '[템플라이프]선(禪)명상', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/4/3/20260403023037792_1_S.webp', '"주지스님과 함께하는 선(禪)명상"
+   덕조스님 (주지스님)
+시   간 :  19:00~21:00
+장   소 : 설법전
+동참금 : 3만원
+* 외국인의 경우  사전상담후 신청 바랍니다.', '1일차;19:00~21:00 선(禪)명상', '상의 : 흰색 티, 하의 : 활동이 편한바지
+개인 컵(텀블러), 양말을 꼭 준비해주세요.', 30000, '당일', '2026-02-28', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '화엄사'), '[공익] "구례 화엄사 화엄매" 천연기념물 행사', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '2026년 국가유산 천연기념물 홍매화 행사 [구례 화엄사 화엄매]', '1일차;11:50~13:00 이천당 점심공양;13:20~13:30 일주문-보제루-각황전;13:30~14:40 행사진행', '개인 세면도구, 수건, 운동화, 양말, 개인 물통 [동계] 방한용품(내복필수,모자, 마스크, 장갑 등), 우산 [하계] 우산, 여벌옷 * 헤어 드라이기는 별도로 제공하지 않습니다.', 0, '당일', '2024-03-09', '2029-03-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '화암사'), '놀러와~!!화암사(당일형 3시간)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '금강산 신선봉아래 첫 사찰
+
+수바위와 울산바위 동해바다가 한눈에 보이는 금강산 화암사
+
+나를 돌아보는 귀중한 시간을 가져보세요...', '1일차;13:00~13:30 사찰안내;13:30~15:30 계곡산책과,수바위.신선대다녀오기;15:30~16:00 인원점검,회향', '운동화, 손수건, 개인물병', 30000, '당일', '2024-03-03', '2026-11-01', 20, FALSE, 0, 0),
+* 위 일정은 사중상황에 따라 변동 될 수 있습니다.
+** 15명 미만시 일정이 취소될 수 있습니다.', '1일차;10:30~10:30 도착 및 기본 습의;10:40~11:10 사찰 안내;11:10~11:20 포행;11:20~11:40 명상;11:40~12:30 점심 공양;12:30~13:30 스님과의 차담;13:30~13:30 회향', '마스크, 운동화(편한 신발), 양말 착용, 개인(보온)물통 짧은 반바지와 치마, 민소매옷, 슬리퍼는 삼가해주시기 바랍니다.', 80000, '당일', '2024-03-19', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '대승사'), '당일형 체험', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '', '1일차;14:00~14:30 사찰안내;14:30~16:00 암자순례;16:00~17:00 스님과차담', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다.
+개인 물병 정도 준비하시면 됩니다.', 40000, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '영랑사'), '당일형 - 예불참여및 사찰 알아가기', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/3/31/20260331020954039_2_S.webp', '진흙속에서도 아름답게 피어나는 연꽃처럼, 연꽃잎 양초에 자기의 소원을 밝히고,  부처님의 가르침을 알아가는 당일체험입니다.', '1일차;08:30~09:00 입소 및 사찰 안내;09:00~10:00 사찰예절 알아가기;10:00~11:30 사시예불;11:30~12:00 점심공양;12:00~13:00 휴식 또는 수목원 산책;13:00~15:00 참가 소감문 작성후 퇴소', '개인 세면도구, 수건, 칫솔, 여벌옷(면티,가벼운바지), 운동화(편한 신발), 양말, 개인 물통 *동절기에는 개인방한용품 준비하세요.', 30000, '당일', '2025-09-01', '2026-10-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '지장정사'), '무재칠시(無財七施)자원봉사 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/4/27/20250427114102609_1_S.webp', '무재칠시(無財七施) 부처님은 재물이 없어도 남에게 베풀 수 있는 7가지 방법을 말씀하셨습니다.
+
+첫째 ,얼굴에 화색을 띠고 부드럽고 정다운 얼굴로 남을 대하는 화안시(和顔施)
+둘째, 말로써 베풀수 있는 사랑의 말,칭찬의 말,격려의 말,부드러운 말 언시(言施)
+셋째, 마음의 문을 열고 따뜻한 마음을 주는 심시(心施)
+넷째, 호의를 담은 눈으로부드럽기 바라보는 안시(眼施)
+다섯째, 몸으로 봉사하며 베푸는 신시(身施)
+여섯째, 때와 장소에 맞게 자리를 내주어 양보하는 상좌시(床座施)
+일곱째, 굳이 묻지 않고 상대방의 마음을 살펴서 돕는 찰시(察施)
+
+무재칠시는 돈보다 더 귀하고 돈으로도 바꿀수 없는 마음을 부자로 만들어 주는 나눔입니다!!
+우리 주변의 불편한 모든 곳에 마음을 담아 베푼다면 행복하고 아름다운 세상이 될 것입니다.
+우리 함께 이런 세상을 만들어 보는 것은 어떨까요?
+
+* 동네 한바퀴 - 마을 돌며 환경정화 하기
+* 문화재 탐방 - 문화재 보호, 자연환경 가꾸기
+* 노인 요양원 - 어르신들과 친구되어 주기, 자리 살펴 드리기. 책읽어 드리기
+* 반찬 봉사 - 어르신들을 위한 반찬을 만들어 포장, 배달', '1일차;10:00~10:30 사찰 안내 및 오리엔테이션(봉사안내);10:30~12:30 봉사활동 - 요양원 방문, 반찬 봉사,,, (오늘의 봉사활동);12:30~13:30 점심공양;13:30~14:30 스님과의 차담(마음나누기);14:30~15:00 소감문 작성 후 집으로!!', '당일형 프로그램의 경우 별도의 준비물이 필요없습니다. 개인물병정도 준비하시면 됩니다.', 0, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '흥국사(여수)'), '매월 세째주 토요일 오후6시 주지스님과 함께하는 다라니기도', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '흥국사(여수)는 고려 명종 25년 (1195)에 보조국사 지눌스님에 의해 세워졌고, 현 대웅전은 인조2년 (1624)계특대사가 절을고쳐 세울때 다시 지은 건물 입니다. 보물 제396호로 법당 안에는 석가모니불을 중심으로 좌우에 제화갈라와, 미륵부처님이 협시 보살님으로 모셔져 있습니다. (과거, 현재, 미래)의 삼세불이 계시는 저희 훙국사 대웅전에서 천수경의 핵심인 신묘장구대다라니 기도를 하므로서 절망과 좌절에서 벗어나 나의 이기심을 참회하고, 간절한 마음 으로 기도하면 가정의 행복과 평화, 사업자는 사업성취, 병고자는 즉득쾌차, 온갖 장애를 해소 하시고 소원하는바가 성취 되시길 발원합니다.', '1일차;16:40~17:30 저녁공양;18:00~20:00 천수다라니기도;20:00~20:30 기도회향', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 개인 물병 정도 준비하시면 됩니다.', 10000, '당일', '2024-01-20', '2027-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '망경산사'), '전통 메주 만들기 체험', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '2026년 10월 31일 (토) 오전 10시 깊은 산속 망경산사에서 전통 사찰음식의 핵심인 메주를 직접 만들어보는 특별한 체험을 제공합니다.
+사찰의 정갈한 분위기 속에서 손으로 빚는 메주는 오랜 시간과 정성을 담은 우리 전통의 맛을 느낄 수 있는 기회입니다.
+자연과 하나 되어 템플스테이의 고요함 속에서 마음을 다스리고, 정성으로 빚어낸 메주를 통해 사찰음식의 깊은 철학을 경험해보세요.
+- 메주 만드는 과정 : 콩 씻기-콩 삶기-메주 모양 만들기-(새끼꼬기)메주 말리기 작업복으로 사용할 여벌의 옷을 준비해오시면 좋습니다.', '1일차;09:00~10:00 참가 등록;10:00~10:40 메주 만들기 교육;10:40~12:00 메주 만들기 체험;12:00~13:00 사찰음식 체험(점심공양)', '세면도구(수건, 비누, 칫솔 등 필참), 운동화, 긴팔 옷, 모자, 우산(비), 개인 물병(보온)', 10000, '당일', '2023-10-28', '2026-10-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '미륵사'), '[당일형] 천 년 미륵의 꿈', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '■ 학교, 회사 등 단체를 위한 프로그램으로 미륵사에 2시간 ~ 4시간 정도 머물면서 사찰의 불교문화를 체험할수 있는 프로그램입니다. 단체의 가능한 시간에 따라 서로 협의하여 사찰음식, 걷기 명상, 스님과의 대화, 연꽃등 만들기 등 체험할수 있는 프로그램을 선택할 수 있습니다. ■ 예약 및 입금 안내 ▷ 승인완료 문자 안내를 받은 후 2일 이내 입금 완료 시 예약이 확정됩니다 예약이 확정 된 경우 안내 메세지가 전송됩니다. ▷ 날짜 변경: 예약완료 이후, 날짜 변경은 1회 가능하며, 날짜 변경 후 취소 시 환불 불가합니다 ■ 프로그램 일정은 사찰의 사정에 따라 변경될 수 있습니다.', '1일차;11:00~12:00 사찰안내;12:00~13:00 점심 공양;13:00~14:00 스님과의 차담;14:00~15:00 숲속의 명상;15:00~15:10 기념사진 촬영 후 귀가', '□ 준비물 ( 필요하신 분은 준비 바랍니다) ▶ 텀블러(정수기 사용) ▶ 손수건 ▶ 양말 지참 : 법당 출입시 양말 착용 바랍니다. ▶ (동절기 ) 강 추위 대비 두꺼운 외투(옷) 준비 ▶ 기타(참가자님께서 필요한 소지품)을 준비해주세요. 승인 완료 후 입금 바랍니다.', 30000, '당일', '2026-07-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '화운사'), '[사회·공익] 나눔_당일 (경제적 배려대상 무료지원)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/7/4/20260704024558535_1_S.webp', '▶용인시의 소외계층 시민들께 참가비용 전액을 지원 해 드립니다. ▶전통 문화체험의 기회를 제공하고, 우리 문화의 뿌리에 대한 이해와 마음의 치유를 더하기 위한 목적입니다. ▶ 최소 5인 이상 인원이 모이면 본 프로그램을 진행하는 점 양해바랍니다. ▶사찰 안내, 사찰식 점심공양, 스님과의 차담, 108배, 염주 만들기, 마음명상 등 사전에 상의하여 진행하는 프로그램입니다. *''경제적 배려''에 해당되는 대상은- 소외계층 (저소득층 노인, 독거노인, 장애인, 환우, 노숙인, 새터민, 다문화 가정, 지역자활센터민 등), 수급자, 차상위계층입니다. ▶증빙서류: 용인시 관할기관의 추천서 ▶위의 대상 외에도 경제적 배려가 필요한 분께서는 아래번호로 메시지나 연락을 주시면 도움 드리겠습니다. ▶ 자세한 문의는 전화주세요. 010-9633-2576 본 프로그램은 화운사의 당일형 일정과 동일한 내용으로 진행됩니다.', '1일차;10:00~10:15 접수;10:30~11:30 사찰 습의 & 도량 안내;11:30~13:00 약으로 삼아 공양합니다. (점심 & 휴식);13:00~14:00 108배, 염주 만들기, 만다라 색칠하기, 명상 중 선택 (사찰 재량);14:00~15:00 스님과의 차담 & 마음 쓰기;15:00~00:00 돌아보고 돌아갑니다. (회향)', '양말(하절기에도 반드시), 편한신발, 좌식생활에 편안한 복장(수련복은 조끼만 대여)', 0, '당일', '2023-05-08', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '대흥사'), '[선.선.선 당일형 템플스테이] 다도체험, 사찰안내, 숲길걷기 템플스테이_20명 이상 진행(당일 하루)_적은 인원 수로 진행하고 싶다면 연락주세요.★사전 예약 필수★', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '▶#대흥사 #선.선.선 #당일형 #사찰안내 #다도체험 #차 #초의선사 #동다송 #스님과의대화 #숲길걷기◀
+
+디디고 템플스테이 당일형으로 단체만 가능 합니다.
+
+이 프로그램은 조선 후기 승려이자 ''해동다성''으로 불리는 초의선사의 《동다송(東茶頌)》을 바탕으로 기획되었습니다.
+우리나라 최초의 차 전문 서적인 이 책은 우리 차의 우수성부터 제다법, 차를 대하는 태도까지 상세히 담고 있어 한국 차 문화의 이론적 토대로 평가받습니다.
+
+**단체 참가를 원하시는 경우 대흥사 템플스테이 사무국으로 연락 주시기 바랍니다. 061-535-5775
+(희망 일정, 인원 수, 단체 특성, 참가자 특성, 성별, 특이사항 등에 대해 사전 전달 필요)', '1일차;09:00~10:00 다도체험, 스님과 대화;10:00~10:30 숲길걷기;10:30~11:00 대흥사 사찰안내;11:00~11:30 소감문 쓰기;11:30~12:00 회향', '일반 준비물
+
+☞ 산행할 수 있는 (접지력 좋은 편한 운동화 (슬리퍼는 경내 착용 불가합니다)
+☞ (우천 시) 우산
+동절기 준비물
+☞ 방한용품(장갑, 목도리, 모자)
+- 대흥사 안내소부터는 오토바이나 자전거(산악자전거 포함)를 보행자 안전상 이용하실 수 없습니다.
+- 안내소 통과하시면 전화 부탁드립니다. 사찰이 넓어서 전화안내가 필요합니다.^^', 35000, '당일', '2025-03-14', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '금강정사'), '[사회공익]나눔 템플스테이-광명시 거주 65세이상 어르신 대상', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/17/20250317032042951_2_S.webp', '가정과 사회에서 소외된 광명시 거주 65세 이상 수급자,차상위,장애인 어르신들을 대상으로 4월에서 9월까지 매주 수요일에 진행하는 템플스테이입니다.
+사회적 약자이신 어르신들을 모시고 와서 즐거운 원예체험과 명상,사찰음식 체험, 차담, 선물 증정 등을 통하여 지역사회에 한 발 더 가까이 다가가는 템플스테이가 되려고 노력하고 있습니다.', '1일차;10:00~10:30 동사무소로 모시러감;11:00~11:40 원예체험(꽃심고 가꾸기);11:40~12:00 호흡명상 체험;12:10~12:40 점심공양(사찰음식체험);12:50~13:20 스님과 차담(마음나누기);13:30~14:00 모셔다드림', '간편 복장', 0, '당일', '2026-04-01', '2026-09-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '대흥사'), '[당일체험] 사찰 한끼 후 힐링의 시간 스님과 차담 -  15인이상 가능합니다.', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '디디고 템플스테이 당일형으로 단체만 가능 합니다. 일정은 사찰안내, 점심공양, 스님과 대화 시간으로 진행 됩니다. 참가를 원하실 경우 일정조정과 추가로 진행할 일정 상담을 위해 대흥사 템플스테이 사무국으로 연락 주시기 바랍니다. 061) 535 - 5775', '1일차;11:30~12:00 점심공양;12:30~13:30 스님과 차담', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 개인 물병 정도 준비하시면 됩니다.', 30000, '당일', '2023-03-16', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '수원사'), '당일형_잠시 쉬어 감(5명 이상시 운영)', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/10/5/20251005125621353_1_S.webp', 'o 당일형 템플스테이는 짧은 시간 수원사에 머물며 잠시 쉬어가는 시간을 통해 행복한 나를 찾는 프로그램입니다.
+
+o 스님과의 차담, 걷기명상 등 프로그램을 진행하므로 편한 신발을 신고 오시면 좋습니다.
+
+o 민소매, 반바지, 맨발 등 노출이 심한 복장 등은 피해주시고, 법당 등에서의 사찰예절도 잘 지켜주세요.
+
+o 삶을 살아가면서 미처 살펴보지 못한 것이 아주 소중할 수도 있습니다.  당일형 템플스테이 체험을 통하여 내 자신의 무한한 가치를 알아 차리고 삶의 행복도를 높여 보세요.', '1일차;11:00~12:00 등록 및 사찰안내;12:00~13:00 점심 공양;13:00~14:00 스님과의 차담;14:00~15:30 화성행궁 걷기명상 또는  108염주 만들기 체험;15:30~16:00 정리 및 소감문 작성', '* 당일형은 별도의 준비물이 없습니다', 40000, '당일', '2025-12-09', '2026-12-27', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '영국사'), '은행나무에서', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '천년고찰 영국사는 충청북도에서 문화재와 보물이 두번째로 많은 사찰입니다.
+문화재와 보물이 잘 보존된 영국사에서 당일 체험으로 문화재와 보물을 돌아보며 천년의 숨결을 느껴보세요.', '1일차;11:30~12:00 도착 및 신청서 작성;12:00~13:00 점심공양;13:00~14:00 문화재탐방;14:00~15:00 스님과의 차담;15:00~15:30 회향', '텀블러, 운동화 (편한신발), 모자, 필기도구, 여벌옷(겉옷)', 30000, '당일', '2026-08-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '명주사'), '숲속 판화이야기(당일형)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '명주사 템플스테이에 오신 것을 환영합니다! 명주사는 산사와 박물관의 만남인 문화형 템플스테이 입니다. 숲속판화학교 당일형은 해설이 있는 박물관관람, 고판화체험 등 문화체험이 포함된 프로그램입니다. 오전, 오후 중에 선택 가능합니다. 많은 참가 바랍니다. 감사합니다.', '1일차;10:00~11:00 명주사와 함께하는 박물관 판화이야기;11:00~12:00 고인쇄문화체험(전통책만들기);12:00~12:00 사진촬영 및 회향;14:00~15:00 명주사와 함께하는 박물관 판화이야기;15:00~16:00 고인쇄문화체험(전통책만들기);16:00~16:00 사진촬영 및 회향', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 개인 물병 정도 준비하시면 됩니다.', 30000, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '화엄사'), '[당일형] 산사의밥상', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '화엄사에서 20년 넘는 경력을 가진 "마하연 보살님"의 사찰음식 강좌입니다. - 강사: 마하연 보살님 - 장소: 화엄사 사찰음식체험관 - 모집인원: 40명(선착순)', '1일차;13:00~15:00 사찰음식 강의', '만드신 음식을 담아 갈 컨테이너', 100000, '당일', '2022-03-07', '2027-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '구인사'), '[당일형] 선재선재 이어라', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/22/20250322043052055_1_S.webp', '*직접온분만 참가가능 영상관람/체험 후 경내 자유 참배하십니다.
+당일형(10,000원) 잠깐 둘러보시지만 마음은 행복하게... 구인사 오신분들이 많이 궁금할수있는 역사와 예법등 기본 습의교육을 영상을 통해 기본 습의를 받을수 있습니다. 영상보시고 난 후 홍보관에서 연꽃등 만들기 프로그램이 있습니다. 깨끗하지 않은 연못에서 피지만 자기 스스로는 주변에 물들지 않는 연꽃처럼, 불교의 가르침은 아무리 주변이 방해 투성이여도 나 자신은 물들지 않고 행복할 수 있는 삶을 지향합니다. 자율로 사찰 내 묵언으로 둘러보실수 있도록 홍보관앞에 안내문이 잘 설명되어 있으며 상세한 내용은 홍보관에서 추가 안내 받을수 있습니다. 시간이 완전히 정해진 것은 아닙니다. 참가자 분 오시는 시간에 따라, 오후 1~3시 사이 시작합니다.', '1일차;13:00~13:30 구인사 안내 영상 시청;13:30~14:30 연꽃등 만들기;14:30~15:30 사찰 자율 관람', '입고계신 복장 그대로 좋습니다. (단, 민소매-반소매이상 입으시고....반바지 보다 긴바지가 산행에 좋습니다. 슬리퍼, 샌달: 경사가 있는 산세라 발 다칠수 있습니다. 안전한 운동화 신고 오세요)', 10000, '당일', '2022-01-08', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '도리사'), '신라복식 체험하기', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '', '1일차;14:00~17:00 2022년 4월 ''천년향의 문을 열다''', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다.
+개인 물병 정도 준비하시면 됩니다.', 10000, '당일', '2025-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '백담사'), '2026년 말한 바 없이 말하고 들은 바 없이 듣는 템플스테이', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '노력과 인연의 관계 세상은 노력 없이는 관계가 이루어지지 않는다.
+사람의 관계란 우연히 만나 관심을 가지면 인연이 되고 공을 들이면 필연이 된다.
+우연은 10% 노력이 90%이다.
+아무리 좋은 인연도 서로 노력 없이는 오래 갈 수 없고 아무리 나쁜 인연도 서로 노력하면 좋은 인연이 된다.
+그러기 위해서는 서로를 이해하고 배려하는 마음이 있어야 한다.
+그리고 사랑하는 사람이 되어주고, 따뜻한 사람이 되어 주어야 한다.
+좋은 사람으로 만나 착한 사람으로 헤어져 그리운 사람으로 남아야 한다.
+꼭 쥐고 있어야 내것이 되는 인연은 진짜 내 인연이 아니다.
+잠깐 놓았는데도 내 곁에 머무는 사람이 진짜 내 인연인 것이다.
+모두 좋은 인연이었다고 기억되는 그런 당일형 템플스테이가 될 수 있도록 두손모아 합장하며 기도합니다.....
+이 당일형 프로그램은 1차 2차 중 하나를 선택 하시면 됩니다.', '1일차;08:50~10:00 자기 소개 및 마음 나누기;10:00~11:00 스님과의 차담', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다.
+개인 물병 정도 준비하시면 됩니다.', 20000, '당일', '2021-05-05', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '범어사'), '템플라이프 (단체형)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '바쁜 일상 속에서 잠깐 동안 사찰에 머물며, 천년 고찰의 수행의 발자취를 느껴 볼 수 있는 당일형 프로그램입니다.
+
+* 최소 20인 이상 단체 진행 가능합니다.  한그룹씩 진행하며 다른그룹과 섞어서 진행하지 않습니다. 개인 예약은 접수 하지 않습니다.
+* 진행 시간은 오전 또는 오후 협의 가능합니다.
+* 당일형 단체는 월~토 진행가능하며, 일요일은 진행하지 않습니다.
+
+<개별 프로그램 추가비용>
+* 108 수행염주 만들기 1만원
+* 연꽃등 만들기 체험 1만원
+* 단청무늬 부채 채색 체험 1만원
+
+* 정식 다도체험은 3만원 추가 비용 있습니다. (다도체험만 별도로 원하시는 경우 1인당 3만원 입니다. 20인 미만시 최소 상차림 비용은 50만원 입니다.)
+
+*수요일~일요일 주5일 근무로 월요일~화요일은 휴무 입니다.
+그리고 월~화 휴무일은 전화 통화가 되지 않으니 문의 사항은 휴대폰 문자(010-2581-5726) 또는 이메일(beomeosa@templestay.com)으로 남겨주시면 답변 드릴수 있도록 하겠습니다.', '1일차;10:30~11:30 스님과의 차담;11:30~12:30 점심공양;12:30~13:00 범어사 경내로 이동 도보 또는 자차;13:00~14:00 사찰안내', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 개인 물병과 편안한 신발 정도 준비하시면 됩니다.', 35000, '당일', '2020-11-17', '2026-09-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '법륜사'), '“ 사찰애(愛) 올래? 요리애(愛) 빠져볼래? ” 사찰음식 당일형 템플스테이(단체는 협의 후 날짜조정 가능)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '오늘 하루 사찰에서 건강도 챙기고 입맛도 챙기는 사찰요리에 빠져보실래요?
+몸도 마음도 지쳐있는 나에게 신선한 하루를 선물해보세요.
+스님의 친절한 미소와 열정, 자비로움에 나도 모르게 물들게 됩니다
+건강한 하루 맛있는 하루 신선해서 더 행복한 하루 스님과 함께 법륜사에서 사찰요리에 빠져보세요.
+
+
+
+■ 계좌이체(무통장입금)의 경우 환불에 1주일 이상 소요될 수 있습니다. - 환불 수수료 500원이 있습니다.
+■ 안내문자는 참가하는 주에 발송해드립니다. 상담가능 시간은 9시~17시까지이며 프로그램 진행 중에는 전화를 받지 못합니다.(문자 남겨주세요!)
+
+
+
+♣ 안내 사항 ♣
+* 참가비 납부시에는 반드시 참가자의 이름으로 납부해주시길 바랍니다.
+* 참가비는 신청한 날짜로부터 3일내로(오후 6시)까지 납부해주시길 바랍니다. (미납시에는 자동 예약취소됩니다).
+* 미성년자(고등학생 이하)와 80세 이상 어르신은 반드시 보호자 동반 참가 가능합니다.
+* 앞치마 (사찰음식) 지급
+* 사찰음식 정원은 32명(4인 1조)입니다.
+  (12인 이상 진행 - 12인 미만인 경우 취소, 연기 가능)
+* 단체 예약 가능 (12인이상 문의 후 진행 010-6766-8700)
+* 강사 스님의 음식 시연·설명이 끝난 후 도착하시는 경우(지각), 참가하실 수 없습니다.', '1일차;09:30~10:00 도착 및 안내;10:00~11:50 사찰 음식 만들기;11:50~12:10 공양;12:10~12:30 명상;12:30~13:00 자유시간 후 회향', '개인 물병 (필히 지참) 및 필요한 물품(양말 반드시 착용) 챙기시면 됩니다.', 70000, '당일', '2020-12-09', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '화운사'), '마음산책  (평일 오전~) / 단체', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/5/23/20250523095811819_3_S.webp', '템플스테이는 하고 싶지만, 좀처럼 긴 시간 여유가 없다면 하루라도 좋습니다. ▶ 최소 5인 이상 인원이 모이면 본 프로그램을 진행하는 점 양해바랍니다. ▶모임, 회사, 학교 등 단체를 대상으로 진행하는 프로그램으로 사찰안내, 사찰식 점심공양, 스님과의 차담, 108배, 염주 만들기, 마음명상, 싱잉볼 명상 등 사전에 상의하여 진행하는 프로그램입니다. ▶ 5인 이상 단체부터 예약이 가능합니다. ▶ 자세한 문의는 전화주세요. 010-9633-2576', '1일차;10:30~11:20 몸과 마음으로 익혀봅니다 (사찰예절 습의);11:20~13:00 약으로 삼아 공양합니다(점심/휴식);13:00~14:00 108배, 염주 만들기, 사경(사불), 명상 중 선택 (사찰 재량);14:00~15:00 스님과의 차담;15:00~00:00 돌아보고 돌아갑니다(회향)', '양말(하절기에도 반드시), 편한신발, 좌식생활에 편안한 바지 입어주세요.(수련복은 조끼만 대여)', 40000, '당일', '2025-04-09', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '용화사(통영)'), '템플라이프 2025 (20명)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '바쁜 일상을 떠나 천년고찰 용화사에서 가져보는 힐링과 여유...', '1일차;13:00~13:30 입산및 OT;13:30~14:30 사찰 둘러보기;14:30~15:30 미륵산 산행;15:30~16:30 회향', '개인용 상비약 / 수건 / 물병 / 편한운동화(트랙킹화) / 간편복 / 기타 개인용품', 40000, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '내원정사'), '[당일 체험형] 힐링의 숲 _ 사찰 문화 체험 및  명상', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '생각이 일면 알아차리고 분별없이 바라봅니다. 떨어져서 바라보는 힘을 길러 스트레스를 다루어가는 내원정사만의 솔루션을 만나보십시오. 스스로 족한 줄만 알면 좋다 나쁘다는 분별하는 생각이 일어 날 일도 없습니다. 나의 그림자와 겨루려 애쓰지 마세요. 지금 이 순간을 수용해버리면 그뿐입니다. 당신은 지금 이대로도 충분히 괜찮습니다. 그저 바라볼 수만 있다면 말입니다.', '1일차;13:30~14:00 접수 / 수련복 배부;14:00~15:30 사찰안내 및 포행;15:30~17:00 108배 (자율참여);17:00~18:00 저녁 공양;18:00~18:30 저녁 예불;18:30~19:30 사경 및 자율정진;19:30~20:30 자율회향', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다.', 35000, '당일', '2019-07-02', '2026-12-26', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '법주사'), '[당일형] 마음의 쉼  - 단체 10인 이상', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/3/22/20260322053225642_1_S.webp', '바쁜 일상을 떠나 잠시 멈추어 충전시간을 가져보십시오. 1500년 역사의 UNESCO 세계문화유산을 체험하면서, 천혜의 자연인 "속리산 국립공원" 숲속길을 거닐며, 본래의 자신을 찾는 사색의 시간도 가져보시기 바랍니다. ▶프로그램 신청을 원하는 단체에서는 전화문의주세요.(010-9528-5655)예약은 참가일 기준 7일전까지 신청해주세요.', '1일차;09:30~10:00 도착,수련복 착의 및 오리엔테이션;10:00~11:00 스님과 함께 법주사 문화재 둘러보기;11:00~11:30 점심공양;12:00~13:00 108 염주 만들기 체험;13:00~14:30 세조길 산책 및 자유시간;14:30~15:00 수련복 반납 및 사무실서 108 염주 받기', '예불 참석을 위해서 맨발은 안되므로 반드시 양말을 신으셔야합니다. 수련복을 제공하지만, 민소매는 안되며 티셔츠 차림 위에 입으셔야 합니다.', 30000, '당일', '2018-05-22', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '선본사'), '우리의 소원은 (당일형)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '팔공산 선본사 갓바위에서 당일형 템플스테이를 운영합니다. 아래 프로그램중 사찰안내와 갓바위 부처님 참배와 그 외 1개 프로그램 선택 가능하십니다. 프로그램 :108 소원염주만들기, 명상, 차담, 사찰안내(선택),갓바위 산행(선택) 팔공산의 수려한 자연환경과 선본사템플스테이 당일형 프로그램으로 일상에서 잊고 살았던 소중한 내 꿈을 다시 알아차리고, 꿈을 이루기 위해 열심히 노력할 수 있는 에너지를 충전하는 프로그램입니다. 당일형은 5명 이상 되어야 운영되오니 인원이 모자랄시 취소 될수 있음에 양해 부탁드립니다. *개인차량을 이용하시는 분들은 차량번호 (예시: 00 가 1234 )를 참가자 성함과 참여날짜도 함께 문자 남겨주세요. 만일 차량통제 바가 자동으로 안 올라가면 버튼 누르신 후 연결 되면 템플스테이 참가자 라고 말씀하시면 통과 가능하십니 다. * 소모임 또는 단체 신청 가능하며, 프로그램과 운영시간은 모임 성격에따라 맞춤진행가능합니다. * 010-2631-1868 (오전 09시 ~ 오후 5시)로 문의 전화 주세요.', '1일차;12:40~13:00 도착;13:00~14:30 스님과 차담 또는 108염주꿰기,연꽃등만들기 중 택 1;15:00~16:00 사찰안내;15:00~17:00 갓바위 참배;16:00~18:00 갓바위 부처님 참배 후 집으로 귀가', '* 운동화 또는 등산화, 생수, 등산스틱 ,우천시 우산 또는 우의', 30000, '당일', '2025-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '조계사'), '[개인] ''올웨이즈'' 당일형 템플스테이', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '올웨이즈 템플스테이는 누구나 부담없이 참여하실 수 있는 당일형 프로그램입니다.
+
+도심 속 전통사찰 조계사의 경내 투어와
+전통방식의 연꽃등 만들기를 체험할 수 있는 특별한 시간에 함께하세요!
+
+운영일 : 월요일 ~ 토요일 (명절 제외)
+운영시간 : 오전(10시 ~) / (사전예약)
+진행장소 : 일주문 옆 사찰안내소 집결 후 진행장소 이동
+
+* 참가비: 1만원 (취소는 불가하며 참가일정 변경만 가능합니다)', '1일차;10:00~10:00 일주문 옆 사찰안내소 집결, 참가자 확인;10:00~10:40 사찰안내;10:40~11:20 연꽃컵등만들기', '프로그램 진행 중에는 명찰을 착용합니다.
+사찰에 오실 때는 소매 없는 셔츠나 짧은 바지, 슬리퍼 , 샌들보다
+단정한 복장으로 오시는 것이 좋습니다.', 10000, '당일', '2025-06-01', '2026-11-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '대흥사'), '[이벤트 당일형 템플스테이] 사회공익 나눔 템플스테이_10명 이상 진행(당일체험형)_적은 인원 수로 진행하고 싶다면 연락주세요.★사전 예약 필수★', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '▶#대흥사 #이벤트 #당일형 #사찰예절 #사찰안내 #스님과대화 #숲길걷기 #합장주만들기◀
+
+대흥사 이벤트 템플스테이 당일형으로 단체만 가능 합니다.
+
+일정은 사찰안내, 점심공양, 스님과 대화 시간으로 진행 됩니다.
+
+**단체 참가를 원하시는 경우 대흥사 템플스테이 사무국으로 연락 주시기 바랍니다. 061-535-5775
+   (희망 일정, 인원 수, 단체 특성, 참가자 특성, 성별, 특이사항 등에 대해 사전 전달 필요)', '1일차;10:00~11:30 스님과 대화;11:30~12:30 점심공양;12:30~13:30 사찰안내, 숲길걷기;13:30~14:00 소감문 쓰기, 만족도 조사;14:00~14:00 회향', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 개인 물병 정도 준비하시면 됩니다.', 0, '당일', '2017-04-19', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '수국사'), '황금 템플스테이', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '당일체험형 템플스테이는 먼저 전화(010-2844-2604)로 문의해주세요^^', '1일차;10:00~10:30 입소;10:30~11:00 사찰예절 및 도량안내;11:00~12:00 108배 체험하기;12:00~13:00 점심공양;13:00~14:00 스님과의 차담', '당일형 프로그램의 경우 별도의 준비물이 없습니다.
+편한 운동화를 준비해오시면 됩니다.
+
+**동절기 준비물
+장갑, 목도리, 핫팩등 준비해 오시면 됩니다.', 40000, '당일', '2017-04-16', '2028-03-01', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '화암사'), '금강산에서  하루(당일형)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '화암사에 2~4시간 정도 머물면서 사찰 안내, 점심 공양, 스님과의 차담, 명상 등의 프로그램을 선택하여 진행합니다.
+
+참가 일정, 시간, 프로그램 선택에는 사전 협의가 필요하니 전화(033/633-7463)주시면 고맙겠습니다.', '1일차;10:30~11:30 사찰안내;11:30~12:30 점심공양;12:30~13:30 연꽃등 만들기;13:30~14:30 스님과의 차담', '운동화, 손수건, 개인물병', 30000, '당일', '2017-01-01', '2026-10-01', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '금룡사'), '당일형템플스테이', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '금룡사에 3 ~ 4시간 정도 머물면서 사찰안내, 108 염주꿰기, 스님과의 차담, 파도명상, 바닷가 걷기, 지질트레일 걷기, 올레길 20코스 걷기, 연꽃등 만들기  등의 프로그램을 선택하여 진행합니다.
+참가 일정, 시간, 프로그램 선택에는 사전에 협의가 필요하니 전화(064-783-3663)주시면 고맙겠습니다.', '1일차;10:00~11:00 사시예불;11:00~12:00 참선 및 명상;12:00~13:00 점심공양;13:00~14:00 스님과의 차담;14:00~14:30 회향', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다.
+개인 물병 정도 준비하시면 됩니다.', 30000, '당일', '2017-01-18', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '영평사'), '당일 체험 템플스테이 (5인 이상 단체)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '당일형 템플스테이는 숙박하지 않고 3시간 정도 사찰문화를 체험하는 당일 체험 프로그램입니다. 5인 또는 단체로 예약이 가능합니다. 단체 예약은 5인 이상이며 원하는 프로그램으로 조정이 가능합니다, 명상 수행은 별도 추가 비용이 발생할 수 있으니 단체 예약시에는 예약시 템플 담당자와 협의를 바랍니다. 스님과의 차담 프로그램은 당일 스님의 일정에 따라 변동되오니 예약시 참고 바랍니다. 단 , 스님과의 차담을 할 경우에는 108배 체험은 없습니다. 당일 기본 체험 내역 ; 1. 사찰 안내 및 습의 2. 108배 체험 3. 108 염주 만들기 4. 명상수행(단체 별도 추가) 5. 연꽃 만들기 당일 체험은 1번 , 2번 , 3번을 기본으로 합니다.
+
+* 원활한 안전 관리와 보험 적용을 위해 모든 예약은 실명으로 이루어져야 합니다.
+타인 명의 도용 등 허위 정보로 예약된 경우, 당 사찰은 시설 관리권에 의거하여 별도의 통보 없이 예약 취소 및 현장 퇴방 조치를 시행할 수 있습니다.', '1일차;14:00~14:00 도착;14:00~15:00 스님과의 차담;15:00~16:30 108배', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 개인 칫솔이나 물병(텀블러) 정도 준비하시면 됩니다.', 30000, '당일', '2017-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '송광사(완주)'), '【 송광사 완주】오늘 하루 템플스테이 (당일형)', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/6/6/20250606012332854_1_S.webp', '아름다운 완주 송광사에 오셔서 바쁜 마음 내려놓고 편안하고 아름다운 시간을 만들어 가시길 바랍니다.
+( 단체 10명 이상 사전 예약시 가능합니다.)
+
+프로그램 시간 및  변경 협의 가능하며 체험의 종류에 따라 추가요금 발생할 수 있습니다.
+(사찰 해설 이후 체험 가능하며 합장주만들기,연꽃등 만들기, 108염주 만들기, 명상체험 등을 할 수 있습니다)
+
+개인은 접수 받지 않습니다.', '1일차;11:00~12:00 사찰 예절;12:00~13:00 점심 공양;13:00~14:00 사찰 해설;14:00~15:00 자율 포행', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다.  개인 물병 정도 준비하시면 됩니다.', 30000, '당일', '2017-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '무각사'), '여의산 色 - 무각사 경험쌓기', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '여의산 무각사에서 만나는 다양한 사찰문화체험 다도체험, 5.18공원 둘레길 스님과의 포행 108배 염주꿰기, 연꽃 만들기등 여의산의 다양한 문화와 색깔을 체험하실수 있습니다. 학교, 기업 및 단체참여 가능합니다. 참가를 원하신분은 사무국으로 문의하세요 (사찰 행사, 템플일정 등으로 인해 일정은 변경될 수 있습니다.) 주)당일형 체험은 단체만 가능합니다. 사무국 062-383-0107', '1일차;14:00~15:00 웰컴티-차맛 어때?;15:00~15:30 사찰안내-무각사 둘러보기;15:30~16:30 절명상( 단주꿰기) - 마음 보기 명상;16:30~17:00 마음 나누기 및 회향', '*당일형은 수련복이 지급되지 않습니다. *신체노출이 심한 옷, 꽉 낀 옷(레깅스)은 삼가해 주세요. *예약시 특이사항이 있으신 분은 꼭! 메모 남겨주세요', 30000, '당일', '2017-01-01', '2030-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '골굴사'), '나를 위한 하루동안의 행복여행!', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '골굴사의 트레이드 마크인 ''선무도 수련 체험''과 ''선무도 공연 관람(무료)'' 신라 화랑의 기상을 계승한 체험형 프로그램인 ''국궁'' 등의 다양한 프로그램을 즐기실 수 있습니다. 관공서와 기업의 연수, 학교의 수학여행과 체험학습, 각종 단체나 동호회의 체험 프로그램으로 인기가 많은 당일형 템플스테이입니다.
+
+
+* 중학생 포함 저학년 학생들과 어린이들의 경우 보호자 동반하여야 합니다.
+* 입금 계좌: 농협 351-1096-1402-23 (골굴사)
+*취소 신청시, 예약사이트에서  취소신청과  환불 계좌번호(입금한 경우시)를 남겨주시길 바랍니다.
+*원활한 안전 관리와 보험 적용을 위한 모든 예약은 실명으로 이루어져야 합니다.
+타인 명의 도용 및 허위 정보로 예약된 경우, 당 사찰은 시설 관리권에 의거하여 별도의
+통보 없이 예약 취소 및 현장 퇴방 조치를 시행할 수 있음을 알려드립니다.', '1일차;12:30~12:50 입산 및 방사배정;13:10~13:40 국궁;14:00~14:30 좌선;15:00~15:30 선무도 공연 관람(월, 화요일은 공연없음)   ※ 선무도 공연은 템플스테이 프로그램과는 별도로, 사찰을 방문하시는 모든 참배객들을 위해 진행되는 정기 공연입니다. 공연이 없는 날에는 별도의 대체 프로그램이 제공되지 않습니다. ※;16:10~16:20 오리엔테이션;16:30~17:30 선무도수련;17:40~18:00 108배;18:00~18:30 저녁 공양 후 하산', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 수련 중 목이 마르실 수 있으니 개인물병 준비하시면 됩니다.', 80000, '당일', '2016-12-26', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '서광사'), '깨달음의 한수를 찾아가는여행 (각수삼매)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '삼매는 우주와 내가 하나가 되는,
+나도 없고 상대도 없는 집중력의 절정을 뜻합니다.
+바둑에서도 집중력 필수적이죠.
+자기 자신과의 싸움이나,
+어떤 사고의 굳은 틀에 묶여서는 안되는 자유로움...
+바득템플스테이를 프로그램을진행합니다.
+(당일형 단체프로그램)
+
+전화상담으로 진행합니다.
+
+041-664-2002', '1일차;10:30~11:30 도착,사찰안내;12:00~12:30 점심공양;13:00~14:00 연등만들기 or  염주꿰며108배;14:00~15:00 차담 후  집으로 go go 싱~~', '인솔자 와 협의하여 준비', 30000, '당일', '2026-01-12', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '백제사'), '당일형 템플스테이', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '당일형 프로그램은 일상에 지쳐 있는 사람들을 위한 프로그램입니다. 짧은 시간 동안 스님과의 차담, 108배 염주만들기로 지친 마음을 회복하시길 바랍니다.', '1일차;10:00~10:30 프로그램 및 사찰안내;10:30~11:30 108배 염주만들기(1알1배);12:00~13:00 점심공양;13:00~14:00 스님과의 차담 및 사경,회향', '당일형 프로그램의 경우 별도의 준비물이 필요없습니다. 개인물병정도 준비하시면 됩니다.', 30000, '당일', '2016-12-15', '2030-01-25', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '흥국사(여수)'), '국궁과 사물체험(당일형)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '임진왜란때 사용 하였던 국궁을 체험해 봄으로써 호국 정신과.
+
+ 절에서 의식할때 사용하는 사물 (대종, 대북, 목어, 운판)을 체험해 보면서
+
+  내 자신을 돌아보는 소중한 시간 입니다
+
+( 최소 10인 이상 예약 가능합니다 )', '1일차;09:30~10:30 사찰도착 사찰안내및 사찰예절교육;10:30~11:30 프로그램 설명후 국궁 직접체험;11:30~12:30 점심공양;12:30~13:30 사물 (대종 대북 목어 운판) 직접체험;13:30~14:30 소감문 작성과 해단식', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다.
+개인 물병 정도 준비하시면 됩니다.', 40000, '당일', '2016-12-07', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '화계사'), '당일 ''참 나를 찾아서'' (주중/ 15인이상 단체)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '당일체험 프로그램은 15인 이상 단체만 참가 가능합니다.
+참가비는 4시간 기준으로 4만원이며,
+요청하시는 프로그램 시간에 따라 조정할 수 있습니다.
+예약을 원하시면 010-4024-4326으로 전화문의 바랍니다.
+
+
+서울 도심에서 가까운 화계사에서
+자연을 느끼며 수행과 정신 문화를 체험할 수 있는 기회를 가져보세요.
+
+맛있는 사찰음식과 전통문화를 느낄 수 있어요~
+사찰투어, 북한산 둘레길 걷기명상, 스님과의 차담 등을 통해
+몇 시간만이라도 자신을 돌아보며 참 나를 찾는 시간을 가져보세요.
+
+
+*프로그램 일정은 화계사 사정으로 변경될수 있습니다.
+*사찰에서 음주. 흡연 발견시 퇴소될수 있습니다.(환불 되지않습니다)
+*프로그램이 진행되는 동안 사찰 밖으로 나갈수 없습니다.
+급한 용무가 있어서 사찰밖을 벗어날때는 사전 협의하에 가능합니다.
+수련복을 입고 사찰밖은 나가실수 없습니다.', '1일차;10:00~00:00 접수 및 오리엔테이션;11:00~00:00 점심공양;12:00~00:00 스님과의 차담;13:00~00:00 북한산 둘레길 걷기명상', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다.
+개인 마스크와  물병 정도 준비하시면 됩니다.', 40000, '당일', '2016-10-27', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '봉정사'), '당일 웰니스 체험형 템플스테이(5인 이상)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '봉정사 당일(Daily)템플스테이는 내, 외국인을 대상으로 하는 당일 문화체험 프로그램입니다. 우리나라에서 가장 오래된 목조건물인 극락전이 있고, 과거 고려 태조와 고려 공민왕 등 많은 분들과 최근 영국 여왕, 영국 왕자가 다녀 간 유네스코 세계문 화재에 등록된 봉정사에서 당일 웨니스 체험 템플스테이를 하시면 지금까지 받으신 많은 스트레스에서 심신 치유하실 수 있는 웰니스 시간을 가질 수 있습니다. 저희 봉정사의 당일 웰니스 체험 프로그램은 2~4시간 진행되는 것으로 참가자님들의 몸과 마음의 건강을 위하여 큰 스님과의 차담(사찰 일정에 따라 못할 수도 있습니다,예약 시에 꼭 전화로 확인 바랍니다) , 108배 하기 , 염주만들기(단주만들기)을 통한 몸과 마음의 스트레스를 치유로 웰리스한 삶을 시작할 수 있습니다.. 웰니스 의미 : 웰빙(well-being) + 행복(happiness) + 건강(fitness) 참가 일정, 시간, 프로그램 선택은 협의가 필요하니 사전에 전화(054-853-4183) 주시면 고맙겠습니다. 단. 5인 이상 단체만 가능한 프로그램입니다. 5인 이하 예약 및 사전 협의가 안된 예약은 자동 취소됨을 다시 한번 공지드립니다. 예약은 [템플스테이 예약하기] 봉정사 홈페이지에서 가능하며, 전화로도 가능하며 사찰마다 선착순 마감입니다 ^^', '1일차;10:00~11:00 OT 및 사찰 안내;11:00~11:40 108배 체험;11:40~12:00 점심공양;12:00~12:30 108염주 만들기;12:30~13:30 스님과의 차담;13:30~14:00 주변 정리 및 회향', '당일형 프로그램의 경우 별도의 준비물이 필요없습니다. 개인 물병 정도만 준비하시면 됩니다. * 코로나-19로 인해 마스크를 반드시 착용하시고, 여분의 마스크도 준비하세요', 0, '당일', '2016-10-27', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '도갑사'), '영암(靈巖) 월출산(月出山) 도갑사 당일형(사회공익) 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/29/20260829025108457_1_S.webp', '이 프로그램은 바쁜 일상에서 벗어나 몸과 마음에 깊은 휴식을 선물하는 ''당일형'' 템플스테이 프로그램 입니다.
+천년고찰 월출산 도갑사의 역사와 사찰문화를 체험하는 프로그램으로, 문화해설과 함께 도갑사를 한바퀴 돌아보고 스님과 함께 차담과 명상을 경험해 보세요.
+
+- 사찰 문화 체험
+천년 고찰의 역사와 전통을 자연스럽게 배울 수 있는 프로그램이 포함되어 있습니다.
+
+염주 만들기        : 나만의 소망과 염원을 한 알씩 정성껏 담아 만드는 체험입니다.
+도갑사 문화해설 : 해설사와 함께 사찰 구석구석을 둘러보며 숨겨진 깊은 이야기를 듣습니다.
+스님과 차담및 명상     은은한 차향을 음미하며 현재에 집중하고 생각을 가라앉히는 시간입니다.', '1일차;13:00~13:30 도착 및 O.T (프로그램 및 사찰예절 안내);13:30~14:00 염원에 마음을 담다, [염주 만들기];14:00~15:20 천년 고찰의 숨결을 느끼다, [도갑사 문화해설];15:20~16:40 스님과 함께 따뜻한 차 한 잔의 여유 [차명상]', '텀블러, 편한운동화, 수련복 안에 입을 옷, 보온성외투, 모자', 20000, '당일', '2026-05-01', '2026-12-31', 20, FALSE, 0, 0),
+사찰안내. 사찰식 점심공양. 선명상. 스님과의 차담 등을 선택하실 수 있습니다.
+
+■ 일정, 프로그램 및 진행시간은 사전에 전화(010-3157-3161)로 상의하시길 바랍니다.
+
+-. 프로그램 일정은 사찰 사정으로 변경될수 있습니다.
+-. 참가 3일 전까지 입금이 확인되지 않는 경우 자동 취소됩니다.', '1일차;09:30~10:00 입소;10:00~10:30 수련복 및 일정표 배부;10:30~11:00 OT 및 사찰예절;11:00~11:50 공양 및 휴식;12:00~12:50 연꽃컵등 만들기;12:50~13:30 사찰안내 및 불교문화해설;13:30~14:00 회향 및 정리', '■ 편안한 복장으로 오시고 물병 또는 텀블러를 준비하시면 더욱 좋습니다.
+■ 개인 치솔 및 치약은 각자 지참해 오시기 바랍니다.
+■ 모자 및 개인 물품은 분실하지 않도록 개인 관리 하시기 바랍니다.', 30000, '당일', '2026-08-04', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '죽림사(포항)'), '내마음보기 템플라이프', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/4/27/20260427125152104_1_S.webp', '바쁜 일상 속에서 일주일에 한번이라도 나의 마음을 바라보는 시간을 가져봅시다..
+포항 죽림사에서는 매주(화,목,토) 한번 4시간씩 명상템플라이프를 진행니다.
+나의 몸을 바라보고 나의 마음을 바라보고 하루하루 살아가는 의미를 느껴보는 시간이 되시길 바랍니다..', '1일차;14:00~15:00 입재(등록 및 습의);15:00~17:30 명상 및 느낌나누기;17:30~18:00 회향(설문)', '편안한 일상복', 20000, '당일', '2026-05-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '국제선센터'), '《향기와 울림 사이, 깊게 숨쉬다》 – 싱잉볼 명상 × 아로마테라피', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/18/20260818073927231_1_S.webp', '도시의 소음 속에서,
+마지막으로 깊이 숨을 쉰 순간을 떠올려봅니다.
+
+사찰의 고요한 오후에
+몸과 마음을 잠시 내려놓는 시간을 마련했습니다.
+
+싱잉볼의 맑은 울림이 잔잔히 퍼지고,
+아로마의 향은 감각을 자연스럽게 열어줍니다.
+
+각자의 상태에 맞는 향을 고르고,
+그 흐름을 따라 나의 마음을 가만히 바라봅니다.
+
+그 사이에서 느껴지는 안정감과 여유,
+조금씩 정리되는 마음.
+
+누구에게 보일 필요 없는 시간,
+오롯이 자신에게 집중해봅니다.
+잠시 멈추고, 다시 호흡을 가다듬어 봅니다.
+
+🌸 직접 고른 향으로 만든 아로마 스프레이를 증정해드립니다', '1일차;13:00~13:30 스님과의 차담;13:30~14:30 아로마 불교 심리 상담;14:30~15:00 싱잉볼 SOUND BATH', '편한 복장, 개인 컵(텀블러), 양말을 꼭 준비해주세요!', 50000, '당일', '2026-04-05', '2026-11-15', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '화계사'), '''금요 쉼표 템플스테이''', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/3/4/20260304104805964_1_S.webp', '"금요 쉼표 템플스테이" _ ''마음 머무는 금요일''
+
+금요일 오후, 일상에 조용한 ''쉼표''를 찍어보세요.
+
+금요 쉼표 템플스테이는 평일 오후, 비교적 한적한 시간에 진행되는 3시간 프로그램입니다.
+
+스님과 함께 사찰을 천천히 걸으며 공간에 담긴 이야기를 듣고,
+호흡에 집중하는 명상으로 마음을 고르게 한 뒤
+따뜻한 차 한 잔과 함께 담담한 대화를 나눕니다.
+
+주말을 앞둔 금요일, 서두르지 않고 잠시 머무는 시간.
+
+일상 속에서 잠깐 방향을 고르는 작은 쉼표 같은 오후가 됩니다.', '1일차;13:00~14:00 오리엔테이션 및 사찰 안내;14:00~15:00 금요 쉼표 명상;15:00~16:00 스님과의 차담', '"크게 준비하지 않아도 됩니다. 잠시 머무를 마음이면 충분합니다."', 40000, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '관문사'), '사찰음식과 차한잔', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/25/20260825055208804_1_S.webp', '- 바쁜  현대인을 위한  반나절 사찰체험 프로램으로  제철 재료로 만든  사찰음식 체험 등  힐링하는  프로그램입니다
+-  도심을 떠나 잠시 자신과의 대화가 필요한 당신, 멀리 떠나지 않아도 숲속 사찰에서 잠시 쉼을 하세요
+- 직장인 워크숍 등  7인 이상 단체 신청 시 필요한 시간대로 스케줄 조정 가능합니다 <점심& 저녁>
+* 프로그램은 사찰 사정이나 참가인원에  따라 일부 변동될 수 있습니다.', '1일차;10:00~11:00 OT, 사찰투어;11:00~12:00 다양한 명상체험( 숲체험 / 북 명상 중 1개);12:00~13:00 사찰음식 공양;13:00~14:00 다도체험 & 연꽃등 만들기 중 1개 프로그램', '조끼에 받쳐입을 흰색 상의, 양말착용, 운동화, 텀블러(정수기이용) 기타 개인 소지품,  반바지나 민소매 착용은 불가 합니다', 40000, '당일', '2025-09-12', '2026-09-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '석왕사'), '[단체형] 도심 속 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/4/1/20250401060314372_1_S.webp', '도심 속 전통사찰 석왕사에서 하루를 보내며 다양한 불교문화체험을 할 수 있습니다.
+- 108배 체험, 다도체험, 108염주꿰기, 반야심경 사경, 원미산 둘레길 걷기 중 자유선택 가능
+  (예약 신청시 비고란에 원하는 체험을 기록해 주세요)
+- 개인참가는 불가하며 10인 이상 단체만 예약 가능합니다.', '1일차;10:00~10:30 입소, 법복 착용;10:30~11:00 사찰예절 안내;11:00~12:00 석왕사 안내;12:00~13:00 점심공양;13:00~13:30 휴식;13:30~14:30 체험 선택;14:30~15:00 명상 및 체험후기 작성 (우천 시 ''명상 → 컵등만들기'')', '별도의 준비물이 없습니다.
+편한 신발을 준비해 오시면 됩니다.
+동절기에는 개인 방한용품을 준비하세요.', 30000, '당일', '2025-04-01', '2026-12-31', 20, FALSE, 0, 0),
+사찰안내. 사찰식 점심공양. 선명상. 스님과의 차담 등을 선택하실 수 있습니다.
+
+■ 일정, 프로그램 및 진행시간은 사전에 전화(010-3157-3161)로 상의하시길 바랍니다.
+
+-. 프로그램 일정은 사찰 사정으로 변경될수 있습니다.
+-. 참가 3일 전까지 입금이 확인되지 않는 경우 자동 취소됩니다.', '1일차;09:30~10:00 입소;10:00~10:30 수련복 및 일정표 배부;10:30~11:00 OT 및 사찰예절;11:00~11:50 공양 및 휴식;12:00~12:50 스님과의 차담 또는 연꽃컵등 만들기;12:50~13:30 사찰안내 및 불교문화해설;13:30~14:00 회향 및 정리', '■ 편안한 복장으로 오시고 물병 또는 텀블러를 준비하시면 더욱 좋습니다.
+■ 개인 치솔 및 치약은 각자 지참해 오시기 바랍니다.
+■ 모자 및 개인 물품은 분실하지 않도록 개인 관리 하시기 바랍니다.', 30000, '당일', '2026-05-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '국제선센터'), '[당일 선명상] 내 마음에 선함: "연등/염주念珠 - 마인드컨트롤"', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/5/20260605102801715_1_S.webp', '도심 속 쉼의 공간. 국제선센터 템플스테이에서 반복되는 일상을 잠시 멈추고, 내 마음에 ''쉼''을 줍니다.
+''보이는 것, 들리는 것''에 따라다니는 마음을 안으로 거두어 봅니다.
+지금 내 마음을 현재에 머무르게 하기 위한 "염주", 산란한 마음을 고요하게, 그리고 일상 속에서 소중한 것을 기억합니다.
+<선명상>으로 생각과 마음 다루기 연습을 합니다.
+
+* 몸과 마음의 재충전, 그리고 일상의 마음챙김을 위한 시간
+<선명상: INNER PEACE> - 명상의 바른 자세와 방법. 수식관
+★ 생각에 끌려다니지 않기 위하여 ★ 스스로를 괴롭히지 않기 위하여 ★ 내 마음을 알아가기 위하여
+<연꽃등·염주 만들기>
+★ 염주念珠: 집중을 위하여 for Mind Control ★ 마음을 밝히는 일상 속 작은 소품 만들기
+<스님과의 차담>
+★ 따뜻한 차와 함께 ‘한 마음’ 쉬어가는 스님과의 Q&A 시간
+
+일상의 반복감에서 벗어나 지금 이 순간을 오롯이 느껴봅니다.
+도심 속 평온의 공간, 국제선센터에서 명상을 통해 일상의 고요한 마음자리를 찾아갑니다.
+진정한 휴식은 마음의 고요에서 비롯됩니다.
+쉬어진 마음으로, 일상을 다시 새로이 시작해봅니다.', '1일차;10:00~10:15 등록 및 체험복 환복;10:15~10:30 오리엔테이션;10:30~11:30 선명상(수식관數息觀): 자세.방법.실참.피드백;11:30~12:20 점심공양 / 휴식 / 포토타임;12:20~12:40 법당 참배·안내;12:50~13:40 연꽃등 & 염주 만들기 - 마음을 밝히는 일상의 소품;13:45~14:20 스님과의 차담: Q&A session', '편한 복장(명상참가자), 개인 컵(텀블러), 양말을 꼭 준비해주세요!', 50000, '당일', '2025-02-19', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '증심사'), '차와 명상이 있는 원데이클래스 (티클래스/3h)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/5/20260805021349753_1_S.webp', '※ 운영: 1주, 3주 토요일 ※
+
+
+
+
+
+
+주말의 칠(Chill) 무드를 광주 증심사에서!
+
+주말 오후 세 시간을 할애하여
+도심 속 산사 증심사에서 이너피스(Inner peace)를 찾아보세요.
+
+무등산 증심사는 매주 토요일 오후 2시
+증심사 취백루에서 당일형 템플라이프
+‘차와 명상이 있는 원데이 클래스’를 운영합니다.
+
+개완을 이용하여 차를 직접 우려보고 체험합니다. [1,3주]
+싱잉볼 소리를 따라가며 소리명상에 잠겨보고
+지도법사 스님이 안내하는 자아탐구 명상 체험까지.
+
+건강하고 느긋한 주말 클래스에 참여해보세요.
+
+.
+.
+.
+
+세상을 향한 분주함에서
+내면을 향한 고요함으로
+후회와 불안으로 치닫는 마음을
+지금 이 순간
+고요한 자리로
+
+차와 명상이 있는 원데이클래스
+
+*증심사 소식지와 인스타그램, 유튜브 채널에 참가자 모습을 촬영하여 소식용으로 올리고 있습니다. 촬영이 부담스러우신 분은 현장에서 말씀해주세요.', '1일차;14:00~14:10 오리테이션 (취백루, 대웅전 맞은편 초록 창가 기와집);14:10~15:50 티클래스 & 싱잉볼 소리명상;16:00~16:40 자아탐구 명상 체험;17:00~17:00 소감문작성 밎 하산     (X저녁공양을 제공하지않습니다,)', '당일형 프로그램의 경우 별도의 준비물이 필요하지 않습니다. 좌식 프로그램이므로 편안한 옷차림을 권합니다. 여름철 노출이 심한 옷은 삼가주세요.', 30000, '당일', '2025-05-03', '2027-02-27', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '국제선센터'), '[당일 선명상] 내 마음에 선함: "필사筆寫/염주 - 디지털디톡스"', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/12/5/20251205040951868_1_S.webp', '도심 속 쉼의 공간.
+국제선센터 템플스테이에서 반복되는 일상을 잠시 멈추고, 내 마음에 ''쉼''을 줍니다.
+''보이는 것, 들리는 것''에 따라다니는 마음을 안으로 거두어 봅니다.
+<선명상>을 통해 생각과 마음을 다루어 가는 연습을 합니다.
+* 몸과 마음의 재충전, 그리고 일상의 마음챙김을 위한 시간
+
+<선명상: INNER PEACE> - 명상의 바른 자세와 방법. 수식관
+★ 생각에 끌려다니지 않기 위하여 ★ 스스로를 괴롭히지 않기 위하여 ★ 내 마음을 알아가기 위하여
+<필사: 아크릴무드등 / 합죽선 / 압화 캘리그라피>
+★ 마음에 쉼을 주는 구절 필사를 통한 "디지털 디톡스" ★ 나를 위한 격려와 위로: 마음의 양식 꾸리기
+<염주 만들기>  ★ 서원을 기억하기 위하여
+<스님과의 차담> ★ 따뜻한 차와 함께 ‘한 마음’ 쉬어가는 스님과의 Q&A 시간
+
+일상의 반복감에서 벗어나 지금 이 순간을 오롯이 느껴봅니다.
+도심 속 평온의 공간, 국제선센터에서 명상을 통해 일상의 고요한 마음자리를 찾아갑니다.
+진정한 휴식은 마음의 고요에서 비롯됩니다.
+쉬어진 마음으로, 일상을 다시 새로이 시작해봅니다.', '1일차;10:00~10:15 등록 및 체험복 환복;10:15~10:30 오리엔테이션;10:30~11:30 선명상(수식관數息觀): 자세.방법.실참.피드백;11:30~12:20 점심공양 / 휴식 / 포토타임;12:20~12:40 법당 참배·안내;12:50~13:40 필사 & 염주 만들기;13:45~14:20 스님과의 차담: Q&A session', '편한 복장(명상참가자), 개인 컵(텀블러), 양말을 꼭 준비해주세요!', 50000, '당일', '2025-03-06', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '길상사'), '붓끝에 피어나는 마음', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/18/20260818114412950_1_S.webp', '고즈넉한 사찰에서 느끼는 바람 한조각, 나만의 고운 정성과 기원을 담아 민화 부채를 만들어 보세요.
+이어지는 길상사만의 사찰이야기와 스님과의 차담, 완성된 부채에 오늘의 평온한 마음과 추억을 함께 담아가세요.', '1일차;12:50~13:00 오리엔테이션;13:00~14:30 부채그림 그리기;14:30~15:20 사찰 안내;15:20~16:20 스님과의 차담;16:20~16:30 설문지 & 회향', '편안복장,  양말필수 ,텀블러', 30000, '당일', '2026-09-01', '2026-09-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '원효사'), '가족 템플스테이(당일형)"가장 가까운 사람과 가장 깊이 만나는 시간"', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/24/20260624042640667_1_S.webp', '"가장 가까운 사람과 가장 깊이 만나는 시간"
+
+휴대폰은 잠시 내려놓고,
+가족의 눈을 바라보는 시간.
+아이에게는 추억을,
+부모에게는 쉼을,
+가족에게는 사랑을.
+
+가족 템플스테이에서 가장 가까운 사람과 가장 깊이 만나는 소중한 시간을 함께하시기 바랍니다.
+
+대상
+• 가족 단위 참가자
+
+프로그램
+• 사찰 음식체험(점심공양)
+• 스님과의 대화
+• 나만의 부채 색 입히기
+
+참가비
+• 성인 1인 3만원
+• 학생무료(미취학포함)', '1일차;10:50~11:00 도착;11:30~12:30 사찰 음식체험(점심공양);12:30~14:20 스님과의 대화, 나만의 부채 색 입히기;14:20~14:30 귀가', '운동화, 가벼운 옷차림, 개인텀블러', 30000, '당일', '2026-06-24', '2026-10-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '백련사(강진)'), '(당일-체험형, 치유와 성찰)「연화지로(蓮華之路) : 연꽃이 피어나기까지」', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/10/20260610094357660_1_S.webp', '본 프로그램은 당일형 템플스테이 입니다.
+소요 시간은 3~4시간 이내로 진행되며
+1인 이상으로 진행되는 체험형 템플스테이 입니다.
+* 우천시 실내 프로그램으로 대체될 수 있습니다.
+
+백련사(白蓮寺)는 한자 풀이로하면 하얀 연꽃의 절을 의미합니다.
+백련(白蓮)은 ''맑고 순수함''을 상징하며
+누구나 존귀한 존재이며 불성(佛性)을 가지고 있다는
+법화경(法華經)을 의미하기도 합니다.
+또한 백련사에서는 고려 후기에 일어났던
+백련결사(白蓮結社)운동을
+의미하기도 합니다.
+
+
+연꽃은 진흙에서 태어나지만 진흙에 물들지 않고
+물속에서 자라지만 물에 젖지 않는 성질을 가지고 있습니다.
+다양한 환경과 변화 속에서 살아가는 ''나''는
+백련(白蓮)과 같은 맑고 순수한 성품을 지닌 존재이면서
+변화에 적응하며 성장해 나아가는 존재입니다.
+
+본 프로그램은 연화지로(蓮華之路) : 연꽃이 피어나기까지」
+라는 주제로 진행됩니다.
+연꽃이 진흙속에서 성장해 연꽃으로 피어나기까지의
+성장과정을 사유하며
+한 인간이 어머니의 태에서 태어나
+존재하며 살아가는 과정을 사유하는 것을 통해
+앞으로의 건강한 삶의 설계를 이루어 내기를 바라는
+의미가 담긴 치유와 성찰의  프로그램입니다.
+
+
+<프로그램 특이사항>
+1. 프로그램 시작 10분 전까지 도착 (장소 : 종무소 앞)
+2. 본 프로그램은 쉼과 회복의 시간입니다.
+   개인의 건강을 살펴서 프로그램 참여 여부를 결정하시기 바랍니다.
+   (프로그램 일부 구간 미 참여시 휴식으로 대체됩니다.)
+3. 휴대폰 및 전자기기는 무음으로 해주시고 되도록 프로그램 본연에 집중해주세요.
+4. 묵언(언어로 소통하지 않으며 옆 사람에게 말과 행동을 자제)
+   (걷기 명상 및 공양 중에는 되도록 묵언하여 소음을 통한 다른 수행자들의
+    선정(禪定, 고요)을 방해하지 않도록 합니다.)
+5. 알레르기가 있는 음식 및 건강상 주의해야 하는 점이 있는 경우 사전에 미리
+    담당자에게 말씀해 주세요.', '1일차;10:00~10:30 입재(入齋) & 연화다담(蓮華茶啖) : 불교에서 손님을 위해 내놓는 다과(茶菓);10:30~11:20 연화선(蓮華禪) : 고요 속의 자유로움 (지관수행(止觀修行)-참선);11:30~12:00 연화공양(蓮華供養) : 차와 다식;12:00~13:00 연화법문(蓮華法門) : 뿌리는 어둠 속에서 자란다.(소원지 & 연꽃 편지);13:00~14:00 연등회향(蓮燈回向) : 육법공양(六法供養), 소원지와 공양 올리기', '1. 당일형 템플스테이로 복장을 별도로 제공하지 않습니다.
+2. 걷기 명상 및 누각에 앉아 차를 마시는 프로그램 특성상 바지(편안한 소재의)를 착용해 주세요.
+3. 긴팔 및 가디건 등의 겉옷을 착용하시면 햇볓차단, 모기물림, 온도 변화 등을 예방 할 수 있습니다.
+4. 법당 참배 및 실내 활동이 있으므로 양말을 착용해 주세요.', 50000, '당일', '2026-06-10', '2026-09-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '광제사'), 'study templestay 세계문학읽기', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/5/31/20260531054010439_1_S.webp', '스님과 함께 세계 문학작품들을 영어로 읽는, 절에서 영어 공부 프로그램 입니다
+선명상과 함께 세계 문화를 접해 보는 특색있고 의미 있는 프로그램 입니다.', '1일차;10:30~12:00 초등부;14:00~15:30 중등부', '필기도구', 0, '당일', '2026-05-31', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '길상사'), '마음이 쉬어 가는 자리', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/7/20/20260720100631820_1_S.webp', '일상의 흐름속에서 잠시 나의 마음을 들여다보는 미술심리 시간입니다.
+ 명상을 통해 떠오른 이미지를  자유롭게 표현해 보고,
+서로의 이미지를 바라보며 마음의 연결을 경험하는  소중한 시간입니다.
+스님과의 차담시간에는  마음을 나누며 잠시 쉬어가시길 바랍니다.', '1일차;13:00~13:10 오리엔테이션;13:10~14:40 잠시, 나를  만나다.;14:40~15:30 사찰안내;15:30~16:30 스님과의 차담', '편한 상하의 복장과 개인컵(텀블러), 양말을 꼭 준비해 주세요.', 30000, '당일', '2026-04-06', '2026-09-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '팔공산석굴암'), '길 따라 마음 따라', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/1/5/20260105111754911_1_S.webp', 'span {
+    font-size: 16px !important;
+}
+
+table tr td, table tr th, .summary, .info ul li{
+    font-size: 16px !important;
+}
+
+.bold-color {
+    color: #b45213 !important;
+}
+
+.margin-top {
+    margin-top: 10px !important;
+}
+
+.summary {
+    font-weight: bold !important;
+}
+
+.title-imgage {
+    float: left !important;
+    width: 40% !important;
+    margin: 10px 30px 15px 0px !important;
+    box-shadow: 5px 5px 3px #666 !important;
+}
+
+.ul-display {
+    padding: 0px 0px 0px 25px !important;
+}
+
+.ul-display > li {
+    font-size: 16px !important;
+    list-style: disc !important;
+    text-align: left !important;
+}
+
+.ul-display > li > span, .program-content-1-2 > span, .font-weight-bold{
+    font-weight: bold !important;
+}
+
+/* 이미지 컨테이너 */
+.image-container {
+    display: flex !important;
+    flex-wrap: wrap !important; /* 줄바꿈 허용 */
+    justify-content: flex-start !important;
+    gap: 10px 2% !important; /* 상하 간격 30px, 좌우 간격 2% */
+    width: 100% !important;
+    margin-top: 20px !important;
+}
+
+/* 각 이미지 아이템 (이미지 + 텍스트) */
+.image-container > div {
+    flex: 0 0 32% !important; /* 한 줄에 3개 배치 */
+    text-align: center !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important; /* 이미지와 텍스트를 세로로 나열 */
+    margin-bottom: 10px !important; /* 아래 줄과의 추가 여백 */
+}
+
+.image-container img {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 3 / 2 !important; /* 이미지 비율을 통일시켜 정렬 유지 */
+    object-fit: cover !important;
+    border-radius: 4px !important;
+    display: block;
+    margin-bottom: 12px !important; /* 이미지와 바로 아래 글자 사이의 간격 */
+}
+
+/* 이미지 아래 글자 스타일 */
+.caption-text {
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+    font-weight: 500 !important;
+    color: #333 !important;
+    word-break: keep-all !important; /* 단어 단위 줄바꿈 */
+    text-align: center !important;
+}
+
+.program-title {
+    background-color: #b2a070 !important;
+    text-align: center !important;
+    font-size: 16px !important;
+    text-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3) !important;
+    color: white !important;
+    box-shadow: 5px 5px 3px #666 !important;
+    font-weight: bold !important;
+    padding: 10px !important;
+    margin: 20px 0px 10px 0px !important;
+}
+
+.program-content {
+    display: flex !important;
+    align-items: flex-start !important;
+    flex-wrap: wrap !important; /* 자식이 넘치면 다음 줄로 보냄 */
+    gap: 20px !important;       /* 자식 사이의 간격 */
+    width: 100% !important;
+    margin: 20px 0 !important;
+}
+
+.program-content-1-1 {
+    font-size: 18px !important;
+    font-weight: bold !important;
+    margin-bottom: 10px !important;
+}
+
+.program-content-1-2 {
+    font-size: 16px !important;
+}
+
+.program-content-copy {
+    margin-bottom: 10px !important;
+    display: inline-block !important;
+}
+
+.part-1 {
+    text-align: left !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+    margin-top: 40px !important;
+    margin-bottom: 10px !important;
+    clear: both !important;
+}
+
+.fixed-bottom-bar {
+    /* 하단 고정 및 여백 설정 */
+    position: fixed !important;
+    bottom: 0px !important;
+    left: 0px !important;
+    right: 0px !important;
+    max-width: 1280px !important;
+    margin: 0 auto !important;
+    /* 버튼 정렬을 위한 Flex 설정 */
+    display: flex !important;
+    gap: 15px !important; /* 버튼 사이의 간격 */
+    /* 시각적 스타일 */
+    background-color: white !important;
+    padding: 15px 20px !important;
+
+    z-index: 1000 !important;
+  }
+
+  .btn {
+    /* 버튼이 동일한 비율로 공간을 채우도록 설정 */
+    flex: 1 !important;
+    height: 50px !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+
+  }
+
+  .btn-secondary {
+    background-color: #b45213 !important;
+    color: white !important;
+    border: 0px !important;
+  }
+
+  .btn-primary {
+    background-color: white !important;
+    color: black !important;
+    border: 2px solid black !important;
+  }
+
+  /* 클릭 효과 */
+  .btn:active {
+    opacity: 0.8 !important;
+    transform: scale(0.98) !important;
+  }
+
+  .templestay-part {
+    background-color: #b45213 !important;
+    color: white !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+    border-radius: 15px !important;
+    display: inline-block !important;
+    padding: 5px 15px !important;
+    margin-bottom: 5px !important;
+  }
+
+
+/* [모바일용] 화면 너비가 768px 이하일 때 */
+@media screen and (max-width: 768px) {
+    .image-container > div {
+        flex: 0 0 100% !important; /* 한 줄에 1개씩 */
+
+    }
+
+    .image-container {
+        gap: 10px 0 !important;
+    }
+
+    .program-content-1 {
+        flex: 0 0 100% !important; /* 가로를 꽉 채우도록 설정 */
+    }
+
+    .title-imgage {
+        width: 100% !important;
+        margin-bottom: 20px !important;
+    }
+}
+
+잠시 머무는 천년의 고요, 당일형 템플스테이
+
+경주 석굴암보다 100년 앞선 우리 역사 최초의 석굴사원, 팔공산 석굴암(국보 제109호)으로 여러분을 초대합니다.
+
+당일형 템플스테이는 숙박이 부담스럽거나 짧은 시간 동안 사찰의 정취를 만끽하고 싶은 분들을 위한 프로그램입니다. 사찰 안내와 타종 체험, 정갈한 공양은 물론, 국보 제109호 삼존석굴에서의 108배와 명상까지 팔공산 석굴암 템플스테이의 핵심 프로그램을 짧고 깊게 경험하실 수 있습니다.
+
+당일형은 10인 이상 단체를 대상으로만 운영되며 일정 협의 후 프로그램 진행이 가능하기 때문에 온라인 예약이 불가합니다. 따라서 인원과 일정에 맞춘 맞춤형 프로그램 구성을 위해, 사무국으로 직접 문의 후 예약을 진행해 주시기 바랍니다.
+
+당일형 템플스테이 문의 : 010-6770-2001
+
+일상 속 소중한 분들과 함께 짧지만 깊은 쉼표를 찍어보세요.
+
+번잡한 일상에서 벗어나 온전히 나에게 집중하는 시간. 팔공산 석굴암에서의 명상과 힐링이 여러분의 삶에 고요한 평화와 조화를 선물하기를 기원합니다.
+
+😁 이용 안내
+
+
+	당일형 운영 : 10인 이상 단체 맞춤형으로 운영
+
+
+
+
+단체 프로그램
+
+
+
+👍 당일형 템플스테이만의 특별한 혜택
+
+
+	특별 혜택 : 일반인 미개방 구역인 국보 제109호 삼존석굴 내 108배 및 참배
+	전문성 : 지도법사 스님이 직접 프로그램 진행
+	최신 시설 : 2025년 리모델링을 마친 최신 시설
+	편의 제공 : 문화원 전용 주차장 무료 이용
+
+
+
+
+지도법사 혜아스님
+
+
+
+주차장
+
+
+
+👉 프로그램 시작 전 안내사항
+
+
+	주차 안내: 템플스테이 문화원 주차장을 이용하시면 편리합니다.(무료)
+	접수 : 문화원 1층 사무실로 오셔서 접수하시고 지정된 장소에서 기다려 주세요.
+
+
+
+
+템플스테이 문화원
+
+
+
+템플스테이 사무실(문화원1층)
+
+
+
+🔎 세부 프로그램 안내
+
+사찰 예절
+
+
+	일정 : 10:00~10:30(30분)
+	장소 : 대강당(템플스테이 문화원 2층)
+	진행 : 지도법사 혜아스님
+
+
+일정 및 장소 안내와 사찰 습의를 배우는 시간
+오리엔테이션은 원활한 템플스테이 진행을 위한 프로그램 일정 및 장소 안내와 습의를 배우는 시간입니다.
+습의(習儀)는 사찰에서 지켜야할 기본적인 예절을 말하는데 템플스테이 오리엔테이션에서는 법당에서 삼배하는 법, 스님을 만났을 때 반배하는 법 등 1박 2일 템플스테이 진행하는 동안 지켜야할 간단한 습의를 배우게 됩니다.
+
+
+
+대강당(문화원 2층)
+
+
+
+일정 및 장소 안내
+
+
+
+사찰 습의
+
+
+
+사찰 안내
+
+
+	일정 : 10:30~11:00(30분)
+	장소 : 템플스테이 문화원
+	진행 : 지도법사 혜아스님
+
+
+불교의 전통과 문화를 느끼는 시간
+사찰안내는 단순히 불교사찰을 방문해 보는 것이 아니라 살아 숨쉬는 불교의 전통과 문화를 느끼고 배우는 불교 전통문화 순례의 길이 될 것입니다. 사찰의 구조와 건축, 조각, 공예, 단청 등 각종 불교 문화재들은 부처님의 가르침과 민족의 전통을 오롯이 간직하고 있기에 사찰순례를 통하여 이러한 의미와 아름다움을 음미해 보는 경험을 해보는 것입니다.
+사찰안내는 다음 코스로 진행됩니다.
+석조비로자나불좌상(유형문화재258호) → 모전석탑(문화재자료241호) → 군위 아미타여래삼존 석굴(국보109호) → 비로전(毘盧殿)
+비로전(毘盧殿)에서는 오리엔테이션에서 배운 법당 참배 예절을 배웁니다.
+
+
+
+석조비로자나불좌상(유형문화재258호)
+
+
+
+모전석탑(문화재자료241호)
+
+
+
+군위 아미타여래삼존 석굴(국보109호)
+
+
+
+비로전(毘盧殿)
+
+
+
+타종 체험
+
+
+	일정 : 11:00~11:30(30분)
+	장소 : 법성루
+	진행 : 지도법사 혜아스님
+
+
+모든 생명체의 평안을 기원하는 시간
+불전사물이란 소리로써 모든 중생(衆生)에게 부처님의 가르침을 전하고 번뇌에서 벗어나게 해탈로 이끌기 위한 도구입니다. 이 네 가지 사물은 예불 시간에 맞춰 울리며, 각기 다른 존재들을 구원하는 의미를 담고 있습니다.
+이 중 범종(梵鐘)은 천상과 지옥의 중생을 구제하고 모든 번뇌에서 벗어나게 해주는 소리입니다.
+범종은 새벽 예불에는 28번, 저녁 예불에는 33번의 종을 치는데 타종 체험을 통해 나를 포함한 모든 생명체의 평안을 기원해 보시기 바랍니다.
+
+
+
+법성루
+
+
+
+타종 체험
+
+
+
+공양
+
+
+	일정 : 11:30~12:30(60분)
+	장소 : 공양간(템플스테이 문화원 1층)
+	진행 : 지도법사 혜아스님
+
+
+수행자의 지혜가 담긴 사찰음식 공양
+사찰에서는 식사를 공양이라고 합니다. 공양이란 “부처님 전에 음식을 올린다” 라는 의미인데 단순히 음식을 먹는 이상의 의미가 있습니다.
+사찰에서는 음식이 우리에게 오기까지 수고로움을 아끼지 않은 수많은 이들에 대한 고마움과 자연에 대한 감사의 마음 그리고 쌀 한 톨도 낭비하지 않겠다는 절약의 정신을 강조합니다.
+또한 사찰음식은 생명 존중을 실천하기 위해 육류를 사용하지 않고 마음을 산란하게 하는 다섯가지 채소인 오신체(五辛菜)도 사용하지 않습니다.
+
+
+
+공양간(문화원 1층)
+
+
+
+공양
+
+
+
+개인 공양
+
+
+
+삼존석굴 108배
+
+
+	일정 : 12:30~14:00(90분)
+	장소 : 아미타여래삼존 석굴
+	진행 : 지도법사 혜아스님
+
+
+몸과 마음을 다스리는 절 수행, 108배
+경주 석굴암보다 100년 앞선 우리 역사 최초의 석굴사원인 아미타여래삼존 석굴은 국보 제109호입니다. 평소에는 문화재 보존을 위해 일반인에게는 개방하지 않으며 템플스테이 참가자들에게만 특별히 개방하여 108배를 할 수 있는 기회를 제공하고 있습니다.
+108배는 108가지 번뇌를 참회하고 씻기 위한 수행법으로 절을 할 때마다 108번뇌도 하나씩 내려놓으면서 자신의 어리석음을 반성합니다. 고로 108배 시간은 내 몸을 낮춤으로써 겸손을 배우고, 새로운 마음을 채우는 시간이기도 합니다.
+
+
+
+삼존석굴(국보109호)
+
+
+
+삼존석굴 전경
+
+
+
+걷기 명상
+
+
+	일정 : 12:30~14:00(90분)
+	장소 : 아미타여래삼존 석굴
+	진행 : 지도법사 혜아스님
+
+
+걷는 동안 온전히 나에게 집해 보세요
+바쁜 일상 속, 온전히 나에게 집중하는 시간이 필요하신가요? 걷기 명상은 몸과 마음을 동시에 깨우는 가장 쉬운 명상법입니다.
+땅을 딛는 한 걸음마다 발바닥의 감각에 집중하고, 불어오는 바람, 스치는 햇살을 온전히 느껴보세요. 복잡한 생각은 잠시 멈추고, 발소리마저 명상이 되는 순간을 경험하게 됩니다. 걷는 동안 오롯이 나 자신과 연결되며, 맑은 정신과 평온함을 되찾을 수 있습니다.
+
+
+
+스님과의 차담
+
+
+	일정 : 12:30~14:00(90분)
+	장소 : 대강당(템플스테이 문화원 2층)
+	진행 : 지도법사 혜아스님
+
+
+따뜻한 위로가 담긴 차 한 잔으로 마음을 나누는 시간
+일반적인 생활과 달리 수행을 하는 스님과 마주앉아 대화를 나누는 것은 템플스테이가 주는 아주 특별한 경험 중의 하나입니다. 우리나라 전통문화의 보고인 불교 문화에 대한 궁금증뿐만 아니라 살아가면서 겪게 되는 고민과 갈등에 대해 특별한 주제 없이 편안하게 이야기를 나눌 수 있습니다. 스님과 함께 차 한 잔을 나누는 차담은 템플스테이에서도 가장 의미 있는 시간이기도 합니다.
+
+
+
+☎️ 예약 문의 010-6770-2001
+
+  document.addEventListener(''DOMContentLoaded'', function() {
+    // 이제 DOM이 확실히 생성되었습니다.
+    const area = document.querySelector(''.reserveArea'');
+    if (area) {
+        area.id = ''reserve'';
+        console.log("아이디가 성공적으로 추가되었습니다.");
+    }
+
+    const target = document.querySelector(''.place > h3'');
+
+    if (target) {
+        // 2. 추가할 새로운 div 생성
+        const newDiv = document.createElement(''div'');
+        newDiv.className = ''templestay-part''; // 클래스 추가
+        newDiv.innerHTML = ''당일형'';
+
+        // 3. 타겟 요소 바로 위에 삽입
+        target.before(newDiv);
+    }
+});', '1일차;10:00~10:30 사찰 예절;10:30~11:00 사찰 안내;11:00~11:30 타종 체험;11:30~12:30 점심 공양(식사);12:30~14:00 선택 프로그램(삼존석굴 108배, 걷기 명상, 스님과의 차담)', '원활한 프로그램 참여를 위해 편한 신발(운동화 등), 편한 복장으로 오시길 추천 드립니다.
+	계절별로 차이가 있으나 산사는 시내 보다 추우므로 이를 감안하여 옷을 준비해 오시기 바랍니다.', 40000, '당일', '2026-01-05', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '길상사'), '108 염주로 이어가는 108배 이야기', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/12/14/20251214030055591_1_S.webp', '자신을 낮추는 108배를 하며, 108배의  깊은 의미를 배우는 시간입니다.
+한알 한알 108 염주를 꿰며  마음을 정화하고 평온을 찾아가는 행복한 시간 되세요.
+스님과의 차담을 통해 마음을 다독이는 평안한 시간 되세요.', '1일차;13:20~13:30 오리엔테이션;13:30~14:20 108배와 염주만들기;14:20~15:30 사찰안내;15:30~16:30 스님과 차담', '편안한 상하의 복장과 개인컵, 양말을 꼭 준비해 주세요.', 30000, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '길상사'), '자개로 만드는 세상', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/9/21/20250921082614592_1_S.webp', '자개 공예와  발우 공양 (점심공양), 그리고 따뜻한 차담이 어우러진  프로그램입니다.
+ 자개를 직접 만들어보고,  스님과 함께하는  명상을 통해
+ 복잡한 일상에서 벗어나 잠시 쉬어가는 시간을 가져보세요.', '1일차;11:00~11:10 오리엔테이션;11:10~12:00 발우공양 ( 공양간에서 정성껏 준비한 사찰음식);12:00~13:00 자개 소품 만들기;13:00~14:00 길상사 이야기;14:00~15:00 스님과 함께하는  명상;15:00~16:00 스님과의 차담 및 설문지 작성, 회향', '편한 복장, 양말, 개인컵(텀블러)을 꼭 준비해주세요!', 50000, '당일', '2025-08-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '봉은사'), '[사회·공익·무료] 타이치명상 템플스테이 [화요일]', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/11/27/20251127034420373_1_S.webp', '타이치 동작을 통한 몸의 이완과 에너지 순환을 원활하게 하는 명상 프로그램입니다.
+3개월 이상 매일 꾸준히 수련을 해야 효과를 보실 수 있습니다.
+가능하면 매주 참여가 가능하신분들이 신청해주시기 바랍니다.
+*예약이 마감되었더라도 꼭 참가를 원하시는 분은 전화(3218-4826) 또는 이메일(bongeunsa1@templestay.com)로 문의해주시기 바랍니다.
+
+*강의 일정과 내용은 사정에 따라 변경될 수 있습니다.
+*참가를 원하시는 분들은 오픈채팅방에 참여해주세요
+오픈채팅방 참여하기(클릭) (best)', '1일차;17:00~18:00 예비공 (몸 깨우기);18:00~18:20 삼원참장공;18:20~18:50 타이치 명상;18:50~19:00 마무리', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 개인 물병 정도 준비하시면 됩니다.
+* 단정하고 수행하기 편한 옷 차림으로 오시면 됩니다.', 0, '당일', '2026-06-16', '2026-12-29', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '용화사(청주)'), '차와 함께하는 " 선명상"스테이 ( 당일형) [ 매주 월요일, 화요일 ]', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '차와 함께하는 마음공부, 용화사 명상교실에서 지금 이 순간의 깨어있음을 알아차려보세요.
+기초 차명상 실습 및 차담명상으로 당신의  행복이 습관이 되길 바랍니다.
+
+** 명상 실습(30분)과 스님의 강의( 1시간)로 진행 됩니다.
+
+1. 참가대상 : 차명상에 관심있고 "꾸준히" 배우실 분
+2. 참가요일 : 매주 월요일, 화요일
+3. 참여시간 : 낮   반 - 13:30 ~ 15:00 ( 화요일만 ) - 월요일은 낮반이 없습니다
+                     저녁반 - 19:00 ~ 20:30
+4. 참가비 : 3만원
+             ( 월 수강료 입니다 .  평균 월 4회의 강의가 이루어 집니다. )
+              당일 청강 후, 현장결제 가능합니다.
+5. 입금계좌 : 신협 131-017-695951 대한불교조계종용화사)
+
+
+
+필독!!!
+##  화요일 낮반 명상강의는  "편안한" 분위기에서 강의과 실습이 함께하는 강의 입니다.
+     심화강의를 원하시면 월요일 명상 강의 또는 화요일 저녁 강의를 신청하시면 됩니다.
+     월요일 강의와 화요일 강의는 강의 주제/내용은 같습니다.', '1일차;13:30~15:00 (낮강의) 차명상과 함께  명상이론 강의;19:00~21:00 (저녁강의) 차명상과 함께  명상이론 강의', '간단한 필기구,', 30000, '당일', '2024-07-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '옥천사'), '나를 찾아서!', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '보통 학교, 기업, 동호회, 모임 등 단체에서 진행하는 문화행사의 일환으로 10명 이상의 참가자를 대상으로 해당일 최소 2시간부터 최대 5시간까지 템플스테이에 참여할 수 있습니다. 개인이 당일 템플스테이에 참여할 경우 사찰소개와 편백 숲 걷기 명상, 차담만으로 진행합니다.', '1일차;10:00~10:30 사찰소개 및 박물관 관람;10:30~11:30 108배 소원주 만들기;11:30~12:30 점심공양;12:30~14:00 휴식 및 자유시간;14:00~16:00 편백 숲 걷기 명상;16:00~16:00 회향', '당일형 프로그램의 경우 별도의 준비물이 필요없습니다. 개인물병 정도 준비하시면 좋습니다. * 우천 시 우산', 40000, '당일', '2023-06-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '관문사'), '[공익형]나눔 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/6/14/20250614040032588_1_S.webp', '- 지역사회와 상호작용을 위한 프로그램으로, 다문화가정, 이주노동자, 홀몸노인, 한부모가정 자녀 등 대상으로 따뜻한 절밥과 차담 등 정나누기
+- 기관 단체별로 10명이상 신청 가능 합니다(개인신청 불가)
+
+
+
+
+
+
+
+
+
+
+
+
+-', '1일차;10:30~11:00 오리엔테이션 및 사찰안내;11:30~12:30 점심공양;12:30~13:30 프로그램(다도체험& 연꽃등만들기);13:30~14:00 후기작성 회향', '개인 세면도구, 수건, 조끼에 받쳐 입을 상의, 여벌옷, 운동화(편한 신발), 양말, 개인 물통 등', 0, '당일', '2026-06-21', '2026-09-30', 20, FALSE, 0, 0),
+     사찰안내. 사찰식 점심공양. 선명상. 스님과의 차담 등을 선택하실 수 있습니다.
+
+■  일정, 프로그램 및 진행시간은 사전에 전화(010-3157-3161)로 상의하시길 바랍니다.
+
+-. 프로그램 일정은 사찰 사정으로 변경될수 있습니다.
+-. 참가 3일 전까지 입금이 확인되지 않는 경우 자동 취소됩니다.', '1일차;10:00~10:30 입소 및 일정표 배부;10:30~11:00 OT 및 사찰예절;11:00~12:00 공양 및 휴식;12:00~12:50 사찰 안내 및 불교문화해설;12:50~13:00 회향', '■  편안한 복장으로 오시고 물병을 준비하시면 더욱 좋습니다', 30000, '당일', '2026-06-19', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '관음사(제주)'), '관음사 어린이 법회(부모님법회)', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/5/15/20250515013523079_1_S.webp', '제주 관음사 어린이법회, 부모님법회에 초대합니다.
+
+☆아이들 스스로 마음을 다스리며 절제 할 줄 알고
+지혜로운 삶을 살아가기 위해 부처님의 가르침과 수행법,
+다양한 불교 문화를 함께 배워 봅니다.☆
+
+♤일시- 매월 2째-4째주 토,일요일 오전 10시~오후1시
+♤장소- 관음사 템플스테이 선센터
+♤대상- 초등1학년~6학년 (7살 포함)
+♤문의 010-2027-5162
+
+"궁금하신 사항은 언제든지 연락주시고, 템플스테이 홈페이지로 예약주시면 안내 문자 드립니다~
+첫 걸음이 낮설기도 하지만 편안한 마음으로 아이들과 손잡고 용기내어 오세요.
+불교에 대해 전혀 모르셔도 됩니다."
+
+*어린이 법회시간에 맞추어 부모님법회가 있습니다.
+(아이들 기다리는 시간에 부모님들도 불교에 대해 배우 실 수 있습니다.)
+*유아와 함께(토,일요일) 참석 할 수 있습니다. (유아반 운영)
+***부모와 유아법회에 참석을 희망하시는 분은 "전달사항" 이나 문자 주시면 감사하겠습니다.
+*토요일반과 일요일반이 따로 있습니다.(토요일, 일요일 중복 참석은 불가합니다.)
+*신청(예약)해주시면 "관음사 어린이" 카톡방에 초대됩니다.
+(단톡 초대를 원치 않으실 경우 문자나 "전달사항"에 메모 남겨 주시면 됩니다.)
+***일정이 바뀔 수가 있으니, 카톡에서 일정 확인 꼭 부탁드리고,
+참석여부를 꼭  알려주시면 감사하겠습니다.', '1일차;10:00~11:00 1부 법회- 삼귀의, 반야심경, 명상, 스님 법문, 정근, 어린이 오계 등;11:00~12:00 점심 공양- 공양 게송, 설거지 등;12:00~13:00 2부 - 다도, 숲속명상, 창작미술활동, 신나게 뛰어 놀기 등', '양말, 운동화, 물병 등', 0, '당일', '2026-03-07', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '능가사'), '[당일체험] 진공관앰프스피커와 싱잉볼 소리명상 체험', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/2/11/20260211073734416_2_S.webp', '고즈넉한 한옥 독채에서
+빈티지 스피커와 싱잉볼을 활용해
+자연의 소리, 내면의 소리에 귀기울여보는 치유의 시간 🌿
+
+싱잉볼은 노래하는 그릇입니다
+싱잉볼에서 만들어내는 진동은 에너지를 가지고 있는데
+진동과 만나는 순간 몸으로 진동이 전달되고(공명)
+진동의 고유한 리듬을 점차적으로 몸이 따라가(동기화)
+몸과 마음의 균형을 되찾게 해줍니다.
+
+소리를 통해 몸과 마음을 씻어내는 색다른 치유를 경험해보세요 ✨
+
+*이 프로그램은 숙박을 포함하지 않습니다.
+*예약시 사찰음식 점심공양 후 사운드테라피룸에서
+ [싱잉볼 소리명상]과 [사운드테라피]를 체험하실 수 있는 프로그램입니다.
+*시간 내에 자유롭게 공간을 이용하실 수 있습니다.
+*프로그램은 비대면(QR코드 포함된 이용안내문)으로 진행됩니다.', '1일차;10:30~11:30 [선택] 사찰(문화재) 안내;11:40~12:10 점심 공양;12:30~14:30 진공관앰프스피커&싱잉볼 명상 체험', '개인 용품만 지참하시면 됩니다', 50000, '당일', '2026-08-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '관음사(제주)'), '산사의 고요한 자연 속에서 "나를 내려 놓을 몇 시간 "(10명 이상)', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/7/10/20250710044823678_1_S.webp', '바쁜 일상에서 잠시 벗어나 산사의 고요한 자연 속에서 "나를 내려 놓는 시간"입니다.
+일주문에 들어서면서 속세를 떠나 깨달음으로 향하는 여정이 시작됩니다.
+
+-스님의 안내에 따라 사찰 곳곳을 둘러보며, 내가 그동안 알지 못했던 세계에 대해 호기심을 갖게 됩니다.
+-염주를 한알씩 꿰면서 108배를 하게 되면 나도 모르게 자만하고 고집스러웠던 자신을 낮추고 하심下心합니다.
+-오로지 채소로만 이루어진 건강하고 맛있는 절밥은 몸과 마음을 가볍고 편안하게 만들어 줍니다.
+-한끼 공양을 하고 나면 나한전까지 포행을 합니다. 시원하게 탁트인 바다를 바라보며 명상하는 시간은 세상의 온갖 시름을 날려 줍니다.
+-마지막으로 스님과의 차 한잔을 통해 그동안 궁금했던 부분들을 이야기하며 서로 마음을 나눕니다.
+
+
+*모든 일정은 조율이 가능합니다.
+*108배, 연꽃등 만들기, 염주만들기는 추가요금이 발생합니다.
+*참가자 인원이 10명 이상일때 신청 가능합니다.
+*최소 5일전에 신청하셔야 합니다. (환불불가, 날짜변경 가능)
+*10명 미만은 신청 불가합니다.
+
+문의 전화 010-5219-8561', '1일차;10:00~10:30 일주문에서 사찰 안내 시작;10:30~11:30 염주 한알씩 꿰면서 108배(선택);11:30~12:00 건강하고 맛있는 점심공양;12:00~12:30 나한전 포행 및 명상;12:30~13:00 스님과의 편안한 차담', '운동화, 모자, 물병, 모기약, 우산(우천시)
+부처님께 올릴 공양물(자율)', 30000, '당일', '2025-07-10', '2026-12-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '흥국사(고양)'), '나를 찾는 시간여행 (당일형)', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/4/5/20250405103138591_1_S.webp', '“나를 찾는 시간여행” 천년고찰 흥국사에서는 현대인들의 바쁜 일상생활에 지친 몸과 마음을 내려놓는 시간, 평일 짧은 시간이지만 나를 찾는 시간여행의 장을 마련했습니다.
+도량을 거닐고, 스님과 차한잔 나누며, 참 나를 찾아가는 시간이 되시길 바랍니다
+
+*당일템플스테이 체험은 2인이상 신청가능합니다.
+*수련복은 조끼만 제공됩니다.
+
+※본사찰 템플스테이 휴무일은 매주 월, 화입니다.(문자 남기시면 수요일에 연락드리겠습니다.)', '1일차;10:40~11:10 사찰안내;11:10~11:40 점심공양;11:50~12:10 염주만들기;12:15~12:45 스님과의 차담', '당일형 프로그램의 경우 별도의 준비물이 필요없습니다. 개인물병정도 준비하시면 됩니다.', 40000, '당일', '2026-05-28', '2026-11-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '설악산신흥사'), '[단체/ 당일형 템플스테이] 오, 설악! 내 마음의 울림! _Rock the Spirit! Oh, Seorak!', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/5/4/20260504024946523_1_S.webp', '짧은 시간이나마 산사의 불교문화를 체험할 수 있는 템플스테이 데일리 프로그램 입니다.
+아름다운 설악산에서 잠시나마 내 마음의 울림을 들어보세요!
+It is a temple stay daily program where you can experience the Buddhist culture of Sansa even for a short time.
+Listen to my heart for a moment at the beautiful Mt. Seorak!
+
+►내국인과 외국인 단체를 위한 당일형 프로그램 입니다.  프로그램 시간협의 가능합니다.
+   예약문의는 템플스테이 사무실로 연락주세요.
+▶전화상담  ☎ 033.636.8001  / 매주 월요일 휴관', '1일차;09:30~10:00 Temple Etiquettes 선체험관 명상홀 사찰습의/ OT.;10:10~11:00 Making prayerbeads & Tea meditation with monk 스님과 불교문화체험 (단주만들기&차명상);11:00~11:40 Temple meal time 사찰음식체험;11:50~12:30 Temple Tour 사찰안내;12:30~14:00 Trekking 설악산 숲길 자율 트레킹', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 개인 물병 정도 준비하시면 됩니다.', 40000, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '관문사'), '''26년 가을, 부모와 자녀가 교감하는 꽁냥꽁냥', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/7/2/20260702121528785_2_S.webp', '- 자녀와 부모가 함께하는 도심속 힐링 프로그램으로  서울근교에서 자연을 느끼고  교감하며 행복해지는 건강한 가족참여 프로그램입니다
+- 아지자기 꾸며진 사찰 정원에서  신선한 공기를 마시며 뛰고 걷는 신체 정서 근육 키우기 활동', '1일차;10:30~11:00 접수 및 사찰투어;11:00~12:00 대보탑 주변 야외놀이 활동;12:00~13:00 제철재료 만든 맛난 공양시간;13:00~14:00 신나는 난타체험& 연꽃등만들기 (택1)', '- 양말착용, 편안한 신발, 개인물병 등', 40000, '당일', '2025-07-02', '2026-09-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '국제선센터'), '[저녁·당일·마음챙김] 사띠클럽 Sati Club (feat.움직이는사찰)', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/12/20250312092111992_1_S.webp', '마음챙김 주제를 활용하여 자신을 성찰하고 일상 속 긍정적 변화를 이끌어내봅니다.
+호흡명상을 통해 현재의 신체 감각과 마음 상태를 알아차림으로써 내면의 고요와 평온을 체험합니다.
+
+★ 주제별로 살펴보는 마음
+- 탐욕, 성냄, 질투, 인색, 후회, 해태, 들뜸
+- 마음챙김, 고요함, 가벼움, 부드러움
+- 연민, 더불어기뻐함, 바른 말
+
+1. 마음챙김과 호흡명상 연습을 통해 현재 순간에 주의를 기울이는 훈련을 합니다.
+2. 부정적인 감정과 생각을 인식하고 조절하며 내면의 평화와 안정감을 찾습니다.
+3. 개인적 성찰과 단체적 나눔을 통해 주체적이고 건강한 삶의 방식을 익힙니다.
+
+* 재참가 예약 시 결제 전에 연락주시기 바랍니다. (국제선센터 템플스테이팀: 010-6728-2242)
+* 재참가시 참가비 2만원. 첫 시간에 받은 마음카드를 지참해주세요.', '1일차;19:00~20:00 호흡명상의 이론·실습·피드백;20:00~20:30 마음챙김 주제에 대한 탐구 및 내면 성찰;20:30~21:00 스님과의 차담: Q&A session', '편한 복장(명상참가자), 개인 컵(텀블러), 양말을 꼭 준비해주세요!', 30000, '당일', '2025-04-02', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '국제선센터'), '[저녁·당일·선명상] 내 마음에 선함: Twilight Moments', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/12/20250312042803346_1_S.webp', '하루 일정을 마친 나에게 주는 "여유시간".
+<선명상>을 통해 생각과 마음을 다루어 가는 연습을 합니다.
+
+"고요하고 편안하되, 명료한 상태"
+
+내면의 힘을 길러가는 <선명상>은 하고자 하는 일의 ''효율''은 높여주고, ''휴식''의 깊이는 더해줍니다.
+
+도심 속 쉼의 공간. 국제선센터 템플스테이에서 ''보이는 것, 들리는 것''에 따라다니는 마음을 안으로 거두어 봅니다.
+
+* 몸과 마음의 재충전, 그리고 일상의 마음챙김을 위한 시간
+<선명상: INNER PEACE> - 명상의 바른 자세와 방법. 수식관
+★ 생각에 끌려다니지 않기 위하여 ★ 스스로를 괴롭히지 않기 위하여 ★ 내 마음을 알아가기 위하여
+<스님과의 차담>
+★ 따뜻한 차와 함께 ‘한 마음’ 쉬어가는 스님과의 Q&A 시간
+
+일상의 반복감에서 벗어나 지금 이 순간을 오롯이 느껴봅니다.
+도심 속 평온의 공간, 국제선센터에서 명상을 통해 일상의 고요한 마음자리를 찾아갑니다.
+진정한 휴식은 마음의 고요에서 비롯됩니다.
+쉬어진 마음으로, 일상을 다시 새로이 시작해봅니다.', '1일차;19:00~20:00 선명상: 자세.방법.실참.피드백 - 수식관數息觀;20:00~21:00 스님과의 차담: Q&A session', '편한 복장(명상참가자), 개인 컵(텀블러), 양말을 꼭 준비해주세요!', 20000, '당일', '2025-04-03', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '흥국사(여수)'), '여수내 외국인근로자와 다문화 가정을 위한 무료나늠 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/15/20260615012430694_1_S.webp', '여수내에서 근무하시는 외국인 근로자 및 여수내 다문화 가정을 위한 무료 체험 템플스테이 입니다.
+이번 흥국사에서 진행하는 무료 체험 템플스테이를 통해 여수의 역사와 문화를 깊이 있게 알고
+외국인 근로자에게는 이색적인 체험과 다문화 가정에게는 우리 문화와 역사를 전달함으로서 한국사회의 따뜻한 이웃으로
+정착할 수 있는 기회를 마련하고자 합니다.
+
+* 1일 10인 이상 가능합니다.
+* 여수시내에서 근무하시는 외국인근로자 한해서 참가 가능합니다.
+* 여수시내에서 거주하시는 다문화가정에 한해서 참가 가능합니다.', '1일차;10:00~10:10 입실;10:10~11:10 사찰 안내 및 역사 소개;11:30~12:00 점심공양;13:00~13:30 팔찌 만들기 체험;13:30~15:00 컵등 만들기 체험;15:00~15:10 퇴실', '개인 세면도구,( 수건, 칫솔,치약,비누, 삼푸 머리빗등)
+여벌옷, 운동화(편한 신발), 양말, 개인(보온) 물병
+* 헤어드라이기는 비치되어 있습니다.
+* 참가복은 바지 드립니다
+
+* 동절기에는 방한용품 준비하세요.', 0, '당일', '2026-06-15', '2028-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '이제사'), '지친 나를 위한 처방전, 외갓집 감성 당일형 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/1/20/20260120052423791_1_S.webp', '도시 소음은 잠시 로그아웃!
+
+시간은 없지만 힐링은 간절한 당신을 위해 이제사가 문을 활짝 열었습니다.
+대단하고 거창한 다짐 없어도 괜찮아요.
+그저 시골 외갓집에 놀러 온 것처럼 편하게 쉬다 가는 곳,
+바쁜 일정 사이, 잠시 이제사 마당에 머물다 가세요.
+
+참가비 : 기본 1인 30,000원
+
+
+입소시간 : 오전입소 : 오전9시 ~ 오후12시
+                  오후입소 : 오후2시 ~ 오후5시
+                     * 원하시는 시간대에 편히 머물다 가실 수 있도록, 예약 시 ''이제사 템플 스테이 연수원''에 먼저 확인 부탁드려요.
+
+
+이제사 템플 스테이 연수원 문의 : 010 2498 5038
+*이제사 템플스테이는 외부 강사 진행이 아닌, 지도법사 스님이 모든 프로그램을 진행합니다.*
+*개인상담은 프로그램 종료 후 가능합니다. (상담 비용 : 1인 시간당 20,000원)
+
+
+주소 : 충남 공주시 사곡면 다복골길73-6  대한불교조계종 팔봉산이제사
+
+
+오시는길', '1일차;00:00~00:00 도량안내 / 사물체험 / 스님과 차담 ( 시간 문의 주세요.)', '당일형 프로그램의 경우 준비물이 필요하지 않습니다.', 30000, '당일', '2026-01-20', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '봉은사'), '[사회·공익·무료] 선명상 수행 템플스테이 [수요일]', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/7/10/20250710052832365_1_S.webp', '봉은사 부주지 각진스님을 모시고, 선명상 실참을 진행하는 프로그램 입니다. 매주 수요일에 진행됩니다. 사중일정상 스님께서 참석하지 못하는 경우는 방장님의 지도로 자율정진으로 진행됩니다.
+선명상을 처음 접하시는 분들은 어려울 수 있습니다.
+*프로그램에 대한 문의사항이 있는분은  02-3218-4921로 문의해주세요.', '1일차;19:00~20:00 선명상 실참(45분), 행선(15분);20:00~21:00 참선(대방), 스님과 함께하는 개별 인터뷰(다실)', '당일형 프로그램은 특별한 준비물이 필요없습니다.
+편한 신발과 명상하기 좋은 편한 옷을 착용해주세요.
+노출이 심한 옷이나 진한 향수는 삼가주세요', 0, '당일', '2026-01-07', '2026-10-28', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '석왕사'), '[사회.공익]무료/체험형 소외계층을 위한 무료 템플스테이 (단체 10인 이상만 참여 가능)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '소외계층을 위한 무료 템플스테이로 개인 참가는 불가하며 단체로 10인 이상 참가 가능합니다.
+대상 : 다문화가정, 한부모가정, 저소득층, 미혼모, 독거노인, 조손가정, 장애인
+
+매주 다르게 운영되며 원하는 체험이 있는 날짜에 참가 신청할 수 있습니다.
+- 첫째주 108배, 둘째주 다도체험, 셋째주 108염주꿰기, 넷째주 반야심경 사경, 다섯째주 원미산 둘레길 걷기', '1일차;10:00~10:30 입소, 법복 착용;10:30~11:00 사찰예절 안내;11:00~12:00 석왕사 안내;12:00~13:00 점심공양;13:00~13:30 휴식;13:30~14:30 매주 다른 체험;14:30~15:00 명상 및 체험후기 작성 (우천 시 ''명상 → 컵등만들기'')', '별도의 준비물이 없습니다.
+편한 신발을 준비해오시면 됩니다.
+* 동절기에는 개인 방한용품 준비하세요.', 0, '당일', '2024-09-28', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '용주사'), '당일 맞춤형(단체)', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/9/18/20250918034911434_1_S.webp', '단체형으로 맞춤 템플스테이 진행합니다.
+만들기와 명상, 인성교육 등 템플스테이 맞춤형으로 나를 알아보는 시간을 만들어 봅니다.
+시간 및 세부 프로그램은 서로 협의하여 조정할 수 있습니다.
+당일 맞춤형 템플스테이는 단체 10명이상 신청 바랍니다.', '1일차;10:30~10:40 효행문화원 만남;10:50~12:00 점심공양/사찰안내/박물관 관람;12:00~13:00 소원염주;13:30~15:00 마음창작;15:00~16:00 명상', '* 당일형 프로그램의 경우 별도의 준비물이 필요 없습니다.
+* 개인 텀블러,머리끈, 양말 준비하시면 됩니다.', 70000, '당일', '2023-08-23', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '건봉사'), '[군부대 연계 ]  민통선  해탈의 길 -  등공대 수행 순례   (10인이상 사전예약)  당일형', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/9/20250309022310937_1_S.webp', '건봉사는 만일염불기도의 전통을 이어온 수행도량 입니다.
+청정한 염불 정진의 기운 속에서 마음을 가다듬고,
+등공대 순례길을 따라 걸으며 스스로의 삶을 돌아보는 시간을 마련합니다.
+민통선지역에 위치한 등공대는 사전예약을 통해
+해설과함께 왕복 1시간 30분동안 진행됩니다.
+(군부대 협조로 10인 이상 사전 예약 필수)
+염불과 순례가 하나로 이어지는 이 여정은 기도와 발원이
+삶의 다짐으로 이어지는 수행 체험 입니다.
+* 프로그램 안내 *
+소요시간 : 왕복 약  1시간 30분
+진행방식 : 해설사동행 해설 및 소원지달기 체험
+예약기준 : 민통선 지역 (군부대 연계) 으로 10인이상 사전 예약 필수
+(우천시, 군부대 사정상 일정이 취소될 수 있습니다.)
+경계의 길을 걸으며
+마음의 방향을 다시 세우기 바랍니다.
+*  단체환영  *', '1일차;11:00~12:00 도착 / 점심공양;12:00~13:00 사찰참배 및 인원점검;13:00~14:30 해설사와 함께하는 등공대순례 ,회향', '점심공양시 1인 7000원
+소원지1인 5000원
+운동화착용,개인물병, 준비하시면 됩니다.', 0, '당일', '2025-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '관문사'), '이벤트가 있는 나눔 템플스테이(무료)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/7/20260607093940459_1_S.webp', '지역사회와의 나눔 실천을 위한  공익형 템플스테이를 진행합니다
+<10명 이상 단체 신청만 가능하며 개인 신청은 불가합니다>
+다문화가정,  이주노동자 등 취약계층 대상으로 리마인드 웨딩촬영 이벤트와 사찰음식 체험 연꽃등 만들기 등 다양한 프로그램이 준비되어 있습니다
+기관이나 단체의 많은 참여를 바랍니다', '1일차;10:30~11:00 사찰소개, 사찰둘러보기;11:00~12:00 연꽃등만들기;12:00~13:00 점심공양;13:00~14:00 고구려 북 명상 & 우면산 산책 명상', '-법당 출입시 양찰착용 바랍니다.
+- 수련복지급(조끼,)
+- 아침 저녁 기온차에 대비한 겉옷 준비
+- 텀블러(정수기이용)', 0, '당일', '2025-06-12', '2026-09-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '대원사(가평)'), '[당일형] 행복한 산사의 하루', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/3/30/20250330102404679_1_S.webp', '친환경적인 공간속에서 대자연과 교감하며 자연과 하나가 되는 여행.
+자신의 내면을 성찰하고, 무거운 마음의 짐을 비우는 평화로운 휴식여행.
+사찰음식, 연등만들기, 단주만들기 등 불교의 전통문화를 직접 즐기는 체험여행.
+산사에서의 하루는 지친몸과 마음의 문을 열어주는 귀한 시간입니다.
+자연속에서 마음의 먼지를 털어내고, 전통과 인연 맺는 산사의 하루.
+종교와 인종의 벽을 넘어 전세계인을 한국의 산사로 초대합니다.
+
+- 당일형 프로그램은 3인 이상 접수 완료 시에 운영이 가능합니다.', '1일차;11:00~11:50 일정소개 및 사찰안내 (연꽃등만들기, 단주만들기 /  108배 염주꿰기) 선택 1개;12:00~13:00 사찰음식 먹기, 추억의 사진 촬영(자유시간);13:00~14:30 잣나무 숲 트레킹, 소리명상/ 스님과 차담 (선택 1개);14:30~00:00 정리하고 집으로 gogo~~~', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다.
+개인 물병 정도 준비하시면 됩니다.', 50000, '당일', '2025-06-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '대광사(성남)'), '성화 스님과 함께하는 전통 고추장 만들기 무료 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/20/20260820034309513_1_S.webp', '복잡한 도시의 소음에서 벗어나 고즈넉한 산사의 풍경 속에서 온전한 쉼을 누릴 수 있는 특별한 당일형 템플스테이를 소개합니다. 이번 프로그램은 지친 일상에 여유를 선사하는 힐링의 시간인 동시에, 우리 고유의 전통 식문화를 내 손으로 직접 경험하고 배워보는 의미 있는 자리입니다. 참가자들은 사찰에 도착해 맑고 신선한 공기를 마시며 고요한 산사를 거니는 사찰 투어로 하루를 시작하게 됩니다. 자연의 호흡에 발맞추어 숲길을 걸으며 복잡했던 머리를 비우고 마음의 결을 편안하게 정돈하는 시간을 가집니다. 마음의 안정을 찾은 뒤 이어지는 메인 프로그램인 ''전통 고추장 만들기'' 체험에서는 우리 콩과 고춧가루, 정성이 어우러져 깊은 맛을 내는 전통 방식의 고추장을 직접 만들어보게 됩니다. 성화 스님의 친절한 설명을 들으며 누구나 쉽게 참여할 수 있으며, 자신이 직접 담근 정성 가득한 고추장은 예쁜 병에 담아 집으로 가져가 소중한 가족과 함께 맛볼 수 있습니다.
+몸과 마음을 건강하게 채워주는 정갈한 사찰음식 공양을 끝으로 모든 일정이 마무리됩니다. 바쁜 일상 속에서 잠시 멈춤의 미학을 배우고, 손끝으로 느끼는 전통의 깊은 맛과 특별한 추억을 선물 받을 수 있는 이 모든 과정은 무료로 진행됩니다. 자연의 품에서 마음의 안식을 찾고 우리 전통의 가치를 되새기는 뜻깊은 주말 나들이를 지금 시작해 보세요.', '1일차;10:00~12:00 고추장 만들기 체험;12:00~13:00 점심공양;13:00~14:00 사찰 안내', '호기심, 열린 마음, 친절함', 0, '당일', '2026-08-20', '2026-09-19', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '자비선사'), '불교 경전템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/2/26/20260226085459263_1_S.webp', '불교경전이나 논서를 공부하며 휴식하는 템플스테이.', '1일차;11:00~12:00 경전공부;12:00~13:30 점심공양 및 휴식;13:30~15:00 경전공부', '당일형 프로그램의 경우 별도의 준비물이 필요없습니다. 개인물병정도 준비하시면 됩니다.', 40000, '당일', '2026-02-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '길상사'), '차한잔 그리고 나만의 단청', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/1/6/20260106051016395_1_S.webp', '바쁜 일상 속에서 잠시 마음을 내려놓고 스스로를 돌아볼 수 있는 시간입니다.
+자신의 염원을 담아 전통 문양이 담긴  키링을 만들며,  여유로운 시간을 가져보시기 바랍니다. 스님과의 편안한 이야기 속에서  일상의 모습들을 돌아보는 소중한 순간을 만나보세요.', '1일차;13:00~13:10 오리엔테이션;13:10~14:00 단청 키링 만들기;14:00~15:00 사찰 안내;15:00~16:00 스님과의 차담;16:00~16:10 설문지 & 회향', '텀블러, 편한 복장, 양말을 꼭 준비해주세요!', 30000, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '화엄사'), '[공익]  화엄사 모기장 음악회 영화음악제', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/8/20260808020238757_1_S.webp', '천년고찰 화엄사 경내에서 영화 음악을 통해 예술과 어우러진 여름밤의 휴식을 선사하고자 합니다. -뮤지컬 콘서트로 이건영, 장소연, 아리현, 리사가 출연하여 대성당들의 시대, Think of Me, 사랑은 열린문, A whole New Wolrd, All that Jazz등의 노래를 부를 예정입니다. 노래와 노래 사이에는 영화영상을 함게 보며 셜명을 합니다.  ※ 문 의 : 화엄사 템플스테이 사무국 061-782-7600 , 010-4455-5592 (담당자) ※ 업무시간 : 오전 9시 ~오후 5시 / 점심시간 : 오전 : 11시 15분 ~ 오후 : 1시 매주 월,화 휴무', '1일차;19:40~21:05 프로그램 진행', '없음', 0, '당일', '2025-08-02', '2036-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '선운사'), '[당일형][일요일]사찰음식 체험_연잎밥+스님과 차담', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/7/27/20260727105004300_1_S.webp', '*26년 9월부터 시작합니다.(매주 일요일)*
+9월: 6일, 13일, 20일 27일
+10월 : 4일, 11일, 18일 25일
+
+자연의 시간과 정성을 담아 지친 몸과 마음을 채우는 건강한 한끼, 사찰음식.
+
+연잎밥
+황산화 작용과 혈관건강 증진, 노폐물 배출에 탁월한 건강식입니다.
+찹쌀, 밤, 대추, 콩 등 다양한 잡곡과 어우러져 영양 균형이 훌륭하며, 카페인이 없어 임산부나 어린이도 편하게 즐길 수 있습니다.
+(사찰음식: 2025년 5월 19일 국가무형유산으로 지정)
+
+스님과 차담
+절에 왔으니 스님께 좋은 이야기 듣고 가요~
+살면서 물어 보고 싶은것도 물어보고 차 한잔~
+
+*재료비 포함 2만원
+*이 프로그램은 환불과 연기가 불가능합니다.
+** 참가일 2일 전까지 미입금시 자동 취소됩니다.**', '1일차;10:00~10:20 템플스테이 도착;10:30~12:00 사찰음식 체험관에서 맛보는 점심& 뒷정리;12:00~13:00 스님과 차 한 잔', '개인 행주 2장', 20000, '당일', '2026-05-10', '2026-12-31', 20, FALSE, 0, 0),
+* 개인은
+   (당일-체험형, 다도체험)  <다산의 차맛은 어떨까?(1인 이상)>
+    에서 등록해 주세요.
+* 다도체험 시간은 1~2시간 내외로 진행됩니다.
+
+
+< 프로그램 소개>
+다산 정약용과 아암 혜장스님의 아름다운 차 이야기가 깃든 곳,
+만덕산 백련사는 고려시대부터 자생해 온 야생 차밭이 남아 있어
+‘다산(茶山)’이라 불려왔습니다.
+
+불가에서 차를 우려 마시는 일은
+몸과 마음을 다스리는 하나의 수행입니다.
+차 한 잔을 마시며 정신은 맑아지고,
+몸은 편안해지며, 마음은 자연스레 고요해집니다.
+
+백련사에서는 이러한 차 문화의 의미를 담아
+당일 체험형 템플스테이 프로그램
+「다산의 차맛은 어떨까?」 다도 체험을 운영하고 있습니다.
+만경루에서 바라보는 백일홍과 강진만의 풍경을 벗 삼아,
+다산에서 만들어진 녹차를 천천히 음미하는 시간을 가져보세요.
+
+차를 대하는 마음에는 격식이 필요하지 않습니다.
+자연스럽고 온화한 분위기 속에서
+편안한 마음으로 마시면 충분합니다.
+차를 마시는 자리는 조용할수록 좋고,
+화려함보다는 소박함이 어울리며,
+잡념보다는 한 생각으로 오롯이 마음을 모으는 시간이 되기를 바랍니다.
+
+* 10인이상 신청할 수 있으며,  전화로 문의 부탁드립니다.
+* 문의 전화 010-5831-0837', '1일차;09:00~17:00 다도(茶道)', '당일형 프로그램의 경우, 별도의 준비물은 필요 없습니다. 개인 물병 정도만 준비하시면 됩니다. *예약시 특이사항이나 몸이 불편하신 분, 알러지 (음식 등) 꼭 알려주세요.', 20000, '당일', '2026-02-01', '2026-11-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '내원정사'), '[하루수행] 위빳사나', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '■ 위빳사나 수행 <사피엔스>의 저자 ''유발 하라리''가 추천한 명상! 위빳사나는 몸과 마음의 현상에 대한 알아차림에 의해 그것들의 세가지 특성인 무상.고.무아를 꿰뚫어 보는 것입니다. 그래서 위빳사나 수행의 목적은 몸과 마음의 현상 "무상.고.무아"를 꿰뚫어 보는 지혜를 통한 괴로움의 소멸이며 진정하고 참된 행복을 얻는 것입니다. 나 자신을 통찰하고 꿰뚫어보는 시간, 어렵지 않게 다가갈 수 있습니다 :) ※ 위빳사나는 매월 첫째주에 당일형 프로그램으로 셋째주 1박 2일형 프로그램으로 진행되는 점 참고해주세요~!^^', '1일차;13:30~14:00 접수 / 안내;14:00~15:00 이론과 실습 : 좌선;15:00~16:00 이론과 실습 : 걷기 명상;16:00~17:00 좌선;17:00~18:00 걷기 명상;18:00~18:02 저녁 예불;18:20~00:00 자율 귀가', '★ 당일형 : 편안한 복장(소리나지 않고 좌선시 불편하지 않은 옷), 개인물통, 양말
+★ 1박 2일형 : - 사찰에서 법복을 드립니다.(상의: 조끼/하의:바지) - 개인 법복을 입으셔도 무방합니다.
+                   - 개인 세면도구(칫솔,치약,샴푸,폼클렌징 등 개인사용품)
+                   - 수건 (위생상 지급되지않습니다) , 양말 (법당 출입시 필요)
+                   - 우천시 우산 필요 / 개인 물병 / 개인 방한용품', 30000, '당일', '2019-05-04', '2027-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '대광사(성남)'), '사찰문화 체험 당일형 템플라이프(개인 신청은 불가하며, 단체 기관별로 10인 이상 신청 가능합니다)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '마음의 휴식과 힐링이 함께하는 대광사 "내 마음 주인되기" 명상 템플스테이로 오세요. 오는 발걸음은 무겁지만, 돌아가는 발걸음은 가벼워질겁니다. 자기 자신을 존중하고 사랑하는 마음을 길러 스스로를 위로하며 행복하게 살아가자는 프로그램입니다. 북 카페 가비지안에서 커피와 책을 동양 최대의 미륵좌불에 담긴 자비 자신을 되돌아 보며 내일을 그려 봅니다.', '1일차;14:00~15:00 오리엔테이션(사찰예절);15:00~15:30 사찰안내;15:30~16:00 미륵보전 108배;16:00~17:00 마음챙김 명상 또는 고구려북 명상;17:00~18:00 회향', '생수 및 개인이 필요한 소지품', 40000, '당일', '2018-02-23', '2026-09-27', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '능가사'), '[당일체험] 사찰문화 체험 (단체)', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/12/14/20251214010037075_2_S.webp', '사찰 문화를 체험할 수 있는 당일형 단체 프로그램입니다.
+
+✔️ 학교, 기관 등 단체 대상 프로그램 (5인 이상)
+✔️ 2~4시간 소요
+
+🔖 [기본] 사찰(문화재) 안내 투어, 사찰음식 점심공양, 스님과의 차담/명상
+🔖 [선택] 단주/소원등 만들기, 탁본/단청 체험, 편백숲 명상', '1일차;10:30~11:30 사찰 도착 및 사찰 안내;11:40~12:20 점심공양;12:30~13:30 스님과의 차담;13:40~14:40 선택 체험', '개인 물병을 지참해주세요', 30000, '당일', '2018-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '용문사(예천)'), '용문사 하루체험 템플스테이[단체]', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '◎◎ 전화 상담후 예약이 가능합니다. 하루 체험형은 단체전용프로그램입니다.◎◎ 기존의 숙박형 템플스테이의 한계를 벗어나 예약자가 원하는 시간대에 짧고 알차게 체험해 보는 맞춤형 템플스테이입니다. 템플스테이는 경험해보고 싶은데 하루 이틀 외박이 부담스러우신 분들, 여행 일정 중 사찰 관광이나 문화 체험을 짧게 체험해보고 싶으신 10인 이상의 가족이나 단체, 회사 워크숍이나 세미나를 템플스테이와 병행해서 진행해 보고 싶은 개인 또는 법인 등이 대상입니다. 원하는 날짜와 시간대에 원하는 프로그램을 짧고 진하게 체험하실 수 있습니다.', '1일차;10:00~11:00 접수 및 오리엔테이션;11:00~12:00 연등 및 염주만들기;12:00~13:00 점심공양;13:00~15:00 스님과의 차담;15:00~16:00 회향', '당일형 프로그램의 경우 별도의 준비물이 필요없습니다. 개인물병정도 준비하시면 됩니다.', 20000, '당일', '2017-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '청계사'), '잠시 머물고 간 산사에서 "나"를 돌아 보다(당일형)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/6/25/20260625090246974_1_S.webp', '끊임없이 반복되는 일상속에서 잠시나마 벗어나 스스로에게 선물하는 작은 행복...
+
+자연속 사찰에서 맑은 공기, 맑은 물과 마주하며, 오로지 자신에게 집중하는 시간.
+
+스스로에게 작은 행복을 선물하세요...
+
+
+⭐ 픽업불가 프로그램입니다', '1일차;10:00~11:00 사찰 도착 및 환복;11:30~12:00 사찰음식으로 진행하는 점심 공양;13:00~14:00 사찰 안내 및 불교문화 해설;14:00~16:00 자유롭게, 여유롭게 시간 보내기', '⭐ 수련복은 조끼를 지급합니다.
+⭐ 개인 물병, 텀블러 등을 준비하시면 좋습니다.
+⭐ 등산하실 분은 운동화, 장갑 챙겨오시면 됩니다.', 20000, '당일', '2026-07-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '백련사(강진)'), '(당일-체험형, 다도체험) 다산의 차맛은 어떨까? (1인 이상)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/5/28/20260528094047189_1_S.webp', '* 본 프로그램은 단체가 아닌 개인 다도체험 프로그램입니다.
+  단체는 <다산의 차맛은 어떨까?(10인 이상)>에서 등록해 주세요.
+
+* 다도체험 시간은 1~2시간 내외로 진행됩니다.
+  다도체험 시간은 프로그램 일정 중에서 선택 가능합니다.
+  2~3종류의 차와 다식을 음미하며
+ 스님과 담소를 나누는 다도체험 프로그램입니다.
+(차와 다식의 종류는 다도체험 당일에 정해집니다.)
+
+* 1인 이상 누구나 신청이 가능하며
+  최소 2일 전에 신청해 주시고
+  당일 신청하는 경우 종무소 또는 템플스테이로 연락주세요
+  정원은 10명 내외로 가족 및 지인이 아닌 다른 신청자와
+  함께 다도체험을 하게 될 수 있습니다.
+
+
+
+< 프로그램 소개 >
+
+다산 정약용과 아암 혜장스님의 아름다운 차 이야기가 깃든 곳,
+만덕산 백련사는 고려시대부터 자생해 온 야생 차밭이 남아 있어
+‘다산(茶山)’이라 불려왔습니다.
+
+불가에서 차를 우려 마시는 일은
+몸과 마음을 다스리는 하나의 수행입니다.
+차 한 잔을 마시며 정신은 맑아지고,
+몸은 편안해지며, 마음은 자연스레 고요해집니다.
+
+백련사에서는 이러한 차 문화의 의미를 담아
+당일 체험형 템플스테이 프로그램
+「다산의 차맛은 어떨까?」 다도 체험을 운영하고 있습니다.
+만경루에서 바라보는 백일홍과 강진만의 풍경을 벗 삼아,
+다산에서 만들어진 녹차를 천천히 음미하는 시간을 가져보세요.
+
+차를 대하는 마음에는 격식이 필요하지 않습니다.
+자연스럽고 온화한 분위기 속에서
+편안한 마음으로 마시면 충분합니다.
+차를 마시는 자리는 조용할수록 좋고,
+화려함보다는 소박함이 어울리며,
+잡념보다는 한 생각으로 오롯이 마음을 모으는 시간이 되기를 바랍니다.', '1일차;08:00~09:30 1회 다도(茶道), 예약 시 비고란에 희망하는 회차 기록 (예: 1회);14:00~15:30 2회 다도(茶道),예약 시  비고란에 희망하는 회차 기록 (예: 2회)', '다도체험 특성상 방석에 앉아서 진행되므로 바지(편안한 소재)와 양말을 착용해 주세요.', 30000, '당일', '2026-06-10', '2026-09-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '동화사'), '단체(당일형데일리 : 20명 이상)', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/11/25/20251125012147851_1_S.webp', '단체는 상담을 통해서만 가능합니다(참가비와 소요 시간은 프로그램 내용에 따라 달라지므로 협의 후 결정됩니다.)
+
+프로그램 : 스님과의 차담, 사찰음식 만들기, 다도체험, 염주만들기, 연꽃 만들기,  명상  中  선택
+
+단체 문의 : 053-980-7979, 010-8225-7445', '1일차;10:00~15:00 협의 된 프로그램 진행(참가비는 프로그램 내용에 따라 책정 됨)', '개인용마스크, 양말, 개인 세안 수건, 세면도구, 물통(보냉병추천), 속옷, 여벌 옷, 운동화(산행용), 후레쉬, 개인상비약 등 *수련복 지급합니다. (조끼와 바지) *양말을 꼭 준비해주세요. (사찰 내에선 맨발로 다니시면 안 됩니다.) *동절기 : 따뜻한 방한용품(외투, 목도리, 장갑, 마스크, 겨울신발 등) *산사(山寺)는 하루의 일교가가 큰 편입니다. 따라서 보온에 필요한 옷을 챙겨 오시면 좋습니다. *소나기.우천시 필요: 비옷.여분의수건 *체험형으로 오셨다가 더 머무르고 싶으신 분은 휴식형으로 추가 하실 수 있습니다.', 50000, '당일', '2025-11-25', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '도림사(대구)'), '사회공익템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/7/20/20250720092246052_1_S.webp', '팔공산의 선경품은 도림사! 일상을 잊고 무상의 바다에누운 평온함 찾아 어디론가 떠나고싶다 나를 편하게 받아주는 그곳 여기 도림사가 있다 도림사에서 나만의 행복을 꿈꾼다. ** 도림사는 수련복을(조끼) 드립니다. ** 모든 일정은 맞춤형으로 변경가능합니다. ** 산행을 할 경우 땀을 닦을 수건은 개인적으로 준비해 주시면 좋을 것 같습니다 ** 인원은 선착순 마감하며, 일정은 사정상 변경될수도 있습니다. (당일형은 참가자인원 10인 이상 시 진행합니다.) ** 신청시 전화 상담 후 예약하시면 됩니다 ^^ (010-9256-7276) ** 예약시 전화를 먼저 주시고 상담을 하신 후 예약 진행 하시길 바랍니다. [저소득층, 한부모가정, 사회복지기관]', '1일차;10:00~10:30 열체크 및 수련복 지급 / 오리엔테이션;10:30~11:30 도량안내 및 스님과의 차담;11:30~12:30 점심공양;12:30~14:00 자유시간;14:00~14:30 소감문 작성 및 QR / 하산', '- 운동화, 양말, 우산(우천시)
+- 물병, 간단한 소지품 가방(하절기)
+- 산사는 일교차가 심합니다. 여벌 옷을 준비해 주시면 좋을 것 같습니다.
+- 사찰의 특성상 산이여서 운동화를 신으셔야 하고 신발을 벗고 실내에 들어가야 하는 경우가 많으므로 양말을 꼭 착용하시길 부탁드립니다.', 10000, '당일', '2025-07-29', '2026-11-28', 20, FALSE, 0, 0),
+공익 단체 및 부처님의 자비를 실천하는 단체를 위한
+프로그램입니다.
+
+전화(010-7594-6887) 문의 후 예약 바랍니다. 통화가 안 될 경우 문자메세지을 남겨주시면 연락드리겠습니다.', '1일차;10:00~10:10 사찰습의;10:10~11:30 스님과 차담;11:30~12:30 점심공양,  사찰안내, 자율시간;12:30~14:00 108명상', '* 당일형 프로그램의 경우 별도의 준비물이 필요 없습니다.
+ 개인 텀블러,머리끈, 양말 준비하시면 됩니다.', 50000, '당일', '2025-03-08', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '연주암'), '마음의 빗장을 열고 나에게 주는 "쉼표" 하나[매주 수요일-당일형]', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/10/23/20251023023036219_1_S.webp', '- (★중요) 연주암은 관악산(해발 632m)정상(운동화 & 등산화 필수) 근처입니다.
+          (사찰 진입 관련 내부 사정으로 인하여 입금순 선착순 마감.)
+- (★중요) 예약 시 세부내용은 개별 연락 안내
+- (★중요) 10세 미만(초3학년) 아동 & 만75세이상 참가신청 불가(만 15세 미만 & 만 75세 미만 보호자 동반)
+♠ 사찰예절 안내 후 연주대 탐방(자율)을 추천합니다.
+♠ 2인 이상 신청시 진행 하며, 단체 예약은 5인 이상 협의 후 가능합니다.
+♠ 공용화장실 & 샤워장 사용.(에어컨 없음)', '1일차;10:00~10:30 입소 &  사찰안내;11:00~11:30 점심공양;11:30~12:30 자유시간 [연주대 탐방];12:30~13:30 스님과의 차담;14:00~00:00 소감문 작성 후 집으로 ~~~', '♠ 입소시간 : 오전 9:30 ~ 10:00 [주차는 관악산길 & 과천향교 공영주차장(1일 14,000원)을 이용.]
+♠ 수련복 : 조끼, 바지 지급 (반팔 터셔츠 준비, 나시는 안됨)
+♠ 준비물 : 개인 물통(텀블러), 양말(법당내 양말 착용 필수)', 50000, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '청계사'), '2026년 불교문화사업단 지원 나눔 템플스테이(당일형)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/4/2/20260402105431039_2_S.webp', '지역사회의 복지관, 요양원, 다문화센터 등 지역의 문화 복지 관련 시설과 연계하여
+지역사회와 함께하는 나눔 템플스테이입니다.
+
+사전 상담 후 신청 부탁드립니다.
+
+*** 단체는 일정조율이 필요합니다
+*** 전화상담 010-4600-1884', '1일차;10:00~11:00 도착 ,오리엔테이션  및 사찰안내;11:30~12:00 점심공양;13:00~14:00 스님과 차담, 명상 체험하기;14:30~14:30 소감문 쓰기, 집으로~~', '⭐ 수련복은 조끼와 바지를 지급합니다.
+⭐ 개인 세면도구, 수건, 칫솔, 여벌옷, 운동화(편한 신발), 양말, 개인물병,우산
+⭐ 샴푸, 린스, 드라이기는 비치되어 있지 않습니다.
+⭐ 산중이라 아침,저녁으로 날씨가 쌀살하니 여벌옷을 준비하시구요~
+- 동절기에는 방한이 가능한 겉옷을 챙겨오세요.
+⭐ 등산하실 분은 운동화, 장갑 챙겨오시면 됩니다.', 0, '당일', '2026-04-01', '2026-09-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '길상사'), '고요히 따라 쓰는 무소유', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/9/25/20250925032506469_1_S.webp', '서울 도심 속 고요한 길상사에서 하루 동안 마음을 내려놓고, 법정스님의 글을 따라 적어 내려가는 시간입니다.
+법정스님의 맑고 간결한 문장을 한 글자 한 글자 옮겨 적으며,  차분히 자신을 돌아보는 순간 일상의 번잡함도 잦아듭니다.
+스님과의 차담시간에 법정스님의 말씀의 여운을  함께 나누세요', '1일차;13:00~13:10 오리엔테이션;13:10~14:10 미디어로 만나는 법정 스님 & 한 줄의 무소유(필사);14:10~14:40 무소유 의자 (자개소품 만들기);14:40~15:30 사찰 안내;15:30~16:30 스님과의 차담', '편한 상하의 복장과 개인컵(텀블러), 양말을 꼭 준비해 주세요.', 30000, '당일', '2025-09-25', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '연주암'), '전통문화 ‘공유’ 나눔 템플스테이(당일형)', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/10/23/20251023034446051_1_S.webp', '♠ 소외계층 시민들(경기도 거주)에게 산사체험 기회를 무료로 제공합니다.
+♠ 대상자 : -수급자, 차상위계층, 한부모, (확인서 제출) , 독거노인, 새터민, 다문화 가정(미취학 아동 불가) 등
+♠ (단체 참가는 5인이상 가능하며, 원하시는 날짜에 협의 후 진행 합니다.)
+- (★중요) 연주암은 관악산(해발 632m) 정상(운동화 & 등산화 필수) 근처입니다.
+- (★중요) 예약 시 세부내용은 개별 연락 안내
+- (★중요) 10세 미만(초3학년) 아동 & 만75세이상 참가신청 불가(만 15세 미만 & 만 70세~74세 미만 보호자 동반)
+♠ 사찰예절 안내 후 연주대 탐방(자율)을 추천합니다.
+♠ 2인 이상 신청시 진행 하며, 단체 예약은 5인 이상 협의 후 가능합니다.
+♠ 공용화장실 & 샤워장 사용.(에어컨 없음)', '1일차;10:00~11:00 입소/오리엔테이션 및 사찰안내;11:00~11:30 점심공양;11:30~12:30 자유시간 [연주대 탐방];12:30~13:30 스님과의 차담;13:30~14:00 소감문 작성 후 집으로 ~~~', '♠ 입소시간 : 오전 9:30 ~ 10:00 [주차는 관악산길 & 과천향교 공영주차장(1일 14,000원)을 이용.]
+♠ 수련복 : 조끼, 바지 지급 (반팔 터셔츠 준비, 나시는 안됨)
+♠ 준비물 : 개인 물통(텀블러), 양말(법당내 양말 착용 필수)', 0, '당일', '2026-04-01', '2026-11-25', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '봉선사'), '비밀의 숲체험 및 연잎밥 체험시식(10인이상 체험가능/단체)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '당신의 손끝에서 시작되는 건강한 밥상 사찰음식은 불교의 수행정신을 계승하고 지혜를 얻기 위해 먹는 음식으로 그 바탕에는 모든 생명의 조화와 이를 귀하게 여기는 마음이 함께 합니다. 봉선사 사찰음식은, 음식을 만드는 것에만 치중하지 않고 만드는 자세와 정신이 담긴 음식에 관한 전 과정이 몸에 배도록 전하고 있습니다. 사찰음식 만듦을 배워 사랑하는 이와 함께 나눌 수 있는 시간을 가져 보시기 바랍니다. #. 본 템플스테이는 사찰음식 교육강좌중심형 템플스테이 입니다. - 교육장소 : 봉선사 사찰음식 연구소 (채운관) - 교육시간 : 매주 월요일 오전 10시 30분 ~ 13시 / 매주 토요일 오전 11시 ~ 13시
+* 단체는 15인이상 받습니다. 상담후 날짜와 일정 잡아드립니다. 감사합니다.', '1일차;10:00~11:00 비밀의 숲 산책;11:00~12:30 연잎밥 체험 및 시식, 정리', '운동화 착용, 개인물병(텀블러), 안경(팔찌 만들때 시력이 안 좋은 분)', 50000, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '도림사(대구)'), '아름다운 향기를 입다(당일형)', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '팔공산의 선경품은 도림사! 일상을 잊고 무상의 바다에누운 평온함 찾아 어디론가 떠나고싶다 나를 편하게 받아주는 그곳 여기 도림사가 있다 도림사에서 나만의 행복을 꿈꾼다. ** 도림사는 수련복을(조끼) 드립니다. ** 모든 일정은 맞춤형으로 변경가능합니다. ** 산행을 할 경우 땀을 닦을 수건은 개인적으로 준비해 주시면 좋을 것 같습니다 ** 인원은 선착순 마감하며, 일정은 사정상 변경될수도 있습니다. (당일형은 참가자인원 10인 이상 시 진행합니다.) ** 신청시 전화 상담 후 예약하시면 됩니다 ^^ (010-9256-7276) ** 예약시 전화를 먼저 주시고 상담을 하신 후 예약 진행 하시길 바랍니다.', '1일차;10:00~10:30 열체크 및 수련복 지급 / 오리엔테이션;10:30~11:30 도량안내 및 스님과의 차담;11:30~12:30 점심공양;12:30~14:00 자유시간;14:00~14:30 소감문 작성 및 QR / 하산', '- 편한 신발, 양말, 코팅 장갑(산행시),우산(우천시) - 물병, 간단한 소지품 가방(하절기) - 산사는 일교차가 심합니다. 여벌 옷을 준비해 주시면 좋을 것 같습니다. - 사찰의 특성상 신발을 벗고 실내에 들어가야 하는 경우가 많으므로 양말을 꼭 착용하시길 부탁드립니다.', 30000, '당일', '2021-01-20', '2026-12-26', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '국제선센터'), '[무료] 담마 치유명상 (vipassana meditation)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/2/10/20260210100147413_1_S.webp', '<외국인들과 같이 진행하기에 영어 가능한 내국인> *Contact: 010-2023-6720 Vipassana is a way of meditation created by Buddha.
+Unlike Samatha, which is aimed to grow concentration and most ways of meditation belong to, vipassana is for growing wisdom through observing things as it is.
+That is, we can cut the roots of  our defilements using wisdom. Then we can be free from unsatisfactoriness or suffering in our lives
+Course - It is a meditation program that runs every Saturday from 6:30 PM to 9:00 PM. We start with a 30 - minute orientation at 6:30 PM for beginners, so please arrive on time to get settled. - There you can practice sitting and walking meditation and have interviews and dhamma talk. - Participation fee is free of charge but donations are recommended. - Contact : 010-2023-6720(Ms. Yi, Geun Joo) seoncenter@templestay.com * 사전 예약은 필수사항입니다.', '1일차;18:30~19:00 O.T.;19:00~20:30 Sitting meditation / Walking meditation / Sitting meditation;20:30~21:00 Dhamma talk', '편한 복장(명상참가자), 개인 컵(텀블러), 양말을 꼭 준비해주세요!', 0, '당일', '2016-12-31', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '길상사'), '이론과 명상', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/8/10/20260810095906944_1_S.webp', '"포교스님과 함께하는 명상 / 이론과 명상"
+ 정원스님  (포교스님)
+시   간 :  14:00 ~ 16:00
+장   소 : 설법전
+ 동참금 : 3만원
+*외국인 신청자의 경우  사전상담 후  이용바랍니다.', '1일차;14:00~16:00 이론과 명상', '활동이 편한 복장과 양말 착용, 개인컵(텀블러)', 30000, '당일', '2026-02-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '낙산사'), '[당일형] 2026 "쉬엄 쉬엄"', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/12/7/20251207062328104_1_S.webp', '잠시나마 마음을 내려놓고 천년고찰 낙산사,
+그리고 푸르른 동해바다와 함께 자연을 벗삼아 쉴 수 있는 시간을 마련하고자 함 입니다.
+사찰의 아름다움을 마음껏 즐기시는 뜻깊은 시간을 가져보기길 바랍니다.', '1일차;14:30~15:30 입소;15:30~16:00 사찰 예절 안내;16:00~17:30 사찰 탐방;17:30~18:30 저녁 공양;18:30~19:30 (자율)저녁예불;19:30~20:00 퇴소', '▶개인물병 필수지참
+▶참가복으로 조끼 드립니다.(템플에 머무시는 동안 참가복 조끼 착용)
+▶여름철 반팔티셔츠 필수(민소매, 반바지는 안됩니다.)
+▶겨울철에는 따뜻한 방한용품 챙겨오시는걸 추천드립니다.
+▶양말(맨발 불가), 운동화
+▶날씨에 따른 개인 용품(긴팔옷, 우산 등)', 30000, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '용흥사'), '당일형 템플스테이', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/2/8/20260208125823059_1_S.webp', '당일형 프로그램입니다.
+역사와 사람과 자연이 조화로운 용흥사에서
+사찰문화를 경험하고 자연을 만끽하며,
+마음이 풍성해지는 시간을 가져보시기 바랍니다.
+
+“좋은 생각을 하면 좋은 인연이 맺어지고,
+나쁜 생각을 하면 나쁜 인연이 맺어진다.
+마음에 일어나는 생각이 좋고 나쁜 인연을 만든다.”
+                                                 『법구경』
+
+※ 체험프로그램(나만의 합장주 만들기/연꽃 만들기 중 택 1)은 선택형이며, 추가비용이 발생합니다.
+   체험을 희망하시는 경우 예약단계에서 선택해주시기 바랍니다.
+
+※당일형은 전화로 예약가능합니다.
+   예약 및 상담 문의
+(09:00~17:00 / 010-2723-0574)', '1일차;11:00~11:00 사찰도착 및 안내(템플사무실);11:20~11:50 점심공양;12:00~13:00 도량 자유 탐방 및 참배;13:00~14:00 스님과의 차담 / 선택 체험 진행', '- 개인물병(정수기 비치, 필요시 텀블러), 운동화(편한신발), 모자, 양말(법당출입시 착용) 등', 30000, '당일', '2025-04-10', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '석종사'), '당일 체험형 프로그램', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/1/7/20260107025408522_1_S.webp', '떠나고 싶을 때, 쉬고 싶을 때 우리가 꿈꾸는 바로 그 여행 떠나고 싶습니다. 쉬고 싶습니다.
+혼자여도 좋고, 함께라면 더욱 좋습니다.
+아름다운 석종사에서 만나는 특별한 휴식 템플스테이는 삶의 쉼표가 필요할 때 마음이 쉬어가는 곳입니다.
+당일형 프로그램은 템플스테이에 참가하고 싶지만 사찰에 하루 동안 머무는 것이 여의치 않거나
+외국인들이 짧은 시간 틈을 내 한국의 불교문화를 체험할 수 있도록 구성된 프로그램입니다.
+보통 사찰 안내, 참선 체험, 다도 및 만들기(연등, 염주, 사경) 체험을 선택하여 참가할 수 있습니다.
+한국을 방문한 외국인 친구에게 잠시나마 한국문화를 체험할 수 있는 시간을 만들어 줄 수 있습니다.
+당일형 프로그램은 단체로 접수하며 세부프로그램은 공지된 프로그램을 토대로 하되 상호 협의하에 진행합니다.
+반드시 담당자와 협의(전화, 문자 등)해주십시요(T. 010-3625-4505)', '1일차;09:30~10:00 사찰소개 및 사경;10:00~11:30 사찰 체험(명상 및 108배 염주 만들기 등);11:50~12:20 점심 공양', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 편안한 복장, 개인 물병 정도 준비하시면 됩니다.', 40000, '당일', '2025-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '국제선센터'), '불교 영어(Dhamma talk 내국인)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/2/9/20260209025612549_1_S.webp', '"기초적 생활 영어"와 "외국인에게 절을 소개할수 있는 역량" 함양
+ 수준별 맞춤 수업
+ 국제선센터 템플스테이 외국어 봉사 지원 가능
+ (수강료 : 150,000원/3개월)', '1일차;09:30~11:30 불교 영어', '편한 복장, 필기도구 및 교재 준비
+
+<교재>
+-  ENGLISH FOR EVERYDAY ACTIVITIES(일상회화 서바이벌 편 외)
+-  WHAT THE BUDDHA TAUGHT
+-  불교영어(승가 대학교 교재)
+-  영어판 NIKAYA(법구경, 숫타니파타등)', 12500, '당일', '2023-07-03', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '석종사'), '[사회공익/무료시민 참선명상] 토요시민 선명상', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/1/7/20260107050254879_1_S.webp', '참선수행도량 석종사에서는 국적, 인종, 종교, 성별, 나이를 초월해 인생의 진정한 의미와 방향을 찾는 모든 사람에게 문이 활짝 열려 있습니다.
+참선수행을 통해 ‘참 나’가 누구인지 밝히고, 인생의 올바른 방향을 찾는 것입니다.
+그리하여 맑은 정신과 지혜를 얻어 일상생활에서도 허공과 같은 마음으로 원만해질 수 있고,
+더 나아가 자비심을 가지고 타인과 사회에 도움을 주는 선한 영향력의 참된 ‘나’가 되어가는 행복한 수행입니다.
+토요참선정진은 좌선과 차담으로 이루어집니다.
+
+참선 대중정진의 특성상 미리 담당자와 의논하신 후 등록, 참석 가능합니다.
+
+담당자 : 토요 참선반 김양숙(여림성) 총무  010-2879-0185', '1일차;06:50~07:00 입실, 경행;07:00~08:00 입선, 참선;08:00~08:10 경행;08:10~09:00 입선, 참선', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 편안한 복장, 개인 물병 정도 준비하시면 됩니다.', 0, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '대원사(보성)'), '[당일형] 대원사 체험과 티벳박물관 관람', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/4/15/20250415054228545_1_S.webp', '당일형 템플스테이는 반나절 동안 진행되며,
+
+아름다운 자연 속에서 스님과 차담을 나누고 티벳박물관에서 저승체험을 비롯해 티벳의 독특한 문화와 역사도 간략히 살펴볼 수 있습니다.
+
+새소리와 숲의 바람소리를 느끼며 어머니 품처럼 따뜻한 대원사에서 여유로운 시간을 보내시기 바랍니다.', '1일차;10:00~10:30 사찰예법 안내;10:30~12:00 티벳박물관 관람;12:00~13:00 점심 공양;13:00~14:00 스님과의 차담', '* 개인 세면도구(비누/치약/칫솔), 수건, 여벌 옷(외투), 운동화(편한 신발), 양말, 물통이나 텀블러, 계절용 방한 의복 (침구/휴지 제공)
+* 깊은 산 속이라 기온차가 심하니, 추위를 많이 느끼시는 분은 따뜻한 의복을 준비하시길 바랍니다.
+* 새벽, 야간에 경내 이동시 손전등이 필요하실 경우가 있습니다.(휴대폰 손전등으로 사용 가능)
+* 템플 스테이 숙소에는 각 방 별 난방 장치와 온수가 제공되는 화장실이 있습니다.
+* 보성 대원사는 주암호의 발원지이며 상수원 보호 지역인 대원사 경내 물을 식수원으로 사용할 수 있습니다. 깨끗한 환경을 위해 플라스틱제품을 지양해 주시고 개인 물통을 지참해 주세요.
+* 사찰에서는 풍성하고 편한 의복이 좋습니다.
+* 현재는 따로 조끼와 바지가 지급되지 않습니다. 개인이 편한 복장을 준비해 오세요.', 10000, '당일', '2026-04-01', '2026-10-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '낙산사'), '[사회공익 50%할인]당일형 "쉬엄쉬엄"', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/1/25/20260125080431657_1_S.webp', '★★사회적 공익 목적으로 운영하는 프로그램입니다. 내용 확인 후 신청해 주세요★★
+▶ 대상 : 군인, 소방관, 경찰관, 기초생활수급자, 차상위계층, 한부모가정, 다문화가정
+▶ 동반 1인까지 50%할인되며, 관련 증빙서류(공무원증, 수급자증명서, 등본 등)을 당일 소지하셔야 합니다.
+▶ 당일 증빙서류 미소지시 차액을 지불해야 입실이 완료됩니다.
+
+잠시나마 마음을 내려놓고 천년고찰 낙산사, 그리고 푸르른 동해바다와 함께 자연을 벗삼아 쉴 수 있는 시간을 마련하고자 함 입니다.
+사찰의 아름다움을 마음껏 즐기시는 뜻깊은 시간을 가져보기길 바랍니다.', '1일차;14:30~15:30 입소;15:30~16:00 사찰예절안내;16:00~17:30 사찰탐방;17:30~18:30 저녁공양;18:30~19:30 (자율)저녁예불;19:30~20:00 퇴소', '▶개인물병 필수지참
+▶참가복으로 조끼 드립니다.(템플에 머무시는 동안 참가복 조끼 착용)
+▶여름철 반팔티셔츠 필수(민소매, 반바지는 안됩니다.)
+▶겨울철에는 따뜻한 방한용품 챙겨오시는걸 추천드립니다.
+▶양말(맨발 불가), 운동화
+▶날씨에 따른 개인 용품(긴팔옷, 우산 등)', 15000, '당일', '2026-01-25', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '용화사(청주)'), '[단체형 ]  "마음에 울림을 주는 한상" - 심향미로(心響味路) 사찰음식체험', '당일형', 'https://ts-cdn.com/ups/templePrg/2025/7/3/20250703040855696_1_S.webp', '"마음에 울림을 주는  한상"
+- 심향미로(心響味路) 사찰음식체험
+마음의 소리에 귀 기울이며, 자연의 맛을 따라 걷는 길.
+한 그릇의 음식에 담긴 의미와 깨달음, 그 깊은 여정을 함께 합니다.
+
+
+- 단체를 위한  당일형템플스테이 입니다.
+## 최소모집인원:  8명  ##
+
+- 예약을 통해 강의가 열립니다. (사전문의 필수)
+- 시간이나 요일 변경 가능합니다.
+- 기본 메인음식 1가지와 간단한 메뉴 1가지 정도하여 2가지 정도의 사찰음식을 직접 만들고, 시식합니다.
+- 매뉴나 체험 시간은 추가 변경 가능합니다. (포장 용기는 각자 준비하여야 합니다)
+- 전문 강사님과 함께 합니다.
+- 레시피와 재료는 미리 공지해 드리며, 참가인원 내에 알러지가 있으신분은  미리 말씀해 주시고, 그에 따른 진행 여부는 참가자님께서 직접 선택 하셔야 합니다.', '1일차;10:00~12:00 (선택1)사찰음식 체험 (담아갈 용기는 직접 준비하세요)- 시간 추가 변경가능;14:00~16:00 (선택2) 사찰음식 체험  (담아갈 용기는 직접 준비하세요)- 시간 추가 변경가능', '남은 음식을 담아갈 용기(그릇)', 45000, '당일', '2025-03-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '길상사'), '지역기관 연계 공익  나눔 템플라이프  (개인신청 불가)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/5/1/20260501020922011_1_S.webp', '도심속 고요한 쉼터, 길상사에서 문화의 온기와 마음의 안정을 나누는 시간을 준비했습니다.
+
+나눔과 상생의 마음을  지역사회와 함께  이어가고자 합니다. * 개인신청 불가 *
+참가일정은 기관과 사전 합의후 결정됩니다.', '1일차;10:50~11:00 오리엔테이션;11:00~11:40 점심공양;11:40~12:30 단청 키링 만들기;12:30~13:30 길상사  이야기;13:30~14:30 스님과 차 한잔 [마음 나누기;14:30~14:40 설문지 및 회향', '편한 복장, 양말을 꼭 준비해주세요!', 5000, '당일', '2026-04-01', '2026-09-30', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '석종사'), '[사회공익/무료시민 참선명상] 일요시민 선명상', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/1/7/20260107025038877_1_S.webp', '‘나는 누구인가?’
+참선 수행도량 석종사에서는 국적, 인종, 종교, 성별, 나이를 초월해 참선 수행 경험이 전혀 없는 분들도 편안하게 참여할 수 있는 일요참선프로그램을 운영하고 있습니다.
+참선수행을 통해 ‘참 나’가 누구인지 밝히고, 삶과 죽음의 본질을 깨달아 인생의 진정한 의미를 찾는 것입니다.
+그리하여 허공과 같은 청정한 마음으로 일상생활에서도 원만해질 수 있고, 더 나아가 자비심을 가지고 타인과 사회에 도움을 주는 선한 영향력의 참된 ‘나’가 되어가는 행복한 수행입니다.
+
+일요참선정진은 좌선과 차담으로 이루어집니다.
+
+참선 대중정진의 특성상 미리 담당자와 의논하신 후 등록, 참석 가능합니다.
+
+담당자 : 일요 참선반 총무 한미숙 010-5353-6758', '1일차;07:00~07:10 행선 / 경행;07:01~08:00 입선/좌선;08:00~08:10 행선 / 경행;08:10~09:00 입선/좌선', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 편안한 복장, 개인 물병 정도 준비하시면 됩니다.', 0, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '석종사'), '[사회공익/무료] 보리의 소풍 : 군부대', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/1/7/20260107034010417_1_S.webp', '보리의 소풍이란, 석종사에서 진행하는 사회공익 프로그램으로 ''찾아가는 템플스테이''입니다.
+군 장병들에 종교 및 문화 체험의 기회를 제공함으로서 몸과 마음에 힐링이 되고 보다 건강하고 행복한 마음으로 일상을 살아갈 수 있도록 진행하는 프로그램입니다.', '1일차;09:30~10:00 청 소 / 예불준비;10:00~10:30 인사나누기;10:30~11:00 예 불 / 부처님 이야기;11:00~11:30 참나를 밝혀주는 ''5분 참선'';11:30~12:00 간 식 / 담소 나누기;12:00~13:00 회 향 / 점심공양', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 편안한 복장, 개인 물병 정도 준비하시면 됩니다.', 0, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '석종사'), '[사회공익/무료] ''참나''를 찾는 소리명상(다라니반)', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/1/7/20260107024637204_1_S.webp', '단체로 진행이 되는 프로그램입니다. 프로그램은 오후 7시부터 진행합니다.
+다라니 기도에 관심있는 분은 누구나 참여 가능 혹 신청을 원하시는 분은 실무자에게 전화를 주시면 단체 진행하는 분에게 동의를 구하겠습니다
+휴대폰: 010-3625-4505', '1일차;19:00~19:20 저녁예불(하절기);19:20~19:30 용서자비;19:30~21:00 다라니 기도', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 편안한 복장, 개인 물병 정도 준비하시면 됩니다.', 0, '당일', '2026-01-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '석종사'), '[사회공익/무료] 보리의 소풍 : 양로원', '당일형', 'https://ts-cdn.com/ups/templePrg/2026/1/7/20260107024330972_2_S.webp', '보리의 소풍이란, 석종사에서 진행하는 사회공익 프로그램으로 ''찾아가는 템플스테이''입니다.
+양로원이나 도움이 필요하신 이웃에게 종교 및 문화 체험의 기회를 제공함으로서
+몸과 마음에 힐링이 되고 보다 건강하고 행복한 마음으로 일상을 살아갈 수 있도록 진행하는 프로그램입니다.', '1일차;14:30~14:50 인사 나누기;14:50~15:20 예불(禮佛);15:20~15:30 휴 식;15:30~16:20 프로그램 체험 / 소감 나누기;16:20~16:30 회 향', '당일형 프로그램의 경우 별도의 준비물이 필요 없습니다. 편안한 복장, 개인 물병 정도 준비하시면 됩니다.', 0, '당일', '2025-03-01', '2026-12-31', 20, FALSE, 0, 0),
+    ((SELECT temple_id FROM TEMPLE WHERE name = '전등사'), '몸과 마음을 알아차리는 하타요가(Hatha Yoga)수행', '당일형', 'data:image/svg+xml,<svg xmlns=''http://www.w3.org/2000/svg'' width=''1200'' height=''800''><rect width=''1200'' height=''800'' fill=''%23e4dccb''/><text x=''600'' y=''420'' font-size=''44'' fill=''%238b8272'' text-anchor=''middle''>사진 준비중</text></svg>', '하타 요가는 동작의 빠름과 느림 , 머무름과 움직임 등을 골고루 사용하여 몸과 마음을 알아차리게 도와주는 수련법으로 스스로를 관찰하며 몸의 모든 부위를 골고루 사용하여 근력과 유연성을 길러주고 몸과 마음을 가볍고 단단하게 합니다. 여러 가지 신체적인 동작요가의 다양한 자세로 신체의 좌우, 상하균형을 맞추는 아사나 (Asana) 수행으로 몸과 마음, 그리고 영혼을 일깨우는 통합적이고 완벽한 경험을 하게 될 것입니다. 각자의 포지션에 맞게, 각기 다른 능력, 연령, 신체적 조건에 적합하게 수련 지도를 받게 될 것이며, 수련생들이 단계에 따라 초급, 중급, 고급으로 나뉘어 고전요가보다 쉽게 효과적으로 수행할 수 있게될것입니다. 다만, 여러종류의 질병 치료와 예방을 위해 조화력과 균형능력을 높이는 신체 수행으로 불완전한 육체를 회복하는 아사나(Asana)에 집중할 수 있게 주의 사항을 잘 숙지하시기 바랍니다.
+
+1. 수련시간은 2시간이며, 오전6시50분에 시작합니다. 5분前(전)에 선불장으로 오셔서 사바사나(송장자세) 요가매트를 깔고 누워 계세요.
+2. 6시에 시작하는 아침공양시간에 간단한 누룽지 또는 야채와 과일 한 조각 등 가벼운 식사를 권합니다. (금식하면 더 좋습니다)
+3. 수련 중에 묵언 - 자신의 몸에 집중해서 내면의 평화를 찾아야 합니다.
+4. 개인수건 준비
+5. 요가수련 전날 자극적인 음식, 고기, 튀김음식, 술, 담배, 과음, 과식을 금합니다.
+
+* 상기 참가비는 주중 휴식형 템플스테이 참가자분들에게 적용되는 금액입니다.
+당일 요가만 참석하시는 분들은 참가비 50,000원입니다.', '1일차;06:50~09:00 몸과 마음을 알아차리는 하타요가(Hatha Yoga)수행', '1. 요가에 적합한 편한 복장
+2. 개인수건', 30000, '당일', '2026-03-01', '2026-10-31', 20, FALSE, 0, 0);

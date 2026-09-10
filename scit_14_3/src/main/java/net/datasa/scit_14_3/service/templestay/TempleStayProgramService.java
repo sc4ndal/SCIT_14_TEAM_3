@@ -124,7 +124,7 @@ public class TempleStayProgramService {
 	/**
 	 * 사찰 계정이 자기 사찰 소속으로 프로그램을 새로 등록.
 	 * support_english/latitude/longitude는 DB 트리거가 소속 TEMPLE 값으로 저장 시점에
-	 * 덮어쓰므로(docs/buddhist-site-schema.sql 참고) 여기서 안 채워도 됨.
+	 * 덮어쓰므로(docs/sql/buddhist-site-schema.sql 참고) 여기서 안 채워도 됨.
 	 */
 	public void register(TempleStayProgramDTO dto, Long templeId) {
 		TempleEntity temple = templeRepository.findById(templeId)

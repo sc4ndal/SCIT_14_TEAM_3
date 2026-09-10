@@ -14,6 +14,11 @@
 <!-- data-program-id 속성에 컨트롤러가 넘겨준 programId를 심어둠 -> JS에서 이 값을 읽어서 API 호출 -->
 <body th:data-program-id="${programId}">
 
+<div id="auth-info" style="display:none;"
+     sec:authorize="isAuthenticated()"
+     th:attr="data-login-id=${#authentication.principal.username}">
+</div>
+
 <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
 
 <h2>템플스테이 상세보기</h2>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -112,6 +112,11 @@
     </style>
 </head>
 <body>
+
+<div id="auth-info" style="display:none;"
+     sec:authorize="isAuthenticated()"
+     th:attr="data-login-id=${#authentication.principal.username}">
+</div>
 
 <header>
     <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>

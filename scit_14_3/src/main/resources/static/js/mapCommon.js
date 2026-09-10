@@ -107,7 +107,9 @@ function createTempleMarker(map, temple) {
                 window.favoriteTempleIds.push(temple.templeId);
             }
         }
-    } else {
+    } else if (document.getElementById('auth-info')) {
+        // 로그인 상태일 때만 조회 - 이 API는 인증이 필요해서(@PreAuthorize), 비로그인
+        // 방문자가 마커를 열 때마다 호출하면 401만 쌓이고 별색도 어차피 항상 회색이라 의미 없음.
         fetch('/api/favoritetemples/' + temple.templeId)
         .then(function (response){
             if (!response.ok) {
