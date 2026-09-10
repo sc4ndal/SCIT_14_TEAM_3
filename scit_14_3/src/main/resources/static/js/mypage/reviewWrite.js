@@ -5,7 +5,7 @@ const currentLoginId = authInfo ? authInfo.dataset.loginId : null;
 
 if (!isLoggedIn) {
   alert('로그인이 필요합니다.');
-  location.href = '/login';
+  location.replace('/login');
 }
 
 // ------------------------- URL 파라미터 -------------------------
@@ -16,7 +16,7 @@ const isEditMode = !!editingReviewId;
 
 if (!reservationId) {
   alert('잘못된 접근입니다.');
-  location.href = '/mypage/myReservations';
+  location.replace('/mypage/myReservations');
 }
 
 // ------------------------- 사진 첨부 (작성/수정 공통) -------------------------
@@ -110,12 +110,12 @@ async function init() {
     // 검증하지만 여기서 먼저 걸러서 불필요한 폼 입력을 막는다.
     if (reservation.loginId !== currentLoginId) {
       alert('본인의 예약에만 리뷰를 작성할 수 있습니다.');
-      location.href = '/mypage/myReservations';
+      location.replace('/mypage/myReservations');
       return;
     }
     if (reservation.status !== '이용완료') {
       alert('이용이 완료된 예약만 리뷰를 작성할 수 있습니다.');
-      location.href = '/mypage/myReservations';
+      location.replace('/mypage/myReservations');
       return;
     }
 
@@ -126,12 +126,12 @@ async function init() {
 
     if (!isEditMode && existingReview) {
       alert('이미 이 예약에 대한 리뷰를 작성했습니다.');
-      location.href = '/mypage/myReservations';
+      location.replace('/mypage/myReservations');
       return;
     }
     if (isEditMode && !existingReview) {
       alert('수정할 리뷰를 찾을 수 없습니다.');
-      location.href = '/mypage/myReservations';
+      location.replace('/mypage/myReservations');
       return;
     }
 
@@ -146,7 +146,16 @@ async function init() {
     if (isEditMode) {
       document.getElementById('page-heading').textContent = '리뷰 수정';
       document.title = '리뷰 수정 · 佛선자';
-      document.getElementById('review-submit-btn').textContent = '리뷰 수정';
+      document.getElementById('review-submit-btn').textContent = '수정';
+
+      // 삭제 버튼 노출 + [수정][삭제][취소] 순으로 재배치
+      document.getElementById('review-delete-btn').hidden = false;
+      const actionsEl = document.querySelector('.review-actions');
+      actionsEl.append(
+        document.getElementById('review-submit-btn'),
+        document.getElementById('review-delete-btn'),
+        actionsEl.querySelector('.review-back-btn'),
+      );
 
       selectedRating = existingReview.rating;
       renderStars();
@@ -158,7 +167,7 @@ async function init() {
   } catch (err) {
     console.error('리뷰 작성 페이지 초기화 중 오류가 발생했습니다.', err);
     alert('예약 정보를 불러오는 중 오류가 발생했습니다.');
-    location.href = '/mypage/myReservations';
+    location.replace('/mypage/myReservations');
   }
 }
 
@@ -210,11 +219,35 @@ document.getElementById('review-submit-btn').addEventListener('click', async () 
     }
 
     alert(isEditMode ? '리뷰가 수정되었습니다.' : '리뷰가 등록되었습니다.');
-    location.href = '/mypage/myReservations';
+    location.replace('/mypage/myReservations');
   } catch (err) {
     console.error(err);
     alert('리뷰 저장 중 오류가 발생했습니다.');
     submitBtn.disabled = false;
+  }
+});
+
+// ------------------------- 리뷰 삭제 (수정 모드 전용) -------------------------
+document.getElementById('review-delete-btn').addEventListener('click', async () => {
+  if (!isEditMode) return;
+  if (!confirm('이 리뷰를 삭제하시겠습니까?')) return;
+
+  const deleteBtn = document.getElementById('review-delete-btn');
+  deleteBtn.disabled = true;
+  try {
+    const res = await fetch(`/reviews/${editingReviewId}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      alert(err && err.message ? err.message : '리뷰 삭제 중 오류가 발생했습니다.');
+      deleteBtn.disabled = false;
+      return;
+    }
+    alert('리뷰가 삭제되었습니다.');
+    location.replace('/mypage/myReservations');
+  } catch (err) {
+    console.error('리뷰 삭제 중 오류가 발생했습니다.', err);
+    alert('리뷰 삭제 중 오류가 발생했습니다.');
+    deleteBtn.disabled = false;
   }
 });
 

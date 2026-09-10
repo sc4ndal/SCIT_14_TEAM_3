@@ -60,6 +60,7 @@ public class WebSecurityConfig {
 			"/api/favoritetemples/**",
 			"/templestayprograms/**",
 			"/api/templestayprograms/**",
+			"/reviews/all",         // 전체 후기 모아보기 - 비로그인도 조회 가능 (작성/수정/삭제는 인증 필요)
 			"/maptemplestayviews/**",
 			"/findtemple",
 			"/templestayGuide",
