@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <link rel="stylesheet" th:href="@{/css/common.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}" type="text/css">
+    <title>1:1 문의 · 佛선자</title>
+    <style>
+        .page-title {
+          margin: 0 0 20px;
+          font-family: var(--serif);
+          font-weight: 500;
+          font-size: 21px;
+          color: var(--text-primary);
+        }
+        .page-title-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+        .new-inquiry-btn {
+          display: inline-flex;
+          align-items: center;
+          padding: 11px 20px;
+          background: var(--blue);
+          border: 1px solid var(--blue);
+          border-radius: 6px;
+          color: #fff;
+          font-family: var(--sans);
+          font-size: 13.5px;
+          font-weight: 600;
+        }
+        .new-inquiry-btn:hover { opacity: .88; }
+
+        .inquiry-card {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+          background: var(--paper);
+          border: 1px solid var(--line);
+          border-radius: 8px;
+          padding: 18px 22px;
+          margin-bottom: 10px;
+          cursor: pointer;
+          transition: box-shadow 0.15s, border-color 0.15s;
+        }
+        .inquiry-card:hover {
+          border-color: rgba(39, 33, 27, 0.18);
+          box-shadow: 0 4px 14px rgba(39, 33, 27, 0.05);
+        }
+        .inquiry-card .info { flex: 1; min-width: 0; }
+        .inquiry-card .info h3 {
+          margin: 0 0 5px;
+          font-family: var(--serif);
+          font-weight: 500;
+          font-size: 15.5px;
+          color: var(--text-primary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .inquiry-card .info p {
+          margin: 0;
+          font-size: 12.5px;
+          color: var(--text-tertiary);
+        }
+
+        .status-badge {
+          display: inline-block;
+          padding: 3px 11px;
+          border-radius: 999px;
+          font-size: 11.5px;
+          font-weight: 600;
+          letter-spacing: .01em;
+          flex-shrink: 0;
+        }
+        .status-대기     { background: var(--muted-bg); color: var(--text-tertiary); }
+        .status-답변완료 { background: rgba(92, 122, 98, .13); color: var(--green); }
+
+        .empty-msg {
+          text-align: center;
+          color: var(--text-tertiary);
+          padding: 40px 0;
+          font-size: 13.5px;
+        }
+        .empty-msg a { color: var(--blue); }
+    </style>
+</head>
+<body>
+
+<div id="auth-info" style="display:none;"
+     sec:authorize="isAuthenticated()"
+     th:attr="data-login-id=${#authentication.principal.username}">
+</div>
+
+<header>
+    <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+</header>
+
+<main class="mypage-main">
+    <div class="mypage-inner">
+        <div class="page-title-row">
+            <h1 class="page-title">1:1 문의</h1>
+            <a class="new-inquiry-btn" th:href="@{/mypage/inquiries/new}">새 문의 작성</a>
+        </div>
+
+        <p class="check-result" style="color:var(--green);" th:if="${submitSuccess}">문의가 접수되었습니다.</p>
+
+        <p class="empty-msg" th:if="${#lists.isEmpty(inquiries)}">
+            작성한 문의가 없습니다. <a th:href="@{/mypage/inquiries/new}">문의 작성하러 가기 →</a>
+        </p>
+
+        <div th:if="${!#lists.isEmpty(inquiries)}">
+            <a class="inquiry-card" th:each="q : ${inquiries}"
+               th:href="@{/mypage/inquiries/{id}(id=${q.inquiryId})}" style="display:flex;color:inherit;">
+                <div class="info">
+                    <h3 th:text="${q.title}"></h3>
+                    <p th:text="${#temporals.format(q.createdAt, 'yyyy.MM.dd HH:mm')}"></p>
+                </div>
+                <span class="status-badge" th:classappend="'status-' + ${q.status}" th:text="${q.status}"></span>
+            </a>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+
+</body>
+</html>

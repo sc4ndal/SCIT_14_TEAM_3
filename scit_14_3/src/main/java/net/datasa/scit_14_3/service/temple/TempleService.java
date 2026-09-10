@@ -10,6 +10,7 @@ import net.datasa.scit_14_3.domain.entity.temple.TempleEntity;
 import net.datasa.scit_14_3.domain.entity.templestay.TempleStayProgramEntity;
 import net.datasa.scit_14_3.repository.temple.TempleRegistrationRequestRepository;
 import net.datasa.scit_14_3.repository.temple.TempleRepository;
+import net.datasa.scit_14_3.service.integration.CloudinaryService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class TempleService {
 	private final TempleRepository tr;
 	private final TempleRegistrationRequestRepository requestRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final CloudinaryService cloudinaryService;
 
 	public boolean isLoginIdAvailable(String loginId) {
 		return !tr.existsByLoginId(loginId);
@@ -172,17 +174,26 @@ public class TempleService {
 	@Transactional
 	public void updateOwnInfo(Long templeId, String imageUrl, boolean supportEnglish, String refundPolicy, String specialNotice) {
 		TempleEntity entity = tr.findById(templeId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
+
+		// 새 이미지로 교체된 경우에만 기존 Cloudinary 파일을 지움 - 같은 URL 그대로면(이미지 변경 안 함) 안 지움
+		String oldImageUrl = entity.getImageUrl();
+		if (oldImageUrl != null && !oldImageUrl.equals(imageUrl) && cloudinaryService.isManagedUrl(oldImageUrl)) {
+			cloudinaryService.delete(oldImageUrl);
+		}
+
 		entity.setImageUrl(imageUrl);
 		entity.setSupportEnglish(supportEnglish);
 		entity.setRefundPolicy(refundPolicy);
 		entity.setSpecialNotice(specialNotice);
 	}
 
-	/** 사찰 계정 본인이 등록된 대표 이미지를 삭제. Cloudinary에 올라간 실제 파일은 안 지움(새
-	    이미지로 교체할 때도 기존 파일 정리 안 하는 기존 방식과 동일 - DB 참조만 비움). */
+	/** 사찰 계정 본인이 등록된 대표 이미지를 삭제. Cloudinary에 올라간 실제 파일도 같이 지움. */
 	@Transactional
 	public void removeImage(Long templeId) {
 		TempleEntity entity = tr.findById(templeId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
+		if (cloudinaryService.isManagedUrl(entity.getImageUrl())) {
+			cloudinaryService.delete(entity.getImageUrl());
+		}
 		entity.setImageUrl(null);
 	}
 
@@ -192,6 +203,8 @@ public class TempleService {
 	    그건 그대로 실패시킴(무작정 같이 지우면 위험한 데이터라 관리자가 먼저 정리해야 함).*/
 	@Transactional
 	public void delete(Long templeId) {
+		TempleEntity entity = tr.findById(templeId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
+
 		List<net.datasa.scit_14_3.domain.entity.templeRequest.TempleRegistrationRequestEntity> linkedRequests =
 				requestRepository.findByApprovedTempleId(templeId);
 		linkedRequests.forEach(r -> r.setApprovedTempleId(null));
@@ -200,6 +213,10 @@ public class TempleService {
 			tr.deleteById(templeId);
 		} catch (DataIntegrityViolationException e) {
 			throw new IllegalStateException("이 사찰에 연결된 프로그램/예약 등의 데이터가 있어 삭제할 수 없습니다.");
+		}
+
+		if (cloudinaryService.isManagedUrl(entity.getImageUrl())) {
+			cloudinaryService.delete(entity.getImageUrl());
 		}
 	}
 

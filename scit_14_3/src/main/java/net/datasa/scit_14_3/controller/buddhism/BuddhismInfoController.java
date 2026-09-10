@@ -2,7 +2,6 @@ package net.datasa.scit_14_3.controller.buddhism;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.datasa.scit_14_3.domain.BuddhismIntroContent;
 import net.datasa.scit_14_3.service.buddhism.BuddhismInfoService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -25,14 +24,11 @@ public class BuddhismInfoController {
 
 	private final BuddhismInfoService buddhismInfoService;
 
+	// 다른 두 페이지(용어/예절가이드)와 같은 이유로 값 변경 없는 정적 콘텐츠라 사전형식
+	// 번역(js/buddhism/intro.i18n.js)을 씀 - BuddhismIntroContent는 그대로 두고(나중에 다시
+	// Model로 내려주는 방식으로 되돌릴 수도 있어서) 여기서 Model에 안 담기만 함.
 	@GetMapping({"/intro", "/intro/"})
-	public String intro(Model model) {
-		model.addAttribute("steps", BuddhismIntroContent.STEPS);
-		model.addAttribute("finalStep", BuddhismIntroContent.FINAL_STEP);
-		model.addAttribute("canDo", BuddhismIntroContent.CAN_DO);
-		model.addAttribute("needNot", BuddhismIntroContent.NEED_NOT);
-		model.addAttribute("faqs", BuddhismIntroContent.FAQS);
-		model.addAttribute("nextCards", BuddhismIntroContent.NEXT_CARDS);
+	public String intro() {
 		return "buddhism/intro";
 	}
 

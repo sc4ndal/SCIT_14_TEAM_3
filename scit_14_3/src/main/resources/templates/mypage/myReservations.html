@@ -214,6 +214,23 @@
         .detail-row span:first-child { color: var(--text-secondary); }
         .detail-row span:last-child { color: var(--text-primary); font-weight: 500; }
 
+        /* 설명처럼 값이 길어질 수 있는 행은 라벨:값 한 줄 배치(space-between)로는 이상하게 잘려서
+           보이므로, 라벨을 위에 두고 값은 아래에 줄바꿈되게 세로로 쌓음 */
+        .detail-row.detail-row-wrap {
+          display: block;
+        }
+        .detail-row.detail-row-wrap span:first-child {
+          display: block;
+          margin-bottom: 6px;
+        }
+        .detail-row.detail-row-wrap span:last-child {
+          display: block;
+          white-space: normal;
+          word-break: break-word;
+          line-height: 1.6;
+          font-weight: 400;
+        }
+
         .cancel-area { padding: 20px 24px 28px; }
         .review-btn-row {
           display: none;
@@ -316,7 +333,7 @@
                     <h4>프로그램 정보</h4>
                     <div class="detail-row"><span>일정</span><span id="detail-duration"></span></div>
                     <div class="detail-row"><span>1인 가격</span><span id="detail-price"></span></div>
-                    <div class="detail-row"><span>설명</span><span id="detail-description"></span></div>
+                    <div class="detail-row detail-row-wrap"><span>설명</span><span id="detail-description"></span></div>
                 </div>
 
                 <div class="detail-section">

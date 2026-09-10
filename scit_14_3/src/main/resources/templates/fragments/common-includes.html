@@ -8,24 +8,23 @@
 <div class="site-header" id="siteHeader" th:fragment="commonIncludes">
     <div class="header-inner">
 
-        <a class="brand" href="/">
+        <div class="header-left">
 
-<!--            <span class="brand-circle">-->
-<!--                禪-->
-<!--            </span>-->
+            <a class="brand" href="/">
+                <img th:src="@{/images/buulgyeong-logo.png}" alt="홈">
+            </a>
 
-<!--            <span class="brand-name">-->
-<!--                佛선자-->
-<!--            </span>-->
-	        <img th:src="@{/images/buulgyeong-logo.png}" alt="홈">
+            <nav class="main-nav">
+                <a th:href="@{/reservation}">템플스테이예약</a>
+                <span>|</span>
+                <a th:href="@{/findtemple}">사찰찾기</a>
+            </nav>
 
-        </a>
-
+        </div>
 
         <div class="header-right">
 
             <div class="language-area">
-
 
                 <button class="language-button active"
                         data-lang="ko"
@@ -93,9 +92,9 @@
                                     닉네임명
                                 </span>
                             </a>
-                            <!-- 사찰 등록 요청 대기 알림 - 드롭다운 열지 않아도 바로 보이도록 닉네임 우측상단에 표시 -->
+                            <!-- 사찰 등록 요청/문의 대기 알림 - 드롭다운 열지 않아도 바로 보이도록 닉네임 우측상단에 표시 -->
                             <span class="notice-dot nickname-dot" sec:authorize="hasRole('ADMIN')"
-                                  th:if="${pendingTempleRequestCount > 0}"></span>
+                                  th:if="${pendingTempleRequestCount > 0 or pendingInquiryCount > 0}"></span>
 
                             <!-- 일반회원: 기존 8개 그대로 -->
                             <div class="mypage-dropdown" sec:authorize="hasRole('USER')">
@@ -127,6 +126,9 @@
                             <a th:href="@{/mypage/favorites/reviews}">
                                 좋아요한 리뷰
                             </a>
+                            <a th:href="@{/mypage/inquiries}">
+                                1:1 문의
+                            </a>
 
                             </div>
 
@@ -155,6 +157,10 @@
                                 <a th:href="@{/admin/temple-requests}" class="notice-link">
                                     <span>사찰 등록 요청 목록</span>
                                     <span class="notice-dot" th:if="${pendingTempleRequestCount > 0}"></span>
+                                </a>
+                                <a th:href="@{/admin/inquiries}" class="notice-link">
+                                    <span>문의 목록</span>
+                                    <span class="notice-dot" th:if="${pendingInquiryCount > 0}"></span>
                                 </a>
 
                             </div>

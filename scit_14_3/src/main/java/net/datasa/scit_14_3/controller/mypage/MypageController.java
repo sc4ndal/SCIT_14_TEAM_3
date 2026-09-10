@@ -39,6 +39,8 @@ public class MypageController {
 	private final UserService userService;
 	private final EmailVerificationService emailVerificationService;
 	private final FavoriteTempleService favoriteTempleService;
+	private final DailyQuoteService dailyQuoteService;
+	private final TempleFoodService templeFoodService;
 
 	@PreAuthorize("hasRole('USER')")
 	@GetMapping("/mypage")
@@ -78,12 +80,14 @@ public class MypageController {
 	}
 	
 	@GetMapping("/mypage/favorites/quotes")
-	public String favoriteQuotes() {
+	public String favoriteQuotes(@AuthenticationPrincipal AppUserDetails principal, Model model) {
+		model.addAttribute("quotes", dailyQuoteService.getFavorites(principal.getUsername()));
 		return "mypage/favorites/quotes";
 	}
-	
+
 	@GetMapping("/mypage/favorites/foods")
-	public String favoriteFoods() {
+	public String favoriteFoods(@AuthenticationPrincipal AppUserDetails principal, Model model) {
+		model.addAttribute("foods", templeFoodService.getFavorites(principal.getUsername()));
 		return "mypage/favorites/foods";
 	}
 	

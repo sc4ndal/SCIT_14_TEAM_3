@@ -109,40 +109,54 @@ function createTempleMarker(map, temple) {
     });
 
     // 7. 정보창 열릴 때, 이미 즐겨찾기 되어있는지 서버에 물어봐서 별표 색 맞춰놓기
-    fetch('/api/favoritetemples/' + temple.templeId)
-    .then(function (response){
-        if (!response.ok) {
-            throw new Error('즐겨찾기 상태 확인 실패');
-        }
-        return response.json();
-    })
-    .then(function (data) {
-        if (data.favorite) {
-            favoriteBtn.classList.add('active');
-            favoriteBtn.style.color = '#f4c25c';
-            // favoriteTempleIds 배열에 이 사찰 ID가 아직 없으면 추가
+    // 호출부가 temple.favorited를 이미 넘겨준 경우(templeList.js처럼 /api/temples가 한 번에
+    // 다 채워서 내려준 경우)는 위 3번/6번에서 이미 별색을 맞춰놨으니 같은 정보를 또
+    // 물어보지 않고 favoriteTempleIds만 맞춰준다. 안 넘겨준 경우(templeDetail.js,
+    // reservation.js, templestayView.js - 단일 마커라 미리 조회 안 함)만 여기서 조회.
+    if (temple.favorited !== undefined) {
+        if (temple.favorited) {
             if (window.favoriteTempleIds.indexOf(temple.templeId) === -1) {
                 window.favoriteTempleIds.push(temple.templeId);
             }
-        } else {
-            favoriteBtn.classList.remove('active');
-            favoriteBtn.style.color = '#ccc';
-
-            // favoriteTempleIds 배열에서 이 사찰 ID의 위치를 찾음
-            var idx = window.favoriteTempleIds.indexOf(temple.templeId);
-            if (idx !== -1) {
-                // 배열 안에 있으면(-1이 아니면) 그 위치에서 1개를 삭제
-                window.favoriteTempleIds.splice(idx, 1)
+        }
+    } else if (document.getElementById('auth-info')) {
+        // 로그인 상태일 때만 조회 - 이 API는 인증이 필요해서(@PreAuthorize), 비로그인
+        // 방문자가 마커를 열 때마다 호출하면 401만 쌓이고 별색도 어차피 항상 회색이라 의미 없음.
+        fetch('/api/favoritetemples/' + temple.templeId)
+        .then(function (response){
+            if (!response.ok) {
+                throw new Error('즐겨찾기 상태 확인 실패');
             }
-        }
-        // refreshFavoriteFilter 함수가 실제로 존재하는지 확인 (안전장치)
-        if (typeof window.refreshFavoriteFilter === 'function') {
-            window.refreshFavoriteFilter();
-        }
-    })
-    .catch(function (error) {
-        console.error(error);
-    });
+            return response.json();
+        })
+        .then(function (data) {
+            if (data.favorite) {
+                favoriteBtn.classList.add('active');
+                favoriteBtn.style.color = '#f4c25c';
+                // favoriteTempleIds 배열에 이 사찰 ID가 아직 없으면 추가
+                if (window.favoriteTempleIds.indexOf(temple.templeId) === -1) {
+                    window.favoriteTempleIds.push(temple.templeId);
+                }
+            } else {
+                favoriteBtn.classList.remove('active');
+                favoriteBtn.style.color = '#ccc';
+
+                // favoriteTempleIds 배열에서 이 사찰 ID의 위치를 찾음
+                var idx = window.favoriteTempleIds.indexOf(temple.templeId);
+                if (idx !== -1) {
+                    // 배열 안에 있으면(-1이 아니면) 그 위치에서 1개를 삭제
+                    window.favoriteTempleIds.splice(idx, 1)
+                }
+            }
+            // refreshFavoriteFilter 함수가 실제로 존재하는지 확인 (안전장치)
+            if (typeof window.refreshFavoriteFilter === 'function') {
+                window.refreshFavoriteFilter();
+            }
+        })
+        .catch(function (error) {
+            console.error(error);
+        });
+    }
 
     // 8. 별표 클릭하면 서버에 토글 요청 보내서 실제로 저장/삭제
     favoriteBtn.addEventListener('click', function(){
