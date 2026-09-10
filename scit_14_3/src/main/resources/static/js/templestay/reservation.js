@@ -788,6 +788,7 @@ function bindFilterChangeEvents() {
 
 // 서버에서 사찰 목록 + 프로그램 목록을 받아와서 하나로 합쳐줌
 async function loadPrograms() {
+  showLoading('프로그램 목록을 불러오는 중...');
   try {
     const [templesRes, programsRes] = await Promise.all([
       fetch(API.temples),
@@ -811,6 +812,8 @@ async function loadPrograms() {
     console.error('프로그램 목록을 불러오는 데 실패했습니다.', err);
     alert('프로그램 목록을 불러오지 못했습니다. 목데이터로 대신 보여줄게요.');
     // 실패하면 state.programs는 원래 MOCK_PROGRAMS 그대로 유지됨
+  } finally {
+    hideLoading();
   }
 }
 
@@ -870,4 +873,7 @@ async function resumeAfterKakaoPay() {
   }
 }
 
-init();
+// common.js(showLoading/hideLoading 등)가 defer로 로드되는데, 이 파일은 defer 없이 body
+// 맨 아래서 바로 실행돼서 파싱 순서상 이 스크립트가 먼저 돌아버릴 수 있다 - DOMContentLoaded는
+// 모든 defer 스크립트 실행이 끝난 뒤에 발생이 보장되므로 그 안에서 init()을 불러야 안전하다.
+document.addEventListener('DOMContentLoaded', init);

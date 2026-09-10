@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 	"불교 용어" 페이지의 8개 소분류는 TermCategory에서 제목 기준으로 매핑한다.
  */
 @Entity
-@Table(name = "buddhism_info")
+@Table(name = "BUDDHISM_INFO")
 @Getter
 @Setter
 @NoArgsConstructor

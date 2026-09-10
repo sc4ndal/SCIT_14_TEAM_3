@@ -18,7 +18,7 @@ import lombok.Setter;
 	하나를 고정 선택하는 방식으로 흉내낸다(DB에는 그냥 전체 목록만 있음).
  */
 @Entity
-@Table(name = "daily_quote")
+@Table(name = "DAILY_QUOTE")
 @Getter
 @Setter
 @NoArgsConstructor

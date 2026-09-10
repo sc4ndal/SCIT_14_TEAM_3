@@ -1,38 +1,30 @@
 /* ============================================================
    quote.js — /info/quote 전용
-   "다른 한마디 보기" 버튼을 누르면 GET /info/quote/random으로 무작위 한마디를
-   받아와서 카드 내용과 즐겨찾기 버튼을 새 한마디 기준으로 다시 그린다.
+   "다른 한마디 보기" 버튼을 누르면 페이지 로드 시 이미 받아둔 ALL_QUOTES(quote.html의
+   인라인 스크립트, 전체 한마디 목록) 안에서 랜덤으로 골라 화면만 바꾼다 - 서버 왕복 없음.
    즐겨찾기 토글 자체는 favoriteButton.js가 공용으로 처리한다.
    ============================================================ */
 
-document.getElementById('quote-refresh-btn')?.addEventListener('click', function (btnEvent) {
-	var btn = btnEvent.currentTarget;
-	btn.disabled = true;
+document.getElementById('quote-refresh-btn')?.addEventListener('click', function () {
+	if (!Array.isArray(ALL_QUOTES) || ALL_QUOTES.length === 0) return;
 
-	fetch('/info/quote/random')
-		.then(function (res) {
-			if (!res.ok) throw new Error('한마디를 불러오지 못했습니다.');
-			return res.json();
-		})
-		.then(function (quote) {
-			document.getElementById('quote-content').textContent = quote.content;
+	var currentId = Number(document.getElementById('quote-favorite-btn').dataset.favoriteUrl.split('/')[3]);
+	var candidates = ALL_QUOTES.length > 1
+		? ALL_QUOTES.filter(function (q) { return q.quoteId !== currentId; })
+		: ALL_QUOTES;
+	var quote = candidates[Math.floor(Math.random() * candidates.length)];
 
-			var sourceEl = document.getElementById('quote-source');
-			if (quote.source) {
-				sourceEl.textContent = quote.source;
-				sourceEl.hidden = false;
-			} else {
-				sourceEl.hidden = true;
-			}
+	document.getElementById('quote-content').textContent = quote.content;
 
-			var favoriteBtn = document.getElementById('quote-favorite-btn');
-			favoriteBtn.dataset.favoriteUrl = '/info/quote/' + quote.quoteId + '/favorite';
-			applyFavoriteState(favoriteBtn, quote.favorited);
-		})
-		.catch(function (err) {
-			alert(err.message || '한마디를 불러오지 못했습니다.');
-		})
-		.finally(function () {
-			btn.disabled = false;
-		});
+	var sourceEl = document.getElementById('quote-source');
+	if (quote.source) {
+		sourceEl.textContent = quote.source;
+		sourceEl.hidden = false;
+	} else {
+		sourceEl.hidden = true;
+	}
+
+	var favoriteBtn = document.getElementById('quote-favorite-btn');
+	favoriteBtn.dataset.favoriteUrl = '/info/quote/' + quote.quoteId + '/favorite';
+	applyFavoriteState(favoriteBtn, quote.favorited);
 });

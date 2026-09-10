@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 	(login_id, quote_id) 조합에 DB UNIQUE 제약이 걸려 있어 중복 저장이 안 된다.
  */
 @Entity
-@Table(name = "favorite_quote")
+@Table(name = "FAVORITE_QUOTE")
 @Getter
 @Setter
 @NoArgsConstructor

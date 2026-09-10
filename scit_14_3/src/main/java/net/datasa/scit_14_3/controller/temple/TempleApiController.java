@@ -24,12 +24,14 @@ public class TempleApiController {
 
 	@GetMapping("/api/temples")
 	public List<TempleDTO> getTemple(@AuthenticationPrincipal AppUserDetails principal) {
-		List<TempleDTO> temples = ts.getAll();
-		// 지도 즐겨찾기 필터/별표 표시용 - 비로그인이면 favoritedIds가 빈 Set이라 전부 false로 남음
+		// ts.getAll()은 캐싱된 목록(TempleService 참고)이라 그 안의 DTO를 직접 고치면(setFavorited)
+		// 캐시 자체가 오염돼서 다음 사람이 조회할 때도 방금 로그인한 사람의 즐겨찾기 상태가 그대로
+		// 남아있게 된다 - toBuilder()로 각 요청마다 새 사본을 만들어서 그 사본에만 값을 채운다.
 		String loginId = principal == null ? null : principal.getUsername();
 		Set<Long> favoritedIds = favoriteTempleService.favoritedIds(loginId);
-		temples.forEach(t -> t.setFavorited(favoritedIds.contains(t.getTempleId())));
-		return temples;
+		return ts.getAll().stream()
+				.map(t -> t.toBuilder().favorited(favoritedIds.contains(t.getTempleId())).build())
+				.toList();
 	}
 	
 	@GetMapping("/api/templestayprograms/{programId}")
