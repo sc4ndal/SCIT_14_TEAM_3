@@ -5,16 +5,24 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.templestay.TempleStayReviewDTO;
+import net.datasa.scit_14_3.domain.dto.templestay.TempleStayReviewListDTO;
+import net.datasa.scit_14_3.domain.entity.templestay.TempleStayProgramEntity;
 import net.datasa.scit_14_3.domain.entity.templestay.TempleStayReservationEntity;
 import net.datasa.scit_14_3.domain.entity.templestay.TempleStayReviewEntity;
+import net.datasa.scit_14_3.domain.entity.user.UserEntity;
+import net.datasa.scit_14_3.repository.templestay.TempleStayProgramRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayReservationRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayReviewRepository;
+import net.datasa.scit_14_3.repository.user.UserRepository;
 import net.datasa.scit_14_3.service.integration.CloudinaryService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -23,6 +31,8 @@ import java.util.List;
 public class TempleStayReviewService {
 	private final TempleStayReviewRepository tsrvr;
 	private final TempleStayReservationRepository tsrr;
+	private final TempleStayProgramRepository tspr;
+	private final UserRepository userRepository;
 	private final CloudinaryService cloudinaryService;
 
 	// Cloudinary 무료 플랜(장당 10MB) + 요청 크기 제한 안에서 감당 가능한 최대 첨부 장수
@@ -80,6 +90,61 @@ public class TempleStayReviewService {
 		List<TempleStayReviewDTO> result = new ArrayList<>();
 		for (TempleStayReviewEntity entity : tsrvr.findByLoginIdOrderByCreatedAtDesc(loginId)) {
 			result.add(toDto(entity));
+		}
+		return result;
+	}
+
+	/**
+	 * 전체 후기 모아보기 (/reservation/reviews) - 최신순.
+	 * 리뷰엔 사찰/프로그램/작성자 이름이 없어서 예약→프로그램→사찰, login_id→닉네임을 여기서 조인해
+	 * 한 번에 내려준다. 검색/정렬/페이징은 양이 많지 않아 프론트(reviews.js)에서 처리한다.
+	 */
+	public List<TempleStayReviewListDTO> findAllReviews() {
+		List<TempleStayReviewEntity> reviews = tsrvr.findAllByOrderByCreatedAtDesc();
+		if (reviews.isEmpty()) {
+			return Collections.emptyList();
+		}
+
+		// 예약 id -> 예약 (프로그램 id를 얻기 위함)
+		List<Long> reservationIds = reviews.stream()
+				.map(TempleStayReviewEntity::getReservationId).distinct().toList();
+		Map<Long, TempleStayReservationEntity> reservationMap = tsrr.findAllById(reservationIds).stream()
+				.collect(Collectors.toMap(TempleStayReservationEntity::getReservationId, Function.identity()));
+
+		// 프로그램 id -> 프로그램 (사찰명/프로그램명)
+		List<Long> programIds = reservationMap.values().stream()
+				.map(TempleStayReservationEntity::getProgramId).distinct().toList();
+		Map<Long, TempleStayProgramEntity> programMap = tspr.findAllById(programIds).stream()
+				.collect(Collectors.toMap(TempleStayProgramEntity::getProgramId, Function.identity()));
+
+		// login_id -> 닉네임(법명)
+		List<String> loginIds = reviews.stream()
+				.map(TempleStayReviewEntity::getLoginId).distinct().toList();
+		Map<String, String> nicknameMap = userRepository.findAllById(loginIds).stream()
+				.collect(Collectors.toMap(UserEntity::getLoginId, UserEntity::getNickname));
+
+		List<TempleStayReviewListDTO> result = new ArrayList<>(reviews.size());
+		for (TempleStayReviewEntity review : reviews) {
+			TempleStayReservationEntity reservation = reservationMap.get(review.getReservationId());
+			TempleStayProgramEntity program = reservation != null ? programMap.get(reservation.getProgramId()) : null;
+
+			result.add(TempleStayReviewListDTO.builder()
+					.reviewId(review.getReviewId())
+					.reservationId(review.getReservationId())
+					.loginId(review.getLoginId())
+					.templeId(program != null && program.getTemple() != null ? program.getTemple().getTempleId() : null)
+					.templeName(program != null && program.getTemple() != null ? program.getTemple().getName() : null)
+					.programId(program != null ? program.getProgramId() : null)
+					.programName(program != null ? program.getTitle() : null)
+					.rating((int) review.getRating())
+					.authorName(nicknameMap.get(review.getLoginId()))
+					.content(review.getContent())
+					.imageUrls(review.getImageUrls())
+					.likeCount(review.getLikeCount())
+					.viewCount(review.getViewCount())
+					.createdAt(review.getCreatedAt())
+					.updatedAt(review.getUpdatedAt())
+					.build());
 		}
 		return result;
 	}

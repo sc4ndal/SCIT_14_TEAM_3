@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>템플스테이 후기 · 사찰 커뮤니티</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+    <link rel="stylesheet" href="/css/common.css">
+    <style>
+        :root {
+          --bg: #efe9dd;
+          --bg-raised: #f7f3ea;
+          --ink: #2a2620;
+          --ink-soft: #5b5346;
+          --ink-faint: #8b8272;
+          --line: #d9d0bd;
+          --line-soft: #e4dccb;
+          --pine: #3d5646;
+          --pine-deep: #2b3e33;
+          --pine-tint: #e2e8e0;
+          --gold: #a9822f;
+          --gold-tint: #f1e6c8;
+          --shadow: 0 1px 2px rgba(42,38,32,0.06), 0 8px 24px -12px rgba(42,38,32,0.18);
+        }
+        @media (prefers-color-scheme: dark) {
+          :root:not([data-theme="light"]) {
+            --bg: #211d18; --bg-raised: #2a251e; --ink: #eee7d8; --ink-soft: #bcb199; --ink-faint: #8b8272;
+            --line: #3d372c; --line-soft: #332e25; --pine: #8fae9b; --pine-deep: #b7cbbe; --pine-tint: #29352e;
+            --gold: #d8b866; --gold-tint: #362d1c; --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+          }
+        }
+        :root[data-theme="dark"] {
+          --bg: #211d18; --bg-raised: #2a251e; --ink: #eee7d8; --ink-soft: #bcb199; --ink-faint: #8b8272;
+          --line: #3d372c; --line-soft: #332e25; --pine: #8fae9b; --pine-deep: #b7cbbe; --pine-tint: #29352e;
+          --gold: #d8b866; --gold-tint: #362d1c; --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+        }
+        * { box-sizing: border-box; }
+        a { color: inherit; text-decoration: none; }
+        body {
+          margin: 0; background: var(--bg); color: var(--ink);
+          font-family: "Noto Sans KR", "Malgun Gothic", sans-serif; line-height: 1.65; font-size: 15.5px;
+        }
+        h1, h2, h3 {
+          font-family: "Noto Serif KR", "Batang", serif; color: var(--ink); text-wrap: balance; font-weight: 700; margin: 0;
+        }
+        button { font-family: inherit; }
+
+        header {
+          padding: 48px 24px 0; text-align: center; border-bottom: 1px solid var(--line);
+          background: radial-gradient(60% 60% at 50% 0%, var(--pine-tint), transparent 70%);
+        }
+        header h1 { font-size: clamp(26px, 4vw, 34px); }
+        header h1::before {
+          content: "TEMPLESTAY REVIEWS"; display: block; font-family: "IBM Plex Mono", monospace;
+          font-size: 12px; letter-spacing: 0.16em; color: var(--pine); font-weight: 600; margin-bottom: 16px;
+        }
+
+        main { max-width: 880px; margin: 0 auto; padding: 40px 24px 96px; }
+
+        .back-link {
+          display: inline-flex; align-items: center; gap: 6px;
+          background: none; border: 1px solid var(--line); color: var(--ink-soft);
+          font-weight: 600; font-size: 14px; padding: 11px 22px; border-radius: 100px; margin-bottom: 20px;
+        }
+        .back-link:hover { border-color: var(--pine); color: var(--pine-deep); }
+
+        /* 검색 / 정렬 툴바 - 목록 아래, 페이징 바로 위에 둔다.
+           정렬: 작성순(최신순 / 오래된순) · 별점순(높은순 / 낮은순) */
+        .review-toolbar {
+          display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+          margin-top: 18px;
+        }
+        .review-toolbar select,
+        .review-toolbar input {
+          font-family: inherit; font-size: 14px; color: var(--ink);
+          background: var(--bg-raised); border: 1px solid var(--line); border-radius: 100px;
+          padding: 11px 18px;
+        }
+        .review-toolbar .search-input { flex: 1; min-width: 180px; }
+        .review-toolbar select { cursor: pointer; }
+        .review-toolbar .search-btn {
+          background: var(--pine); color: var(--bg-raised); font-weight: 700; font-size: 14px;
+          border: none; border-radius: 100px; padding: 11px 24px; cursor: pointer;
+        }
+        .review-toolbar .search-btn:hover { transform: translateY(-1px); }
+
+        /* 리뷰 목록 (아코디언) */
+        #review-list {
+          border: 1px solid var(--line); border-radius: 16px; background: var(--bg-raised);
+          box-shadow: var(--shadow); overflow: hidden;
+        }
+        .review-item + .review-item { border-top: 1px solid var(--line-soft); }
+
+        .review-summary {
+          width: 100%; display: flex; align-items: flex-start; gap: 14px;
+          background: none; border: none; text-align: left; cursor: pointer;
+          padding: 18px 22px; color: inherit;
+        }
+        .review-summary:hover { background: var(--bg); }
+        .review-summary .col-main { flex: 1; min-width: 0; }
+        .review-summary .review-title {
+          font-weight: 700; font-size: 15.5px; color: var(--ink);
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .review-summary .review-meta {
+          margin-top: 5px; font-size: 12.5px; color: var(--ink-faint);
+          display: flex; flex-wrap: wrap; gap: 4px 10px;
+        }
+        .review-summary .review-meta .temple { color: var(--pine); font-weight: 600; }
+        .review-summary .stars { color: var(--gold); letter-spacing: 1px; font-size: 12.5px; white-space: nowrap; }
+        .review-summary .chevron {
+          flex-shrink: 0; color: var(--ink-faint); font-size: 12px; margin-top: 4px;
+          transition: transform 0.15s ease;
+        }
+        .review-item.open .review-summary { background: var(--bg); }
+        .review-item.open .chevron { transform: rotate(180deg); }
+
+        .review-detail { display: none; padding: 4px 22px 24px; }
+        .review-item.open .review-detail { display: block; }
+        .review-detail .detail-fields {
+          display: grid; grid-template-columns: auto 1fr; gap: 6px 16px;
+          font-size: 13px; color: var(--ink-soft);
+          border: 1px solid var(--line-soft); border-radius: 12px; padding: 14px 16px; background: var(--bg-raised);
+          margin-bottom: 16px;
+        }
+        .review-detail .detail-fields dt { color: var(--ink-faint); font-weight: 600; }
+        .review-detail .detail-fields dd { margin: 0; }
+        /* 사찰명 -> 사찰 소개, 프로그램명 -> 프로그램 상세, 작성자 -> 해당 작성자 리뷰만 검색 */
+        .review-detail .detail-fields .field-link,
+        .review-detail .detail-fields .author-filter {
+          color: var(--pine); font: inherit; font-weight: 600;
+          background: none; border: none; padding: 0; cursor: pointer;
+        }
+        .review-detail .detail-fields .field-link:hover,
+        .review-detail .detail-fields .author-filter:hover {
+          color: var(--pine-deep); text-decoration: underline;
+        }
+        .review-detail .review-content {
+          font-size: 14.5px; color: var(--ink-soft); white-space: pre-wrap; word-break: break-word;
+        }
+        .review-detail .review-images {
+          display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px;
+        }
+        .review-detail .review-images img {
+          width: 120px; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line);
+          cursor: zoom-in;
+        }
+
+        /* 본인이 쓴 리뷰에만 노출되는 수정/삭제 버튼 */
+        .review-detail .review-actions {
+          margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;
+        }
+        .review-detail .edit-link,
+        .review-detail .delete-btn {
+          display: inline-flex; align-items: center; gap: 6px;
+          background: none; border: 1px solid var(--line); color: var(--ink-soft);
+          font-family: inherit; font-weight: 600; font-size: 13px;
+          padding: 8px 16px; border-radius: 100px; cursor: pointer;
+        }
+        .review-detail .edit-link:hover { border-color: var(--pine); color: var(--pine-deep); }
+        .review-detail .delete-btn:hover { border-color: #c25b45; color: #c25b45; }
+
+        /* 사진 크게 보기(라이트박스) - 여러 장이면 ‹ › 로 이동 */
+        .image-lightbox {
+          position: fixed; inset: 0; z-index: 1000;
+          display: none; align-items: center; justify-content: center; gap: 8px;
+          padding: clamp(16px, 4vw, 48px); background: rgba(12, 10, 8, 0.86);
+        }
+        .image-lightbox.open { display: flex; }
+        .image-lightbox .lb-img {
+          max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain;
+          border-radius: 8px; box-shadow: 0 12px 48px rgba(0,0,0,0.55);
+        }
+        .image-lightbox .lb-close {
+          position: absolute; top: 14px; right: 20px;
+          background: none; border: none; color: #fff; font-size: 30px; line-height: 1;
+          cursor: pointer; opacity: 0.8;
+        }
+        .image-lightbox .lb-close:hover { opacity: 1; }
+        .image-lightbox .lb-nav {
+          flex-shrink: 0; width: 44px; height: 44px; border-radius: 100px;
+          background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25);
+          color: #fff; font-size: 22px; line-height: 1; cursor: pointer;
+        }
+        .image-lightbox .lb-nav:hover:not(:disabled) { background: rgba(255,255,255,0.22); }
+        .image-lightbox .lb-nav:disabled { opacity: 0.3; cursor: default; }
+        .image-lightbox .lb-counter {
+          position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+          color: #fff; font-size: 13px; letter-spacing: 0.04em; opacity: 0.85;
+        }
+
+        .review-empty { padding: 56px 24px; text-align: center; color: var(--ink-faint); font-size: 14px; }
+
+        /* 페이징 - 10개 단위 */
+        #review-pagination {
+          display: flex; justify-content: center; flex-wrap: wrap; gap: 6px;
+          margin-top: 24px;
+        }
+        #review-pagination button {
+          min-width: 36px; padding: 8px 12px; font-size: 13px;
+          background: var(--bg-raised); color: var(--ink-soft);
+          border: 1px solid var(--line); border-radius: 8px; cursor: pointer;
+        }
+        #review-pagination button:hover:not(:disabled) { border-color: var(--pine); color: var(--pine-deep); }
+        #review-pagination button.active {
+          background: var(--pine); color: var(--bg-raised); border-color: var(--pine); font-weight: 700;
+        }
+        #review-pagination button:disabled { opacity: 0.4; cursor: default; }
+    </style>
+</head>
+<body>
+
+<div id="auth-info" style="display:none;"
+     sec:authorize="isAuthenticated()"
+     th:attr="data-login-id=${#authentication.principal.username}">
+</div>
+
+<header>
+    <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+    <h1>템플스테이 후기</h1>
+</header>
+
+<main>
+    <a class="back-link" th:href="@{/reservation}">&larr; 템플스테이 예약</a>
+
+    <div id="review-list">
+        <div class="review-empty">후기를 불러오는 중입니다&hellip;</div>
+    </div>
+
+    <div class="review-toolbar">
+        <select id="review-sort" aria-label="정렬">
+            <option value="latest">최신순</option>
+            <option value="oldest">오래된순</option>
+            <option value="rating-desc">별점 높은순</option>
+            <option value="rating-asc">별점 낮은순</option>
+        </select>
+        <input type="text" id="review-search" class="search-input" placeholder="사찰명 · 프로그램명 · 작성자 · 내용 검색">
+        <button type="button" id="review-search-btn" class="search-btn">검색</button>
+    </div>
+
+    <div id="review-pagination"></div>
+</main>
+
+<script defer src="/js/templestay/reviews.js"></script>
+</body>
+</html>
