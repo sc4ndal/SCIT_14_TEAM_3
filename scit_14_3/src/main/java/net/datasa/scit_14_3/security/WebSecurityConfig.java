@@ -60,6 +60,8 @@ public class WebSecurityConfig {
 			"/api/favoritetemples/**",
 			"/templestayprograms/**",
 			"/api/templestayprograms/**",
+			"/templeevents/**",     // 홈 화면 "월간 불교 행사" 캘린더 조회용 - 비로그인도 열어둠
+			"/events",              // 찾아보기 > 불교 행사 목록 페이지
 			"/maptemplestayviews/**",
 			"/findtemple",
 			"/templestayGuide",
