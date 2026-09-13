@@ -93,8 +93,7 @@ public class TempleStayProgramService {
 	// 텍스트 전송이 겹쳐서 체감이 큼 - 캐싱하되, reservedCount(예약된 인원)가 섞여 있어서
 	// 예약 생성/취소로도 값이 바뀐다. 그래서 프로그램 등록/수정/삭제뿐 아니라
 	// TempleStayReservationService의 예약 생성/취소 지점들에서도 같은 캐시("programs")를 비운다.
-	// TODO: 로딩바 테스트를 위해 잠깐 꺼둠 - 확인 끝나면 주석 풀어서 다시 캐싱 켤 것
-	// @Cacheable("programs")
+	@Cacheable("programs")
 	public List<TempleStayProgramDTO> getAll() {
 		return toDtoList(tspr.findAllWithTemple());
 	}
