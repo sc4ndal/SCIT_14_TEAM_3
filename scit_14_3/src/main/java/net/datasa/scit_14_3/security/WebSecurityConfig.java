@@ -61,6 +61,8 @@ public class WebSecurityConfig {
 			"/templestayprograms/**",
 			"/api/templestayprograms/**",
 			"/reviews/all",         // 전체 후기 모아보기 - 비로그인도 조회 가능 (작성/수정/삭제는 인증 필요)
+			"/templeevents/**",     // 홈 화면 "월간 불교 행사" 캘린더 조회용 - 비로그인도 열어둠
+			"/events",              // 찾아보기 > 불교 행사 목록 페이지
 			"/maptemplestayviews/**",
 			"/findtemple",
 			"/templestayGuide",

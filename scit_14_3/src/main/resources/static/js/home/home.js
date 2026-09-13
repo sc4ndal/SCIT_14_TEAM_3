@@ -436,21 +436,49 @@ document.addEventListener("DOMContentLoaded", async () => {
     let currentMonth = today.getMonth();
     let selectedDate = today.getDate();
 
-    // 실제 등록된 템플스테이 프로그램(모집기간)과 불교 4대 명절로 채워짐 - loadCalendarEvents() 참고.
-    // 아직 TEMPLE_EVENT(사찰 행사) 기능이 없어서, 그때까지는 이 두 소스로 대신 채움.
+    // 실제 등록된 사찰 행사(TEMPLE_EVENT) + 템플스테이 프로그램(모집기간)으로 채워짐 - loadCalendarEvents() 참고.
+    // 부처님오신날/출가절/성도절/열반절 등 4대 명절(음력 기반이라 매년 양력 날짜가 바뀜)도 이제
+    // TEMPLE_EVENT 시드 데이터로 관리한다(docs/sql/temple-event-seed.sql, 매년 값 갱신 필요) -
+    // 예전엔 여기 하드코딩된 BUDDHIST_HOLIDAYS로 부처님오신날만 표시했는데, DB로 옮기면서
+    // 링크(link_url)까지 같이 관리할 수 있게 됐다.
     const eventData = {};
 
-    // 음력 기반이라 매년 날짜가 바뀜 - 부처님오신날은 법정공휴일이라 확인된 날짜지만,
-    // 출가절/성도절/열반절은 정확한 변환을 못 구해서 일단 빼둠(잘못된 날짜 표시 방지).
-    // 나중에 한국천문연구원 음양력변환 API 연동하면 매년 자동 계산 가능.
-    const BUDDHIST_HOLIDAYS = {
-        "2026-05-24": [{ title: "부처님오신날", location: "전국 사찰 (법정공휴일)", time: "" }]
-    };
+    // 날짜 범위(start~end) 안의 모든 날짜에 같은 이벤트를 하루씩 등록하는 공용 함수.
+    function addEventRange(startStr, endStr, event) {
+        if (!startStr || !endStr) return;
 
-    // 사찰이 실제로 등록한 템플스테이 프로그램을 모집기간(openStartDate~openEndDate) 동안
-    // 매일 달력에 표시함 - 사찰 필터 없이 전체를 그대로 가져옴.
+        const cursor = new Date(startStr);
+        const end = new Date(endStr);
+
+        while (cursor <= end) {
+            const key = makeKey(cursor.getFullYear(), cursor.getMonth(), cursor.getDate());
+            if (!eventData[key]) eventData[key] = [];
+            eventData[key].push(event);
+            cursor.setDate(cursor.getDate() + 1);
+        }
+    }
+
+    // 사찰이 실제로 등록한 불교행사(TEMPLE_EVENT)와 템플스테이 프로그램 모집기간
+    // (openStartDate~openEndDate)을 각각 기간 내 매일 달력에 표시함 - 사찰 필터 없이 전체를 가져옴.
     async function loadCalendarEvents() {
-        Object.assign(eventData, BUDDHIST_HOLIDAYS);
+        try {
+            const res = await fetch("/templeevents");
+            if (!res.ok) throw new Error("불교행사 목록 조회 실패: " + res.status);
+            const events = await res.json();
+
+            events.forEach(e => {
+                addEventRange(e.startDate, e.endDate, {
+                    title: e.title,
+                    location: e.templeName || "",
+                    time: e.startDate === e.endDate ? "" : `행사기간 ${e.startDate} ~ ${e.endDate}`,
+                    description: e.description || "",
+                    eventId: e.eventId,
+                    linkUrl: e.linkUrl || ""
+                });
+            });
+        } catch (err) {
+            console.warn("불교행사를 달력에 불러오지 못했습니다.", err);
+        }
 
         try {
             const res = await fetch("/templestayprograms");
@@ -458,25 +486,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             const programs = await res.json();
 
             programs.forEach(p => {
-                if (!p.openStartDate || !p.openEndDate) return;
-
-                const cursor = new Date(p.openStartDate);
-                const end = new Date(p.openEndDate);
-
-                while (cursor <= end) {
-                    const key = makeKey(cursor.getFullYear(), cursor.getMonth(), cursor.getDate());
-                    if (!eventData[key]) eventData[key] = [];
-                    eventData[key].push({
-                        title: p.title,
-                        location: p.templeName || "",
-                        time: `모집기간 ${p.openStartDate} ~ ${p.openEndDate}`,
-                        description: p.description || "",
-                        price: p.price,
-                        duration: p.duration || "",
-                        programId: p.programId
-                    });
-                    cursor.setDate(cursor.getDate() + 1);
-                }
+                addEventRange(p.openStartDate, p.openEndDate, {
+                    title: p.title,
+                    location: p.templeName || "",
+                    time: `모집기간 ${p.openStartDate} ~ ${p.openEndDate}`,
+                    description: p.description || "",
+                    price: p.price,
+                    duration: p.duration || "",
+                    programId: p.programId
+                });
             });
         } catch (err) {
             console.warn("템플스테이 프로그램을 달력에 불러오지 못했습니다.", err);
@@ -907,15 +925,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (typeof event.price === "number") rows.push(`<p><strong>${t.modalPriceLabel}</strong> ${event.price.toLocaleString()}${currentLang === "ko" ? "원" : currentLang === "ja" ? "円" : " KRW"}</p>`);
         if (event.description) rows.push(`<p style="white-space:pre-line;">${escapeHtml(event.description)}</p>`);
 
+        // 우선순위: 템플스테이 프로그램(예약하러 가기) > 사찰행사 공식 링크(자세히 보기) > 그냥 닫기
+        const confirmLabel = event.programId ? t.modalGoReserve : (event.linkUrl ? t.modalGoLink : t.modalClose);
+        const hasAction = !!(event.programId || event.linkUrl);
+
         Swal.fire({
             title: event.title,
             html: rows.join(""),
-            confirmButtonText: event.programId ? t.modalGoReserve : t.modalClose,
-            showCancelButton: !!event.programId,
+            confirmButtonText: confirmLabel,
+            showCancelButton: hasAction,
             cancelButtonText: t.modalClose
         }).then((result) => {
-            if (event.programId && result.isConfirmed) {
+            if (!result.isConfirmed) return;
+            if (event.programId) {
                 location.href = "/reservation/programs/" + event.programId;
+            } else if (event.linkUrl) {
+                window.open(event.linkUrl, "_blank", "noopener,noreferrer");
             }
         });
     }
