@@ -57,6 +57,17 @@
            console.error(`예약 ${r.reservationId}의 결제 정보를 불러오지 못했습니다.`, err);
          }
 
+         // 이용완료 건만 리뷰 작성 여부를 확인해서 목록에 "작성완료"/"리뷰 미작성"으로 표시
+         let reviewed = false;
+         if (r.status === '이용완료') {
+           try {
+             const reviewRes = await fetch(`/reviews/reservation/${r.reservationId}`);
+             reviewed = reviewRes.ok;
+           } catch (err) {
+             console.error(`예약 ${r.reservationId}의 리뷰 작성 여부를 확인하지 못했습니다.`, err);
+           }
+         }
+
          RESERVATIONS.push({
            reservationId: r.reservationId,
            programId: r.programId,
@@ -67,6 +78,7 @@
            createdAt: r.createdAt,
            amount: payment ? payment.amount : null,
            paymentMethod: payment ? payment.paymentMethod : null,
+           reviewed: reviewed,
            program: {
              title: program ? program.title : '(정보 없음)',
              templeName: temple ? temple.name : '',
@@ -113,7 +125,7 @@
         <div class="meta">
           <p class="applied-at">신청 ${formatAppliedAt(r.createdAt)}</p>
           <div class="date">${r.startDate}${r.startDate !== r.endDate ? ' ~ ' + r.endDate : ''}</div>
-          <span class="status-badge status-${r.status}">${r.status}</span>
+          <span class="status-badge status-${r.status}">${r.status}</span>${r.status === '이용완료' ? `<span class="review-status-badge ${r.reviewed ? 'review-done' : 'review-pending'}">${r.reviewed ? '작성완료' : '리뷰 미작성'}</span>` : ''}
         </div>
       </article>
     `).join('');
