@@ -30,6 +30,12 @@ public class ReservationController {
 		return "templestay/reservation";
 	}
 
+	/** 전체 후기 모아보기 (아직 빈 페이지 - 목록 API/렌더링은 추후 구현) */
+	@GetMapping("/reservation/reviews")
+	public String reviews() {
+		return "templestay/reviews";
+	}
+
 	/** 프로그램 상세보기 - 예전엔 /reservation 안 모달이었는데, 뒤로가기 누르면 이전 페이지(가이드 등)로
 	    바로 나가버려서 진짜 페이지로 분리함(programDetail.js가 데이터는 알아서 fetch해서 채움). */
 	@GetMapping("/reservation/programs/{programId}")

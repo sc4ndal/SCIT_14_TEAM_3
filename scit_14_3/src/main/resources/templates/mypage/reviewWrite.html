@@ -121,6 +121,21 @@
           font-weight: 600;
           cursor: pointer;
         }
+        /* 삭제 버튼 - 수정 모드에서만 노출, 수정/취소와 같은 너비로 나란히 놓인다. */
+        .review-delete-btn {
+          flex: 1;
+          padding: 13px;
+          border-radius: 6px;
+          font-family: var(--sans);
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          background: var(--paper);
+          border: 1px solid var(--destructive);
+          color: var(--destructive);
+        }
+        .review-delete-btn:hover { background: rgba(192, 57, 43, .06); }
+        .review-delete-btn:disabled { opacity: .5; cursor: not-allowed; }
         .review-back-btn {
           background: var(--paper);
           border: 1px solid var(--line);
@@ -189,7 +204,9 @@
                 <div class="image-preview-list" id="image-preview-list"></div>
             </div>
 
+            <!-- 수정 모드에서 reviewWrite.js가 삭제 버튼을 노출하고 [수정][삭제][취소] 순으로 재배치한다 -->
             <div class="review-actions">
+                <button class="review-delete-btn" id="review-delete-btn" type="button" hidden>삭제</button>
                 <button class="review-back-btn" type="button" onclick="location.href='/mypage/myReservations'">취소</button>
                 <button class="review-submit-btn" id="review-submit-btn" type="button">리뷰 등록</button>
             </div>

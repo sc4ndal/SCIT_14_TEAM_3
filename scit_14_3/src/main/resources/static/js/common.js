@@ -10,14 +10,11 @@
         Translator API로 페이지 전체 텍스트를 그 자리에서 번역함 -
         대부분의 페이지는 아무것도 안 해도 자동으로 다국어가 됨.
 
-   ⚠️ 크롬 실험 기능이라 아래 플래그를 켜야 동작함(끄면 조용히
-   아무 일도 안 일어남 - 다른 기능엔 영향 없음):
-     chrome://flags/#translation-api
-     chrome://flags/#language-detection-api
-     chrome://flags/#optimization-guide-on-device-model
-   전부 Enabled로 바꾸고 크롬 재시작. 데스크톱 크롬 전용, 모바일/
-   타 브라우저 미지원. 최초 사용 시 번역 모델을 내려받느라 시간이
-   걸릴 수 있음(버튼에 반투명 로딩 표시로 안내함).
+   Chrome 138(2025-06)부터 정식(stable) 기능이라 플래그 없이 기본으로 동작함
+   (그 이전 버전이면 'Translator' in self가 false라 조용히 defaultOnLanguageChange가
+   끝남 - 다른 기능엔 영향 없음). 데스크톱 크롬/엣지 138+ 전용, 모바일/타 브라우저
+   미지원. 최초 사용 시 번역 모델을 내려받느라 시간이 걸릴 수 있음(버튼에 반투명
+   로딩 표시 + 전체화면 로딩 오버레이로 안내함).
 
    defaultOnLanguageChange 동작 원리:
    document.body 안의 모든 텍스트 노드를 TreeWalker로 순회해서
@@ -34,9 +31,12 @@
    ============================================================ */
 
 const I18N_SOURCE_LANG = 'ko';
-// 번역 중 로딩 오버레이에 "OO(으)로 번역하는 중..." 문구를 띄울 때 쓰는 언어명 -
-// 헤더 언어 버튼(commonIncludes)에 적힌 표기와 그대로 맞춤.
-const I18N_LANG_LABELS = { ko: '한국어', ja: '日本語', en: 'English' };
+// 번역 중 로딩 오버레이 문구 - 한국어 문장에 언어명만 끼워 넣으면 "日本語(으)로 번역하는 중..."처럼
+// 어색하게 섞여서, 대상 언어 자체로 완전히 번역된 문장을 각각 준비해둔다.
+const I18N_LOADING_MESSAGES = {
+    ja: '日本語に翻訳中...',
+    en: 'Translating to English...'
+};
 let i18nCurrentLang = 'ko';
 const i18nTranslationCache = {}; // i18nTranslationCache[lang][원문] = 번역문
 let i18nOriginalTextNodes = null; // [{node, text}] - 최초 1회만 스냅샷
@@ -270,7 +270,7 @@ async function defaultOnLanguageChange(lang, btn){
     }
 
     if(!('Translator' in self)){
-        console.warn('[common.js] 이 브라우저는 Translator API를 지원하지 않습니다. chrome://flags에서 translation-api / language-detection-api / optimization-guide-on-device-model 를 켜고 재시작해보세요(데스크톱 크롬 전용).');
+        console.warn('[common.js] 이 브라우저는 Translator API를 지원하지 않습니다. Chrome/Edge 138 이상 데스크톱 버전으로 업데이트해보세요(모바일/타 브라우저는 미지원).');
         return;
     }
 
@@ -279,7 +279,7 @@ async function defaultOnLanguageChange(lang, btn){
     // 끊으면 다운로드 중이던 것도 같이 날아가서 오히려 더 오래 걸리게 됨). 전체화면
     // 로딩 오버레이도 같이 띄워서 어떤 언어로 번역 중인지 보여준다.
     if(btn) btn.classList.add('i18n-loading');
-    showLoading((I18N_LANG_LABELS[lang] || lang) + '(으)로 번역하는 중...');
+    showLoading(I18N_LOADING_MESSAGES[lang] || '번역하는 중...');
 
     try {
         const uniqueTexts = Array.from(new Set([
@@ -344,12 +344,14 @@ document.querySelectorAll('.language-button').forEach(function(btn){
 });
 
 // 페이지 로드 시 저장해둔 언어가 있으면(한국어가 아니면) 자동으로 그 언어를 다시 적용.
-// home.js처럼 페이지가 자기만의 onLanguageChange(data-i18n 사전 방식)를 쓰느라
-// DOMContentLoaded 콜백 안에서 뒤늦게 정의하는 경우가 있어서, common.js(defer라 그보다
-// 먼저 실행됨)에서 바로 호출하면 아직 함수가 없어서 크롬 내장 번역 경로로 새버림 -
-// DOMContentLoaded 이후로 미뤄서 그런 페이지들의 onLanguageChange가 먼저 정의되게 함
-// (리스너 등록 순서상 그 페이지 스크립트가 먼저 등록되므로 먼저 실행됨).
-document.addEventListener('DOMContentLoaded', function applySavedLanguage(){
+// home.js처럼 페이지가 자기만의 onLanguageChange(data-i18n 사전 방식)를 DOMContentLoaded
+// 콜백 안에서 뒤늦게 정의하는 경우가 있다 - 이 코드가 그보다 먼저 실행되면 아직 함수가 없어서
+// 크롬 내장 번역 경로(defaultOnLanguageChange)로 새버린다. DOMContentLoaded 리스너 등록
+// 순서에 기대면 common.js가 defer인지, 스크립트 태그가 어디 있는지에 따라 뒤집힐 수 있어서
+// 불안정함(실제로 한 번 이걸로 깨진 적 있음) - 대신 window의 load 이벤트를 쓴다. load는
+// DOMContentLoaded의 모든 리스너가 실행을 마친 뒤에만 발생한다고 명세로 보장되므로,
+// 페이지별 onLanguageChange가 언제 어떻게 정의되든 항상 그 이후에 실행됨이 보장된다.
+window.addEventListener('load', function applySavedLanguage(){
     const saved = getCookie(I18N_LANG_COOKIE);
     if(!saved || saved === I18N_SOURCE_LANG) return;
 

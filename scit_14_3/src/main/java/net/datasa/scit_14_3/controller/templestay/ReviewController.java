@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.templestay.TempleStayReviewDTO;
+import net.datasa.scit_14_3.domain.dto.templestay.TempleStayReviewListDTO;
 import net.datasa.scit_14_3.security.AppUserDetails;
 import net.datasa.scit_14_3.service.templestay.TempleStayReviewService;
 import org.springframework.http.HttpStatus;
@@ -64,6 +65,13 @@ public class ReviewController {
 	@GetMapping
 	public List<TempleStayReviewDTO> getMyReviews(@RequestParam String loginId) {
 		return reviewService.findByMyReviews(loginId);
+	}
+
+	/** 전체 후기 모아보기 (/reservation/reviews) - 비로그인도 조회 가능. 최신순으로 전체를 내려주고
+	    검색/정렬/페이징은 프론트(reviews.js)에서 처리한다. */
+	@GetMapping("/all")
+	public List<TempleStayReviewListDTO> getAllReviews() {
+		return reviewService.findAllReviews();
 	}
 
 	/**
