@@ -60,15 +60,18 @@
 }
 
 #search-btn {
-    font-family: var(--sans);
-    font-size: 13px;
-    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 34px;
+    height: 34px;
+    padding: 0;
     color: #fff;
 
     background: var(--green);
     border: none;
-    border-radius: 6px;
-    padding: 7px 16px;
+    border-radius: 50%;
 
     cursor: pointer;
     transition: background .15s ease;
@@ -358,7 +361,12 @@
     <option value="address" data-i18n="searchTypeAddress">주소 검색</option>
 </select>
 <input type="text" id="search-keyword" data-i18n-placeholder="searchPlaceholder" placeholder="검색어를 입력하세요">
-<button type="button" id="search-btn" data-i18n="searchBtn">검색</button>
+        <button type="button" id="search-btn" aria-label="검색">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="10.5" cy="10.5" r="7"/>
+                <line x1="16" y1="16" x2="21" y2="21"/>
+            </svg>
+        </button>
 </div>
         <div id="filter-row">
 <div id="type-filter-box">
