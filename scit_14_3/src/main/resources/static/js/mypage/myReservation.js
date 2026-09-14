@@ -38,7 +38,6 @@
        const reservations = await resRes.json();
        const temples = await templesRes.json();
        const programs = await programsRes.json();
-       const paymentsByReservationId = await paymentsRes.json(); // { reservationId: PaymentDTO }
 
        // programId -> program, templeId -> temple 로 빠르게 찾을 수 있게 Map으로 만들어둠
        const templeMap = new Map(temples.map(t => [t.templeId, t]));
@@ -47,9 +46,31 @@
        RESERVATIONS = reservations.map(r => {
          const program = programMap.get(r.programId);
          const temple = program ? templeMap.get(program.templeId) : null;
-         const payment = paymentsByReservationId[r.reservationId];
+         // const payment = paymentsByReservationId[r.reservationId];
 
-         return {
+         let payment = null;
+         try {
+           const payRes = await fetch(`/payments/reservation/${r.reservationId}`);
+           if (payRes.ok) {
+             payment = await payRes.json();
+           }
+         } catch (err) {
+           // 결제 정보 하나 실패해도 이 예약만 "정보 없음"으로 처리하고 나머지는 계속 진행
+           console.error(`예약 ${r.reservationId}의 결제 정보를 불러오지 못했습니다.`, err);
+         }
+
+         // 이용완료 건만 리뷰 작성 여부를 확인해서 목록에 "작성완료"/"리뷰 미작성"으로 표시
+         let reviewed = false;
+         if (r.status === '이용완료') {
+           try {
+             const reviewRes = await fetch(`/reviews/reservation/${r.reservationId}`);
+             reviewed = reviewRes.ok;
+           } catch (err) {
+             console.error(`예약 ${r.reservationId}의 리뷰 작성 여부를 확인하지 못했습니다.`, err);
+           }
+         }
+
+         RESERVATIONS.push({
            reservationId: r.reservationId,
            programId: r.programId,
            status: r.status,
@@ -59,6 +80,7 @@
            createdAt: r.createdAt,
            amount: payment ? payment.amount : null,
            paymentMethod: payment ? payment.paymentMethod : null,
+           reviewed: reviewed,
            program: {
              title: program ? program.title : '(정보 없음)',
              templeName: temple ? temple.name : '',
@@ -67,7 +89,7 @@
              price: program ? program.price : 0,
              description: program ? program.description : '',
            },
-         };
+         });
        });
 
        // 예약확정/취소는 시작일 빠른 순으로 위에, 이용완료는 시작일 늦은 순으로 그 아래에 모아서 보여줌
@@ -109,7 +131,7 @@
         <div class="meta">
           <p class="applied-at">신청 ${formatAppliedAt(r.createdAt)}</p>
           <div class="date">${r.startDate}${r.startDate !== r.endDate ? ' ~ ' + r.endDate : ''}</div>
-          <span class="status-badge status-${r.status}">${r.status}</span>
+          <span class="status-badge status-${r.status}">${r.status}</span>${r.status === '이용완료' ? `<span class="review-status-badge ${r.reviewed ? 'review-done' : 'review-pending'}">${r.reviewed ? '작성완료' : '리뷰 미작성'}</span>` : ''}
         </div>
       </article>
     `).join('');

@@ -15,7 +15,8 @@ const TRANSLATIONS = {
         pwLabel: "비밀번호",
         cancelBtn: "취소",
         findIdLink: "아이디 찾기",
-        findPwLink: "비밀번호 찾기"
+        findPwLink: "비밀번호 찾기",
+        rememberIdLabel: "아이디 기억하기"
     },
     ja: {
         subtitle: "IDとパスワードを入力してください",
@@ -26,7 +27,8 @@ const TRANSLATIONS = {
         pwLabel: "パスワード",
         cancelBtn: "キャンセル",
         findIdLink: "IDを探す",
-        findPwLink: "パスワードを探す"
+        findPwLink: "パスワードを探す",
+        rememberIdLabel: "IDを記憶する"
     },
     en: {
         subtitle: "Please enter your ID and password",
@@ -37,9 +39,44 @@ const TRANSLATIONS = {
         pwLabel: "Password",
         cancelBtn: "Cancel",
         findIdLink: "Find ID",
-        findPwLink: "Find Password"
+        findPwLink: "Find Password",
+        rememberIdLabel: "Remember my ID"
     }
 };
+
+/* 아이디 기억하기: 서버 세션이 아니라 이 브라우저에만 저장되는 로컬 편의 기능 -
+   체크 시 localStorage에 아이디를 저장해뒀다가 다음 방문 때 자동으로 채워줌. */
+const REMEMBER_ID_KEY = "rememberedLoginId";
+
+function initRememberId(){
+    const idInput = document.getElementById("username");
+    const rememberCheckbox = document.getElementById("rememberId");
+    if(!idInput || !rememberCheckbox) return;
+
+    let savedId = "";
+    try {
+        savedId = localStorage.getItem(REMEMBER_ID_KEY) || "";
+    } catch (e) {
+        // 시크릿 모드 등 localStorage 접근이 막힌 환경 - 그냥 기능 없이 넘어감
+    }
+
+    if (savedId) {
+        idInput.value = savedId;
+        rememberCheckbox.checked = true;
+    }
+
+    idInput.closest("form").addEventListener("submit", function(){
+        try {
+            if (rememberCheckbox.checked) {
+                localStorage.setItem(REMEMBER_ID_KEY, idInput.value);
+            } else {
+                localStorage.removeItem(REMEMBER_ID_KEY);
+            }
+        } catch (e) {
+            // 저장 실패해도 로그인 자체는 그대로 진행
+        }
+    });
+}
 
 /* common.js가 언어 버튼 클릭 시 호출하는 훅. active 클래스 토글은 common.js가 처리함. */
 function onLanguageChange(lang){
@@ -57,3 +94,4 @@ function onLanguageChange(lang){
 }
 
 onLanguageChange('ko');
+initRememberId();
