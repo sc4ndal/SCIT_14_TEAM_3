@@ -366,8 +366,14 @@ function renderCalendar() {
   const firstWeekday = new Date(year, month, 1).getDay();   // 0(일)~6(토)
   const totalDays = new Date(year, month + 1, 0).getDate(); // 그 달의 마지막 날
 
-  const todayStr = toDateStr(
-    new Date().getFullYear(), new Date().getMonth(), new Date().getDate()
+  // 당일 예약은 막고 내일부터 선택 가능하게 함 - "오늘"이 아니라 "내일" 날짜를
+  // 선택 가능한 최소 날짜로 삼는다. toDateStr은 단순 문자열 조합이라 day를 그냥 +1 하면
+  // 월말(예: 1/31 -> 1/32)에 깨지므로, new Date(...)로 실제 날짜를 하루 더한 뒤(월/연도
+  // 초과를 Date가 알아서 정규화함) 그 결과값으로 문자열을 만든다.
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const minSelectableStr = toDateStr(
+    tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate()
   );
 
   const cells = [];
@@ -385,7 +391,7 @@ function renderCalendar() {
   // 실제 날짜 칸
   for (let day = 1; day <= totalDays; day++) {
     const dateStr = toDateStr(year, month, day);
-    const isPast = dateStr < todayStr;
+    const isPast = dateStr < minSelectableStr;
     const isSelected = state.startDate && state.endDate &&
       dateStr >= state.startDate && dateStr <= state.endDate;
 

@@ -12,7 +12,9 @@ import java.util.Set;
 public interface FavoriteTempleRepository extends JpaRepository<FavoriteTempleEntity, Long> {
 	// 유저가 이 사찰을 이미 즐겨찾기 했는지 확인(별표 초기 상태 표시용)
 	boolean existsByLoginIdAndTemple_TempleId(String loginId, Long templeId);
-	// 유저가 즐겨찾기한 사찰을 마이페이지에 리스트 나열
+	// 유저가 즐겨찾기한 사찰을 마이페이지에 리스트 나열 - FavoriteTempleEntity.temple이
+	// @ManyToOne(기본 EAGER)이라 JOIN FETCH 없이 쓰면 즐겨찾기 건수만큼 TEMPLE을 따로 불러옴(N+1)
+	@Query("select f from FavoriteTempleEntity f join fetch f.temple where f.loginId = :loginId")
 	List<FavoriteTempleEntity> findByLoginId(String loginId);
 	// 유저가 즐겨찾기한 사찰을 취소하기
 	void deleteByLoginIdAndTemple_TempleId(String loginId, Long templeId);

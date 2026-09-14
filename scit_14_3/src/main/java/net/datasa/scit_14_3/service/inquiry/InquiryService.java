@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -40,11 +42,19 @@ public class InquiryService {
 		return result;
 	}
 
-	/** 관리자 목록 - 대기중인 문의가 먼저 보이도록 정렬, 작성자 법명도 같이 채워줌 */
+	/** 관리자 목록 - 대기중인 문의가 먼저 보이도록 정렬, 작성자 법명도 같이 채워줌.
+	    예전엔 문의마다 resolveNickname()으로 USER를 따로 조회했는데(N+1), 작성자 목록을
+	    한 번에 모아서 조회한 뒤 맵으로 매칭하도록 바꿨다. */
 	public List<InquiryDto> getAll() {
+		List<InquiryEntity> entities = inquiryRepository.findAllByOrderByStatusAscCreatedAtDesc();
+
+		List<String> loginIds = entities.stream().map(InquiryEntity::getLoginId).distinct().toList();
+		Map<String, String> nicknameMap = userRepository.findAllById(loginIds).stream()
+				.collect(Collectors.toMap(UserEntity::getLoginId, UserEntity::getNickname));
+
 		List<InquiryDto> result = new ArrayList<>();
-		for (InquiryEntity entity : inquiryRepository.findAllByOrderByStatusAscCreatedAtDesc()) {
-			result.add(toDto(entity, resolveNickname(entity.getLoginId())));
+		for (InquiryEntity entity : entities) {
+			result.add(toDto(entity, nicknameMap.getOrDefault(entity.getLoginId(), entity.getLoginId())));
 		}
 		return result;
 	}

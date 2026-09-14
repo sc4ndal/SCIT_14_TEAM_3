@@ -72,14 +72,12 @@ public class FavoriteTempleService {
 		return ftr.findFavoritedTempleIds(loginId);
 	}
 
-	/** 마이페이지 관심사찰 화면용 - Entity가 아니라 화면에 바로 쓸 수 있는 TempleDTO 리스트로 반환. */
+	/** 마이페이지 관심사찰 화면용 - Entity가 아니라 화면에 바로 쓸 수 있는 TempleDTO 리스트로 반환.
+	    findByLoginId가 이미 JOIN FETCH로 TEMPLE을 같이 불러오므로, 여기서 ts.getInfo()로 다시
+	    조회하지 않고(예전엔 즐겨찾기 건수만큼 왕복이 두 배로 났었음) 이미 로딩된 엔티티에서 바로 만든다. */
 	public List<TempleDTO> getFavorites(String loginId) {
 		return getMyFavoriteTemple(loginId).stream()
-				.map(favorite -> {
-					TempleDTO dto = ts.getInfo(favorite.getTemple().getTempleId());
-					dto.setFavorited(true);
-					return dto;
-				})
+				.map(favorite -> ts.toDto(favorite.getTemple(), true))
 				.toList();
 	}
 }

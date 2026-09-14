@@ -23,6 +23,11 @@ public interface TempleStayProgramRepository extends JpaRepository<TempleStayPro
 	@Query("select p from TempleStayProgramEntity p join fetch p.temple where p.temple.templeId = :templeId")
 	List<TempleStayProgramEntity> findByTemple_TempleIdWithTemple(@Param("templeId") Long templeId);
 
+	// 여러 프로그램 ID를 한 번에 조회할 때(TempleStayReviewService.findAllReviews처럼 이미 예약에서
+	// programId 목록을 뽑아둔 경우) findAllById를 그냥 쓰면 여기서도 또 N+1이 나서 따로 둔다.
+	@Query("select p from TempleStayProgramEntity p join fetch p.temple where p.programId in :programIds")
+	List<TempleStayProgramEntity> findAllByIdInWithTemple(@Param("programIds") List<Long> programIds);
+
 	List<TempleStayProgramEntity> findByTemple_TempleId(Long templeId);
 	// 수정/삭제 시 남의 사찰 프로그램을 programId만 바꿔서 건드리지 못하도록 소유 사찰까지 같이 확인
 	Optional<TempleStayProgramEntity> findByProgramIdAndTemple_TempleId(Long programId, Long templeId);
