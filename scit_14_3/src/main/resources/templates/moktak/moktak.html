@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>온라인 목탁회</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" th:href="@{/css/moktak/moktak.css}">
+</head>
+<body>
+
+<!-- TODO: 팀 결정 대기 - 언어 위젯만 쓸지, 전체 commonIncludes 헤더를 쓸지 아직 미정.
+     당장은 몰입형 단독 화면으로 헤더 없이 감. 필요하면 이 자리에
+     <div th:replace="~{fragments/common-includes :: commonIncludes}"></div> 추가 -->
+
+<div id="top-controls">
+    <button id="soundToggleBtn" type="button" aria-label="소리 켜기/끄기">🔊</button>
+    <button id="resetBtn" type="button" aria-label="카운터 초기화">초기화</button>
+    <a id="homeLink" th:href="@{/}" aria-label="메인으로">메인으로</a>
+</div>
+
+<div class="heading">
+    <h1>온라인 목탁회</h1>
+    <p>잠시 마음을 가라앉히고 목탁을 울려보세요</p>
+</div>
+
+<div class="participant-count" id="participantCount">🟢 참여자 수 확인 중...</div>
+
+<div class="design-label" id="designLabel"></div>
+
+<div class="stage-outer">
+    <button class="nav-arrow" id="prevBtn" aria-label="이전 디자인">‹</button>
+
+    <div class="stage-wrap" id="stageWrap">
+        <!-- 흘러가는 댓글: 목탁 위쪽에 겹쳐지는 레이어 -->
+        <div id="chatFlow" aria-hidden="true"></div>
+
+        <div class="stage" id="stage">
+            <img class="layer" id="cushion" alt="">
+            <img class="layer" id="moktak-body" alt="목탁">
+        </div>
+    </div>
+
+    <button class="nav-arrow" id="nextBtn" aria-label="다음 디자인">›</button>
+</div>
+
+<div class="dots" id="dots"></div>
+
+<div class="counter">
+    오늘의 목탁 <b id="hit-count">0</b> / 108
+    <button id="infoBtn" type="button" aria-label="108의 의미">ⓘ</button>
+</div>
+
+<div id="infoPopover" hidden>
+    불교에서 108은 인간이 가진 여러 번뇌를 상징하는 숫자로 알려져 있습니다.
+    목탁을 치며 자신의 마음을 돌아보는 의미를 담았습니다.
+</div>
+
+<div class="hint">스와이프하거나 화살표(← →)로 디자인을 바꾸고, 목탁을 클릭해보세요</div>
+
+<div id="chatInputBar">
+    <input id="chatInput" type="text" maxlength="60" placeholder="소근소근 말하기...">
+</div>
+
+<div id="credit">
+    목탁 소리 출처: 김용배
+    (<a href="https://gongu.copyright.or.kr/gongu/wrt/wrt/view.do?wrtSn=13253416&menuNo=200020" target="_blank" rel="noopener">공유마당</a>,
+    한국저작권위원회, CC BY)
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const WS_URL = /*[[@{/ws/moktak}]]*/ '/ws/moktak';
+    /*]]>*/
+</script>
+<script th:src="@{/js/moktak/moktak.js}"></script>
+</body>
+</html>

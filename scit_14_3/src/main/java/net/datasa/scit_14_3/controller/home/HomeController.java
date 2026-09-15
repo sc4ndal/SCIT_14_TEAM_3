@@ -22,4 +22,7 @@ public class HomeController {
 	public String findtemple() {
 		return "temple/findTemple";
 	}
+	
+	@GetMapping("/moktak")
+	public String moktak() { return "moktak/moktak"; }
 }
