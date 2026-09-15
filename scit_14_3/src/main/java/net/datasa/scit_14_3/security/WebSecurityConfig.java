@@ -76,6 +76,7 @@ public class WebSecurityConfig {
 			"/info/**",
 			"/etiquette-simulation",
 			"/temple-detail/**",
+			"/moktak",
 
 			// 예약 / 결제 (컨트롤러 내부에서 개별 인증 처리)
 			"/reservation/**",
@@ -98,6 +99,7 @@ public class WebSecurityConfig {
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(PUBLIC_URLS.toArray(String[]::new)).permitAll()
 						.requestMatchers("/admin/**").hasRole("ADMIN")
+						.requestMatchers("/ws/**").permitAll()
 						.anyRequest().authenticated()
 				)
 				
