@@ -82,8 +82,8 @@ function createTempleMarker(map, temple) {
         image: markerImage
     });
     marker.setMap(map);
-     marker.normalImage = markerImage; // 나중에 "선택 해제"할 때 되돌릴 원래 이미지를 마커에 붙여둠
-
+    marker.normalImage = markerImage; // 나중에 "선택 해제"할 때 되돌릴 원래 이미지를 마커에 붙여둠
+    marker.hoverImage = hoverMarkerImage; // 목록에서 마우스 올렸을 때 쓸 밝은 이미지도 붙여둠
     // 4. 마우스 올렸을 때(hover) 뜨는 이름표
     var nameTooltipContent = document.createElement('div');
     nameTooltipContent.style.cssText =
