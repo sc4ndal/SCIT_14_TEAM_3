@@ -689,6 +689,17 @@ h2.type-title:hover {
         repeat(7, 1fr);
 }
 
+.calendar-loading-msg {
+    grid-column: 1 / -1;
+
+    padding: 40px 0;
+
+    text-align: center;
+
+    color: var(--ink-soft, #888);
+    font-size: 14px;
+}
+
 .calendar-day {
     position: relative;
 

@@ -13,11 +13,9 @@
 <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
 
 <!--
-    값 변경이 없는 정적 콘텐츠라 DB(BUDDHISM_INFO, category='예절가이드') 대신 화면에 직접 고정.
-    사전형식(data-i18n) 번역(js/buddhism/etiquetteGuide.i18n.js)을 쓰려면 서버 렌더 반복문이 아니라
-    빌드 타임에 구조가 고정된 정적 마크업이어야 해서 이렇게 바꿈. DB 테이블/서비스/DTO/시드
-    SQL(docs/buddhism-info-seed.sql)은 그대로 두고(나중에 다시 DB 구동 방식으로 되돌릴 수도 있어서)
-    여기서 불러오기만 안 함 - BuddhismInfoController/BuddhismInfoService.loadEtiquetteCategories() 참고.
+    값 변경이 없는 정적 콘텐츠라 화면에 직접 고정. 사전형식(data-i18n) 번역
+    (js/buddhism/etiquetteGuide.i18n.js)을 쓰려면 서버 렌더 반복문이 아니라 빌드 타임에
+    구조가 고정된 정적 마크업이어야 해서 이렇게 함.
 -->
 
 <div id="guide-root">

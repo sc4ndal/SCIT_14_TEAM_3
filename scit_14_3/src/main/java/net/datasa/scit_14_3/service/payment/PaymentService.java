@@ -83,6 +83,17 @@ public class PaymentService {
 		public PaymentDTO findByReservationId(Long reservationId){
 			PaymentEntity entity = pr.findByReservationId(reservationId).orElseThrow(()-> new EntityNotFoundException("해당된 예약 정보가 없습니다."));
 
+			return toDto(entity);
+		}
+
+		/** 예약목록 화면 전용 - 예약 ID 여러 개의 결제 정보를 한 번에 조회. 결제 안 한(대기 등) 예약은
+		    결과 맵에 아예 없으니 호출부에서 get()이 null일 수 있음을 감안해야 한다. */
+		public java.util.Map<Long, PaymentDTO> findByReservationIds(java.util.List<Long> reservationIds) {
+			return pr.findByReservationIdIn(reservationIds).stream()
+					.collect(java.util.stream.Collectors.toMap(PaymentEntity::getReservationId, this::toDto));
+		}
+
+		private PaymentDTO toDto(PaymentEntity entity) {
 			return PaymentDTO.builder()
 					.paymentId(entity.getPaymentId())
 					.reservationId(entity.getReservationId())
