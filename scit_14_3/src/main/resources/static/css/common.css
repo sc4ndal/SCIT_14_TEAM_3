@@ -343,6 +343,11 @@ a {
 .btn-check.btn-danger{border-color:var(--destructive);color:var(--destructive);}
 .btn-check.btn-danger:hover:not(:disabled){background:var(--destructive);color:#fff;}
 
+/* .submit(signup.css)의 위험 동작용 변형 - 회원 탈퇴처럼 되돌리기 어려운 제출 버튼용 */
+.submit.btn-danger{background:var(--destructive);}
+.submit.btn-danger:hover:not(:disabled){background:#a52f22;}
+.submit.btn-danger:disabled{background:var(--border);cursor:not-allowed;}
+
 /* ===== 관리자 페이지 공용 알림 배너 =====
    기존 .check-result(signup.css)는 회원가입 폼의 작은 유효성 텍스트용이라 성공/완료
    안내로 쓰기엔 존재감이 없음(글자 색만 바뀌는 한 줄) - mypage/edit.css의

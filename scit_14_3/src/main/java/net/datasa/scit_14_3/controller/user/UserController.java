@@ -274,8 +274,13 @@ public class UserController {
 
 		return existing
 				.map(user -> {
-					// 이미 가입된 카카오 회원(그리고 로그인 의도) -> 바로 로그인
-					sessionLoginService.loginAs(user, token.getAccessToken(), request, response);
+					// 이미 가입된 카카오 회원(그리고 로그인 의도) -> 바로 로그인. 탈퇴 확정(익명화)된
+					// 계정이면 loginAs가 세션을 만들지 않고 false를 반환한다(SessionLoginService 참고).
+					boolean loggedIn = sessionLoginService.loginAs(user, token.getAccessToken(), request, response);
+					if (!loggedIn) {
+						redirectAttributes.addFlashAttribute("loginNotice", "탈퇴 처리된 계정입니다.");
+						return "redirect:/login";
+					}
 					return "redirect:/";
 				})
 				.orElseGet(() -> {

@@ -17,6 +17,9 @@ public interface FavoriteQuoteRepository extends JpaRepository<FavoriteQuoteEnti
 	@Query("select f from FavoriteQuoteEntity f join fetch f.quote where f.loginId = :loginId order by f.createdAt desc")
 	List<FavoriteQuoteEntity> findByLoginIdOrderByCreatedAtDesc(String loginId);
 
+	// 마이페이지 허브 카드의 "저장한 한마디 N개" 배지용
+	long countByLoginId(String loginId);
+
 	// 목록 화면에서 즐겨찾기 여부 표시용 - 매번 exists 쿼리를 여러 번 날리지 않도록 한 번에 quote_id만 뽑아둠
 	@Query("SELECT f.quote.quoteId FROM FavoriteQuoteEntity f WHERE f.loginId = :loginId")
 	Set<Long> findFavoritedQuoteIds(String loginId);

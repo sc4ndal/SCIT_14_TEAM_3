@@ -24,14 +24,18 @@ public class SessionLoginService {
 
     private final SecurityContextRepository securityContextRepository;
 
-    public void loginAs(UserResponseDto user, HttpServletRequest request, HttpServletResponse response) {
-        loginAs(user, null, request, response);
+    public boolean loginAs(UserResponseDto user, HttpServletRequest request, HttpServletResponse response) {
+        return loginAs(user, null, request, response);
     }
 
     /** 카카오 로그인용. kakaoAccessToken을 principal에 실어두면, 나중에 로그아웃할 때
-        세션을 거치지 않고 Authentication에서 바로 꺼내 쓸 수 있음(세션 invalidate 순서에 안 걸림). */
-    public void loginAs(UserResponseDto user, String kakaoAccessToken,
-                         HttpServletRequest request, HttpServletResponse response) {
+        세션을 거치지 않고 Authentication에서 바로 꺼내 쓸 수 있음(세션 invalidate 순서에 안 걸림).
+        탈퇴 확정(익명화)된 계정이면 세션을 만들지 않고 false를 반환한다 - 폼로그인은
+        AppUserDetails.isEnabled()로 DaoAuthenticationProvider가 알아서 막아주지만, 이 경로는
+        그 절차를 안 거쳐서(이미 신원 확인이 끝났다고 가정) 직접 확인해야 한다. 앞으로 로그인
+        경로가 늘어나도 이 메서드 하나만 거치면 차단이 자동으로 적용되게 하기 위함. */
+    public boolean loginAs(UserResponseDto user, String kakaoAccessToken,
+                            HttpServletRequest request, HttpServletResponse response) {
         AppUserDetails principal = new AppUserDetails(
                 user.getLoginId(),
                 null,
@@ -40,8 +44,14 @@ public class SessionLoginService {
                 null, // 사찰 계정이 아니므로 templeId 없음
                 user.getNickname(),
                 kakaoAccessToken,
-                false// 사찰 계정이 아니므로 비밀번호 강제변경 대상 아님
+                false,// 사찰 계정이 아니므로 비밀번호 강제변경 대상 아님
+                user.getWithdrawalRequestedAt() != null,
+                user.getWithdrawnAt() == null
         );
+
+        if (!principal.isEnabled()) {
+            return false;
+        }
 
         Authentication authentication =
                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
@@ -52,5 +62,6 @@ public class SessionLoginService {
 
         // 이게 없으면 이번 요청에서만 로그인된 것처럼 보이고 다음 요청부터 다시 로그아웃 상태가 됨
         securityContextRepository.saveContext(context, request, response);
+        return true;
     }
 }

@@ -33,6 +33,11 @@ public class TempleFoodService {
 				.toList();
 	}
 
+	/** 마이페이지 허브 카드의 "관심 사찰음식 N개" 배지용 */
+	public long countFavorites(String loginId) {
+		return favoriteFoodRepository.countByLoginId(loginId);
+	}
+
 	public List<TempleFoodDTO> getFavorites(String loginId) {
 		return favoriteFoodRepository.findByLoginIdOrderByCreatedAtDesc(loginId).stream()
 				.map(favorite -> toDto(favorite.getFood(), Set.of(favorite.getFood().getRecommendationId())))

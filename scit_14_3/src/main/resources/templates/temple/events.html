@@ -9,6 +9,10 @@
 </head>
 <body>
 
+<div id="auth-info" style="display:none;"
+	 sec:authorize="isAuthenticated()"
+	 th:attr="data-login-id=${#authentication.principal.username}"></div>
+
 <header>
 	<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
 </header>
@@ -53,13 +57,29 @@
 					자세히 보기 →
 				</a>
 
+				<div class="event-card__footer">
+					<button type="button" class="favorite-toggle"
+							th:classappend="${event.favorited} ? 'is-favorited' : ''"
+							th:attr="data-favorite-url=@{'/events/' + ${event.eventId} + '/favorite'}, aria-pressed=${event.favorited}"
+							th:data-favorited="${event.favorited}">
+						<span class="favorite-toggle__icon"></span>
+						<span class="favorite-toggle__label" th:text="${event.favorited} ? '즐겨찾기됨' : '즐겨찾기'">즐겨찾기</span>
+					</button>
+				</div>
+
 			</article>
 		</div>
+
+		<p class="events-more" th:unless="${#lists.isEmpty(events)}">
+			<a th:href="@{/mypage/favorites/events}" sec:authorize="isAuthenticated()">관심 행사 모아보기 →</a>
+		</p>
 
 	</div>
 </main>
 
 <div th:replace="~{fragments/layout :: footer}"></div>
+
+<script defer th:src="@{/js/buddhism/favoriteButton.js}"></script>
 
 </body>
 </html>

@@ -61,6 +61,11 @@ public class FavoriteTempleService {
 		return ftr.findByLoginId(loginId);
 	}
 
+	/** 마이페이지 허브 카드의 "관심 사찰 N곳" 배지용 */
+	public long countFavorites(String loginId) {
+		return ftr.countByLoginId(loginId);
+	}
+
 	/**
 	 * 지도/목록 화면에서 사찰마다 즐겨찾기 여부(favorited)를 표시할 때 씀 - 사찰 수만큼 exists 쿼리를
 	 * 반복하지 않도록 한 번에 즐겨찾기한 temple_id만 Set으로 뽑아둔다. 비로그인이면 빈 Set 반환.

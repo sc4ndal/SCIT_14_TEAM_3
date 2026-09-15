@@ -34,4 +34,5 @@ public class TempleStayReviewListDTO {
 	private Integer viewCount;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
+	private boolean liked; // 현재 로그인한 회원이 이 리뷰를 좋아요 했는지 - 비로그인이면 항상 false
 }
