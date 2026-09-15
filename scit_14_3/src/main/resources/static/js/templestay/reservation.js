@@ -366,8 +366,14 @@ function renderCalendar() {
   const firstWeekday = new Date(year, month, 1).getDay();   // 0(일)~6(토)
   const totalDays = new Date(year, month + 1, 0).getDate(); // 그 달의 마지막 날
 
-  const todayStr = toDateStr(
-    new Date().getFullYear(), new Date().getMonth(), new Date().getDate()
+  // 당일 예약은 막고 내일부터 선택 가능하게 함 - "오늘"이 아니라 "내일" 날짜를
+  // 선택 가능한 최소 날짜로 삼는다. toDateStr은 단순 문자열 조합이라 day를 그냥 +1 하면
+  // 월말(예: 1/31 -> 1/32)에 깨지므로, new Date(...)로 실제 날짜를 하루 더한 뒤(월/연도
+  // 초과를 Date가 알아서 정규화함) 그 결과값으로 문자열을 만든다.
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const minSelectableStr = toDateStr(
+    tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate()
   );
 
   const cells = [];
@@ -385,7 +391,7 @@ function renderCalendar() {
   // 실제 날짜 칸
   for (let day = 1; day <= totalDays; day++) {
     const dateStr = toDateStr(year, month, day);
-    const isPast = dateStr < todayStr;
+    const isPast = dateStr < minSelectableStr;
     const isSelected = state.startDate && state.endDate &&
       dateStr >= state.startDate && dateStr <= state.endDate;
 
@@ -546,7 +552,10 @@ document.getElementById('reservation-form').addEventListener('submit', async (e)
 
 // ------------------------- 제출 -------------------------
 async function submitReservation() {
-  if (state.isSubmitting) return; // 서버 응답 오기 전에 또 눌러도 무시 (중복 신청 방지)
+  if (state.isSubmitting) {
+    alert('결제가 진행 중입니다. 잠시만 기다려 주세요.');
+    return; // 서버 응답 오기 전에 또 눌러도 무시 (중복 신청 방지)
+  }
 
   const p = state.selectedProgram;
 
@@ -592,6 +601,9 @@ async function submitReservation() {
 
   state.isSubmitting = true;
   setSubmitLoading(true);
+  // 예약/참가자/결제 생성 + (계좌이체는) 결제확인 화면 데이터 조회까지 전부 여기 안에서
+  // 순차로 왕복하므로, 그 사이 화면이 멈춰 보이지 않게 전체를 로딩 오버레이로 감싼다.
+  showLoading('예약을 처리하는 중...');
   try {
     const resRes = await fetch(API.createReservation, {
         method: 'POST',
@@ -675,6 +687,7 @@ async function submitReservation() {
     // 안 보이니 굳이 안 풀어도 되지만, 실패로 여기 되돌아오는 모든 경로를 한 곳에서 확실히 풀기 위해 finally에 둠.
     state.isSubmitting = false;
     setSubmitLoading(false);
+    hideLoading();
   }
 }
 
@@ -859,6 +872,7 @@ async function resumeAfterKakaoPay() {
   }
   if (paid !== 'success') return;
 
+  showLoading('결제 결과를 확인하는 중...');
   try {
     const [reservation, payment] = await Promise.all([
       fetch(`/templestayreservations/${reservationId}`).then(r => r.json()),
@@ -870,6 +884,8 @@ async function resumeAfterKakaoPay() {
   } catch (err) {
     console.error(err);
     alert('결제는 완료됐지만 결과를 불러오지 못했습니다. 마이페이지에서 예약 내역을 확인해 주세요.');
+  } finally {
+    hideLoading();
   }
 }
 

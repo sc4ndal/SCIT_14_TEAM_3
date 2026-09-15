@@ -111,10 +111,12 @@ public class TempleStayReviewService {
 		Map<Long, TempleStayReservationEntity> reservationMap = tsrr.findAllById(reservationIds).stream()
 				.collect(Collectors.toMap(TempleStayReservationEntity::getReservationId, Function.identity()));
 
-		// 프로그램 id -> 프로그램 (사찰명/프로그램명)
+		// 프로그램 id -> 프로그램 (사찰명/프로그램명) - 아래서 program.getTemple()을 바로 쓰므로
+		// findAllById 대신 JOIN FETCH 버전을 써서 프로그램 건수만큼 TEMPLE을 또 따로 불러오는(N+1)
+		// 것을 막는다.
 		List<Long> programIds = reservationMap.values().stream()
 				.map(TempleStayReservationEntity::getProgramId).distinct().toList();
-		Map<Long, TempleStayProgramEntity> programMap = tspr.findAllById(programIds).stream()
+		Map<Long, TempleStayProgramEntity> programMap = tspr.findAllByIdInWithTemple(programIds).stream()
 				.collect(Collectors.toMap(TempleStayProgramEntity::getProgramId, Function.identity()));
 
 		// login_id -> 닉네임(법명)

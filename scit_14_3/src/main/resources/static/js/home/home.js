@@ -458,8 +458,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    // 사찰이 실제로 등록한 불교행사(TEMPLE_EVENT)와 템플스테이 프로그램 모집기간
-    // (openStartDate~openEndDate)을 각각 기간 내 매일 달력에 표시함 - 사찰 필터 없이 전체를 가져옴.
+    // 사찰이 실제로 등록한 불교행사(TEMPLE_EVENT)만 기간 내 매일 달력에 표시함 -
+    // 사찰 필터 없이 전체를 가져옴.
+    // 예전엔 템플스테이 프로그램 모집기간(openStartDate~openEndDate)도 같이 넣었는데,
+    // 프로그램이 500건 넘게 상시 모집 중이라 거의 1년 내내 달력이 꽉 차 보여서 뺐다.
     async function loadCalendarEvents() {
         try {
             const res = await fetch("/templeevents");
@@ -478,26 +480,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         } catch (err) {
             console.warn("불교행사를 달력에 불러오지 못했습니다.", err);
-        }
-
-        try {
-            const res = await fetch("/templestayprograms");
-            if (!res.ok) throw new Error("프로그램 목록 조회 실패: " + res.status);
-            const programs = await res.json();
-
-            programs.forEach(p => {
-                addEventRange(p.openStartDate, p.openEndDate, {
-                    title: p.title,
-                    location: p.templeName || "",
-                    time: `모집기간 ${p.openStartDate} ~ ${p.openEndDate}`,
-                    description: p.description || "",
-                    price: p.price,
-                    duration: p.duration || "",
-                    programId: p.programId
-                });
-            });
-        } catch (err) {
-            console.warn("템플스테이 프로그램을 달력에 불러오지 못했습니다.", err);
         }
     }
 
@@ -995,6 +977,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     );
 
 
+    // 전체 화면 로딩 오버레이를 걸면 그동안 홈 화면 자체를 못 써서, 실제로 값을 기다리는
+    // 캘린더/일정 패널 두 곳에만 부분 로딩 문구를 띄운다.
+    calendarGrid.innerHTML = '<p class="calendar-loading-msg">일정을 불러오는 중...</p>';
+    eventPanel.innerHTML = '<p class="calendar-loading-msg">일정을 불러오는 중...</p>';
     await loadCalendarEvents();
 
     renderCalendar();

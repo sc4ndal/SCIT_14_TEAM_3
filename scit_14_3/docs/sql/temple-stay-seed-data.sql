@@ -11,8 +11,8 @@
 --
 -- 깨끗이 다시 만들려면 실행 전에 아래 두 줄로 비우고 시작할 것
 -- (FAVORITE_REVIEW 는 CASCADE 로 함께 삭제됨):
---   DELETE FROM temple_stay_review;
---   DELETE FROM temple_stay_reservation;
+--   DELETE FROM TEMPLE_STAY_REVIEW;
+--   DELETE FROM TEMPLE_STAY_RESERVATION;
 -- =====================================================================
 
 
@@ -20,46 +20,46 @@
 -- [1] 템플스테이 예약 - 신규(예약확정/취소) 20건
 --     2026-09 ~ 11월 향후 일정
 -- =====================================================================
-INSERT INTO temple_stay_reservation
+INSERT INTO TEMPLE_STAY_RESERVATION
     (login_id, program_id, start_date, end_date, participant_count, note, status, canceled_at) VALUES
-    ('testuser1',   3, '2026-09-20', '2026-09-21', 2, '조용한 방으로 부탁드려요',           '예약확정', NULL),
-    ('testuser2',   8, '2026-09-22', '2026-09-23', 1, NULL,                                 '예약확정', NULL),
-    ('admin',      15, '2026-09-25', '2026-09-26', 3, NULL,                                 '예약확정', NULL),
-    ('testuser1',  22, '2026-09-28', '2026-09-29', 1, '알레르기 있음(견과류)',              '예약확정', NULL),
-    ('testuser2',  29, '2026-10-02', '2026-10-03', 2, NULL,                                 '예약확정', NULL),
-    ('admin',      36, '2026-10-05', '2026-10-06', 1, NULL,                                 '취소',    '2026-09-15 10:00:00'),
-    ('testuser1',  43, '2026-10-08', '2026-10-09', 4, '가족 단위 참가',                     '예약확정', NULL),
-    ('testuser2',  50, '2026-10-11', '2026-10-12', 2, NULL,                                 '예약확정', NULL),
-    ('admin',      57, '2026-10-15', '2026-10-16', 1, NULL,                                 '예약확정', NULL),
-    ('testuser1',  64, '2026-10-18', '2026-10-19', 2, NULL,                                 '취소',    '2026-09-20 09:30:00'),
-    ('testuser2',  71, '2026-10-22', '2026-10-23', 1, NULL,                                 '예약확정', NULL),
-    ('admin',      78, '2026-10-25', '2026-10-26', 3, NULL,                                 '예약확정', NULL),
-    ('testuser1',  85, '2026-10-29', '2026-10-30', 2, NULL,                                 '예약확정', NULL),
-    ('testuser2',  92, '2026-11-02', '2026-11-03', 1, NULL,                                 '예약확정', NULL),
-    ('admin',      99, '2026-11-05', '2026-11-06', 2, NULL,                                 '예약확정', NULL),
-    ('testuser1', 106, '2026-11-09', '2026-11-10', 4, NULL,                                 '예약확정', NULL),
-    ('testuser2', 113, '2026-11-12', '2026-11-13', 1, NULL,                                 '취소',    '2026-09-25 14:20:00'),
-    ('admin',     120, '2026-11-16', '2026-11-17', 2, NULL,                                 '예약확정', NULL),
-    ('testuser1', 127, '2026-11-19', '2026-11-20', 1, NULL,                                 '예약확정', NULL),
-    ('testuser2', 134, '2026-11-23', '2026-11-24', 3, NULL,                                 '예약확정', NULL);
+    ('testuser1',   2, '2026-09-20', '2026-09-21', 2, '조용한 방으로 부탁드려요',           '예약확정', NULL),
+    ('testuser2',   7, '2026-09-22', '2026-09-23', 1, NULL,                                 '예약확정', NULL),
+    ('admin',      14, '2026-09-25', '2026-09-26', 3, NULL,                                 '예약확정', NULL),
+    ('testuser1',  21, '2026-09-28', '2026-09-29', 1, '알레르기 있음(견과류)',              '예약확정', NULL),
+    ('testuser2',  28, '2026-10-02', '2026-10-03', 2, NULL,                                 '예약확정', NULL),
+    ('admin',      35, '2026-10-05', '2026-10-06', 1, NULL,                                 '취소',    '2026-09-15 10:00:00'),
+    ('testuser1',  42, '2026-10-08', '2026-10-09', 4, '가족 단위 참가',                     '예약확정', NULL),
+    ('testuser2',  49, '2026-10-11', '2026-10-12', 2, NULL,                                 '예약확정', NULL),
+    ('admin',      56, '2026-10-15', '2026-10-16', 1, NULL,                                 '예약확정', NULL),
+    ('testuser1',  63, '2026-10-18', '2026-10-19', 2, NULL,                                 '취소',    '2026-09-20 09:30:00'),
+    ('testuser2',  70, '2026-10-22', '2026-10-23', 1, NULL,                                 '예약확정', NULL),
+    ('admin',      77, '2026-10-25', '2026-10-26', 3, NULL,                                 '예약확정', NULL),
+    ('testuser1',  84, '2026-10-29', '2026-10-30', 2, NULL,                                 '예약확정', NULL),
+    ('testuser2',  91, '2026-11-02', '2026-11-03', 1, NULL,                                 '예약확정', NULL),
+    ('admin',      98, '2026-11-05', '2026-11-06', 2, NULL,                                 '예약확정', NULL),
+    ('testuser1', 105, '2026-11-09', '2026-11-10', 4, NULL,                                 '예약확정', NULL),
+    ('testuser2', 112, '2026-11-12', '2026-11-13', 1, NULL,                                 '취소',    '2026-09-25 14:20:00'),
+    ('admin',     119, '2026-11-16', '2026-11-17', 2, NULL,                                 '예약확정', NULL),
+    ('testuser1', 126, '2026-11-19', '2026-11-20', 1, NULL,                                 '예약확정', NULL),
+    ('testuser2', 133, '2026-11-23', '2026-11-24', 3, NULL,                                 '예약확정', NULL);
 
 
 -- =====================================================================
 -- [2] 템플스테이 예약 - 과거 일정 + '이용완료' 10건
 --     ([1] 20건 중 10건을 과거 날짜로 복제. 후기 작성 테스트 등 재사용 목적)
 -- =====================================================================
-INSERT INTO temple_stay_reservation
+INSERT INTO TEMPLE_STAY_RESERVATION
     (login_id, program_id, start_date, end_date, participant_count, note, status, canceled_at) VALUES
-    ('testuser1',   3, '2026-06-10', '2026-06-11', 2, NULL, '이용완료', NULL),
-    ('testuser2',   8, '2026-06-15', '2026-06-16', 1, NULL, '이용완료', NULL),
-    ('admin',      15, '2026-07-01', '2026-07-02', 3, NULL, '이용완료', NULL),
-    ('testuser1',  22, '2026-07-10', '2026-07-11', 1, NULL, '이용완료', NULL),
-    ('testuser2',  29, '2026-07-18', '2026-07-19', 2, NULL, '이용완료', NULL),
-    ('testuser1',  43, '2026-08-01', '2026-08-02', 4, NULL, '이용완료', NULL),
-    ('testuser2',  50, '2026-08-08', '2026-08-09', 2, NULL, '이용완료', NULL),
-    ('admin',      57, '2026-08-15', '2026-08-16', 1, NULL, '이용완료', NULL),
-    ('testuser2',  71, '2026-08-22', '2026-08-23', 1, NULL, '이용완료', NULL),
-    ('admin',      78, '2026-08-29', '2026-08-30', 3, NULL, '이용완료', NULL);
+    ('testuser1',   2, '2026-06-10', '2026-06-11', 2, NULL, '이용완료', NULL),
+    ('testuser2',   7, '2026-06-15', '2026-06-16', 1, NULL, '이용완료', NULL),
+    ('admin',      14, '2026-07-01', '2026-07-02', 3, NULL, '이용완료', NULL),
+    ('testuser1',  21, '2026-07-10', '2026-07-11', 1, NULL, '이용완료', NULL),
+    ('testuser2',  28, '2026-07-18', '2026-07-19', 2, NULL, '이용완료', NULL),
+    ('testuser1',  42, '2026-08-01', '2026-08-02', 4, NULL, '이용완료', NULL),
+    ('testuser2',  49, '2026-08-08', '2026-08-09', 2, NULL, '이용완료', NULL),
+    ('admin',      56, '2026-08-15', '2026-08-16', 1, NULL, '이용완료', NULL),
+    ('testuser2',  70, '2026-08-22', '2026-08-23', 1, NULL, '이용완료', NULL),
+    ('admin',      77, '2026-08-29', '2026-08-30', 3, NULL, '이용완료', NULL);
 
 
 -- =====================================================================
@@ -73,7 +73,7 @@ INSERT INTO temple_stay_reservation
 --       리뷰가 안 달린 예약이 남아있는 만큼 매번 최대 10건씩 더 채워진다. 깨끗이 다시 만들려면
 --       파일 상단 주석의 DELETE 두 줄로 비우고 시작할 것.
 -- =====================================================================
-INSERT INTO temple_stay_review
+INSERT INTO TEMPLE_STAY_REVIEW
     (reservation_id, login_id, rating, content, image_urls, like_count, view_count, created_at, updated_at)
 SELECT reservation_id, login_id, rating, content, NULL, like_count, view_count, created_at, created_at
 FROM (
@@ -88,9 +88,9 @@ FROM (
         -- 아직 리뷰가 없는 '이용완료' 예약을 일정이 이른 순으로 1..N 번호 매김
         SELECT r.reservation_id, r.login_id, r.end_date,
                ROW_NUMBER() OVER (ORDER BY r.start_date, r.reservation_id) AS rn
-        FROM temple_stay_reservation r
+        FROM TEMPLE_STAY_RESERVATION r
         WHERE r.status = '이용완료'
-          AND NOT EXISTS (SELECT 1 FROM temple_stay_review v
+          AND NOT EXISTS (SELECT 1 FROM TEMPLE_STAY_REVIEW v
                           WHERE v.reservation_id = r.reservation_id)
     ) d
     JOIN (

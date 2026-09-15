@@ -111,10 +111,11 @@ a {
     font-size: 16px;
     font-weight: 700;
     color: rgba(39, 33, 27, .42);
+    transition: color 0.2s ease;
 }
 
 .main-nav a:hover {
-    opacity: .75;
+    color: rgba(39, 33, 27, 0.85);
 }
 
 .main-nav span {

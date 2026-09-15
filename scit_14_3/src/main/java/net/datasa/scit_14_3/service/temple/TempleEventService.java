@@ -20,14 +20,14 @@ public class TempleEventService {
 	private final TempleEventRepository templeEventRepository;
 
 	public List<TempleEventDTO> getAll() {
-		return templeEventRepository.findAll().stream()
+		return templeEventRepository.findAllWithTemple().stream()
 				.map(this::toDto)
 				.toList();
 	}
 
 	/** "불교 행사" 목록 페이지(/events)용 - 가까운 일정부터 보이도록 시작일 오름차순 정렬. */
 	public List<TempleEventDTO> getAllSortedByDate() {
-		return templeEventRepository.findAllByOrderByStartDateAsc().stream()
+		return templeEventRepository.findAllWithTempleOrderByStartDateAsc().stream()
 				.map(this::toDto)
 				.toList();
 	}
