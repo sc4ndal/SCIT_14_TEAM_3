@@ -1,0 +1,247 @@
+:root {
+    --bg: #17120d;
+    --bg-vignette: radial-gradient(ellipse at 50% 40%, #241a12 0%, #17120d 55%, #0c0906 100%);
+    --ink: #f3e9ec;
+    --ink-dim: #b9adb1;
+    --accent: #c99a4b;
+    --accent-soft: rgba(201, 154, 75, 0.35);
+}
+* { box-sizing: border-box; }
+html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Noto Sans KR', 'Noto Sans CJK KR', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+    padding: 1.5vh 16px;
+    background: var(--bg-vignette);
+    -webkit-user-select: none;
+    user-select: none;
+    position: relative;
+}
+
+/* 우상단 컨트롤 */
+#top-controls {
+    position: fixed;
+    top: 16px;
+    right: 24px;
+    display: flex;
+    gap: 10px;
+    z-index: 50;
+}
+#top-controls button, #top-controls a {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.14);
+    color: var(--ink-dim);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    font-family: inherit;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+#top-controls button:hover, #top-controls a:hover {
+    background: rgba(255,255,255,0.12);
+    color: var(--ink);
+}
+#soundToggleBtn.muted { opacity: 0.5; }
+
+.heading { text-align: center; margin-bottom: 0; flex: 0 0 auto; }
+.heading h1 {
+    font-size: clamp(18px, 2.6vw, 26px);
+    font-weight: 600;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+}
+.heading p { margin: 0; font-size: 12.5px; color: var(--ink-dim); }
+
+.participant-count {
+    margin-top: 1vh;
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    flex: 0 0 auto;
+}
+
+.design-label {
+    margin-top: 1vh;
+    font-size: 12.5px;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    height: 16px;
+    flex: 0 0 auto;
+}
+
+.stage-outer {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 0.6vh;
+    flex: 0 0 auto;
+}
+.stage-wrap {
+    position: relative;
+    height: min(44vh, 420px);
+    aspect-ratio: 900 / 650;
+    overflow: hidden;
+    touch-action: pan-y;
+    cursor: grab;
+}
+.stage-wrap:active { cursor: grabbing; }
+.stage {
+    position: absolute;
+    inset: 0;
+    transition: opacity 190ms ease, transform 190ms ease;
+}
+.stage.no-transition { transition: none !important; }
+.stage.leaving-left  { opacity: 0; transform: translateX(-26px); }
+.stage.leaving-right { opacity: 0; transform: translateX(26px); }
+.layer {
+    position: absolute;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+}
+#cushion { filter: drop-shadow(0 1.5vw 2vw rgba(0,0,0,0.5)); }
+#moktak-body {
+    transform-origin: center;
+    filter: drop-shadow(0 1.2vw 1.8vw rgba(0,0,0,0.45));
+    cursor: pointer;
+    pointer-events: auto;
+    transition: filter 0.2s ease;
+}
+#moktak-body:hover {
+    filter: drop-shadow(0 1.2vw 1.8vw rgba(0,0,0,0.45)) drop-shadow(0 0 18px var(--accent-soft));
+}
+
+.nav-arrow {
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.05);
+    color: var(--ink-dim);
+    font-size: 17px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.nav-arrow:hover { background: rgba(255,255,255,0.1); color: var(--ink); border-color: rgba(255,255,255,0.22); }
+.nav-arrow:active { transform: scale(0.94); }
+
+.dots { display: flex; gap: 8px; margin-top: 1vh; flex: 0 0 auto; }
+.dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    border: none; padding: 0; cursor: pointer;
+}
+.dot.active { background: var(--accent); }
+
+.counter {
+    margin-top: 1.2vh;
+    font-size: 13px;
+    color: var(--ink-dim);
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+}
+.counter b { color: var(--ink); font-size: 15px; font-weight: 600; }
+#infoBtn {
+    background: none; border: none; color: var(--ink-dim);
+    cursor: pointer; font-size: 12px; padding: 2px 4px;
+}
+#infoPopover {
+    margin-top: 0.6vh;
+    max-width: 340px;
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: var(--ink-dim);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 10px 12px;
+    text-align: center;
+}
+
+.hint {
+    margin-top: 0.8vh;
+    font-size: 11.5px;
+    color: var(--ink-dim);
+    opacity: 0.75;
+    text-align: center;
+    flex: 0 0 auto;
+}
+
+/* 흘러가는 댓글 */
+#chatFlow {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 46%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 5;
+}
+.flow-msg {
+    position: absolute;
+    white-space: nowrap;
+    font-size: 13px;
+    color: var(--ink);
+    left: -10%;
+    animation: flowAcross 6s linear forwards;
+}
+@keyframes flowAcross {
+    0%   { transform: translateX(0); opacity: 1; }
+    75%  { opacity: 0.55; }
+    100% { transform: translateX(120vw); opacity: 0; }
+}
+
+#chatInputBar {
+    margin-top: 1.2vh;
+    width: min(90vw, 380px);
+    flex: 0 0 auto;
+}
+#chatInput {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 20px;
+    padding: 8px 14px;
+    color: var(--ink);
+    font-size: 12.5px;
+    font-family: inherit;
+    outline: none;
+}
+#chatInput::placeholder { color: var(--ink-dim); }
+#chatInput:focus { border-color: var(--accent-soft); }
+
+#credit {
+    margin-top: 1vh;
+    font-size: 10.5px;
+    color: var(--ink-dim);
+    opacity: 0.6;
+    text-align: center;
+    flex: 0 0 auto;
+}
+#credit a { color: var(--ink-dim); }
+
+@media (prefers-reduced-motion: reduce) {
+    #moktak-body, .stage, .flow-msg { transition: none !important; animation: none !important; }
+}
