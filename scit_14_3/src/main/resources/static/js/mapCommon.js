@@ -84,6 +84,7 @@ function createTempleMarker(map, temple) {
     marker.setMap(map);
     marker.normalImage = markerImage; // 나중에 "선택 해제"할 때 되돌릴 원래 이미지를 마커에 붙여둠
     marker.hoverImage = hoverMarkerImage; // 목록에서 마우스 올렸을 때 쓸 밝은 이미지도 붙여둠
+    marker.setZIndex(1); // 기본 쌓임 순서 - 선택되면 이보다 높게 올려서 다른 마커에 안 가려지게 함
     // 4. 마우스 올렸을 때(hover) 뜨는 이름표
     var nameTooltipContent = document.createElement('div');
     nameTooltipContent.style.cssText =
@@ -94,8 +95,10 @@ function createTempleMarker(map, temple) {
     var nameTooltip = new kakao.maps.CustomOverlay({
         position: position,
         content: nameTooltipContent,
-        yAnchor: 2.6 // 핀 높이(38px)에 맞춰 이름표가 핀 위에 뜨도록 조정한 값
+        yAnchor: 2.6, // 핀 높이(38px)에 맞춰 이름표가 핀 위에 뜨도록 조정한 값
+        zIndex: 999999 // 마커 zIndex(최대 999)보다 훨씬 높게 잡아서 항상 마커 위에 뜨게 함
     });
+    marker.nameTooltip = nameTooltip; // 목록에서 마우스 올렸을 때도 이름표를 띄우기 위해 마커에 붙여둠
 
     // 5. 클릭했을 때 뜨는 상세 정보창 (이름 + 주소, X 버튼으로 닫기 가능)
         var infoContent = document.createElement('div');
@@ -132,6 +135,7 @@ function createTempleMarker(map, temple) {
         infoCloseBtn.addEventListener('click', function (e) {
             e.stopPropagation(); // 지도까지 클릭이 전파돼서 다른 로직이 겹쳐 도는 걸 막음
             infowindow.close();
+            marker.setZIndex(1); // 쌓임 순서도 원래대로 복구
             marker.setImage(marker.normalImage); // 선택 색 원래대로 복구
             if (currentOpenInfoWindow === infowindow) {
                 currentOpenInfoWindow = null;
@@ -243,7 +247,8 @@ function createTempleMarker(map, temple) {
 
     var infowindow = new kakao.maps.InfoWindow({
         content: infoContent,
-        removable: false
+        removable: false,
+        zIndex: 999999 // 마커 zIndex보다 훨씬 높게 잡아서 항상 마커 위에 뜨게 함
     });
 
     // 9. 이벤트 등록: 마우스 오버 → 이름표 표시 + 밝은 색 핀으로 교체
@@ -268,10 +273,12 @@ function createTempleMarker(map, temple) {
         // 이전에 선택돼있던 다른 마커가 있으면 색 원래대로 복구
         if (currentOpenMarker && currentOpenMarker !== marker) {
             currentOpenMarker.setImage(currentOpenMarker.normalImage);
+            currentOpenMarker.setZIndex(1);
         }
         infowindow.open(map, marker);
         currentOpenInfoWindow = infowindow; // 지금 연 걸 "현재 열린 것"으로 기억
         marker.setImage(hoverMarkerImage);  // 선택된 마커는 밝은 색으로 고정
+        marker.setZIndex(999); // 다른 마커들 위로 올려서 안 가려지게 함
         currentOpenMarker = marker;
     });
 

@@ -30,6 +30,7 @@ kakao.maps.load(function () {
         }
         if (currentOpenMarker)
             currentOpenMarker.setImage(currentOpenMarker.normalImage);
+            currentOpenMarker.setZIndex(1);
             currentOpenMarker = null;
     });
 
@@ -190,17 +191,21 @@ kakao.maps.load(function () {
             });
 
         // 목록 항목에 마우스 올리면 지도 위 해당 마커도 밝은 색으로 눈에 띄게
-        li.addEventListener('mouseenter'. function() {
+        li.addEventListener('mouseenter', function() {
             var hoveredMarker = markerByTempleId[temple.templeId];
-            if(hoveredMarker) {
-                hoveredMarker.setImage(hoverMarker.hoverImage);
+            if (hoveredMarker) {
+                hoveredMarker.setImage(hoveredMarker.hoverImage);
+                hoveredMarker.nameTooltip.setMap(map); // 이름표도 같이 띄움
             }
         });
         li.addEventListener('mouseleave', function () {
             var hoveredMarker = markerByTempleId[temple.templeId];
-            // 지금 선택(클릭)돼서 색이 고정된 마커라면 원래 색으로 되돌리지 않음
-            if (hoveredMarker && hoveredMarker !== currentOpenMarker) {
-                hoveredMarker.setImage(hoveredMarker.normalImage);
+            if (hoveredMarker) {
+                hoveredMarker.nameTooltip.setMap(null); // 이름표는 선택 여부와 상관없이 항상 숨김.
+                 // 지금 선택(클릭)돼서 색이 고정된 마커라면 원래 색으로 되돌리지 않음
+                 if (hoveredMarker && hoveredMarker !== currentOpenMarker) {
+                 hoveredMarker.setImage(hoveredMarker.normalImage);
+                 }
             }
         });
 
@@ -309,6 +314,10 @@ kakao.maps.load(function () {
               if (marker) {
                   kakao.maps.event.trigger(marker, 'click');
               }
+        // 지도 중심을 검색된 사찰로 이동 + 좀 더 가깝게 확대
+        map.relayout();
+        map.setLevel(4);
+        map.setCenter(new kakao.maps.LatLng(found.latitude, found.longitude));
     }
     document.getElementById('search-btn').addEventListener('click', runSearch);
     // 입력창에서 엔터키로도 검색되게
