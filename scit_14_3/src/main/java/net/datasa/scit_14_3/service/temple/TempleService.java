@@ -86,7 +86,13 @@ public class TempleService {
 
 	public TempleDTO getInfo(Long templeId) {
 		TempleEntity entity = tr.findById(templeId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
-		
+		return toDto(entity, false);
+	}
+
+	/** TempleEntity -> TempleDTO 변환. 이미 로딩된 엔티티가 있는 다른 서비스(FavoriteTempleService
+	    등)가 재조회 없이 바로 쓸 수 있도록 public으로 공개함 - 즐겨찾기 목록처럼 이미 JOIN FETCH로
+	    같이 가져온 엔티티를 여기서 또 findById로 다시 조회하면 왕복이 낭비된다. */
+	public TempleDTO toDto(TempleEntity entity, boolean favorited) {
 		return TempleDTO.builder()
 				.templeId(entity.getTempleId())
 				.name(entity.getName())
@@ -103,6 +109,7 @@ public class TempleService {
 				.isTemple(entity.isTemple())
 				.specialNotice(entity.getSpecialNotice())
 				.refundPolicy(entity.getRefundPolicy())
+				.favorited(favorited)
 				.build();
 	}
 
@@ -111,30 +118,9 @@ public class TempleService {
 	// updateAdmin/updateOwnInfo/removeImage/delete)에서 전체 무효화한다.
 	@Cacheable("temples")
 	public List<TempleDTO> getAll() {
-		List<TempleDTO> dtoList = new ArrayList<>();
-		List<TempleEntity> list = tr.findAll();
-
-		for(TempleEntity entity : list) {
-			TempleDTO dto = TempleDTO.builder()
-					.templeId(entity.getTempleId())
-					.name(entity.getName())
-					.imageUrl(entity.getImageUrl())
-					.latitude(entity.getLatitude())
-					.longitude(entity.getLongitude())
-					.address(entity.getAddress())
-					.region(entity.getRegion())
-					.supportSea(entity.isSupportSea())
-					.supportMountain(entity.isSupportMountain())
-					.supportRiver(entity.isSupportRiver())
-					.supportUrban(entity.isSupportUrban())
-					.supportEnglish(entity.isSupportEnglish())
-					.isTemple(entity.isTemple())
-					.specialNotice(entity.getSpecialNotice())
-					.refundPolicy(entity.getRefundPolicy())
-					.build();
-			dtoList.add(dto);
-		}
-		return dtoList;
+		return tr.findAll().stream()
+				.map(entity -> toDto(entity, false))
+				.toList();
 	}
 
 	// ================= 사이트 관리자 - 사찰관리 =================

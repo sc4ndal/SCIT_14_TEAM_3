@@ -2,9 +2,9 @@
 // 프로그램 상세페이지에 임베드되는 리뷰와 달리, 여기서는 전 사찰의 후기를 한 곳에 모아
 // 검색 / 정렬 / 10개 단위 페이징으로 보여준다.
 //
-// 목록 조회 API는 아직 없다 - GET /reviews/all 을 기대하고 호출하되, 실패하면 빈 목록으로
-// 처리해서 페이지가 깨지지 않게 한다. API가 붙으면 fetchAllReviews() 안만 손보면 된다.
-// 기대하는 응답: [{ reviewId, templeName, programName, title, rating, authorName, createdAt, content, imageUrls }]
+// GET /reviews/all (ReviewController.getAllReviews)에서 전체 후기를 받아온다. 응답 형태:
+// [{ reviewId, templeName, programName, title, rating, authorName, createdAt, content, imageUrls }]
+// 혹시 모를 API 실패에도 페이지가 안 깨지도록 fetchAllReviews()에서 빈 배열로 처리한다.
 
 const PAGE_SIZE = 10;
 
@@ -60,16 +60,19 @@ function runSearch() {
   applyFilters();
 }
 
-// TODO: 전체 후기 목록 조회 API가 나오면 이 함수만 연결하면 된다.
 async function fetchAllReviews() {
+  showLoading('후기를 불러오는 중...');
   try {
     const res = await fetch('/reviews/all', { headers: { Accept: 'application/json' } });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     return Array.isArray(data) ? data : [];
   } catch (e) {
-    console.info('[reviews] 전체 후기 목록 API가 아직 없어 빈 페이지로 표시합니다.', e);
+    console.error('[reviews] 전체 후기 목록을 불러오지 못했습니다.', e);
+    alert('후기 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
     return [];
+  } finally {
+    hideLoading();
   }
 }
 

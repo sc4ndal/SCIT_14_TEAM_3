@@ -2,7 +2,7 @@
 -- 부울경 (불교 종합 사이트) DB 스키마
 -- 팀명: 佛법을 선도하는 자들(불선자)
 -- 대상 DBMS: MySQL 8.0
--- 총 17개 테이블 / BUDDHISM_INFO만 다른 테이블과 연결 없는 독립 테이블
+-- 총 16개 테이블
 --
 -- 이번 정리에서 반영된 결정사항
 --   1) TEMPLE_STAY_PROGRAM.program_type은 당일형/체험형/휴식형 3종 유지(변경 없음)
@@ -49,7 +49,6 @@ DROP TABLE IF EXISTS FAVORITE_FOOD;
 DROP TABLE IF EXISTS TEMPLE_FOOD_RECOMMENDATION;
 DROP TABLE IF EXISTS FAVORITE_QUOTE;
 DROP TABLE IF EXISTS DAILY_QUOTE;
-DROP TABLE IF EXISTS BUDDHISM_INFO;
 DROP TABLE IF EXISTS FAVORITE_EVENT;
 DROP TABLE IF EXISTS TEMPLE_EVENT;
 DROP TABLE IF EXISTS FAVORITE_TEMPLE;
@@ -366,20 +365,7 @@ CREATE TABLE FAVORITE_EVENT (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='관심 행사';
 
 -- =====================================================================
--- 12. BUDDHISM_INFO (불교 정보 게시글) - 독립 테이블, 다른 테이블과 FK 없음
--- =====================================================================
-CREATE TABLE BUDDHISM_INFO (
-    post_id      BIGINT       NOT NULL AUTO_INCREMENT COMMENT '게시글 고유 번호',
-    category     VARCHAR(30)  NOT NULL COMMENT '로드맵/용어/체크리스트/예절가이드 등',
-    title        VARCHAR(150) NOT NULL COMMENT '제목',
-    content      TEXT         NOT NULL COMMENT '본문',
-    view_count   INT          NOT NULL DEFAULT 0 COMMENT '조회수',
-    created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '작성일시',
-    PRIMARY KEY (post_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='불교 정보 게시글';
-
--- =====================================================================
--- 13. DAILY_QUOTE (불교 한마디)
+-- 12. DAILY_QUOTE (불교 한마디)
 -- =====================================================================
 CREATE TABLE DAILY_QUOTE (
     quote_id   BIGINT       NOT NULL AUTO_INCREMENT COMMENT '고유 번호',
@@ -389,7 +375,7 @@ CREATE TABLE DAILY_QUOTE (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='불교 한마디';
 
 -- =====================================================================
--- 14. FAVORITE_QUOTE (저장한 한마디)
+-- 13. FAVORITE_QUOTE (저장한 한마디)
 -- =====================================================================
 CREATE TABLE FAVORITE_QUOTE (
     favorite_quote_id  BIGINT   NOT NULL AUTO_INCREMENT COMMENT '고유 번호',
@@ -405,7 +391,7 @@ CREATE TABLE FAVORITE_QUOTE (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='저장한 불교 한마디';
 
 -- =====================================================================
--- 15. TEMPLE_FOOD_RECOMMENDATION (사찰음식 추천)
+-- 14. TEMPLE_FOOD_RECOMMENDATION (사찰음식 추천)
 -- =====================================================================
 CREATE TABLE TEMPLE_FOOD_RECOMMENDATION (
     recommendation_id  BIGINT      NOT NULL AUTO_INCREMENT COMMENT '고유 번호',
@@ -420,7 +406,7 @@ CREATE TABLE TEMPLE_FOOD_RECOMMENDATION (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='사찰음식 추천';
 
 -- =====================================================================
--- 16. FAVORITE_FOOD (관심 사찰음식 즐겨찾기)
+-- 15. FAVORITE_FOOD (관심 사찰음식 즐겨찾기)
 -- =====================================================================
 CREATE TABLE FAVORITE_FOOD (
     favorite_food_id   BIGINT   NOT NULL AUTO_INCREMENT COMMENT '고유 번호',
@@ -436,7 +422,7 @@ CREATE TABLE FAVORITE_FOOD (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='관심 사찰음식 즐겨찾기';
 
 -- =====================================================================
--- 17. TEMPLE_REGISTRATION_REQUEST (사찰 등록 요청)
+-- 16. TEMPLE_REGISTRATION_REQUEST (사찰 등록 요청)
 --     - 사찰 관계자가 회원가입 없이 남기는 요청. TEMPLE과 분리되어 있고, 관리자가
 --       승인하면 이 행이 아니라 완전히 새로운 TEMPLE 행이 생성된다(승격 아님).
 --     - login_id/password/is_temple은 관리자 승인 시 시스템이 생성하는 값이라

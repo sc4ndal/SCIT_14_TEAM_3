@@ -93,6 +93,7 @@ function formatSchedule(text) {
 }
 
 async function init() {
+  showLoading('프로그램 정보를 불러오는 중...');
   try {
     const [programRes, templesRes] = await Promise.all([
       fetch(`/templestayprograms/${PROGRAM_ID}`),
@@ -110,6 +111,8 @@ async function init() {
   } catch (err) {
     console.error(err);
     document.querySelector('.detail-card').innerHTML = '<p>프로그램 정보를 불러오지 못했습니다.</p>';
+  } finally {
+    hideLoading();
   }
 }
 
