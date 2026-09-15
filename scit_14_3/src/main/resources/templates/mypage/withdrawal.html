@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>회원 탈퇴 · 사찰 커뮤니티</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" th:href="@{/css/signup.css}">
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+	<link rel="stylesheet" th:href="@{/css/mypage/edit.css}">
+	<link rel="icon" th:href="@{/favicon.ico}">
+</head>
+<body>
+<div class="card">
+	<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+
+	<div class="header">
+		<h1>회원 탈퇴</h1>
+		<p>탈퇴 전에 아래 내용을 꼭 확인해주세요</p>
+	</div>
+
+	<form class="page-form" th:action="@{/mypage/withdrawal}" method="post">
+		<fieldset>
+			<legend>탈퇴 안내</legend>
+
+			<p class="check-result fail" th:if="${withdrawalError}" th:text="${withdrawalError}"></p>
+
+			<ul class="hint" style="line-height:1.8; margin:0 0 20px;">
+				<li>탈퇴를 신청하면 <strong th:text="${gracePeriodDays}">30</strong>일의 유예기간을 거친 뒤 계정이 확정 처리됩니다.</li>
+				<li>유예기간 중에는 언제든 이 아이디로 다시 로그인해서 탈퇴를 철회할 수 있습니다.</li>
+				<li>유예기간이 지나면 닉네임·이름·연락처·이메일 등 개인정보는 삭제(익명화)되며 되돌릴 수 없습니다.</li>
+				<li>작성하신 리뷰와 예약 내역은 사이트 운영 기록으로 남아 삭제되지 않습니다(작성자는 "탈퇴한 회원"으로 표시됩니다).</li>
+			</ul>
+
+			<div class="field" th:if="${isLocalAccount}">
+				<label for="password">비밀번호 확인</label>
+				<input type="password" id="password" name="password" autofocus>
+			</div>
+
+			<label class="terms-checkbox">
+				<input type="checkbox" id="agreeWithdrawal" required>
+				<span>위 내용을 확인했으며, 탈퇴에 동의합니다</span>
+			</label>
+		</fieldset>
+
+		<div class="form-actions">
+			<button class="submit btn-danger" type="submit" id="withdrawalSubmitBtn">탈퇴하기</button>
+			<a class="btn-cancel" th:href="@{/mypage/edit}">취소</a>
+		</div>
+	</form>
+</div>
+
+<script>
+	// signup.js(회원가입 약관 동의)와 동일한 방식 - 버튼을 계속 비활성 상태로 뒀다가 JS로만
+	// 풀어주면 스크립트가 어떤 이유로든 안 돌 때 영영 제출을 못 하게 되므로, 제출 시점에 확인한다.
+	document.querySelector('form').addEventListener('submit', function (e) {
+		if (!document.getElementById('agreeWithdrawal').checked) {
+			e.preventDefault();
+			alert('탈퇴 안내에 동의해주세요.');
+		}
+	});
+</script>
+</body>
+</html>

@@ -33,7 +33,7 @@
             아직 즐겨찾기한 행사가 없습니다. <a th:href="@{/events}">불교 행사 보러 가기 →</a>
         </p>
 
-        <div class="food-favorite-grid" th:unless="${#lists.isEmpty(events)}">
+        <div class="food-favorite-grid" data-favorites-grid="event-pagination" th:unless="${#lists.isEmpty(events)}">
             <article class="food-favorite-card" th:each="event : ${events}" data-remove-on-unfavorite>
 
                 <div class="food-favorite-card__body">
@@ -71,12 +71,19 @@
             </article>
         </div>
 
+        <div class="pagination" id="event-pagination" th:unless="${#lists.isEmpty(events)}"></div>
+
+        <p class="favorites-more" th:unless="${#lists.isEmpty(events)}">
+            <a th:href="@{/events}">다른 행사 보러가기 →</a>
+        </p>
+
     </div>
 </main>
 
 <div th:replace="~{fragments/layout :: footer}"></div>
 
 <script defer th:src="@{/js/buddhism/favoriteButton.js}"></script>
+<script defer th:src="@{/js/mypage/favoritesPagination.js}"></script>
 
 </body>
 </html>

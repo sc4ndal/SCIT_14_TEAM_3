@@ -46,6 +46,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         UserEntity user = userRepository.findById(loginId)
                 .orElseThrow(() -> new UsernameNotFoundException("회원을 찾을 수 없습니다: " + loginId));
+
         String roleName = "ROLE_" + user.getRole().name(); // ROLE_USER 또는 ROLE_ADMIN
         return new AppUserDetails(
                 user.getLoginId(),
@@ -54,7 +55,10 @@ public class CustomUserDetailsService implements UserDetailsService {
                 null,
                 user.getNickname(),
                 null, // 폼로그인이라 카카오 토큰 없음
-                false
+                false,
+                user.getWithdrawalRequestedAt() != null,
+                user.getWithdrawnAt() == null // 탈퇴 확정(익명화)된 계정이면 false - DaoAuthenticationProvider가
+                                               // preAuthenticationChecks에서 비밀번호 검사보다 먼저 걸러준다.
         );
     }
 }

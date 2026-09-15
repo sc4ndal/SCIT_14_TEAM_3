@@ -1,10 +1,15 @@
 package net.datasa.scit_14_3.controller.mypage;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.mypage.MypageEditViewDto;
+import net.datasa.scit_14_3.domain.dto.user.UserResponseDto;
+import net.datasa.scit_14_3.domain.entity.user.UserEntity;
 import net.datasa.scit_14_3.security.AppUserDetails;
+import net.datasa.scit_14_3.security.SessionLoginService;
 import net.datasa.scit_14_3.service.buddhism.DailyQuoteService;
 import net.datasa.scit_14_3.service.buddhism.TempleFoodService;
 import net.datasa.scit_14_3.service.mypage.MypageService;
@@ -12,6 +17,7 @@ import net.datasa.scit_14_3.service.integration.CloudinaryService;
 import net.datasa.scit_14_3.service.temple.FavoriteTempleService;
 import net.datasa.scit_14_3.service.temple.TempleEventService;
 import net.datasa.scit_14_3.service.temple.TempleService;
+import net.datasa.scit_14_3.service.templestay.TempleStayReservationService;
 import net.datasa.scit_14_3.service.templestay.TempleStayReviewService;
 import net.datasa.scit_14_3.service.user.EmailVerificationService;
 import net.datasa.scit_14_3.service.user.UserService;
@@ -45,10 +51,20 @@ public class MypageController {
 	private final TempleFoodService templeFoodService;
 	private final TempleEventService templeEventService;
 	private final TempleStayReviewService templeStayReviewService;
+	private final TempleStayReservationService templeStayReservationService;
+	private final SessionLoginService sessionLoginService;
 
 	@PreAuthorize("hasRole('USER')")
 	@GetMapping("/mypage")
-	public String mypage(Model model) {
+	public String mypage(@AuthenticationPrincipal AppUserDetails principal, Model model) {
+		String loginId = principal.getUsername();
+		model.addAttribute("reservationCount", templeStayReservationService.countMyReservations(loginId));
+		model.addAttribute("myReviewCount", templeStayReviewService.countMyReviews(loginId));
+		model.addAttribute("favoriteTempleCount", favoriteTempleService.countFavorites(loginId));
+		model.addAttribute("favoriteEventCount", templeEventService.countFavorites(loginId));
+		model.addAttribute("favoriteQuoteCount", dailyQuoteService.countFavorites(loginId));
+		model.addAttribute("favoriteFoodCount", templeFoodService.countFavorites(loginId));
+		model.addAttribute("favoriteReviewCount", templeStayReviewService.countFavoriteReviews(loginId));
 
 		return "mypage/mypage";
 	}
@@ -205,5 +221,79 @@ public class MypageController {
 			redirectAttributes.addFlashAttribute("passwordChangeError", e.getMessage());
 		}
 		return "redirect:/mypage/edit";
+	}
+
+	// ===== 회원 탈퇴 (일반회원 전용) =====
+	// 예약/리뷰 기록이 있으면 하드 삭제가 불가능해서(UserService 주석 참고) "탈퇴 신청 ->
+	// 30일 유예 -> 확정 시 익명화" 흐름을 쓴다. 유예기간 중 재로그인하면 successHandler가
+	// 이 화면(/mypage/withdrawal/pending)으로 보내고, WithdrawalGateFilter가 그 외 다른 페이지
+	// 접근을 막는다.
+
+	@PreAuthorize("hasRole('USER')")
+	@GetMapping("/mypage/withdrawal")
+	public String withdrawalForm(@AuthenticationPrincipal AppUserDetails principal, Model model) {
+		model.addAttribute("isLocalAccount", isLocalAccount(principal));
+		model.addAttribute("gracePeriodDays", UserService.WITHDRAWAL_GRACE_PERIOD_DAYS);
+		return "mypage/withdrawal";
+	}
+
+	/** 탈퇴 신청 직후 세션 principal도 바로 withdrawalPending=true로 새로 고친다(cancelWithdrawal과
+	    대칭) - 그래야 신청한 순간부터 WithdrawalGateFilter가 곧장 철회 화면 외 접근을 막는다.
+	    안 그러면 로그아웃하기 전까진 이미 로그인된 세션으로 평소처럼 계속 이용할 수 있어서
+	    유예기간 중 이용 제한이 무의미해진다. */
+	@PreAuthorize("hasRole('USER')")
+	@PostMapping("/mypage/withdrawal")
+	public String requestWithdrawal(@AuthenticationPrincipal AppUserDetails principal,
+									 @RequestParam(required = false) String password,
+									 HttpServletRequest request, HttpServletResponse response,
+									 RedirectAttributes redirectAttributes) {
+		UserResponseDto refreshed;
+		try {
+			refreshed = userService.requestWithdrawal(principal.getUsername(), password);
+		} catch (IllegalStateException e) {
+			redirectAttributes.addFlashAttribute("withdrawalError", e.getMessage());
+			return "redirect:/mypage/withdrawal";
+		}
+		sessionLoginService.loginAs(refreshed, principal.getKakaoAccessToken(), request, response);
+		return "redirect:/mypage/withdrawal/pending";
+	}
+
+	/** 유예기간 중 재로그인하면 successHandler가 도착시키는 철회 화면. 세션은 여전히
+	    withdrawalPending=true인데 DB에서는 이미 철회된(다른 탭에서 철회 등) 드문 경우를 대비해
+	    최신 상태를 다시 확인한다 - 이미 풀렸다면 세션 principal도 같이 새로 고쳐야 한다.
+	    안 그러면 WithdrawalGateFilter가 여전히 pending으로 보고 /mypage로 못 나가게 다시
+	    이 화면으로 되돌려보내 리다이렉트 루프가 생긴다. */
+	@PreAuthorize("hasRole('USER')")
+	@GetMapping("/mypage/withdrawal/pending")
+	public String withdrawalPending(@AuthenticationPrincipal AppUserDetails principal, Model model,
+									 HttpServletRequest request, HttpServletResponse response) {
+		UserResponseDto user = userService.findByLoginId(principal.getUsername())
+				.orElseThrow(() -> new IllegalStateException("회원 정보를 찾을 수 없습니다."));
+		if (user.getWithdrawalRequestedAt() == null) {
+			sessionLoginService.loginAs(user, principal.getKakaoAccessToken(), request, response);
+			return "redirect:/mypage";
+		}
+		model.addAttribute("withdrawalRequestedAt", user.getWithdrawalRequestedAt());
+		model.addAttribute("gracePeriodDays", UserService.WITHDRAWAL_GRACE_PERIOD_DAYS);
+		return "mypage/withdrawalPending";
+	}
+
+	/** 탈퇴 철회 - 세션에 들고 있던 principal도 withdrawalPending=false로 새로 고쳐야
+	    WithdrawalGateFilter가 더 이상 이 화면에 가두지 않는다. */
+	@PreAuthorize("hasRole('USER')")
+	@PostMapping("/mypage/withdrawal/cancel")
+	public String cancelWithdrawal(@AuthenticationPrincipal AppUserDetails principal,
+									HttpServletRequest request, HttpServletResponse response,
+									RedirectAttributes redirectAttributes) {
+		UserResponseDto refreshed = userService.cancelWithdrawal(principal.getUsername());
+		sessionLoginService.loginAs(refreshed, principal.getKakaoAccessToken(), request, response);
+		redirectAttributes.addFlashAttribute("withdrawalCancelled", true);
+		return "redirect:/mypage";
+	}
+
+	private boolean isLocalAccount(AppUserDetails principal) {
+		return userService.findByLoginId(principal.getUsername())
+				.map(u -> u.getLoginType() == UserEntity.LoginType.LOCAL)
+				.orElse(true);
 	}
 }

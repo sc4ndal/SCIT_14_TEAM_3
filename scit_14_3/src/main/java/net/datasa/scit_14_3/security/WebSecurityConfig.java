@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 
@@ -30,6 +31,7 @@ import java.util.List;
 public class WebSecurityConfig {
 
 	private final KakaoOAuthService kakaoOAuthService;
+	private final WithdrawalGateFilter withdrawalGateFilter;
 
 	// 로그인 없이 접근 가능한 경로
 	private static final List<String> PUBLIC_URLS = List.of(
@@ -107,6 +109,10 @@ public class WebSecurityConfig {
 							if (authentication.getPrincipal() instanceof AppUserDetails principal
 									&& principal.isMustChangePassword()) {
 								target = "/mypage/edit";
+							} else if (authentication.getPrincipal() instanceof AppUserDetails principal
+									&& principal.isWithdrawalPending()) {
+								// 탈퇴 유예기간 중인 회원 - 철회 화면으로 보냄(그 뒤 요청들은 WithdrawalGateFilter가 가둠)
+								target = "/mypage/withdrawal/pending";
 							} else {
 								// 로그인 폼으로 넘어오기 전 있던 페이지로 되돌아가기 - 오픈 리다이렉트 방지를 위해
 								// "/"로 시작하고 "//"(스킴 생략 절대경로)는 아닌 내부 경로만 허용.
@@ -135,10 +141,13 @@ public class WebSecurityConfig {
 							}
 						})
 						.logoutSuccessUrl("/")
-				);
+				)
+
+				// 인증(SecurityContext 확정) 이후에 돌아야 principal을 읽을 수 있어서 그 뒤에 붙인다.
+				.addFilterAfter(withdrawalGateFilter, UsernamePasswordAuthenticationFilter.class);
 
 
-		
+
 		return http.build();
 	}
 	

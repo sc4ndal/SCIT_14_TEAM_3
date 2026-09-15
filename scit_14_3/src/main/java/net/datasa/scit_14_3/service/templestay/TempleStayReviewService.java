@@ -89,6 +89,16 @@ public class TempleStayReviewService {
 		return tsrvr.findByReservationId(reservationId).map(this::toDto).orElse(null);
 	}
 
+	/** 마이페이지 허브 카드의 "리뷰 N건" 배지용 */
+	public long countMyReviews(String loginId) {
+		return tsrvr.countByLoginId(loginId);
+	}
+
+	/** 마이페이지 허브 카드의 "좋아요한 리뷰 N건" 배지용 */
+	public long countFavoriteReviews(String loginId) {
+		return favoriteReviewRepository.countByLoginId(loginId);
+	}
+
 	/** 마이페이지 > 내가 쓴 리뷰 */
 	public List<TempleStayReviewDTO> findByMyReviews(String loginId) {
 		List<TempleStayReviewDTO> result = new ArrayList<>();
@@ -160,11 +170,13 @@ public class TempleStayReviewService {
 		Map<Long, TempleStayProgramEntity> programMap = tspr.findAllByIdInWithTemple(programIds).stream()
 				.collect(Collectors.toMap(TempleStayProgramEntity::getProgramId, Function.identity()));
 
-		// login_id -> 닉네임(법명)
+		// login_id -> 회원 (닉네임/법명 + 탈퇴 여부) - 탈퇴 확정된 회원은 nickname이 익명화 과정에서
+		// login_id 그대로 채워진 내부용 값이라(UserService.finalizeOverdueWithdrawals 참고) 그대로
+		// 보여주지 않고 authorDisplayName()에서 "탈퇴한 회원"으로 바꿔 보여준다.
 		List<String> loginIds = reviews.stream()
 				.map(TempleStayReviewEntity::getLoginId).distinct().toList();
-		Map<String, String> nicknameMap = userRepository.findAllById(loginIds).stream()
-				.collect(Collectors.toMap(UserEntity::getLoginId, UserEntity::getNickname));
+		Map<String, UserEntity> authorMap = userRepository.findAllById(loginIds).stream()
+				.collect(Collectors.toMap(UserEntity::getLoginId, Function.identity()));
 
 		Set<Long> likedIds = loginId == null ? Collections.emptySet() : favoriteReviewRepository.findFavoritedReviewIds(loginId);
 
@@ -182,7 +194,7 @@ public class TempleStayReviewService {
 					.programId(program != null ? program.getProgramId() : null)
 					.programName(program != null ? program.getTitle() : null)
 					.rating((int) review.getRating())
-					.authorName(nicknameMap.get(review.getLoginId()))
+					.authorName(authorDisplayName(authorMap.get(review.getLoginId())))
 					.content(review.getContent())
 					.imageUrls(review.getImageUrls())
 					.likeCount(review.getLikeCount())
@@ -193,6 +205,15 @@ public class TempleStayReviewService {
 					.build());
 		}
 		return result;
+	}
+
+	/** 탈퇴 확정된 회원은 nickname이 익명화된 내부용 값이라(UserService.finalizeOverdueWithdrawals
+	    참고) 그대로 보여주지 않고 "탈퇴한 회원"으로 표시한다. */
+	private String authorDisplayName(UserEntity author) {
+		if (author == null) {
+			return null;
+		}
+		return author.getWithdrawnAt() != null ? "탈퇴한 회원" : author.getNickname();
 	}
 
 	/** 리뷰 수정 - 작성자 본인만 가능. */

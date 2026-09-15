@@ -1,8 +1,11 @@
 package net.datasa.scit_14_3.service.temple;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.temple.TempleEventDTO;
+import net.datasa.scit_14_3.domain.entity.temple.FavoriteEventEntity;
 import net.datasa.scit_14_3.domain.entity.temple.TempleEventEntity;
+import net.datasa.scit_14_3.repository.temple.FavoriteEventRepository;
 import net.datasa.scit_14_3.repository.temple.TempleEventRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,21 +29,21 @@ public class TempleEventService {
 
 	public List<TempleEventDTO> getAll() {
 		return templeEventRepository.findAllWithTemple().stream()
-				.map(this::toDto)
-		return templeEventRepository.findAll().stream()
 				.map(event -> toDto(event, Collections.emptySet()))
 				.toList();
 	}
 
 	/** "불교 행사" 목록 페이지(/events)용 - 가까운 일정부터 보이도록 시작일 오름차순 정렬. */
-	public List<TempleEventDTO> getAllSortedByDate() {
-		return templeEventRepository.findAllWithTempleOrderByStartDateAsc().stream()
-				.map(this::toDto)
 	public List<TempleEventDTO> getAllSortedByDate(String loginId) {
 		Set<Long> favoritedIds = favoritedIds(loginId);
-		return templeEventRepository.findAllByOrderByStartDateAsc().stream()
+		return templeEventRepository.findAllWithTempleOrderByStartDateAsc().stream()
 				.map(event -> toDto(event, favoritedIds))
 				.toList();
+	}
+
+	/** 마이페이지 허브 카드의 "관심 행사 N건" 배지용 */
+	public long countFavorites(String loginId) {
+		return favoriteEventRepository.countByLoginId(loginId);
 	}
 
 	/** 마이페이지 관심 행사 목록. */

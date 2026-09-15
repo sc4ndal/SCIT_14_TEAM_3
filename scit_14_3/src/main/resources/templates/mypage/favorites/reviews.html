@@ -29,7 +29,7 @@
             아직 좋아요한 리뷰가 없습니다. <a th:href="@{/reservation/reviews}">템플스테이 후기 보러 가기 →</a>
         </p>
 
-        <div class="food-favorite-grid" th:unless="${#lists.isEmpty(reviews)}">
+        <div class="food-favorite-grid" data-favorites-grid="review-pagination" th:unless="${#lists.isEmpty(reviews)}">
             <article class="food-favorite-card" th:each="review : ${reviews}" data-remove-on-unfavorite>
 
                 <div class="food-favorite-card__body">
@@ -49,12 +49,18 @@
                     <button type="button" class="favorite-toggle is-favorited like-toggle"
                             th:attr="data-review-id=${review.reviewId}" aria-pressed="true">
                         <span class="favorite-toggle__icon"></span>
-                        <span class="favorite-toggle__label">좋아요 취소</span>
+                        <span class="favorite-toggle__label">좋아요</span>
                     </button>
                 </div>
 
             </article>
         </div>
+
+        <div class="pagination" id="review-pagination" th:unless="${#lists.isEmpty(reviews)}"></div>
+
+        <p class="favorites-more" th:unless="${#lists.isEmpty(reviews)}">
+            <a th:href="@{/reservation/reviews}">다른 리뷰 보러가기 →</a>
+        </p>
 
     </div>
 </main>
@@ -62,6 +68,7 @@
 <div th:replace="~{fragments/layout :: footer}"></div>
 
 <script defer th:src="@{/js/templestay/favoriteReviewButton.js}"></script>
+<script defer th:src="@{/js/mypage/favoritesPagination.js}"></script>
 
 </body>
 </html>

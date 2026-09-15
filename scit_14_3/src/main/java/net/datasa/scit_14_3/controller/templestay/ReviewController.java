@@ -61,10 +61,14 @@ public class ReviewController {
 		return ResponseEntity.ok(dto);
 	}
 
-	/** 마이페이지 > 내가 쓴 리뷰 */
+	/** 마이페이지 > 내가 쓴 리뷰 - 클라이언트가 보낸 loginId를 그대로 믿으면 남의 리뷰(사진/평점
+	    포함)를 조회할 수 있었다. principal 기준으로만 조회한다. */
 	@GetMapping
-	public List<TempleStayReviewDTO> getMyReviews(@RequestParam String loginId) {
-		return reviewService.findByMyReviews(loginId);
+	public List<TempleStayReviewDTO> getMyReviews(@AuthenticationPrincipal AppUserDetails principal) {
+		if (principal == null) {
+			return List.of();
+		}
+		return reviewService.findByMyReviews(principal.getUsername());
 	}
 
 	/** 전체 후기 모아보기 (/reservation/reviews) - 비로그인도 조회 가능. 최신순으로 전체를 내려주고
