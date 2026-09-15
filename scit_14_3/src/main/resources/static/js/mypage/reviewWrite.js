@@ -101,6 +101,7 @@ document.querySelectorAll('#rating-stars button').forEach(btn => {
 
 // ------------------------- 예약/프로그램 정보 로드 -------------------------
 async function init() {
+  showLoading('리뷰 작성 정보를 불러오는 중...');
   try {
     const resRes = await fetch(`/templestayreservations/${reservationId}`);
     if (!resRes.ok) throw new Error('예약 정보를 불러오지 못했습니다.');
@@ -168,6 +169,8 @@ async function init() {
     console.error('리뷰 작성 페이지 초기화 중 오류가 발생했습니다.', err);
     alert('예약 정보를 불러오는 중 오류가 발생했습니다.');
     location.replace('/mypage/myReservations');
+  } finally {
+    hideLoading();
   }
 }
 
@@ -185,6 +188,7 @@ document.getElementById('review-submit-btn').addEventListener('click', async () 
 
   const submitBtn = document.getElementById('review-submit-btn');
   submitBtn.disabled = true;
+  showLoading('저장하는 중...'); // 사진이 여러 장이면 업로드에 시간이 걸림
 
   try {
     // 사진 업로드는 다른 등록 폼들과 동일하게 /api/images/upload로 먼저 올리고, 받은 URL만
@@ -224,6 +228,8 @@ document.getElementById('review-submit-btn').addEventListener('click', async () 
     console.error(err);
     alert('리뷰 저장 중 오류가 발생했습니다.');
     submitBtn.disabled = false;
+  } finally {
+    hideLoading();
   }
 });
 

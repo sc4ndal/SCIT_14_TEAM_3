@@ -20,6 +20,7 @@ function formatDate(isoString) {
 }
 
 async function loadMyReviews() {
+  showLoading('리뷰 목록을 불러오는 중...');
   try {
     // 리뷰 자체엔 프로그램/사찰 이름이 없어서, 예약목록(myReservation.js)과 같은 방식으로
     // 예약/사찰/프로그램을 같이 불러와 리뷰에 붙여준다.
@@ -89,6 +90,8 @@ async function loadMyReviews() {
   } catch (err) {
     console.error('내가 쓴 리뷰를 불러오지 못했습니다.', err);
     alert('리뷰 목록을 불러오는 중 오류가 발생했습니다.');
+  } finally {
+    hideLoading();
   }
 }
 

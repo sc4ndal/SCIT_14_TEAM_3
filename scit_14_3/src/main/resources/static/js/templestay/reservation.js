@@ -552,7 +552,10 @@ document.getElementById('reservation-form').addEventListener('submit', async (e)
 
 // ------------------------- 제출 -------------------------
 async function submitReservation() {
-  if (state.isSubmitting) return; // 서버 응답 오기 전에 또 눌러도 무시 (중복 신청 방지)
+  if (state.isSubmitting) {
+    alert('결제가 진행 중입니다. 잠시만 기다려 주세요.');
+    return; // 서버 응답 오기 전에 또 눌러도 무시 (중복 신청 방지)
+  }
 
   const p = state.selectedProgram;
 
@@ -598,6 +601,9 @@ async function submitReservation() {
 
   state.isSubmitting = true;
   setSubmitLoading(true);
+  // 예약/참가자/결제 생성 + (계좌이체는) 결제확인 화면 데이터 조회까지 전부 여기 안에서
+  // 순차로 왕복하므로, 그 사이 화면이 멈춰 보이지 않게 전체를 로딩 오버레이로 감싼다.
+  showLoading('예약을 처리하는 중...');
   try {
     const resRes = await fetch(API.createReservation, {
         method: 'POST',
@@ -681,6 +687,7 @@ async function submitReservation() {
     // 안 보이니 굳이 안 풀어도 되지만, 실패로 여기 되돌아오는 모든 경로를 한 곳에서 확실히 풀기 위해 finally에 둠.
     state.isSubmitting = false;
     setSubmitLoading(false);
+    hideLoading();
   }
 }
 
@@ -865,6 +872,7 @@ async function resumeAfterKakaoPay() {
   }
   if (paid !== 'success') return;
 
+  showLoading('결제 결과를 확인하는 중...');
   try {
     const [reservation, payment] = await Promise.all([
       fetch(`/templestayreservations/${reservationId}`).then(r => r.json()),
@@ -876,6 +884,8 @@ async function resumeAfterKakaoPay() {
   } catch (err) {
     console.error(err);
     alert('결제는 완료됐지만 결과를 불러오지 못했습니다. 마이페이지에서 예약 내역을 확인해 주세요.');
+  } finally {
+    hideLoading();
   }
 }
 
