@@ -27,4 +27,5 @@ public class TempleEventDTO {
 	@DateTimeFormat(pattern = "yyyy-MM-dd")
 	private LocalDate endDate;
 	private String linkUrl;
+	private boolean favorited; // 로그인한 회원이 이 행사를 즐겨찾기 했는지 - /events, 관심 행사 목록에서만 채워짐
 }

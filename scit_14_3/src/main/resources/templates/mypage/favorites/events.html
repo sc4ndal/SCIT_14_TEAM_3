@@ -6,10 +6,16 @@
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <link rel="stylesheet" th:href="@{/css/common.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/css/mypage/favorites.css}" type="text/css">
     <title>관심 행사 · 佛선자</title>
 </head>
 
 <body>
+
+<div id="auth-info" style="display:none;"
+     sec:authorize="isAuthenticated()"
+     th:attr="data-login-id=${#authentication.principal.username}"></div>
 
 <header>
     <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
@@ -17,11 +23,60 @@
 
 <main class="mypage-main">
     <div class="mypage-inner">
-        <!-- 관심 행사 내용 영역 -->
+
+        <section class="favorites-hero">
+            <h1>관심 행사</h1>
+            <p>관심 등록한 행사와 법회 일정입니다.</p>
+        </section>
+
+        <p class="favorites-empty" th:if="${#lists.isEmpty(events)}">
+            아직 즐겨찾기한 행사가 없습니다. <a th:href="@{/events}">불교 행사 보러 가기 →</a>
+        </p>
+
+        <div class="food-favorite-grid" th:unless="${#lists.isEmpty(events)}">
+            <article class="food-favorite-card" th:each="event : ${events}" data-remove-on-unfavorite>
+
+                <div class="food-favorite-card__body">
+                    <p class="event-card__date" style="margin:0 0 8px;">
+                        <span th:text="${#temporals.format(event.startDate, 'yyyy.MM.dd')}">2026.01.01</span>
+                        <span th:if="${event.endDate != event.startDate}"
+                              th:text="'~ ' + ${#temporals.format(event.endDate, 'yyyy.MM.dd')}">~ 2026.01.07</span>
+                    </p>
+
+                    <h2 class="food-favorite-card__title" th:text="${event.title}">행사명</h2>
+
+                    <p class="food-favorite-card__desc">
+                        <span aria-hidden="true">⌖</span>
+                        <span th:text="${event.templeName}">사찰명</span>
+                    </p>
+
+                    <p class="food-favorite-card__desc" th:if="${event.description != null}"
+                       th:text="${event.description}">행사 소개</p>
+
+                    <a class="food-favorite-card__link" th:if="${event.linkUrl != null}" th:href="${event.linkUrl}"
+                       target="_blank" rel="noopener noreferrer">
+                        자세히 보기 →
+                    </a>
+                </div>
+
+                <div class="food-favorite-card__footer">
+                    <button type="button" class="favorite-toggle is-favorited"
+                            th:attr="data-favorite-url=@{'/events/' + ${event.eventId} + '/favorite'}"
+                            data-favorited="true" aria-pressed="true">
+                        <span class="favorite-toggle__icon"></span>
+                        <span class="favorite-toggle__label">즐겨찾기됨</span>
+                    </button>
+                </div>
+
+            </article>
+        </div>
+
     </div>
 </main>
 
 <div th:replace="~{fragments/layout :: footer}"></div>
+
+<script defer th:src="@{/js/buddhism/favoriteButton.js}"></script>
 
 </body>
 </html>

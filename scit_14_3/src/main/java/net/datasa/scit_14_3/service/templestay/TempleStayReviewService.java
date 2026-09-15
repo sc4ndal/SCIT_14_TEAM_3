@@ -6,10 +6,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.templestay.TempleStayReviewDTO;
 import net.datasa.scit_14_3.domain.dto.templestay.TempleStayReviewListDTO;
+import net.datasa.scit_14_3.domain.entity.templestay.FavoriteReviewEntity;
 import net.datasa.scit_14_3.domain.entity.templestay.TempleStayProgramEntity;
 import net.datasa.scit_14_3.domain.entity.templestay.TempleStayReservationEntity;
 import net.datasa.scit_14_3.domain.entity.templestay.TempleStayReviewEntity;
 import net.datasa.scit_14_3.domain.entity.user.UserEntity;
+import net.datasa.scit_14_3.repository.templestay.FavoriteReviewRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayProgramRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayReservationRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayReviewRepository;
@@ -21,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -34,6 +37,7 @@ public class TempleStayReviewService {
 	private final TempleStayProgramRepository tspr;
 	private final UserRepository userRepository;
 	private final CloudinaryService cloudinaryService;
+	private final FavoriteReviewRepository favoriteReviewRepository;
 
 	// Cloudinary 무료 플랜(장당 10MB) + 요청 크기 제한 안에서 감당 가능한 최대 첨부 장수
 	public static final int MAX_IMAGES = 5;
@@ -99,8 +103,45 @@ public class TempleStayReviewService {
 	 * 리뷰엔 사찰/프로그램/작성자 이름이 없어서 예약→프로그램→사찰, login_id→닉네임을 여기서 조인해
 	 * 한 번에 내려준다. 검색/정렬/페이징은 양이 많지 않아 프론트(reviews.js)에서 처리한다.
 	 */
-	public List<TempleStayReviewListDTO> findAllReviews() {
-		List<TempleStayReviewEntity> reviews = tsrvr.findAllByOrderByCreatedAtDesc();
+	public List<TempleStayReviewListDTO> findAllReviews(String loginId) {
+		return toListDto(tsrvr.findAllByOrderByCreatedAtDesc(), loginId);
+	}
+
+	/** 마이페이지 > 좋아요한 리뷰. */
+	public List<TempleStayReviewListDTO> getFavoriteReviews(String loginId) {
+		List<TempleStayReviewEntity> reviews = favoriteReviewRepository.findByLoginIdOrderByCreatedAtDesc(loginId).stream()
+				.map(FavoriteReviewEntity::getReview)
+				.toList();
+		return toListDto(reviews, loginId);
+	}
+
+	/** 이미 좋아요한 상태면 취소, 아니면 새로 등록 - likeCount도 함께 증감시킨다.
+	    반환값은 처리 후 좋아요 상태(true=등록됨). */
+	@Transactional
+	public boolean toggleLike(String loginId, Long reviewId) {
+		var existing = favoriteReviewRepository.findByLoginIdAndReview_ReviewId(loginId, reviewId);
+		TempleStayReviewEntity review = tsrvr.findById(reviewId)
+				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 리뷰입니다."));
+
+		if (existing.isPresent()) {
+			favoriteReviewRepository.delete(existing.get());
+			review.setLikeCount(Math.max(0, review.getLikeCount() - 1));
+			log.debug("리뷰 좋아요 취소: loginId={}, reviewId={}", loginId, reviewId);
+			return false;
+		}
+
+		favoriteReviewRepository.save(FavoriteReviewEntity.builder()
+				.loginId(loginId)
+				.review(review)
+				.build());
+		review.setLikeCount(review.getLikeCount() + 1);
+		log.debug("리뷰 좋아요 등록: loginId={}, reviewId={}", loginId, reviewId);
+		return true;
+	}
+
+	/** 리뷰 엔티티 목록 -> 사찰/프로그램/작성자/좋아요 여부를 조인해 목록 DTO로 변환하는 공용 로직
+	    (전체 후기 모아보기와 마이페이지 좋아요한 리뷰가 같이 쓴다). */
+	private List<TempleStayReviewListDTO> toListDto(List<TempleStayReviewEntity> reviews, String loginId) {
 		if (reviews.isEmpty()) {
 			return Collections.emptyList();
 		}
@@ -123,6 +164,8 @@ public class TempleStayReviewService {
 		Map<String, String> nicknameMap = userRepository.findAllById(loginIds).stream()
 				.collect(Collectors.toMap(UserEntity::getLoginId, UserEntity::getNickname));
 
+		Set<Long> likedIds = loginId == null ? Collections.emptySet() : favoriteReviewRepository.findFavoritedReviewIds(loginId);
+
 		List<TempleStayReviewListDTO> result = new ArrayList<>(reviews.size());
 		for (TempleStayReviewEntity review : reviews) {
 			TempleStayReservationEntity reservation = reservationMap.get(review.getReservationId());
@@ -144,6 +187,7 @@ public class TempleStayReviewService {
 					.viewCount(review.getViewCount())
 					.createdAt(review.getCreatedAt())
 					.updatedAt(review.getUpdatedAt())
+					.liked(likedIds.contains(review.getReviewId()))
 					.build());
 		}
 		return result;

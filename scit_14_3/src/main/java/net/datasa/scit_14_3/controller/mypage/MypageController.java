@@ -10,7 +10,9 @@ import net.datasa.scit_14_3.service.buddhism.TempleFoodService;
 import net.datasa.scit_14_3.service.mypage.MypageService;
 import net.datasa.scit_14_3.service.integration.CloudinaryService;
 import net.datasa.scit_14_3.service.temple.FavoriteTempleService;
+import net.datasa.scit_14_3.service.temple.TempleEventService;
 import net.datasa.scit_14_3.service.temple.TempleService;
+import net.datasa.scit_14_3.service.templestay.TempleStayReviewService;
 import net.datasa.scit_14_3.service.user.EmailVerificationService;
 import net.datasa.scit_14_3.service.user.UserService;
 import net.datasa.scit_14_3.util.PasswordPolicy;
@@ -41,6 +43,8 @@ public class MypageController {
 	private final FavoriteTempleService favoriteTempleService;
 	private final DailyQuoteService dailyQuoteService;
 	private final TempleFoodService templeFoodService;
+	private final TempleEventService templeEventService;
+	private final TempleStayReviewService templeStayReviewService;
 
 	@PreAuthorize("hasRole('USER')")
 	@GetMapping("/mypage")
@@ -75,7 +79,8 @@ public class MypageController {
 	}
 	
 	@GetMapping("/mypage/favorites/events")
-	public String favoriteEvents() {
+	public String favoriteEvents(@AuthenticationPrincipal AppUserDetails principal, Model model) {
+		model.addAttribute("events", templeEventService.getFavorites(principal.getUsername()));
 		return "mypage/favorites/events";
 	}
 	
@@ -92,7 +97,8 @@ public class MypageController {
 	}
 	
 	@GetMapping("/mypage/favorites/reviews") // 내가 좋아요 한 리뷰
-	public String favoriteReviews() {
+	public String favoriteReviews(@AuthenticationPrincipal AppUserDetails principal, Model model) {
+		model.addAttribute("reviews", templeStayReviewService.getFavoriteReviews(principal.getUsername()));
 		return "mypage/favorites/reviews";
 	}
 	
