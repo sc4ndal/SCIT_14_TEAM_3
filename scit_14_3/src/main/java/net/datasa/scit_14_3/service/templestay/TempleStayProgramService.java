@@ -80,6 +80,10 @@ public class TempleStayProgramService {
 	 * @param programId
 	 * @return
 	 */
+	// 프로그램 상세보기 화면 전용 - getAll()과 같은 이유(원격 DB 왕복 + reservedCount가
+	// 예약 생성/취소로 바뀜)로 캐싱하고, 같은 evict 지점들(아래 register/update/delete,
+	// TempleStayReservationService의 예약 생성/취소)에서 이 캐시도 같이 비운다.
+	@Cacheable(value = "program", key = "#programId")
 	public TempleStayProgramDTO getInfo(Long programId) {
 		TempleStayProgramEntity entity = tspr.findById(programId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
 		return toDto(entity);
@@ -93,8 +97,7 @@ public class TempleStayProgramService {
 	// 텍스트 전송이 겹쳐서 체감이 큼 - 캐싱하되, reservedCount(예약된 인원)가 섞여 있어서
 	// 예약 생성/취소로도 값이 바뀐다. 그래서 프로그램 등록/수정/삭제뿐 아니라
 	// TempleStayReservationService의 예약 생성/취소 지점들에서도 같은 캐시("programs")를 비운다.
-	// TODO: 로딩바 테스트를 위해 잠깐 꺼둠 - 확인 끝나면 주석 풀어서 다시 캐싱 켤 것
-	// @Cacheable("programs")
+	@Cacheable("programs")
 	public List<TempleStayProgramDTO> getAll() {
 		return toDtoList(tspr.findAllWithTemple());
 	}
@@ -135,7 +138,7 @@ public class TempleStayProgramService {
 	 * support_english/latitude/longitude는 DB 트리거가 소속 TEMPLE 값으로 저장 시점에
 	 * 덮어쓰므로(docs/sql/buddhist-site-schema.sql 참고) 여기서 안 채워도 됨.
 	 */
-	@CacheEvict(value = {"programs", "programsByTemple"}, allEntries = true)
+	@CacheEvict(value = {"programs", "programsByTemple", "program"}, allEntries = true)
 	public void register(TempleStayProgramDTO dto, Long templeId) {
 		TempleEntity temple = templeRepository.findById(templeId)
 				.orElseThrow(() -> new EntityNotFoundException("사찰 계정을 찾을 수 없습니다."));
@@ -160,7 +163,7 @@ public class TempleStayProgramService {
 
 	/** 본인 사찰 소속 프로그램만 수정 가능 - programId만 바꿔서 남의 프로그램을 건드릴 수 없도록
 	    findByProgramIdAndTemple_TempleId로 소유 사찰까지 같이 확인. */
-	@CacheEvict(value = {"programs", "programsByTemple"}, allEntries = true)
+	@CacheEvict(value = {"programs", "programsByTemple", "program"}, allEntries = true)
 	public void update(Long programId, TempleStayProgramDTO dto, Long templeId) {
 		TempleStayProgramEntity entity = tspr.findByProgramIdAndTemple_TempleId(programId, templeId)
 				.orElseThrow(() -> new EntityNotFoundException("해당 프로그램을 찾을 수 없습니다."));
@@ -188,7 +191,7 @@ public class TempleStayProgramService {
 
 	/** 본인 사찰 소속 프로그램만 삭제 가능. 이미 예약이 걸린 프로그램은 외래키 제약으로 삭제가
 	    막히므로(TEMPLE_STAY_RESERVATION.program_id) 친절한 에러로 안내함. */
-	@CacheEvict(value = {"programs", "programsByTemple"}, allEntries = true)
+	@CacheEvict(value = {"programs", "programsByTemple", "program"}, allEntries = true)
 	public void delete(Long programId, Long templeId) {
 		TempleStayProgramEntity entity = tspr.findByProgramIdAndTemple_TempleId(programId, templeId)
 				.orElseThrow(() -> new EntityNotFoundException("해당 프로그램을 찾을 수 없습니다."));

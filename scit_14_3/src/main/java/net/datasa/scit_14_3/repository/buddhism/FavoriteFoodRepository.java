@@ -12,6 +12,9 @@ public interface FavoriteFoodRepository extends JpaRepository<FavoriteFoodEntity
 
 	Optional<FavoriteFoodEntity> findByLoginIdAndFood_RecommendationId(String loginId, Long recommendationId);
 
+	// FavoriteFoodEntity.food가 @ManyToOne(기본 EAGER)이라 JOIN FETCH 없이 쓰면 즐겨찾기
+	// 건수만큼 TEMPLE_FOOD_RECOMMENDATION을 따로 불러옴(N+1)
+	@Query("select f from FavoriteFoodEntity f join fetch f.food where f.loginId = :loginId order by f.createdAt desc")
 	List<FavoriteFoodEntity> findByLoginIdOrderByCreatedAtDesc(String loginId);
 
 	// 목록 화면에서 즐겨찾기 여부 표시용 - 매번 exists 쿼리를 여러 번 날리지 않도록 한 번에 recommendation_id만 뽑아둠

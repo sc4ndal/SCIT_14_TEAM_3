@@ -23,41 +23,36 @@
    }
 
    async function loadMyReservations() {
+     showLoading('예약 목록을 불러오는 중...');
      try {
-       // 예약 목록 + 사찰 목록 + 프로그램 목록을 동시에 요청 (서로 기다릴 필요 없으니 Promise.all)
-       const [resRes, templesRes, programsRes] = await Promise.all([
+       // 예약 목록 + 사찰 목록 + 프로그램 목록 + (본인 예약 전체의) 결제 정보 + 내가 쓴 리뷰 목록을
+       // 한 번에 요청. 예전엔 결제 정보/리뷰 작성 여부를 예약마다 따로(N+1) 불러왔는데, 원격 DB(Aiven)
+       // 왕복이 예약 건수만큼 쌓여서 느렸음 - 전부 한 번씩만 왕복하도록 묶음.
+       const [resRes, templesRes, programsRes, paymentsRes, reviewsRes] = await Promise.all([
          fetch(`/templestayreservations?loginId=${currentLoginId}`),
          fetch('/temples'),
          fetch('/templestayprograms'),
+         fetch('/payments/my-reservations'),
+         fetch(`/reviews?loginId=${currentLoginId}`),
        ]);
 
        const reservations = await resRes.json();
        const temples = await templesRes.json();
        const programs = await programsRes.json();
+       const paymentsByReservationId = await paymentsRes.json(); // { reservationId: PaymentDTO }
+       const myReviews = await reviewsRes.json();
 
        // programId -> program, templeId -> temple 로 빠르게 찾을 수 있게 Map으로 만들어둠
        const templeMap = new Map(temples.map(t => [t.templeId, t]));
        const programMap = new Map(programs.map(p => [p.programId, p]));
+       const reviewedReservationIds = new Set(myReviews.map(rv => rv.reservationId));
 
-       RESERVATIONS = [];
-
-       // 예약 하나하나마다 프로그램 정보 붙이고, 결제 정보도 따로 불러옴
-       for (const r of reservations) {
+       RESERVATIONS = reservations.map(r => {
          const program = programMap.get(r.programId);
          const temple = program ? templeMap.get(program.templeId) : null;
+         const payment = paymentsByReservationId[r.reservationId];
 
-         let payment = null;
-         try {
-           const payRes = await fetch(`/payments/reservation/${r.reservationId}`);
-           if (payRes.ok) {
-             payment = await payRes.json();
-           }
-         } catch (err) {
-           // 결제 정보 하나 실패해도 이 예약만 "정보 없음"으로 처리하고 나머지는 계속 진행
-           console.error(`예약 ${r.reservationId}의 결제 정보를 불러오지 못했습니다.`, err);
-         }
-
-         RESERVATIONS.push({
+         return {
            reservationId: r.reservationId,
            programId: r.programId,
            status: r.status,
@@ -67,6 +62,7 @@
            createdAt: r.createdAt,
            amount: payment ? payment.amount : null,
            paymentMethod: payment ? payment.paymentMethod : null,
+           reviewed: reviewedReservationIds.has(r.reservationId),
            program: {
              title: program ? program.title : '(정보 없음)',
              templeName: temple ? temple.name : '',
@@ -75,8 +71,8 @@
              price: program ? program.price : 0,
              description: program ? program.description : '',
            },
-         });
-       }
+         };
+       });
 
        // 예약확정/취소는 시작일 빠른 순으로 위에, 이용완료는 시작일 늦은 순으로 그 아래에 모아서 보여줌
        const upcoming = RESERVATIONS.filter(r => r.status !== '이용완료')
@@ -85,10 +81,14 @@
          .sort((a, b) => b.startDate.localeCompare(a.startDate));
        RESERVATIONS = [...upcoming, ...finished];
 
+       // 이 시점 이후로 예약확정/취소/완료 필터 버튼은 RESERVATIONS 배열 안에서만 걸러서
+       // renderList()를 다시 그리는 식이라(아래 #status-filter 클릭 핸들러 참고) 서버를 다시 안 탄다.
        renderList();
      } catch (err) {
        console.error('예약 목록을 불러오지 못했습니다.', err);
        alert('예약 목록을 불러오는 중 오류가 발생했습니다.');
+     } finally {
+       hideLoading();
      }
    }
   let selectedReservationId = null;
@@ -113,7 +113,7 @@
         <div class="meta">
           <p class="applied-at">신청 ${formatAppliedAt(r.createdAt)}</p>
           <div class="date">${r.startDate}${r.startDate !== r.endDate ? ' ~ ' + r.endDate : ''}</div>
-          <span class="status-badge status-${r.status}">${r.status}</span>
+          <span class="status-badge status-${r.status}">${r.status}</span>${r.status === '이용완료' ? `<span class="review-status-badge ${r.reviewed ? 'review-done' : 'review-pending'}">${r.reviewed ? '작성완료' : '리뷰 미작성'}</span>` : ''}
         </div>
       </article>
     `).join('');

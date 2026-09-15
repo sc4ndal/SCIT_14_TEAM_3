@@ -5,11 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.payment.PaymentDTO;
 import net.datasa.scit_14_3.domain.dto.templestay.ReservationParticipantDTO;
 import net.datasa.scit_14_3.domain.dto.templestay.TempleStayReservationDTO;
+import net.datasa.scit_14_3.security.AppUserDetails;
 import net.datasa.scit_14_3.service.payment.PaymentService;
 import net.datasa.scit_14_3.service.templestay.ReservationParticipantService;
 import net.datasa.scit_14_3.service.templestay.TempleStayReservationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +30,12 @@ public class ReservationController {
 	@GetMapping("/reservation")
 	public String Reservation() {
 		return "templestay/reservation";
+	}
+
+	/** 전체 후기 모아보기 (아직 빈 페이지 - 목록 API/렌더링은 추후 구현) */
+	@GetMapping("/reservation/reviews")
+	public String reviews() {
+		return "templestay/reviews";
 	}
 
 	/** 프로그램 상세보기 - 예전엔 /reservation 안 모달이었는데, 뒤로가기 누르면 이전 페이지(가이드 등)로
@@ -82,21 +90,64 @@ public class ReservationController {
 		return tsrs.findByMyReservation(loginId);
 	}
 
+	/** 본인 예약만 조회 가능 - reservationId는 URL/쿼리스트링에 그대로 노출되는 값이라(카카오페이
+	    리다이렉트 등) 아무 숫자나 넣어서 남의 예약 정보(날짜/인원 등)를 볼 수 있으면 안 된다. */
 	@GetMapping("/templestayreservations/{reservationId}")
 	@ResponseBody
-	public TempleStayReservationDTO getTempleStayReservationById(@PathVariable Long reservationId) {
-		return tsrs.getInfo(reservationId);
+	public ResponseEntity<?> getTempleStayReservationById(@PathVariable Long reservationId,
+			@AuthenticationPrincipal AppUserDetails principal) {
+		TempleStayReservationDTO dto = tsrs.getInfo(reservationId);
+		if (!isOwner(dto, principal)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "본인 예약만 조회할 수 있습니다."));
+		}
+		return ResponseEntity.ok(dto);
 	}
-	
+
+	/** 본인 예약의 결제 정보만 조회 가능 - 위와 같은 이유(reservationId가 URL에 노출됨)로,
+	    소유자 확인 없이 열어두면 결제 금액/수단 같은 정보가 그대로 새어나간다. */
 	@GetMapping("/payments/reservation/{reservationId}")
 	@ResponseBody
-	public PaymentDTO getPaymentByReservations(@PathVariable Long reservationId) {
-		return ps.findByReservationId(reservationId);
+	public ResponseEntity<?> getPaymentByReservations(@PathVariable Long reservationId,
+			@AuthenticationPrincipal AppUserDetails principal) {
+		TempleStayReservationDTO reservation = tsrs.getInfo(reservationId);
+		if (!isOwner(reservation, principal)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "본인 예약만 조회할 수 있습니다."));
+		}
+		return ResponseEntity.ok(ps.findByReservationId(reservationId));
+	}
+
+	private boolean isOwner(TempleStayReservationDTO reservation, AppUserDetails principal) {
+		return principal != null && reservation != null
+				&& reservation.getLoginId() != null
+				&& reservation.getLoginId().equals(principal.getUsername());
+	}
+
+	/** 예약목록 화면에서 예약마다 결제 정보를 하나씩 불러오면(N+1) 느려서, 로그인한 본인의 예약 전체
+	    결제 정보를 한 번에 조회. 클라이언트가 예약 ID 목록을 넘기는 방식이 아니라 서버가 principal
+	    기준으로 본인 예약만 찾아서 그 안에서만 조회함 - 남의 예약 ID를 넣어서 결제 정보를 엿볼 수
+	    없도록(기존 /payments/reservation/{id} 단건 조회는 이 검증이 없어서 그대로 두면 같이 뚫림).
+	    결제 정보가 없는 예약(대기 등)은 응답 맵에 그 id가 아예 없음. */
+	@GetMapping("/payments/my-reservations")
+	@ResponseBody
+	public Map<Long, PaymentDTO> getMyPayments(@AuthenticationPrincipal AppUserDetails principal) {
+		if (principal == null) {
+			return Map.of();
+		}
+		List<Long> myReservationIds = tsrs.findByMyReservation(principal.getUsername()).stream()
+				.map(TempleStayReservationDTO::getReservationId)
+				.toList();
+		return ps.findByReservationIds(myReservationIds);
 	}
 	
+	/** 본인 예약만 취소 가능 - 확인 없이 열어두면 reservationId만 알면(URL에 그대로 노출됨) 아무나
+	    남의 예약을 취소시킬 수 있었다(조회보다 더 위험한 상태변경 API인데 이게 더 허술했음). */
 	@PatchMapping("/templestayreservations/{reservationId}/cancel")
 	@ResponseBody
-	public ResponseEntity<?> canceledReservation(@PathVariable Long reservationId) {
+	public ResponseEntity<?> canceledReservation(@PathVariable Long reservationId,
+			@AuthenticationPrincipal AppUserDetails principal) {
+		if (!isOwner(tsrs.getInfo(reservationId), principal)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "본인 예약만 취소할 수 있습니다."));
+		}
 		try {
 			return ResponseEntity.ok(tsrs.canceledMyReservation(reservationId));
 		} catch (IllegalStateException e) {

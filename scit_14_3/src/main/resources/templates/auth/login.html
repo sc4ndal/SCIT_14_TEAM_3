@@ -58,6 +58,11 @@
             <input id="password" name="password" type="password" autocomplete="current-password">
         </div>
 
+        <label class="terms-checkbox" for="rememberId">
+            <input id="rememberId" name="rememberId" type="checkbox">
+            <span data-i18n="rememberIdLabel">아이디 기억하기</span>
+        </label>
+
         <div class="form-actions">
             <button class="submit" type="submit">로그인</button>
             <a class="btn-cancel" th:href="@{/}" data-i18n="cancelBtn">취소</a>

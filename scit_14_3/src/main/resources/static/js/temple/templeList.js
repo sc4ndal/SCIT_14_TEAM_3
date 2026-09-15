@@ -28,6 +28,9 @@ kakao.maps.load(function () {
             currentOpenInfoWindow.close();
             currentOpenInfoWindow = null;
         }
+        if (currentOpenMarker)
+            currentOpenMarker.setImage(currentOpenMarker.normalImage);
+            currentOpenMarker = null;
     });
 
     // 검색 기능에서 쓰기 위해 사찰 데이터 + 마커를 기억해둔다 (templeId 기준)
@@ -96,10 +99,18 @@ kakao.maps.load(function () {
 
     // ------------------------- 검색 -------------------------
     function showResultList(temples) {
+        // 즐겨찾기한 사찰을 목록 맨 위로 오게 정렬
+        // (temples 원본 배열은 그대로 두고, 복사본(slice())을 정렬해서 사용 - 원본을 건드리면 다른 곳에서 꼬일 수 있음)
+        var sortedTemples = temples.slice().sort(function (a, b){
+            var aFav = favoriteTempleIds.indexOf(a.templeId) !== -1;
+            var bFav = favoriteTempleIds.indexOf(b.templeId) !== -1;
+            if (aFav === bFav) return 0;
+            return aFav ? -1 : 1;
+        });
         var list = document.getElementById('result-list');
         list.innerHTML = ''; // 이전 검색 결과 지우기
 
-        temples.forEach(function (temple){
+        sortedTemples.forEach(function (temple){
             var li = document.createElement('li');
             // 검색 결과 리스트에 사찰 이름이랑 주소 표시
             li.innerHTML =
@@ -157,13 +168,18 @@ kakao.maps.load(function () {
             });
         // 리스트 항목을 클릭하면 그 사찰로 이동 + 정보창 열기
         li.addEventListener('click', function() {
-            map.setCenter(new kakao.maps.LatLng(temple.latitude, temple.longitude));
-            map.setLevel(4);
+            var marker = markerByTempleId[temple.templeId]; // ← markerByTempleId에서 찾아옴
+                   if (marker) {
+                       kakao.maps.event.trigger(marker, 'click'); // ← Marker는 카카오 이벤트 시스템으로 흉내냄
+                   }
 
-            var marker = markerByTempleId[temple.templeId];
-            if(marker) {
-                kakao.maps.event.trigger(marker, 'click');
-            }
+            // 지도 중심을 검색된 사찰로 이동 + 좀 더 가깝게 확대
+            map.relayout();
+            map.setLevel(4);
+            map.setCenter(new kakao.maps.LatLng(temple.latitude, temple.longitude));
+
+
+
         });
         list.appendChild(li);
         });
@@ -184,10 +200,16 @@ kakao.maps.load(function () {
         }
     }
     document.getElementById('result-panel-close').addEventListener('click', function () {
-        resultPanel.classList.add('collapsed');
-        updateResultPanelToggle();
+        // 검색 조건뿐 아니라 켜져있던 필터 버튼들도 전부 꺼줘야
+        // applyFilter()가 패널을 다시 열지 않음
+        document.querySelectorAll('#temple-filter-box button.active').forEach(function (btn) {
+            btn.classList.remove('active');
+        });
+        document.getElementById('filter-support-english').classList.remove('active');
+        document.getElementById('filter-favorite').classList.remove('active');
         searchMatchedIds = null; // 검색 제한 해제
-        applyFilters();
+
+        applyFilters(); // 위에서 다 껐으니 이제 anyFilterActive가 false가 되어 패널이 실제로 닫힘.
     });
 
     resultPanelToggle.addEventListener('click', function () {
@@ -250,9 +272,9 @@ kakao.maps.load(function () {
 
         // 해당 마커를 클릭한 것처럼 처리해서 정보창 띄우기
         var marker = markerByTempleId[found.templeId];
-        if (marker) {
-            kakao.maps.event.trigger(marker, 'click');
-        }
+              if (marker) {
+                  kakao.maps.event.trigger(marker, 'click');
+              }
     }
     document.getElementById('search-btn').addEventListener('click', runSearch);
     // 입력창에서 엔터키로도 검색되게
@@ -269,6 +291,11 @@ kakao.maps.load(function () {
             location.href = '/login';
             return; // 필터는 켜지지 않음
         }
+        // 필터 바뀌면 열려있던 정보창부터 닫기
+        if (currentOpenInfoWindow) {
+             currentOpenInfoWindow.close();
+             currentOpenInfoWindow = null;
+             }
         favoriteFilterBtn.classList.toggle('active');
         applyFilters();
     });
@@ -284,12 +311,18 @@ kakao.maps.load(function () {
 
     typeAndEnglishButtons.forEach(function (btn){
         btn.addEventListener('click', function (){
+        // 필터 바뀌면 열려있던 정보창부터 닫기
+        if (currentOpenInfoWindow) {
+             currentOpenInfoWindow.close();
+             currentOpenInfoWindow = null;
+             }
             btn.classList.toggle('active');
             applyFilters();
         });
     });
 
     function applyFilters() {
+
         var activeTypeFields = [];
         document.querySelectorAll('#temple-filter-box button.active').forEach(function (btn){
             var field = typeFieldMap[btn.id];
@@ -316,9 +349,10 @@ kakao.maps.load(function () {
             var matchSearch = !searchMatchedIds || searchMatchedIds.indexOf(temple.templeId) !== -1;
             var match = matchType && matchEnglish && matchFavorite && matchSearch;
 
-            var marker = markerByTempleId[temple.templeId];
-            if(marker) { marker.setMap(match ? map : null);}
-
+            var marker = markerByTempleId[temple.templeId]; // ← markerByTempleId에서 찾아옴
+                if (marker) {
+                    marker.setMap(match ? map : null);
+                }
             if (match) {
                 matchedTemples.push(temple); // 통과한 사찰은 목록에도 추가
             }
