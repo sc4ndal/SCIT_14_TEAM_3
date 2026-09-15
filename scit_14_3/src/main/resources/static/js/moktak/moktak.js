@@ -193,13 +193,14 @@ infoBtn.addEventListener('click', () => { infoPopover.hidden = !infoPopover.hidd
 //    아래는 JOIN/CHAT/LEAVE 스키마 기준으로 짠 가정 버전.
 let ws = null;
 let flowLane = 0;
-const FLOW_LANES = 4;
+const FLOW_LANES = 5;
 
 function addFlowingMessage(text) {
     const el = document.createElement('div');
     el.className = 'flow-msg';
     el.textContent = text;
-    el.style.top = (8 + (flowLane % FLOW_LANES) * 10) + '%';
+    const laneHeight = 100 / FLOW_LANES;
+    el.style.top = (flowLane % FLOW_LANES) * laneHeight + laneHeight / 2 + '%';
     flowLane++;
     chatFlow.appendChild(el);
     el.addEventListener('animationend', () => el.remove());

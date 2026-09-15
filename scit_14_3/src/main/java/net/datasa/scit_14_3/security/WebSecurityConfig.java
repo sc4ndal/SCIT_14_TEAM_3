@@ -93,6 +93,7 @@ public class WebSecurityConfig {
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(PUBLIC_URLS.toArray(String[]::new)).permitAll()
 						.requestMatchers("/admin/**").hasRole("ADMIN")
+						.requestMatchers("/ws/**").permitAll()
 						.anyRequest().authenticated()
 				)
 				

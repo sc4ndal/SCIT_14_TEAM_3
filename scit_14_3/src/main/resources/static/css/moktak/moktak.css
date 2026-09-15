@@ -192,12 +192,14 @@ body {
 
 /* 흘러가는 댓글 */
 #chatFlow {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 46%;
+    position: fixed;
+    top: 20vh;
+    left: 0;
+    width: 100vw;
+    height: 36vh;
     overflow: hidden;
     pointer-events: none;
-    z-index: 5;
+    z-index: 50;
 }
 .flow-msg {
     position: absolute;
