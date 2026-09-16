@@ -83,7 +83,7 @@ const MOCK_PROGRAMS = [
 const state = {
   step: 1,                    // 1: 목록/상세, 2: 예약신청, 3: 신청완료
   programs: MOCK_PROGRAMS,    // GET /templestayprograms 결과로 교체 예정
-  filter: { region: '', templeId: '', programType: '', headcount: '' },
+  filter: { region: '', templeId: '', programType: '', supportEnglish: '', headcount: ''},
   page: 1,                    // 프로그램 목록 페이지네이션 (한 페이지 = 3줄 x 3개 = 9개)
   checkedProgramId: null,     // 목록에서 체크박스로 체크해둔 programId
   selectedProgram: null,      // 선택된 program 객체
@@ -121,6 +121,7 @@ function filteredPrograms() {
     (!f.region || p.region === f.region) &&
     (!f.templeId || String(p.templeId) === f.templeId) &&
     (!f.programType || p.programType === f.programType) &&
+    (!f.supportEnglish || String(p.supportEnglish) === f.supportEnglish) &&
     (!f.headcount || remainingSeats(p) >= Number(f.headcount))
   );
 }
@@ -196,7 +197,10 @@ function renderProgramList() {
     return `
     <article class="program-card ${state.checkedProgramId === p.programId ? 'picked' : ''}" data-program-id="${p.programId}">
       <div class="program-card-top">
+      <div class="badge-group">
         <span class="program-type-badge" data-type="${p.programType}">${p.programType}</span>
+        ${p.supportEnglish ? '<span class="lang-badge">EN</span>' : ''}
+        </div>
         <p class="program-capacity">
           <span class="capacity-dot ${full ? 'full' : 'open'}"></span>
           ${p.reservedCount || 0} / ${p.maxParticipant}명
@@ -798,6 +802,11 @@ function bindFilterChangeEvents() {
   });
   document.getElementById('filter-program-type').addEventListener('change', (e) => {
     state.filter.programType = e.target.value;
+    state.page = 1;
+    renderProgramList();
+  });
+  document.getElementById('filter-support-english').addEventListener('change', (e) => {
+    state.filter.supportEnglish = e.target.value;
     state.page = 1;
     renderProgramList();
   });

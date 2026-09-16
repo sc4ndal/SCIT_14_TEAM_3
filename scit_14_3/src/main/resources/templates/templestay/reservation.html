@@ -174,7 +174,7 @@
         }
 
         main {
-          max-width: 880px;
+          max-width: 1040px;
           margin: 0 auto;
           padding: 40px 24px 96px;
         }
@@ -195,7 +195,7 @@
         /* ---------- Filter form ---------- */
         #filter-form {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(5, 1fr);
           gap: 14px;
           background: var(--bg-raised);
           border: 1px solid var(--line);
@@ -322,6 +322,23 @@
         .program-type-badge[data-type="당일형"] {
         --badge-color: var(--gold-deep, var(--gold));
         --badge-tint: var(--gold-tint);
+        }
+        .lang-badge {
+        display: inline-flex;
+        align-items: center;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        font-weight: 700;
+        color: #1a1a1a;
+        background: transparent;
+        border: 1px solid #1a1a1a;
+        border-radius: 999px;
+        padding: 2px 9px;
+        }
+        .badge-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
         }
         .program-title {
           font-family: "Noto Serif KR", serif;
@@ -767,7 +784,13 @@
                     <option value="휴식형">휴식형</option>
                 </select>
             </div>
-
+            <div class="filter-item">
+                <label for="filter-support-english">언어</label>
+                <select id="filter-support-english" name="supportEnglish">
+                    <option value="">전체</option>
+                    <option value="true">영어 지원</option>
+                </select>
+            </div>
             <div class="filter-item">
                 <label for="filter-headcount">인원</label>
                 <select id="filter-headcount" name="headcount">
