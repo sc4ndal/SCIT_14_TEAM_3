@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "USER")
 @Getter
@@ -40,6 +42,16 @@ public class UserEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "login_type", nullable = false)
     private LoginType loginType = LoginType.LOCAL;
+
+    // 탈퇴 신청 일시 - null이면 정상 회원, 값이 있으면 유예기간(신청일+30일) 중이라 로그인하면
+    // 철회할 수 있음(WithdrawalGateFilter). withdrawnAt이 채워지기 전까지는 계속 로그인 가능.
+    @Column(name = "withdrawal_requested_at")
+    private LocalDateTime withdrawalRequestedAt;
+
+    // 탈퇴 확정(익명화) 처리된 일시 - 신청 후 30일이 지나면 WithdrawalScheduler가 채움.
+    // 값이 있으면 로그인 자체가 막힘(CustomUserDetailsService).
+    @Column(name = "withdrawn_at")
+    private LocalDateTime withdrawnAt;
 
     public enum Role { USER, ADMIN }
     public enum LoginType { LOCAL, KAKAO }

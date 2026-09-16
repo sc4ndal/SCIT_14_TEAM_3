@@ -6,10 +6,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.templestay.TempleStayReviewDTO;
 import net.datasa.scit_14_3.domain.dto.templestay.TempleStayReviewListDTO;
+import net.datasa.scit_14_3.domain.entity.templestay.FavoriteReviewEntity;
 import net.datasa.scit_14_3.domain.entity.templestay.TempleStayProgramEntity;
 import net.datasa.scit_14_3.domain.entity.templestay.TempleStayReservationEntity;
 import net.datasa.scit_14_3.domain.entity.templestay.TempleStayReviewEntity;
 import net.datasa.scit_14_3.domain.entity.user.UserEntity;
+import net.datasa.scit_14_3.repository.templestay.FavoriteReviewRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayProgramRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayReservationRepository;
 import net.datasa.scit_14_3.repository.templestay.TempleStayReviewRepository;
@@ -21,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -34,6 +37,7 @@ public class TempleStayReviewService {
 	private final TempleStayProgramRepository tspr;
 	private final UserRepository userRepository;
 	private final CloudinaryService cloudinaryService;
+	private final FavoriteReviewRepository favoriteReviewRepository;
 
 	// Cloudinary 무료 플랜(장당 10MB) + 요청 크기 제한 안에서 감당 가능한 최대 첨부 장수
 	public static final int MAX_IMAGES = 5;
@@ -85,6 +89,16 @@ public class TempleStayReviewService {
 		return tsrvr.findByReservationId(reservationId).map(this::toDto).orElse(null);
 	}
 
+	/** 마이페이지 허브 카드의 "리뷰 N건" 배지용 */
+	public long countMyReviews(String loginId) {
+		return tsrvr.countByLoginId(loginId);
+	}
+
+	/** 마이페이지 허브 카드의 "좋아요한 리뷰 N건" 배지용 */
+	public long countFavoriteReviews(String loginId) {
+		return favoriteReviewRepository.countByLoginId(loginId);
+	}
+
 	/** 마이페이지 > 내가 쓴 리뷰 */
 	public List<TempleStayReviewDTO> findByMyReviews(String loginId) {
 		List<TempleStayReviewDTO> result = new ArrayList<>();
@@ -99,8 +113,45 @@ public class TempleStayReviewService {
 	 * 리뷰엔 사찰/프로그램/작성자 이름이 없어서 예약→프로그램→사찰, login_id→닉네임을 여기서 조인해
 	 * 한 번에 내려준다. 검색/정렬/페이징은 양이 많지 않아 프론트(reviews.js)에서 처리한다.
 	 */
-	public List<TempleStayReviewListDTO> findAllReviews() {
-		List<TempleStayReviewEntity> reviews = tsrvr.findAllByOrderByCreatedAtDesc();
+	public List<TempleStayReviewListDTO> findAllReviews(String loginId) {
+		return toListDto(tsrvr.findAllByOrderByCreatedAtDesc(), loginId);
+	}
+
+	/** 마이페이지 > 좋아요한 리뷰. */
+	public List<TempleStayReviewListDTO> getFavoriteReviews(String loginId) {
+		List<TempleStayReviewEntity> reviews = favoriteReviewRepository.findByLoginIdOrderByCreatedAtDesc(loginId).stream()
+				.map(FavoriteReviewEntity::getReview)
+				.toList();
+		return toListDto(reviews, loginId);
+	}
+
+	/** 이미 좋아요한 상태면 취소, 아니면 새로 등록 - likeCount도 함께 증감시킨다.
+	    반환값은 처리 후 좋아요 상태(true=등록됨). */
+	@Transactional
+	public boolean toggleLike(String loginId, Long reviewId) {
+		var existing = favoriteReviewRepository.findByLoginIdAndReview_ReviewId(loginId, reviewId);
+		TempleStayReviewEntity review = tsrvr.findById(reviewId)
+				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 리뷰입니다."));
+
+		if (existing.isPresent()) {
+			favoriteReviewRepository.delete(existing.get());
+			review.setLikeCount(Math.max(0, review.getLikeCount() - 1));
+			log.debug("리뷰 좋아요 취소: loginId={}, reviewId={}", loginId, reviewId);
+			return false;
+		}
+
+		favoriteReviewRepository.save(FavoriteReviewEntity.builder()
+				.loginId(loginId)
+				.review(review)
+				.build());
+		review.setLikeCount(review.getLikeCount() + 1);
+		log.debug("리뷰 좋아요 등록: loginId={}, reviewId={}", loginId, reviewId);
+		return true;
+	}
+
+	/** 리뷰 엔티티 목록 -> 사찰/프로그램/작성자/좋아요 여부를 조인해 목록 DTO로 변환하는 공용 로직
+	    (전체 후기 모아보기와 마이페이지 좋아요한 리뷰가 같이 쓴다). */
+	private List<TempleStayReviewListDTO> toListDto(List<TempleStayReviewEntity> reviews, String loginId) {
 		if (reviews.isEmpty()) {
 			return Collections.emptyList();
 		}
@@ -119,11 +170,15 @@ public class TempleStayReviewService {
 		Map<Long, TempleStayProgramEntity> programMap = tspr.findAllByIdInWithTemple(programIds).stream()
 				.collect(Collectors.toMap(TempleStayProgramEntity::getProgramId, Function.identity()));
 
-		// login_id -> 닉네임(법명)
+		// login_id -> 회원 (닉네임/법명 + 탈퇴 여부) - 탈퇴 확정된 회원은 nickname이 익명화 과정에서
+		// login_id 그대로 채워진 내부용 값이라(UserService.finalizeOverdueWithdrawals 참고) 그대로
+		// 보여주지 않고 authorDisplayName()에서 "탈퇴한 회원"으로 바꿔 보여준다.
 		List<String> loginIds = reviews.stream()
 				.map(TempleStayReviewEntity::getLoginId).distinct().toList();
-		Map<String, String> nicknameMap = userRepository.findAllById(loginIds).stream()
-				.collect(Collectors.toMap(UserEntity::getLoginId, UserEntity::getNickname));
+		Map<String, UserEntity> authorMap = userRepository.findAllById(loginIds).stream()
+				.collect(Collectors.toMap(UserEntity::getLoginId, Function.identity()));
+
+		Set<Long> likedIds = loginId == null ? Collections.emptySet() : favoriteReviewRepository.findFavoritedReviewIds(loginId);
 
 		List<TempleStayReviewListDTO> result = new ArrayList<>(reviews.size());
 		for (TempleStayReviewEntity review : reviews) {
@@ -139,16 +194,26 @@ public class TempleStayReviewService {
 					.programId(program != null ? program.getProgramId() : null)
 					.programName(program != null ? program.getTitle() : null)
 					.rating((int) review.getRating())
-					.authorName(nicknameMap.get(review.getLoginId()))
+					.authorName(authorDisplayName(authorMap.get(review.getLoginId())))
 					.content(review.getContent())
 					.imageUrls(review.getImageUrls())
 					.likeCount(review.getLikeCount())
 					.viewCount(review.getViewCount())
 					.createdAt(review.getCreatedAt())
 					.updatedAt(review.getUpdatedAt())
+					.liked(likedIds.contains(review.getReviewId()))
 					.build());
 		}
 		return result;
+	}
+
+	/** 탈퇴 확정된 회원은 nickname이 익명화된 내부용 값이라(UserService.finalizeOverdueWithdrawals
+	    참고) 그대로 보여주지 않고 "탈퇴한 회원"으로 표시한다. */
+	private String authorDisplayName(UserEntity author) {
+		if (author == null) {
+			return null;
+		}
+		return author.getWithdrawnAt() != null ? "탈퇴한 회원" : author.getNickname();
 	}
 
 	/** 리뷰 수정 - 작성자 본인만 가능. */

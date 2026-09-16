@@ -15,6 +15,9 @@ public interface TempleStayReviewRepository extends JpaRepository<TempleStayRevi
 	// 마이페이지 > 내가 쓴 리뷰
 	List<TempleStayReviewEntity> findByLoginIdOrderByCreatedAtDesc(String loginId);
 
+	// 마이페이지 허브 카드의 "리뷰 N건" 배지용
+	long countByLoginId(String loginId);
+
 	// 전체 후기 모아보기 (/reservation/reviews) - 최신순
 	List<TempleStayReviewEntity> findAllByOrderByCreatedAtDesc();
 }
