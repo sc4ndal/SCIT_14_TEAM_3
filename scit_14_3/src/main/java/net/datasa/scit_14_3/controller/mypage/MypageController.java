@@ -118,9 +118,13 @@ public class MypageController {
 		return "mypage/favorites/reviews";
 	}
 	
-	/** 회원정보수정 들어가기 전 본인 확인 - 비밀번호를 다시 입력받음. */
+	/** 회원정보수정 들어가기 전 본인 확인 - 비밀번호를 다시 입력받음. 카카오 회원은 비밀번호가
+	    없어 이 단계를 건너뛰고 바로 /mypage/edit로 보낸다(UserService.verifyPassword 주석 참고). */
 	@GetMapping("/mypage/edit/verify")
 	public String editVerifyForm(@AuthenticationPrincipal AppUserDetails principal, Model model) {
+		if (!principal.isTempleAccount() && !mypageService.getEditView(principal.getUsername()).isLocalMember()) {
+			return "redirect:/mypage/edit";
+		}
 		model.addAttribute("nickname", principal.getNickname());
 		return "mypage/verifyPassword";
 	}
