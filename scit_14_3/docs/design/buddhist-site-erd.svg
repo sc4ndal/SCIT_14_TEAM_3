@@ -1,131 +1,204 @@
-<svg width="100%" viewBox="0 0 980 880" xmlns="http://www.w3.org/2000/svg" role="img">
+<svg width="100%" viewBox="0 0 1326 896" xmlns="http://www.w3.org/2000/svg" role="img">
 <title>불교 종합 사이트 데이터베이스 ERD</title>
-<desc>흰 배경에 직선 커넥터로 표시되는 10개 테이블 관계도. PK/FK 아이콘과 카디널리티 표시 포함.</desc>
-<rect x="0" y="0" width="980" height="880" fill="#ffffff"/>
-<text x="40" y="42" font-family="NanumGothic, NanumGothic, Arial, sans-serif" font-size="18" font-weight="700" fill="#1c2b3d">불교 종합 사이트 ERD — 핵심 구조 (10개 테이블)</text>
-<text x="40" y="60" font-family="NanumGothic, Arial, sans-serif" font-size="11" fill="#8b8f95">PK/FK 중심으로 단순화 · 전체 컴럼은 buddhist-site-db-design.md 참고 · 1—N 표기는 카디널리티</text>
-<line x1="40" y1="72" x2="940" y2="72" stroke="#d5d8dc" stroke-width="1"/>
-<rect x="40" y="100" width="230" height="102" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
-<rect x="40" y="100" width="230" height="28" rx="6" fill="#1c2b3d"/>
-<rect x="40" y="120" width="230" height="8" fill="#1c2b3d"/>
-<text x="155.0" y="119" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">USER</text>
-<circle cx="60" cy="140" r="4" fill="#c8862b"/>
-<text x="72" y="144" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">user_id</text>
-<line x1="54" y1="168" x2="256" y2="168" stroke="#d5d8dc" stroke-width="1"/>
-<text x="72" y="186" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+7 cols : email, password, nickname, phone, role...</text>
-<rect x="350" y="100" width="230" height="146" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
-<rect x="350" y="100" width="230" height="28" rx="6" fill="#1c2b3d"/>
-<rect x="350" y="120" width="230" height="8" fill="#1c2b3d"/>
-<text x="465.0" y="119" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">FAVORITE_TEMPLE</text>
-<circle cx="370" cy="140" r="4" fill="#c8862b"/>
-<text x="382" y="144" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">favorite_id</text>
-<rect x="366" y="155" width="8" height="8" fill="#3a6ea5"/>
-<text x="382" y="166" font-family="NanumGothic, Arial, sans-serif" font-size="11" fill="#20272f">user_id <tspan fill="#3a6ea5">→ USER</tspan></text>
-<rect x="366" y="177" width="8" height="8" fill="#3a6ea5"/>
-<text x="382" y="188" font-family="NanumGothic, Arial, sans-serif" font-size="11" fill="#20272f">temple_id <tspan fill="#3a6ea5">→ TEMPLE</tspan></text>
-<line x1="364" y1="212" x2="566" y2="212" stroke="#d5d8dc" stroke-width="1"/>
-<text x="382" y="230" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+1 col : created_at</text>
-<rect x="660" y="100" width="230" height="102" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
-<rect x="660" y="100" width="230" height="28" rx="6" fill="#1c2b3d"/>
-<rect x="660" y="120" width="230" height="8" fill="#1c2b3d"/>
-<text x="775.0" y="119" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">TEMPLE</text>
-<circle cx="680" cy="140" r="4" fill="#c8862b"/>
-<text x="692" y="144" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">temple_id</text>
-<line x1="674" y1="168" x2="876" y2="168" stroke="#d5d8dc" stroke-width="1"/>
-<text x="692" y="186" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+2 cols : name, api_place_id</text>
-<rect x="660" y="300" width="230" height="124" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
-<rect x="660" y="300" width="230" height="28" rx="6" fill="#1c2b3d"/>
-<rect x="660" y="320" width="230" height="8" fill="#1c2b3d"/>
-<text x="775.0" y="319" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">TEMPLE_STAY_PROGRAM</text>
-<circle cx="680" cy="340" r="4" fill="#c8862b"/>
-<text x="692" y="344" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">program_id</text>
-<rect x="676" y="355" width="8" height="8" fill="#3a6ea5"/>
-<text x="692" y="366" font-family="NanumGothic, Arial, sans-serif" font-size="11" fill="#20272f">temple_id <tspan fill="#3a6ea5">→ TEMPLE</tspan></text>
-<line x1="674" y1="390" x2="876" y2="390" stroke="#d5d8dc" stroke-width="1"/>
-<text x="692" y="408" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+6 cols : title, description, price...</text>
-<rect x="350" y="300" width="230" height="146" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
-<rect x="350" y="300" width="230" height="28" rx="6" fill="#1c2b3d"/>
-<rect x="350" y="320" width="230" height="8" fill="#1c2b3d"/>
-<text x="465.0" y="319" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">TEMPLE_STAY_RESERVATION</text>
-<circle cx="370" cy="340" r="4" fill="#c8862b"/>
-<text x="382" y="344" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">reservation_id</text>
-<rect x="366" y="355" width="8" height="8" fill="#3a6ea5"/>
-<text x="382" y="366" font-family="NanumGothic, Arial, sans-serif" font-size="11" fill="#20272f">user_id <tspan fill="#3a6ea5">→ USER</tspan></text>
-<rect x="366" y="377" width="8" height="8" fill="#3a6ea5"/>
-<text x="382" y="388" font-family="NanumGothic, Arial, sans-serif" font-size="11" fill="#20272f">program_id <tspan fill="#3a6ea5">→ PROGRAM</tspan></text>
-<line x1="364" y1="412" x2="566" y2="412" stroke="#d5d8dc" stroke-width="1"/>
-<text x="382" y="430" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+8 cols : start_date, end_date, status...</text>
-<rect x="350" y="500" width="230" height="146" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
-<rect x="350" y="500" width="230" height="28" rx="6" fill="#1c2b3d"/>
-<rect x="350" y="520" width="230" height="8" fill="#1c2b3d"/>
-<text x="465.0" y="519" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">TEMPLE_STAY_REVIEW</text>
-<circle cx="370" cy="540" r="4" fill="#c8862b"/>
-<text x="382" y="544" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">review_id</text>
-<rect x="366" y="555" width="8" height="8" fill="#3a6ea5"/>
-<text x="382" y="566" font-family="NanumGothic, Arial, sans-serif" font-size="11" fill="#20272f">reservation_id <tspan fill="#3a6ea5">→ RESERVATION</tspan></text>
-<rect x="366" y="577" width="8" height="8" fill="#3a6ea5"/>
-<text x="382" y="588" font-family="NanumGothic, Arial, sans-serif" font-size="11" fill="#20272f">user_id <tspan fill="#3a6ea5">→ USER</tspan></text>
-<line x1="364" y1="612" x2="566" y2="612" stroke="#d5d8dc" stroke-width="1"/>
-<text x="382" y="630" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+6 cols : rating, content, like_count...</text>
-<rect x="40" y="700" width="210" height="102" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
-<rect x="40" y="700" width="210" height="28" rx="6" fill="#1c2b3d"/>
-<rect x="40" y="720" width="210" height="8" fill="#1c2b3d"/>
-<text x="145.0" y="719" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">BUDDHISM_INFO</text>
-<circle cx="60" cy="740" r="4" fill="#c8862b"/>
-<text x="72" y="744" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">post_id</text>
-<line x1="54" y1="768" x2="236" y2="768" stroke="#d5d8dc" stroke-width="1"/>
-<text x="72" y="786" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+4 cols : title, content, view_count...</text>
-<rect x="265" y="700" width="210" height="102" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
-<rect x="265" y="700" width="210" height="28" rx="6" fill="#1c2b3d"/>
-<rect x="265" y="720" width="210" height="8" fill="#1c2b3d"/>
-<text x="370.0" y="719" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">MOKTAK</text>
-<circle cx="285" cy="740" r="4" fill="#c8862b"/>
-<text x="297" y="744" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">moktak_id</text>
-<line x1="279" y1="768" x2="461" y2="768" stroke="#d5d8dc" stroke-width="1"/>
-<text x="297" y="786" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+2 cols : total_count, updated_at</text>
-<rect x="490" y="700" width="210" height="102" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
-<rect x="490" y="700" width="210" height="28" rx="6" fill="#1c2b3d"/>
-<rect x="490" y="720" width="210" height="8" fill="#1c2b3d"/>
-<text x="595.0" y="719" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">DAILY_QUOTE</text>
-<circle cx="510" cy="740" r="4" fill="#c8862b"/>
-<text x="522" y="744" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">quote_id</text>
-<line x1="504" y1="768" x2="686" y2="768" stroke="#d5d8dc" stroke-width="1"/>
-<text x="522" y="786" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+2 cols : content, source</text>
-<rect x="715" y="700" width="210" height="102" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
-<rect x="715" y="700" width="210" height="28" rx="6" fill="#1c2b3d"/>
-<rect x="715" y="720" width="210" height="8" fill="#1c2b3d"/>
-<text x="820.0" y="719" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">TEMPLE_FOOD_RECOMMENDATION</text>
-<circle cx="735" cy="740" r="4" fill="#c8862b"/>
-<text x="747" y="744" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">recommendation_id</text>
-<line x1="729" y1="768" x2="911" y2="768" stroke="#d5d8dc" stroke-width="1"/>
-<text x="747" y="786" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+4 cols : food_name, description, recipe...</text>
-<path d="M270,150 L350,150" fill="none" stroke="#9aa5b1" stroke-width="1.3"/>
-<text x="278" y="142" font-family="NanumGothic, Arial, sans-serif" font-size="10.5" font-weight="700" fill="#3a3f45">1</text>
-<text x="330" y="142" font-family="NanumGothic, Arial, sans-serif" font-size="10.5" font-weight="700" fill="#3a3f45">N</text>
-<path d="M660,150 L580,150" fill="none" stroke="#9aa5b1" stroke-width="1.3"/>
-<text x="648" y="142" font-family="NanumGothic, Arial, sans-serif" font-size="10.5" font-weight="700" fill="#3a3f45">1</text>
-<text x="592" y="142" font-family="NanumGothic, Arial, sans-serif" font-size="10.5" font-weight="700" fill="#3a3f45">N</text>
-<path d="M775,200 L775,300" fill="none" stroke="#9aa5b1" stroke-width="1.3"/>
-<text x="783" y="216" font-family="NanumGothic, Arial, sans-serif" font-size="10.5" font-weight="700" fill="#3a3f45">1</text>
-<text x="783" y="286" font-family="NanumGothic, Arial, sans-serif" font-size="10.5" font-weight="700" fill="#3a3f45">N</text>
-<path d="M120,200 L120,260 L465,260 L465,300" fill="none" stroke="#9aa5b1" stroke-width="1.3"/>
-<text x="128" y="212" font-family="NanumGothic, Arial, sans-serif" font-size="10.5" font-weight="700" fill="#3a3f45">1</text>
-<text x="473" y="292" font-family="NanumGothic, Arial, sans-serif" font-size="10.5" font-weight="700" fill="#3a3f45">N</text>
-<path d="M660,360 L620,360 L620,372 L580,372" fill="none" stroke="#9aa5b1" stroke-width="1.3"/>
-<text x="648" y="352" font-family="NanumGothic, Arial, sans-serif" font-size="10.5" font-weight="700" fill="#3a3f45">1</text>
-<text x="592" y="364" font-family="NanumGothic, Arial, sans-serif" font-size="10.5" font-weight="700" fill="#3a3f45">N</text>
-<path d="M465,440 L465,500" fill="none" stroke="#9aa5b1" stroke-width="1.3"/>
-<text x="473" y="456" font-family="NanumGothic, Arial, sans-serif" font-size="10.5" font-weight="700" fill="#3a3f45">1</text>
-<text x="473" y="490" font-family="NanumGothic, Arial, sans-serif" font-size="10.5" font-weight="700" fill="#3a3f45">N</text>
-<path d="M190,200 L190,570 L350,570" fill="none" stroke="#9aa5b1" stroke-width="1.3"/>
-<text x="198" y="212" font-family="NanumGothic, Arial, sans-serif" font-size="10.5" font-weight="700" fill="#3a3f45">1</text>
-<text x="340" y="562" font-family="NanumGothic, Arial, sans-serif" font-size="10.5" font-weight="700" fill="#3a3f45">N</text>
-<line x1="30" y1="682" x2="940" y2="682" stroke="#d5d8dc" stroke-width="1" stroke-dasharray="4 4"/>
-<text x="40" y="678" font-family="NanumGothic, Arial, sans-serif" font-size="11" fill="#8b8f95">독립 테이블 (다른 테이블과 직접 연결 없음)</text>
-<circle cx="46" cy="846" r="4" fill="#c8862b"/>
-<text x="58" y="850" font-family="NanumGothic, Arial, sans-serif" font-size="11" fill="#3a3f45">PK 기본키</text>
-<rect x="126" y="839" width="8" height="8" fill="#3a6ea5"/>
-<text x="140" y="850" font-family="NanumGothic, Arial, sans-serif" font-size="11" fill="#3a3f45">FK 외래키</text>
-<line x1="210" y1="846" x2="250" y2="846" stroke="#9aa5b1" stroke-width="1.3"/>
-<text x="258" y="850" font-family="NanumGothic, Arial, sans-serif" font-size="11" fill="#3a3f45">1 (부모) — N (자식) 관계</text>
+<desc>흰 배경에 직각으로 꺾이는 직선 커넥터로 표시되는 17개 테이블 관계도. PK/FK 아이콘과 카디널리티 표시 포함.</desc>
+<rect x="0" y="0" width="1326" height="896" fill="#ffffff"/>
+<text x="30" y="34" font-family="NanumGothic, Arial, sans-serif" font-size="18" font-weight="700" fill="#1c2b3d">불교 종합 사이트 ERD — 전체 구조 (17개 테이블)</text>
+<text x="30" y="52" font-family="NanumGothic, Arial, sans-serif" font-size="11" fill="#8b8f95">PK/FK 중심으로 단순화 · 전체 컬럼은 buddhist-site-db-design.md 참고 · 원 = PK, 사각 아이콘 = FK</text>
+<line x1="30" y1="64" x2="1296" y2="64" stroke="#d5d8dc" stroke-width="1"/>
+<path d="M686,146 L663,146 L663,146 L640,146" fill="none" stroke="#3a6ea5" stroke-width="1.3" opacity="0.6"/>
+<path d="M1014,146 L991,146 L991,80 L335,80 L335,146 L312,146" fill="none" stroke="#8a5cab" stroke-width="1.3" opacity="0.6"/>
+<path d="M1014,166 L986,166 L986,146 L968,146" fill="none" stroke="#2f8f6f" stroke-width="1.3" opacity="0.6"/>
+<path d="M312,312 L330,312 L330,84 L996,84 L996,146 L1014,146" fill="none" stroke="#b3762b" stroke-width="1.3" opacity="0.6"/>
+<path d="M640,312 L658,312 L658,80 L981,80 L981,146 L1014,146" fill="none" stroke="#a5473a" stroke-width="1.3" opacity="0.6"/>
+<path d="M968,312 L1001,312 L1001,146 L1014,146" fill="none" stroke="#3f8f9e" stroke-width="1.3" opacity="0.6"/>
+<path d="M686,332 L668,332 L668,80 L340,80 L340,146 L312,146" fill="none" stroke="#3a6ea5" stroke-width="1.3" opacity="0.6"/>
+<path d="M1014,312 L976,312 L976,80 L325,80 L325,146 L312,146" fill="none" stroke="#8a5cab" stroke-width="1.3" opacity="0.6"/>
+<path d="M1014,332 L1006,332 L1006,312 L968,312" fill="none" stroke="#2f8f6f" stroke-width="1.3" opacity="0.6"/>
+<path d="M312,478 L345,478 L345,146 L312,146" fill="none" stroke="#b3762b" stroke-width="1.3" opacity="0.6"/>
+<path d="M312,498 L320,498 L320,146 L358,146" fill="none" stroke="#a5473a" stroke-width="1.3" opacity="0.6"/>
+<path d="M640,478 L653,478 L653,146 L640,146" fill="none" stroke="#3f8f9e" stroke-width="1.3" opacity="0.6"/>
+<path d="M686,478 L673,478 L673,84 L350,84 L350,146 L312,146" fill="none" stroke="#3a6ea5" stroke-width="1.3" opacity="0.6"/>
+<path d="M686,498 L648,498 L648,478 L640,478" fill="none" stroke="#8a5cab" stroke-width="1.3" opacity="0.6"/>
+<path d="M312,644 L315,644 L315,146 L312,146" fill="none" stroke="#2f8f6f" stroke-width="1.3" opacity="0.6"/>
+<path d="M312,664 L355,664 L355,88 L971,88 L971,478 L1014,478" fill="none" stroke="#b3762b" stroke-width="1.3" opacity="0.6"/>
+<path d="M686,644 L678,644 L678,80 L310,80 L310,146 L312,146" fill="none" stroke="#a5473a" stroke-width="1.3" opacity="0.6"/>
+<path d="M686,664 L643,664 L643,644 L640,644" fill="none" stroke="#3f8f9e" stroke-width="1.3" opacity="0.6"/>
+<path d="M1014,644 L1011,644 L1011,80 L683,80 L683,146 L640,146" fill="none" stroke="#3a6ea5" stroke-width="1.3" opacity="0.6"/>
+<path d="M312,810 L360,810 L360,146 L312,146" fill="none" stroke="#8a5cab" stroke-width="1.3" opacity="0.6"/>
+<rect x="30" y="96" width="282" height="86" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
+<rect x="30" y="96" width="282" height="28" rx="6" fill="#1c2b3d"/>
+<rect x="30" y="116" width="282" height="8" fill="#1c2b3d"/>
+<text x="171" y="114" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">USER</text>
+<circle cx="50" cy="142" r="4" fill="#c8862b"/>
+<text x="62" y="146" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">login_id</text>
+<line x1="44" y1="162" x2="298" y2="162" stroke="#d5d8dc" stroke-width="1"/>
+<text x="62" y="180" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+7개 : password, nickname, name...</text>
+<rect x="358" y="96" width="282" height="86" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
+<rect x="358" y="96" width="282" height="28" rx="6" fill="#1c2b3d"/>
+<rect x="358" y="116" width="282" height="8" fill="#1c2b3d"/>
+<text x="499" y="114" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">TEMPLE</text>
+<circle cx="378" cy="142" r="4" fill="#c8862b"/>
+<text x="390" y="146" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">temple_id</text>
+<line x1="372" y1="162" x2="626" y2="162" stroke="#d5d8dc" stroke-width="1"/>
+<text x="390" y="180" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+17개 : name, image_url, latitude...</text>
+<rect x="686" y="96" width="282" height="106" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
+<rect x="686" y="96" width="282" height="28" rx="6" fill="#1c2b3d"/>
+<rect x="686" y="116" width="282" height="8" fill="#1c2b3d"/>
+<text x="827" y="114" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">TEMPLE_STAY_PROGRAM</text>
+<circle cx="706" cy="142" r="4" fill="#c8862b"/>
+<text x="718" y="146" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">program_id</text>
+<rect x="702" y="157" width="8" height="8" fill="#3a6ea5"/>
+<text x="718" y="166" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">temple_id <tspan fill="#3a6ea5">→ TEMPLE</tspan></text>
+<line x1="700" y1="182" x2="954" y2="182" stroke="#d5d8dc" stroke-width="1"/>
+<text x="718" y="200" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+15개 : title, program_type, image_url...</text>
+<rect x="1014" y="96" width="282" height="126" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
+<rect x="1014" y="96" width="282" height="28" rx="6" fill="#1c2b3d"/>
+<rect x="1014" y="116" width="282" height="8" fill="#1c2b3d"/>
+<text x="1155" y="114" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">TEMPLE_STAY_RESERVATION</text>
+<circle cx="1034" cy="142" r="4" fill="#c8862b"/>
+<text x="1046" y="146" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">reservation_id</text>
+<rect x="1030" y="157" width="8" height="8" fill="#3a6ea5"/>
+<text x="1046" y="166" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">login_id <tspan fill="#3a6ea5">→ USER</tspan></text>
+<rect x="1030" y="177" width="8" height="8" fill="#3a6ea5"/>
+<text x="1046" y="186" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">program_id <tspan fill="#3a6ea5">→ TEMPLE_STAY_PROGRAM</tspan></text>
+<line x1="1028" y1="202" x2="1282" y2="202" stroke="#d5d8dc" stroke-width="1"/>
+<text x="1046" y="220" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+7개 : start_date, end_date, participant_count...</text>
+<rect x="30" y="262" width="282" height="106" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
+<rect x="30" y="262" width="282" height="28" rx="6" fill="#1c2b3d"/>
+<rect x="30" y="282" width="282" height="8" fill="#1c2b3d"/>
+<text x="171" y="280" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">RESERVATION_PARTICIPANT</text>
+<circle cx="50" cy="308" r="4" fill="#c8862b"/>
+<text x="62" y="312" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">participant_id</text>
+<rect x="46" y="323" width="8" height="8" fill="#3a6ea5"/>
+<text x="62" y="332" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">reservation_id <tspan fill="#3a6ea5">→ TEMPLE_STAY_RESERVATION</tspan></text>
+<line x1="44" y1="348" x2="298" y2="348" stroke="#d5d8dc" stroke-width="1"/>
+<text x="62" y="366" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+4개 : name, gender, email...</text>
+<rect x="358" y="262" width="282" height="106" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
+<rect x="358" y="262" width="282" height="28" rx="6" fill="#1c2b3d"/>
+<rect x="358" y="282" width="282" height="8" fill="#1c2b3d"/>
+<text x="499" y="280" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">PAYMENT</text>
+<circle cx="378" cy="308" r="4" fill="#c8862b"/>
+<text x="390" y="312" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">payment_id</text>
+<rect x="374" y="323" width="8" height="8" fill="#3a6ea5"/>
+<text x="390" y="332" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">reservation_id <tspan fill="#3a6ea5">→ TEMPLE_STAY_RESERVATION</tspan></text>
+<line x1="372" y1="348" x2="626" y2="348" stroke="#d5d8dc" stroke-width="1"/>
+<text x="390" y="366" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+7개 : payment_method, amount, status...</text>
+<rect x="686" y="262" width="282" height="126" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
+<rect x="686" y="262" width="282" height="28" rx="6" fill="#1c2b3d"/>
+<rect x="686" y="282" width="282" height="8" fill="#1c2b3d"/>
+<text x="827" y="280" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">TEMPLE_STAY_REVIEW</text>
+<circle cx="706" cy="308" r="4" fill="#c8862b"/>
+<text x="718" y="312" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">review_id</text>
+<rect x="702" y="323" width="8" height="8" fill="#3a6ea5"/>
+<text x="718" y="332" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">reservation_id <tspan fill="#3a6ea5">→ TEMPLE_STAY_RESERVATION</tspan></text>
+<rect x="702" y="343" width="8" height="8" fill="#3a6ea5"/>
+<text x="718" y="352" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">login_id <tspan fill="#3a6ea5">→ USER</tspan></text>
+<line x1="700" y1="368" x2="954" y2="368" stroke="#d5d8dc" stroke-width="1"/>
+<text x="718" y="386" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+7개 : rating, content, image_urls...</text>
+<rect x="1014" y="262" width="282" height="126" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
+<rect x="1014" y="262" width="282" height="28" rx="6" fill="#1c2b3d"/>
+<rect x="1014" y="282" width="282" height="8" fill="#1c2b3d"/>
+<text x="1155" y="280" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">FAVORITE_REVIEW</text>
+<circle cx="1034" cy="308" r="4" fill="#c8862b"/>
+<text x="1046" y="312" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">favorite_review_id</text>
+<rect x="1030" y="323" width="8" height="8" fill="#3a6ea5"/>
+<text x="1046" y="332" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">login_id <tspan fill="#3a6ea5">→ USER</tspan></text>
+<rect x="1030" y="343" width="8" height="8" fill="#3a6ea5"/>
+<text x="1046" y="352" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">review_id <tspan fill="#3a6ea5">→ TEMPLE_STAY_REVIEW</tspan></text>
+<line x1="1028" y1="368" x2="1282" y2="368" stroke="#d5d8dc" stroke-width="1"/>
+<text x="1046" y="386" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+1개 : created_at</text>
+<rect x="30" y="428" width="282" height="126" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
+<rect x="30" y="428" width="282" height="28" rx="6" fill="#1c2b3d"/>
+<rect x="30" y="448" width="282" height="8" fill="#1c2b3d"/>
+<text x="171" y="446" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">FAVORITE_TEMPLE</text>
+<circle cx="50" cy="474" r="4" fill="#c8862b"/>
+<text x="62" y="478" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">favorite_id</text>
+<rect x="46" y="489" width="8" height="8" fill="#3a6ea5"/>
+<text x="62" y="498" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">login_id <tspan fill="#3a6ea5">→ USER</tspan></text>
+<rect x="46" y="509" width="8" height="8" fill="#3a6ea5"/>
+<text x="62" y="518" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">temple_id <tspan fill="#3a6ea5">→ TEMPLE</tspan></text>
+<line x1="44" y1="534" x2="298" y2="534" stroke="#d5d8dc" stroke-width="1"/>
+<text x="62" y="552" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+1개 : created_at</text>
+<rect x="358" y="428" width="282" height="106" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
+<rect x="358" y="428" width="282" height="28" rx="6" fill="#1c2b3d"/>
+<rect x="358" y="448" width="282" height="8" fill="#1c2b3d"/>
+<text x="499" y="446" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">TEMPLE_EVENT</text>
+<circle cx="378" cy="474" r="4" fill="#c8862b"/>
+<text x="390" y="478" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">event_id</text>
+<rect x="374" y="489" width="8" height="8" fill="#3a6ea5"/>
+<text x="390" y="498" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">temple_id <tspan fill="#3a6ea5">→ TEMPLE</tspan></text>
+<line x1="372" y1="514" x2="626" y2="514" stroke="#d5d8dc" stroke-width="1"/>
+<text x="390" y="532" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+6개 : title, description, start_date...</text>
+<rect x="686" y="428" width="282" height="126" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
+<rect x="686" y="428" width="282" height="28" rx="6" fill="#1c2b3d"/>
+<rect x="686" y="448" width="282" height="8" fill="#1c2b3d"/>
+<text x="827" y="446" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">FAVORITE_EVENT</text>
+<circle cx="706" cy="474" r="4" fill="#c8862b"/>
+<text x="718" y="478" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">favorite_event_id</text>
+<rect x="702" y="489" width="8" height="8" fill="#3a6ea5"/>
+<text x="718" y="498" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">login_id <tspan fill="#3a6ea5">→ USER</tspan></text>
+<rect x="702" y="509" width="8" height="8" fill="#3a6ea5"/>
+<text x="718" y="518" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">event_id <tspan fill="#3a6ea5">→ TEMPLE_EVENT</tspan></text>
+<line x1="700" y1="534" x2="954" y2="534" stroke="#d5d8dc" stroke-width="1"/>
+<text x="718" y="552" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+1개 : created_at</text>
+<rect x="1014" y="428" width="282" height="86" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
+<rect x="1014" y="428" width="282" height="28" rx="6" fill="#1c2b3d"/>
+<rect x="1014" y="448" width="282" height="8" fill="#1c2b3d"/>
+<text x="1155" y="446" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">DAILY_QUOTE</text>
+<circle cx="1034" cy="474" r="4" fill="#c8862b"/>
+<text x="1046" y="478" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">quote_id</text>
+<line x1="1028" y1="494" x2="1282" y2="494" stroke="#d5d8dc" stroke-width="1"/>
+<text x="1046" y="512" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+2개 : content, source</text>
+<rect x="30" y="594" width="282" height="126" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
+<rect x="30" y="594" width="282" height="28" rx="6" fill="#1c2b3d"/>
+<rect x="30" y="614" width="282" height="8" fill="#1c2b3d"/>
+<text x="171" y="612" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">FAVORITE_QUOTE</text>
+<circle cx="50" cy="640" r="4" fill="#c8862b"/>
+<text x="62" y="644" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">favorite_quote_id</text>
+<rect x="46" y="655" width="8" height="8" fill="#3a6ea5"/>
+<text x="62" y="664" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">login_id <tspan fill="#3a6ea5">→ USER</tspan></text>
+<rect x="46" y="675" width="8" height="8" fill="#3a6ea5"/>
+<text x="62" y="684" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">quote_id <tspan fill="#3a6ea5">→ DAILY_QUOTE</tspan></text>
+<line x1="44" y1="700" x2="298" y2="700" stroke="#d5d8dc" stroke-width="1"/>
+<text x="62" y="718" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+1개 : created_at</text>
+<rect x="358" y="594" width="282" height="86" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
+<rect x="358" y="594" width="282" height="28" rx="6" fill="#1c2b3d"/>
+<rect x="358" y="614" width="282" height="8" fill="#1c2b3d"/>
+<text x="499" y="612" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">TEMPLE_FOOD_RECOMMENDATION</text>
+<circle cx="378" cy="640" r="4" fill="#c8862b"/>
+<text x="390" y="644" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">recommendation_id</text>
+<line x1="372" y1="660" x2="626" y2="660" stroke="#d5d8dc" stroke-width="1"/>
+<text x="390" y="678" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+5개 : food_name, description, recipe...</text>
+<rect x="686" y="594" width="282" height="126" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
+<rect x="686" y="594" width="282" height="28" rx="6" fill="#1c2b3d"/>
+<rect x="686" y="614" width="282" height="8" fill="#1c2b3d"/>
+<text x="827" y="612" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">FAVORITE_FOOD</text>
+<circle cx="706" cy="640" r="4" fill="#c8862b"/>
+<text x="718" y="644" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">favorite_food_id</text>
+<rect x="702" y="655" width="8" height="8" fill="#3a6ea5"/>
+<text x="718" y="664" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">login_id <tspan fill="#3a6ea5">→ USER</tspan></text>
+<rect x="702" y="675" width="8" height="8" fill="#3a6ea5"/>
+<text x="718" y="684" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">recommendation_id <tspan fill="#3a6ea5">→ TEMPLE_FOOD_RECOMMENDATION</tspan></text>
+<line x1="700" y1="700" x2="954" y2="700" stroke="#d5d8dc" stroke-width="1"/>
+<text x="718" y="718" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+1개 : created_at</text>
+<rect x="1014" y="594" width="282" height="106" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
+<rect x="1014" y="594" width="282" height="28" rx="6" fill="#1c2b3d"/>
+<rect x="1014" y="614" width="282" height="8" fill="#1c2b3d"/>
+<text x="1155" y="612" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">TEMPLE_REGISTRATION_REQUEST</text>
+<circle cx="1034" cy="640" r="4" fill="#c8862b"/>
+<text x="1046" y="644" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">request_id</text>
+<rect x="1030" y="655" width="8" height="8" fill="#3a6ea5"/>
+<text x="1046" y="664" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">approved_temple_id <tspan fill="#3a6ea5">→ TEMPLE</tspan></text>
+<line x1="1028" y1="680" x2="1282" y2="680" stroke="#d5d8dc" stroke-width="1"/>
+<text x="1046" y="698" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+16개 : name, image_url, latitude...</text>
+<rect x="30" y="760" width="282" height="106" rx="6" fill="#ffffff" stroke="#d5d8dc" stroke-width="1"/>
+<rect x="30" y="760" width="282" height="28" rx="6" fill="#1c2b3d"/>
+<rect x="30" y="780" width="282" height="8" fill="#1c2b3d"/>
+<text x="171" y="778" text-anchor="middle" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">INQUIRY</text>
+<circle cx="50" cy="806" r="4" fill="#c8862b"/>
+<text x="62" y="810" font-family="NanumGothic, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#20272f">inquiry_id</text>
+<rect x="46" y="821" width="8" height="8" fill="#3a6ea5"/>
+<text x="62" y="830" font-family="NanumGothic, Arial, sans-serif" font-size="10.2" fill="#20272f">login_id <tspan fill="#3a6ea5">→ USER</tspan></text>
+<line x1="44" y1="846" x2="298" y2="846" stroke="#d5d8dc" stroke-width="1"/>
+<text x="62" y="864" font-family="NanumGothic, Arial, sans-serif" font-size="10" font-style="italic" fill="#8b8f95">+6개 : title, content, answer...</text>
 </svg>

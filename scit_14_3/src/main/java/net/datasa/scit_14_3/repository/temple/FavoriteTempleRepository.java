@@ -16,6 +16,9 @@ public interface FavoriteTempleRepository extends JpaRepository<FavoriteTempleEn
 	// @ManyToOne(기본 EAGER)이라 JOIN FETCH 없이 쓰면 즐겨찾기 건수만큼 TEMPLE을 따로 불러옴(N+1)
 	@Query("select f from FavoriteTempleEntity f join fetch f.temple where f.loginId = :loginId")
 	List<FavoriteTempleEntity> findByLoginId(String loginId);
+
+	// 마이페이지 허브 카드의 "관심 사찰 N곳" 배지용
+	long countByLoginId(String loginId);
 	// 유저가 즐겨찾기한 사찰을 취소하기
 	void deleteByLoginIdAndTemple_TempleId(String loginId, Long templeId);
 

@@ -1,7 +1,6 @@
    // ------------------------- 로그인 확인 -------------------------
    const authInfo = document.getElementById('auth-info');
    const isLoggedIn = !!authInfo;
-   const currentLoginId = authInfo ? authInfo.dataset.loginId : null;
 
    if (!isLoggedIn) {
      alert('로그인이 필요합니다.');
@@ -29,11 +28,11 @@
        // 한 번에 요청. 예전엔 결제 정보/리뷰 작성 여부를 예약마다 따로(N+1) 불러왔는데, 원격 DB(Aiven)
        // 왕복이 예약 건수만큼 쌓여서 느렸음 - 전부 한 번씩만 왕복하도록 묶음.
        const [resRes, templesRes, programsRes, paymentsRes, reviewsRes] = await Promise.all([
-         fetch(`/templestayreservations?loginId=${currentLoginId}`),
+         fetch('/templestayreservations'),
          fetch('/temples'),
          fetch('/templestayprograms'),
          fetch('/payments/my-reservations'),
-         fetch(`/reviews?loginId=${currentLoginId}`),
+         fetch('/reviews'),
        ]);
 
        const reservations = await resRes.json();

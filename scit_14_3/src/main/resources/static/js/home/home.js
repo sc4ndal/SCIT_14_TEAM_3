@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return `${year}년 ${month + 1}월 ${day}일`;
     }
 
-    window.onLanguageChange = function (lang) {
+    window.onLanguageChange = async function (lang) {
         currentLang = HOME_TRANSLATIONS[lang] ? lang : "ko";
 
         // 프래그먼트(로그인/회원가입/드롭다운/로그아웃)는 이 페이지 전용 사전(HOME_TRANSLATIONS)이
@@ -112,6 +112,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             const key = el.getAttribute("data-i18n-aria");
             if (ariaT[key] !== undefined) el.setAttribute("aria-label", ariaT[key]);
         });
+
+        // 행사 제목/장소/소개(사찰이 직접 입력한 값)는 사전에 없어서 여기서 따로 번역해둔다.
+        // 달력/일정 패널이 이 값을 새로 그리기 전에 캐시가 채워져 있어야 하므로 렌더링보다 먼저 기다린다.
+        // 전체 화면 오버레이 대신 이 두 곳에만 부분 로딩 문구를 띄운다(loadCalendarEvents와 동일한 방식).
+        const translatingMsg = I18N_LOADING_MESSAGES[currentLang] || "번역하는 중...";
+        calendarGrid.innerHTML = `<p class="calendar-loading-msg">${translatingMsg}</p>`;
+        eventPanel.innerHTML = `<p class="calendar-loading-msg">${translatingMsg}</p>`;
+        await translateEventTexts(currentLang);
 
         // 달력/일정 패널은 데이터(날짜 표기, "자세히 보기" 등)까지 새로 그려야 반영됨
         renderCalendar();
@@ -472,7 +480,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 addEventRange(e.startDate, e.endDate, {
                     title: e.title,
                     location: e.templeName || "",
-                    time: e.startDate === e.endDate ? "" : `행사기간 ${e.startDate} ~ ${e.endDate}`,
+                    // ISO 날짜 그대로 - 언어별로 다시 쓸 필요 없어서 라벨("기간" 등)은
+                    // 안 붙이고 보여주는 쪽(패널 ◷ 아이콘/모달 "기간" 라벨)에서 붙인다.
+                    time: e.startDate === e.endDate ? "" : `${e.startDate} ~ ${e.endDate}`,
                     description: e.description || "",
                     eventId: e.eventId,
                     linkUrl: e.linkUrl || ""
@@ -481,6 +491,41 @@ document.addEventListener("DOMContentLoaded", async () => {
         } catch (err) {
             console.warn("불교행사를 달력에 불러오지 못했습니다.", err);
         }
+    }
+
+    // 행사 제목/장소/소개는 사찰이 직접 입력하는 값이라(스크래핑 데이터와 같은 성격) 이
+    // 페이지의 나머지 고정 문구처럼 사전(HOME_TRANSLATIONS)으로 미리 번역해둘 수 없다 -
+    // common.js의 크롬 내장 Translator API를 직접 불러서 번역해두고, 렌더링할 때 trText()로
+    // 꺼내 쓴다. (날짜는 ISO 형식 그대로라 번역 대상에서 뺀다.)
+    async function translateEventTexts(lang) {
+        if (lang === "ko" || !("Translator" in self)) return;
+        const texts = new Set();
+        Object.values(eventData).forEach(list => list.forEach(ev => {
+            if (ev.title) texts.add(ev.title.trim());
+            if (ev.location) texts.add(ev.location.trim());
+            if (ev.description) texts.add(ev.description.trim());
+        }));
+        if (!texts.size) return;
+        try {
+            // ensureTranslated(Translator API)가 멈추면(모델 다운로드가 막힌 환경 등)
+            // 화면 전체가 로딩 상태로 굳어버리므로, 일정 시간 안에 안 끝나면 원문을 그대로
+            // 보여주는 쪽으로 포기한다.
+            await Promise.race([
+                ensureTranslated([...texts], lang),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("번역 시간 초과")), 15000))
+            ]);
+        } catch (err) {
+            console.warn("행사 내용을 번역하지 못했습니다.", err);
+        }
+    }
+
+    // translateEventTexts로 캐시해둔 번역을 꺼내 씀 - 아직 캐시에 없으면(번역 실패 등)
+    // 원문을 그대로 보여준다.
+    function trText(raw) {
+        if (!raw || currentLang === "ko") return raw;
+        const cache = i18nTranslationCache[currentLang];
+        const hit = cache && cache[raw.trim()];
+        return hit !== undefined ? hit : raw;
     }
 
 
@@ -815,7 +860,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
                 title.textContent =
-                    event.title;
+                    trText(event.title);
 
 
                 const location =
@@ -829,7 +874,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
                 location.textContent =
-                    `⌖ ${event.location}`;
+                    `⌖ ${trText(event.location)}`;
 
 
                 const time =
@@ -901,18 +946,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         const t = HOME_TRANSLATIONS[currentLang];
         const rows = [];
 
-        if (event.location) rows.push(`<p><strong>⌖</strong> ${escapeHtml(event.location)}</p>`);
+        if (event.location) rows.push(`<p><strong>⌖</strong> ${escapeHtml(trText(event.location))}</p>`);
         if (event.time) rows.push(`<p><strong>${t.modalPeriodLabel}</strong> ${escapeHtml(event.time)}</p>`);
         if (event.duration) rows.push(`<p><strong>${t.modalDurationLabel}</strong> ${escapeHtml(event.duration)}</p>`);
         if (typeof event.price === "number") rows.push(`<p><strong>${t.modalPriceLabel}</strong> ${event.price.toLocaleString()}${currentLang === "ko" ? "원" : currentLang === "ja" ? "円" : " KRW"}</p>`);
-        if (event.description) rows.push(`<p style="white-space:pre-line;">${escapeHtml(event.description)}</p>`);
+        if (event.description) rows.push(`<p style="white-space:pre-line;">${escapeHtml(trText(event.description))}</p>`);
 
         // 우선순위: 템플스테이 프로그램(예약하러 가기) > 사찰행사 공식 링크(자세히 보기) > 그냥 닫기
         const confirmLabel = event.programId ? t.modalGoReserve : (event.linkUrl ? t.modalGoLink : t.modalClose);
         const hasAction = !!(event.programId || event.linkUrl);
 
         Swal.fire({
-            title: event.title,
+            title: trText(event.title),
             html: rows.join(""),
             confirmButtonText: confirmLabel,
             showCancelButton: hasAction,

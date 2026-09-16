@@ -6,6 +6,8 @@
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <link rel="stylesheet" th:href="@{/css/common.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/css/mypage/favorites.css}" type="text/css">
     <title>좋아요한 리뷰 · 佛선자</title>
 </head>
 
@@ -17,11 +19,56 @@
 
 <main class="mypage-main">
     <div class="mypage-inner">
-        <!-- 좋아요한 리뷰 내용 영역 -->
+
+        <section class="favorites-hero">
+            <h1>좋아요한 리뷰</h1>
+            <p>공감을 눌러 둔 다른 사람의 후기입니다.</p>
+        </section>
+
+        <p class="favorites-empty" th:if="${#lists.isEmpty(reviews)}">
+            아직 좋아요한 리뷰가 없습니다. <a th:href="@{/reservation/reviews}">템플스테이 후기 보러 가기 →</a>
+        </p>
+
+        <div class="food-favorite-grid" data-favorites-grid="review-pagination" th:unless="${#lists.isEmpty(reviews)}">
+            <article class="food-favorite-card" th:each="review : ${reviews}" data-remove-on-unfavorite>
+
+                <div class="food-favorite-card__body">
+                    <h2 class="food-favorite-card__title" th:text="${review.programName} ?: '(프로그램 정보 없음)'">프로그램명</h2>
+
+                    <p class="food-favorite-card__desc">
+                        <a th:if="${review.templeId != null}" th:href="@{/temple-detail/{id}(id=${review.templeId})}"
+                           th:text="${review.templeName}">사찰명</a>
+                        <span th:unless="${review.templeId != null}" th:text="${review.templeName} ?: '-'">사찰명</span>
+                        · <span th:text="${review.authorName} ?: '익명'">작성자</span>
+                    </p>
+
+                    <p class="food-favorite-card__desc" th:text="${review.content}">리뷰 내용</p>
+                </div>
+
+                <div class="food-favorite-card__footer">
+                    <button type="button" class="favorite-toggle is-favorited like-toggle"
+                            th:attr="data-review-id=${review.reviewId}" aria-pressed="true">
+                        <span class="favorite-toggle__icon"></span>
+                        <span class="favorite-toggle__label">좋아요</span>
+                    </button>
+                </div>
+
+            </article>
+        </div>
+
+        <div class="pagination" id="review-pagination" th:unless="${#lists.isEmpty(reviews)}"></div>
+
+        <p class="favorites-more" th:unless="${#lists.isEmpty(reviews)}">
+            <a th:href="@{/reservation/reviews}">다른 리뷰 보러가기 →</a>
+        </p>
+
     </div>
 </main>
 
 <div th:replace="~{fragments/layout :: footer}"></div>
+
+<script defer th:src="@{/js/templestay/favoriteReviewButton.js}"></script>
+<script defer th:src="@{/js/mypage/favoritesPagination.js}"></script>
 
 </body>
 </html>

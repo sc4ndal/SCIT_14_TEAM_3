@@ -108,6 +108,11 @@ public class TempleStayReservationService {
 				.build();
 	}
 	
+	/** 마이페이지 허브 카드의 "예약 N건" 배지용 */
+	public long countMyReservations(String loginId) {
+		return tsrr.countByLoginId(loginId);
+	}
+
 	/**
 	 * 회원의 템플스테이 예약 목록
 	 * @param loginId

@@ -2,7 +2,7 @@
 -- 부울경 (불교 종합 사이트) DB 스키마
 -- 팀명: 佛법을 선도하는 자들(불선자)
 -- 대상 DBMS: MySQL 8.0
--- 총 16개 테이블
+-- 총 17개 테이블
 --
 -- 이번 정리에서 반영된 결정사항
 --   1) TEMPLE_STAY_PROGRAM.program_type은 당일형/체험형/휴식형 3종 유지(변경 없음)
@@ -75,6 +75,8 @@ CREATE TABLE USER (
     email        VARCHAR(100) NULL     COMMENT '이메일 (일반회원은 필수, 사이트 관리자 계정은 불필요해서 NULL 허용)',
     role         ENUM('USER','ADMIN') NOT NULL DEFAULT 'USER' COMMENT '일반/사이트 관리자',
     login_type   ENUM('LOCAL','KAKAO') NOT NULL DEFAULT 'LOCAL' COMMENT '가입 경로',
+    withdrawal_requested_at DATETIME NULL COMMENT '탈퇴 신청 일시 - NULL이면 정상 회원, 값이 있으면 유예기간(신청일+30일) 중. 이 기간에 로그인하면 철회 가능, 배치가 기한 지난 건을 찾아 탈퇴 확정 처리함',
+    withdrawn_at DATETIME NULL COMMENT '탈퇴 확정(익명화) 처리된 일시 - 신청 후 30일 경과 시 배치가 채움. 이 값이 있으면 로그인 불가',
     PRIMARY KEY (login_id),
     UNIQUE KEY uq_user_nickname (nickname),
     UNIQUE KEY uq_user_email (email),
@@ -453,6 +455,9 @@ CREATE TABLE TEMPLE_REGISTRATION_REQUEST (
         FOREIGN KEY (approved_temple_id) REFERENCES TEMPLE(temple_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='사찰 관계자가 제출한 사찰 등록 요청(관리자 승인 대기열)';
 
+-- =====================================================================
+-- 17. INQUIRY (1:1 문의)
+-- =====================================================================
 CREATE TABLE INQUIRY (
     inquiry_id   BIGINT       NOT NULL AUTO_INCREMENT COMMENT '고유 번호',
     login_id     VARCHAR(30)  NOT NULL COMMENT '작성 회원',

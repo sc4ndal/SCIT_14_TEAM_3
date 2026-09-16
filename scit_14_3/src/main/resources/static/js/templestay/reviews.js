@@ -142,6 +142,42 @@ function renderList() {
   listEl.querySelectorAll('.delete-btn').forEach((btn) => {
     btn.addEventListener('click', () => deleteReview(btn.dataset.reviewId));
   });
+
+  // 좋아요 토글 - review-summary(아코디언 펼치기 버튼)와 별개 버튼이라 클릭이 겹치지 않는다
+  listEl.querySelectorAll('.like-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleLike(btn.dataset.reviewId);
+    });
+  });
+}
+
+async function toggleLike(reviewId) {
+  if (!currentLoginId) {
+    alert('로그인이 필요합니다.');
+    location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
+    return;
+  }
+  try {
+    const res = await fetch(`/reviews/${reviewId}/like`, { method: 'POST' });
+    if (res.status === 401) {
+      alert('로그인이 필요합니다.');
+      location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
+      return;
+    }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+
+    const review = state.all.find((r) => String(r.reviewId) === String(reviewId));
+    if (review) {
+      review.liked = data.liked;
+      review.likeCount = Math.max(0, (review.likeCount || 0) + (data.liked ? 1 : -1));
+    }
+    renderList();
+  } catch (e) {
+    console.error('좋아요 처리 중 오류가 발생했습니다.', e);
+    alert('좋아요 처리 중 오류가 발생했습니다.');
+  }
 }
 
 async function deleteReview(reviewId) {
@@ -196,15 +232,24 @@ function renderItem(r) {
         .join('')}</div>`
     : '';
 
+  const likeCount = Number(r.likeCount) || 0;
+  const liked = !!r.liked;
+
   return `
     <div class="review-item${isOpen ? ' open' : ''}" data-id="${escapeAttr(id)}">
-      <button type="button" class="review-summary">
-        <span class="col-main">
-          <span class="review-title">${escapeHtml(heading)}</span>
-          <span class="review-meta">${meta}</span>
-        </span>
-        <span class="chevron">&#9660;</span>
-      </button>
+      <div class="review-row">
+        <button type="button" class="review-summary">
+          <span class="col-main">
+            <span class="review-title">${escapeHtml(heading)}</span>
+            <span class="review-meta">${meta}</span>
+          </span>
+          <span class="chevron">&#9660;</span>
+        </button>
+        <button type="button" class="like-btn${liked ? ' is-liked' : ''}"
+                data-review-id="${escapeAttr(id)}" aria-pressed="${liked}">
+          <span class="like-btn__icon"></span><span class="like-btn__count">${likeCount}</span>
+        </button>
+      </div>
       <div class="review-detail">
         <dl class="detail-fields">
           <dt>사찰명</dt><dd>${

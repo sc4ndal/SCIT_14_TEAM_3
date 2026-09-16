@@ -92,12 +92,24 @@
         }
         .review-item + .review-item { border-top: 1px solid var(--line-soft); }
 
+        .review-row { display: flex; align-items: stretch; }
+
         .review-summary {
-          width: 100%; display: flex; align-items: flex-start; gap: 14px;
+          flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 14px;
           background: none; border: none; text-align: left; cursor: pointer;
           padding: 18px 22px; color: inherit;
         }
         .review-summary:hover { background: var(--bg); }
+
+        .like-btn {
+          flex-shrink: 0; display: flex; align-items: center; gap: 6px;
+          background: none; border: none; color: var(--ink-faint);
+          font-size: 13px; padding: 0 22px 0 8px; cursor: pointer;
+        }
+        .like-btn:hover { color: var(--gold); }
+        .like-btn .like-btn__icon::before { content: "\2661"; font-size: 16px; }
+        .like-btn.is-liked { color: var(--gold); }
+        .like-btn.is-liked .like-btn__icon::before { content: "\2665"; }
         .review-summary .col-main { flex: 1; min-width: 0; }
         .review-summary .review-title {
           font-weight: 700; font-size: 15.5px; color: var(--ink);

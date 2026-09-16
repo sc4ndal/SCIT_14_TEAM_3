@@ -12,6 +12,9 @@ import java.util.List;
 public interface TempleStayReservationRepository extends JpaRepository<TempleStayReservationEntity, Long> {
 	List<TempleStayReservationEntity> findByLoginId(String loginId);
 
+	// 마이페이지 허브 카드의 "예약 N건" 배지용
+	long countByLoginId(String loginId);
+
 	// 사찰 프로그램 관리 > 상세보기에서 이 프로그램에 걸린 예약들을 볼 때 씀
 	List<TempleStayReservationEntity> findByProgramIdOrderByStartDateAsc(Long programId);
 

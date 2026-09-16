@@ -1,7 +1,6 @@
 // ------------------------- 로그인 확인 -------------------------
 const authInfo = document.getElementById('auth-info');
 const isLoggedIn = !!authInfo;
-const currentLoginId = authInfo ? authInfo.dataset.loginId : null;
 
 if (!isLoggedIn) {
   alert('로그인이 필요합니다.');
@@ -25,8 +24,8 @@ async function loadMyReviews() {
     // 리뷰 자체엔 프로그램/사찰 이름이 없어서, 예약목록(myReservation.js)과 같은 방식으로
     // 예약/사찰/프로그램을 같이 불러와 리뷰에 붙여준다.
     const [reviewsRes, reservationsRes, templesRes, programsRes] = await Promise.all([
-      fetch(`/reviews?loginId=${currentLoginId}`),
-      fetch(`/templestayreservations?loginId=${currentLoginId}`),
+      fetch('/reviews'),
+      fetch('/templestayreservations'),
       fetch('/temples'),
       fetch('/templestayprograms'),
     ]);
