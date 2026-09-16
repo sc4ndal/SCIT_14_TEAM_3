@@ -84,10 +84,15 @@ public class ReservationController {
 		return ps.reserved(paymentDTO);
 	}
 	
+	/** 본인 예약 목록만 반환 - 이 경로 자체는 PUBLIC_URLS에 열려있어(컨트롤러 내부 개별 인증) 클라이언트가
+	    보낸 loginId를 그대로 믿으면 남의 예약을 조회할 수 있었다. principal 기준으로만 조회한다. */
 	@GetMapping("/templestayreservations")
 	@ResponseBody
-	public List<TempleStayReservationDTO> getTempleStayReservation(@RequestParam String loginId) {
-		return tsrs.findByMyReservation(loginId);
+	public List<TempleStayReservationDTO> getTempleStayReservation(@AuthenticationPrincipal AppUserDetails principal) {
+		if (principal == null) {
+			return List.of();
+		}
+		return tsrs.findByMyReservation(principal.getUsername());
 	}
 
 	/** 본인 예약만 조회 가능 - reservationId는 URL/쿼리스트링에 그대로 노출되는 값이라(카카오페이

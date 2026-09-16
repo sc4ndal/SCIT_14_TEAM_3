@@ -75,6 +75,8 @@ CREATE TABLE USER (
     email        VARCHAR(100) NULL     COMMENT '이메일 (일반회원은 필수, 사이트 관리자 계정은 불필요해서 NULL 허용)',
     role         ENUM('USER','ADMIN') NOT NULL DEFAULT 'USER' COMMENT '일반/사이트 관리자',
     login_type   ENUM('LOCAL','KAKAO') NOT NULL DEFAULT 'LOCAL' COMMENT '가입 경로',
+    withdrawal_requested_at DATETIME NULL COMMENT '탈퇴 신청 일시 - NULL이면 정상 회원, 값이 있으면 유예기간(신청일+30일) 중. 이 기간에 로그인하면 철회 가능, 배치가 기한 지난 건을 찾아 탈퇴 확정 처리함',
+    withdrawn_at DATETIME NULL COMMENT '탈퇴 확정(익명화) 처리된 일시 - 신청 후 30일 경과 시 배치가 채움. 이 값이 있으면 로그인 불가',
     PRIMARY KEY (login_id),
     UNIQUE KEY uq_user_nickname (nickname),
     UNIQUE KEY uq_user_email (email),

@@ -50,6 +50,11 @@ public class DailyQuoteService {
 				.toList();
 	}
 
+	/** 마이페이지 허브 카드의 "저장한 한마디 N개" 배지용 */
+	public long countFavorites(String loginId) {
+		return favoriteQuoteRepository.countByLoginId(loginId);
+	}
+
 	public List<DailyQuoteDTO> getFavorites(String loginId) {
 		return favoriteQuoteRepository.findByLoginIdOrderByCreatedAtDesc(loginId).stream()
 				.map(favorite -> toDto(favorite.getQuote(), Set.of(favorite.getQuote().getQuoteId())))

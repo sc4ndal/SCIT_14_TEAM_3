@@ -61,17 +61,38 @@ public class ReviewController {
 		return ResponseEntity.ok(dto);
 	}
 
-	/** 마이페이지 > 내가 쓴 리뷰 */
+	/** 마이페이지 > 내가 쓴 리뷰 - 클라이언트가 보낸 loginId를 그대로 믿으면 남의 리뷰(사진/평점
+	    포함)를 조회할 수 있었다. principal 기준으로만 조회한다. */
 	@GetMapping
-	public List<TempleStayReviewDTO> getMyReviews(@RequestParam String loginId) {
-		return reviewService.findByMyReviews(loginId);
+	public List<TempleStayReviewDTO> getMyReviews(@AuthenticationPrincipal AppUserDetails principal) {
+		if (principal == null) {
+			return List.of();
+		}
+		return reviewService.findByMyReviews(principal.getUsername());
 	}
 
 	/** 전체 후기 모아보기 (/reservation/reviews) - 비로그인도 조회 가능. 최신순으로 전체를 내려주고
-	    검색/정렬/페이징은 프론트(reviews.js)에서 처리한다. */
+	    검색/정렬/페이징은 프론트(reviews.js)에서 처리한다. 로그인 상태면 각 리뷰의 좋아요 여부(liked)도 같이 채워준다. */
 	@GetMapping("/all")
-	public List<TempleStayReviewListDTO> getAllReviews() {
-		return reviewService.findAllReviews();
+	public List<TempleStayReviewListDTO> getAllReviews(@AuthenticationPrincipal AppUserDetails principal) {
+		String loginId = principal == null ? null : principal.getUsername();
+		return reviewService.findAllReviews(loginId);
+	}
+
+	/** 리뷰 좋아요 등록/해제 토글(JSON) - 로그인 관련 방어 방식은 DailyQuoteController 주석 참고,
+	    동일한 정책을 따른다(URL은 공개, 컨트롤러 내부에서 principal 없으면 401). */
+	@PostMapping("/{reviewId}/like")
+	public ResponseEntity<?> toggleLike(@PathVariable Long reviewId,
+										 @AuthenticationPrincipal AppUserDetails principal) {
+		if (principal == null) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요합니다."));
+		}
+		try {
+			boolean liked = reviewService.toggleLike(principal.getUsername(), reviewId);
+			return ResponseEntity.ok(Map.of("liked", liked));
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+		}
 	}
 
 	/**

@@ -630,6 +630,11 @@ async function submitReservation() {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(participantPayload),
     });
+    if (!partRes.ok) {
+      const err = await partRes.json().catch(() => null);
+      alert(err && err.message ? err.message : '참가자 정보 등록에 실패했습니다.');
+      return;
+    }
     const participants = await partRes.json();
 
     if (state.paymentMethod === '카카오페이') {
@@ -669,7 +674,11 @@ async function submitReservation() {
         headers: { 'Content-Type': 'application/json'},
         body: JSON.stringify(paymentPayload),
     });
-
+    if (!payRes.ok) {
+      const err = await payRes.json().catch(() => null);
+      alert(err && err.message ? err.message : '결제 정보 등록에 실패했습니다.');
+      return;
+    }
     const payment = await payRes.json();
 
     // 방금 만든 예약은 신청일시(created_at)가 DB가 채워주는 값이라 응답에 아직 안 실려있음 -

@@ -22,11 +22,32 @@ public class AppUserDetails implements UserDetails {
     private final String nickname; // 헤더에 표시할 이름 - 일반회원은 법명, 사찰계정은 사찰명
     private final String kakaoAccessToken; // 카카오 로그인일 때만 값 존재 - 로그아웃 시 카카오 REST API 로그아웃 호출용
     private final boolean mustChangePassword; // 관리자가 임시 비밀번호를 발급한 사찰 계정만 true - 로그인 성공 시 비밀번호 변경 페이지로 강제 이동시키는 데 씀
+    private final boolean withdrawalPending; // 탈퇴 유예기간 중인 일반회원만 true - 로그인 성공 시 철회 화면으로 강제 이동시키고,
+                                              // WithdrawalGateFilter가 그 화면 외 다른 곳 접근을 막는 데 씀
+    private final boolean enabled; // 탈퇴 확정(익명화)된 회원만 false - UserDetails 표준 훅이라
+                                    // 폼로그인은 DaoAuthenticationProvider가 비밀번호 검사보다 먼저 자동으로
+                                    // 막아준다(preAuthenticationChecks). 카카오 로그인처럼 그 경로를 안 타는
+                                    // 곳은 SessionLoginService.loginAs가 이 값을 직접 확인해서 막는다 -
+                                    // "탈퇴 계정 로그인 차단"을 한 곳(이 필드)만 보면 되게 하기 위함.
 
     public AppUserDetails(String loginId, String password,
                            Collection<? extends GrantedAuthority> authorities,
                            Long templeId, String nickname, String kakaoAccessToken,
                            boolean mustChangePassword) {
+        this(loginId, password, authorities, templeId, nickname, kakaoAccessToken, mustChangePassword, false, true);
+    }
+
+    public AppUserDetails(String loginId, String password,
+                           Collection<? extends GrantedAuthority> authorities,
+                           Long templeId, String nickname, String kakaoAccessToken,
+                           boolean mustChangePassword, boolean withdrawalPending) {
+        this(loginId, password, authorities, templeId, nickname, kakaoAccessToken, mustChangePassword, withdrawalPending, true);
+    }
+
+    public AppUserDetails(String loginId, String password,
+                           Collection<? extends GrantedAuthority> authorities,
+                           Long templeId, String nickname, String kakaoAccessToken,
+                           boolean mustChangePassword, boolean withdrawalPending, boolean enabled) {
         this.loginId = loginId;
         this.password = password;
         this.authorities = authorities;
@@ -34,6 +55,8 @@ public class AppUserDetails implements UserDetails {
         this.nickname = nickname;
         this.kakaoAccessToken = kakaoAccessToken;
         this.mustChangePassword = mustChangePassword;
+        this.withdrawalPending = withdrawalPending;
+        this.enabled = enabled;
     }
 
     public Long getTempleId() {
@@ -54,6 +77,10 @@ public class AppUserDetails implements UserDetails {
 
     public boolean isMustChangePassword() {
         return mustChangePassword;
+    }
+
+    public boolean isWithdrawalPending() {
+        return withdrawalPending;
     }
 
     @Override
@@ -81,6 +108,6 @@ public class AppUserDetails implements UserDetails {
     public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() { return true; }
+    public boolean isEnabled() { return enabled; }
     
 }
