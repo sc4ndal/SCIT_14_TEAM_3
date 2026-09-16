@@ -204,7 +204,7 @@ body {
 .flow-msg {
     position: absolute;
     white-space: nowrap;
-    font-size: 13px;
+    font-size: 20px;
     color: var(--ink);
     left: -10%;
     animation: flowAcross 6s linear forwards;
