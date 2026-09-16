@@ -69,7 +69,7 @@ function createTempleMarker(map, temple) {
     var imageOption = { offset: new kakao.maps.Point(16, 33) }; // 기준점: 핀 뾰족한 끝(하단 중앙)
 
     var normalImageUrl = buildPinImageUrl(PIN_COLOR);
-    var hoverImageUrl = buildPinImageUrl('#8a4a48'); // PIN_COLOR보다 밝은 톤
+    var hoverImageUrl = buildPinImageUrl('#b0453f'); // PIN_COLOR보다 밝은 톤
 
     var markerImage = new kakao.maps.MarkerImage(normalImageUrl, imageSize, imageOption);
     var hoverMarkerImage = new kakao.maps.MarkerImage(hoverImageUrl, imageSize, imageOption);
@@ -104,7 +104,7 @@ function createTempleMarker(map, temple) {
         var infoContent = document.createElement('div');
         infoContent.style.cssText = 'padding:5px;position:relative;';
         infoContent.innerHTML =
-            '<button type="button" class="info-close-btn" style="position:absolute;top:0;right:0;border:none;background:none;font-size:15px;line-height:1;cursor:pointer;color:#999;padding:2px 4px;">×</button>' +
+            '<button type="button" class="info-close-btn" style="position:absolute;top:0;right:0;border:none;background:none;font-size:19px;line-height:1;cursor:pointer;color:#999;padding:2px 4px;">×</button>' +
             '<div style="display:flex;align-items:center;gap:6px;white-space:nowrap;padding-right:16px;">' +
             '  <div style="font-size:15px;font-weight:bold;">' + temple.name + '</div>' +
             '  <span class = "favorite-wrapper" style="position:relative;display:inline-flex;">' +

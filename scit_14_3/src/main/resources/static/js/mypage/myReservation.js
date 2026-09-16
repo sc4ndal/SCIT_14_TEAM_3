@@ -111,7 +111,7 @@
           <p>${r.program.templeName} · ${r.program.region}</p>
         </div>
         <div class="meta">
-          <p class="applied-at">신청 ${formatAppliedAt(r.createdAt)}</p>
+          <p class="applied-at">신청일시 : ${formatAppliedAt(r.createdAt)}</p>
           <div class="date">${r.startDate}${r.startDate !== r.endDate ? ' ~ ' + r.endDate : ''}</div>
           <span class="status-badge status-${r.status}">${r.status}</span>${r.status === '이용완료' ? `<span class="review-status-badge ${r.reviewed ? 'review-done' : 'review-pending'}">${r.reviewed ? '작성완료' : '리뷰 미작성'}</span>` : ''}
         </div>
