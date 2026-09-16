@@ -14,7 +14,7 @@
    ============================================================ */
 
 (function () {
-	var PAGE_SIZE = 6;
+	var PAGE_SIZE = 8;
 
 	document.querySelectorAll('[data-favorites-grid]').forEach(function (grid) {
 		var pagerEl = document.getElementById(grid.dataset.favoritesGrid);

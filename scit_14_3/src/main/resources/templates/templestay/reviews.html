@@ -102,7 +102,10 @@
         .review-summary:hover { background: var(--bg); }
 
         .like-btn {
-          flex-shrink: 0; display: flex; align-items: center; gap: 6px;
+          /* 좋아요 개수 자릿수(1 vs 19 vs 123)에 따라 버튼 폭이 변하면, flex:1인 review-summary의
+             오른쪽 경계(=화살표 가로 위치)도 그만큼 밀려서 행마다 화살표가 좌우로 흔들려 보였다.
+             폭을 고정하고 안에서 가운데 정렬해서 숫자 자릿수가 바뀌어도 버튼 전체 폭은 그대로 유지한다. */
+          flex-shrink: 0; width: 80px; display: flex; align-items: center; justify-content: flex-start; gap: 6px;
           background: none; border: none; color: var(--ink-faint);
           font-size: 13px; padding: 0 22px 0 8px; cursor: pointer;
         }
@@ -122,7 +125,10 @@
         .review-summary .review-meta .temple { color: var(--pine); font-weight: 600; }
         .review-summary .stars { color: var(--gold); letter-spacing: 1px; font-size: 12.5px; white-space: nowrap; }
         .review-summary .chevron {
-          flex-shrink: 0; color: var(--ink-faint); font-size: 12px; margin-top: 4px;
+          flex-shrink: 0; color: var(--ink-faint); font-size: 12px;
+          align-self: center; /* .review-summary는 col-main을 위쪽 정렬(align-items:flex-start)하는데
+            이 화살표까지 같이 위로 붙어버려서, 오른쪽의 좋아요 아이콘(가운데 정렬)과 높이가
+            안 맞았다 - 얘만 따로 가운데로 맞춘다. */
           transition: transform 0.15s ease;
         }
         .review-item.open .review-summary { background: var(--bg); }

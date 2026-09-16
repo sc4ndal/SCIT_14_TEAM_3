@@ -33,8 +33,10 @@
             아직 즐겨찾기한 행사가 없습니다. <a th:href="@{/events}">불교 행사 보러 가기 →</a>
         </p>
 
-        <div class="food-favorite-grid" data-favorites-grid="event-pagination" th:unless="${#lists.isEmpty(events)}">
-            <article class="food-favorite-card" th:each="event : ${events}" data-remove-on-unfavorite>
+        <div class="food-favorite-grid event-favorite-grid" data-favorites-grid="event-pagination" th:unless="${#lists.isEmpty(events)}">
+            <article class="food-favorite-card event-favorite-card"
+                     th:classappend="${event.endDate.isBefore(T(java.time.LocalDate).now())} ? 'event-favorite-card--past' : ''"
+                     th:each="event : ${events}" data-remove-on-unfavorite>
 
                 <div class="food-favorite-card__body">
                     <p class="event-card__date" style="margin:0 0 8px;">
@@ -50,7 +52,7 @@
                         <span th:text="${event.templeName}">사찰명</span>
                     </p>
 
-                    <p class="food-favorite-card__desc" th:if="${event.description != null}"
+                    <p class="food-favorite-card__desc event-favorite-card__description" th:if="${event.description != null}"
                        th:text="${event.description}">행사 소개</p>
 
                     <a class="food-favorite-card__link" th:if="${event.linkUrl != null}" th:href="${event.linkUrl}"

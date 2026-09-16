@@ -10,6 +10,7 @@ import net.datasa.scit_14_3.repository.temple.TempleEventRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -53,10 +54,24 @@ public class TempleEventService {
 		return favoriteEventRepository.countByLoginId(loginId);
 	}
 
-	/** 마이페이지 관심 행사 목록. */
+	/** 마이페이지 관심 행사 목록 - 아직 안 끝난 행사(오늘 포함)를 가까운 날짜순으로 먼저 보여주고,
+	    이미 끝난 행사는 그 뒤에 최근에 끝난 것부터 오래된 순으로 이어붙인다. */
 	public List<TempleEventDTO> getFavorites(String loginId) {
+		LocalDate today = LocalDate.now();
+		Comparator<TempleEventDTO> upcomingFirstThenRecentPast = (a, b) -> {
+			boolean aPast = a.getEndDate().isBefore(today);
+			boolean bPast = b.getEndDate().isBefore(today);
+			if (aPast != bPast) {
+				return aPast ? 1 : -1; // 안 끝난 쪽(false)이 앞으로
+			}
+			return aPast
+					? b.getStartDate().compareTo(a.getStartDate()) // 지난 행사: 최근에 끝난 것부터
+					: a.getStartDate().compareTo(b.getStartDate()); // 예정 행사: 가까운 날짜부터
+		};
+
 		return favoriteEventRepository.findByLoginIdOrderByCreatedAtDesc(loginId).stream()
 				.map(favorite -> toDto(favorite.getEvent(), Set.of(favorite.getEvent().getEventId())))
+				.sorted(upcomingFirstThenRecentPast)
 				.toList();
 	}
 
