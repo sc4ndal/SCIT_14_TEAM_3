@@ -13,7 +13,4 @@ public interface TempleEventRepository extends JpaRepository<TempleEventEntity, 
 	// 이 비용을 치르게 됨. JOIN FETCH로 한 번에 가져온다.
 	@Query("select e from TempleEventEntity e join fetch e.temple")
 	List<TempleEventEntity> findAllWithTemple();
-
-	@Query("select e from TempleEventEntity e join fetch e.temple order by e.startDate asc")
-	List<TempleEventEntity> findAllWithTempleOrderByStartDateAsc();
 }

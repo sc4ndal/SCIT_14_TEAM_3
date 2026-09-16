@@ -27,8 +27,17 @@
 		아직 등록된 사찰음식이 없습니다.
 	</p>
 
-	<div class="food-grid">
-		<article class="food-card" th:each="food : ${foods}">
+	<div class="food-search" th:unless="${#lists.isEmpty(foods)}">
+		<input type="search" id="food-search-input" class="food-search__input"
+			   placeholder="음식 이름으로 검색 (예: 두부, 나물, 조림...)" autocomplete="off">
+	</div>
+
+	<p class="food-empty" id="food-search-empty" hidden>
+		검색 결과가 없습니다.
+	</p>
+
+	<div class="food-grid" id="food-grid">
+		<article class="food-card" th:each="food : ${foods}" th:attr="data-food-name=${food.foodName()}">
 
 			<img class="food-card__image" th:if="${food.imageUrl() != null}" th:src="${food.imageUrl()}"
 				 th:alt="${food.foodName()}">
@@ -69,6 +78,7 @@
 <div th:replace="~{fragments/layout :: footer}"></div>
 
 <script defer th:src="@{/js/buddhism/favoriteButton.js}"></script>
+<script defer th:src="@{/js/buddhism/food.js}"></script>
 
 </body>
 </html>

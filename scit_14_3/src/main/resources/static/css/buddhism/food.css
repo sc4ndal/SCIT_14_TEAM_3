@@ -22,6 +22,32 @@
 	font-size: 16px;
 }
 
+.food-search {
+	max-width: 480px;
+	margin: 0 auto 40px;
+	padding: 0 24px;
+}
+
+.food-search__input {
+	width: 100%;
+	padding: 12px 20px;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	background: #fff;
+	color: var(--ink);
+	font-size: 15px;
+	font-family: inherit;
+}
+
+.food-search__input:focus {
+	outline: none;
+	border-color: var(--accent);
+}
+
+.food-search__input::placeholder {
+	color: var(--ink-soft);
+}
+
 .food-empty {
 	max-width: 720px;
 	margin: 0 auto;
@@ -46,6 +72,13 @@
 	border-radius: 20px;
 	background: #fff;
 	overflow: hidden;
+}
+
+/* .food-card가 display:flex를 직접 지정해서 브라우저 기본 [hidden]{display:none} 규칙을
+   덮어써버림 - 검색 필터(food.js)가 hidden 속성을 줘도 카드가 계속 보이던 원인.
+   더 구체적인 선택자로 다시 숨겨준다. */
+.food-card[hidden] {
+	display: none;
 }
 
 .food-card__image {

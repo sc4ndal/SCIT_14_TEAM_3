@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
@@ -33,10 +34,16 @@ public class TempleEventService {
 				.toList();
 	}
 
-	/** "불교 행사" 목록 페이지(/events)용 - 가까운 일정부터 보이도록 시작일 오름차순 정렬. */
+	/**
+	 * "불교 행사" 목록 페이지(/events)용 - 시작일 오름차순.
+	 * 종료일이 아니라 항상 시작일 기준으로 정렬한다 - 예를 들어 5/1~5/5인 행사와 5/5 하루짜리
+	 * 행사가 있으면, 종료일은 둘 다 5/5로 같아도 5/1에 시작하는 행사가 먼저 나와야 하기 때문이다.
+	 */
 	public List<TempleEventDTO> getAllSortedByDate(String loginId) {
 		Set<Long> favoritedIds = favoritedIds(loginId);
-		return templeEventRepository.findAllWithTempleOrderByStartDateAsc().stream()
+
+		return templeEventRepository.findAllWithTemple().stream()
+				.sorted(Comparator.comparing(TempleEventEntity::getStartDate))
 				.map(event -> toDto(event, favoritedIds))
 				.toList();
 	}
