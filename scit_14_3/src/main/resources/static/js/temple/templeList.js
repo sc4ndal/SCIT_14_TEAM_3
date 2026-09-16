@@ -30,6 +30,7 @@ kakao.maps.load(function () {
         }
         if (currentOpenMarker)
             currentOpenMarker.setImage(currentOpenMarker.normalImage);
+            currentOpenMarker.setZIndex(1);
             currentOpenMarker = null;
     });
 
@@ -97,6 +98,27 @@ kakao.maps.load(function () {
             hideLoading();
         });
 
+            // 사찰의 유형(바다/산/강/도심)을 작은 태그 뱃지로 만들어주는 헬퍼.
+            // 필터 버튼(#data-type-*)이랑 같은 색을 써서 서로 연결되어 보이게 함.
+            var TEMPLE_TYPE_TAGS = [
+                { field: 'supportSea', label: '바다', color: 'var(--blue)'},
+                { field: 'supportMountain', label: '산', color: 'var(--green)'},
+                { field: 'supportRiver', label: '강', color: 'var(--brown)'},
+                { field: 'supportUrban', label: '도심', color: 'var(--gold)'},
+                { field: 'supportEnglish', label: '영어지원', color: 'var(--text)'}
+
+            ];
+
+            function buildTypeTagsHtml(temple) {
+                return TEMPLE_TYPE_TAGS
+                .filter(function (t) { return temple[t.field]; })
+                .map(function (t) {
+                    return '<span style="font-size:10px;font-weight:700;color:' + t.color + ';border:1px solid ' + t.color + ';border-radius:999px;padding:1px 6px;margin-right:4px;">' + t.label + '</span>';
+                })
+                .join('');
+            }
+
+
     // ------------------------- 검색 -------------------------
     function showResultList(temples) {
         // 즐겨찾기한 사찰을 목록 맨 위로 오게 정렬
@@ -118,7 +140,8 @@ kakao.maps.load(function () {
                 '  <div class="result-name">' + temple.name + '</div>' +
                 '  <button type="button" class="result-favorite-btn" style="border:none;background:none;font-size:16px;line-height:1;cursor:pointer;color:#ccc;padding:0;">★</button>' +
                 '</div>' +
-                '<div class="result-address">' + temple.address + '</div>';
+                '<div class="result-address">' + temple.address + '</div>' +
+                '<div class="result-types" style="margin-top:4px;">' + buildTypeTagsHtml(temple) + '</div>';
 
             var favoriteBtn = li.querySelector('.result-favorite-btn');
 
@@ -166,20 +189,36 @@ kakao.maps.load(function () {
                         location.href = '/login';
                     });
             });
+
+        // 목록 항목에 마우스 올리면 지도 위 해당 마커도 밝은 색으로 눈에 띄게
+        li.addEventListener('mouseenter', function() {
+            var hoveredMarker = markerByTempleId[temple.templeId];
+            if (hoveredMarker) {
+                hoveredMarker.setImage(hoveredMarker.hoverImage);
+                hoveredMarker.nameTooltip.setMap(map); // 이름표도 같이 띄움
+            }
+        });
+        li.addEventListener('mouseleave', function () {
+            var hoveredMarker = markerByTempleId[temple.templeId];
+            if (hoveredMarker) {
+                hoveredMarker.nameTooltip.setMap(null); // 이름표는 선택 여부와 상관없이 항상 숨김.
+                 // 지금 선택(클릭)돼서 색이 고정된 마커라면 원래 색으로 되돌리지 않음
+                 if (hoveredMarker && hoveredMarker !== currentOpenMarker) {
+                 hoveredMarker.setImage(hoveredMarker.normalImage);
+                 }
+            }
+        });
+
         // 리스트 항목을 클릭하면 그 사찰로 이동 + 정보창 열기
         li.addEventListener('click', function() {
             var marker = markerByTempleId[temple.templeId]; // ← markerByTempleId에서 찾아옴
                    if (marker) {
                        kakao.maps.event.trigger(marker, 'click'); // ← Marker는 카카오 이벤트 시스템으로 흉내냄
                    }
-
             // 지도 중심을 검색된 사찰로 이동 + 좀 더 가깝게 확대
             map.relayout();
             map.setLevel(4);
             map.setCenter(new kakao.maps.LatLng(temple.latitude, temple.longitude));
-
-
-
         });
         list.appendChild(li);
         });
@@ -275,6 +314,10 @@ kakao.maps.load(function () {
               if (marker) {
                   kakao.maps.event.trigger(marker, 'click');
               }
+        // 지도 중심을 검색된 사찰로 이동 + 좀 더 가깝게 확대
+        map.relayout();
+        map.setLevel(4);
+        map.setCenter(new kakao.maps.LatLng(found.latitude, found.longitude));
     }
     document.getElementById('search-btn').addEventListener('click', runSearch);
     // 입력창에서 엔터키로도 검색되게
@@ -368,6 +411,62 @@ kakao.maps.load(function () {
     document.getElementById('reset-map-btn').addEventListener('click', function () {
         map.setLevel(13);
         map.setCenter(new kakao.maps.LatLng(35.9, 127.7));
+    });
+
+    // 두 좌표 사이 거리(km)를 구하는 하버사인 공식
+    function getDistanceKm(lat1, lng1, lat2, lng2) {
+        var R = 6371; // 지구 반지름(km)
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLng = (lng2 - lng1) * Math.PI / 180;
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    var NEAR_ME_RADIUS_KM = 10; // 이 반경(km) 안의 사찰만 "내 주변"으로 취급 - 숫자만 바꾸면 반경 조절 가능
+
+    // 내 주변 사찰 - 브라우저 위치 정보를 받아서 반경 안의 사찰만 지도에 남김
+    document.getElementById('near-me-btn').addEventListener('click', function() {
+        if (!navigator.geolocation) {
+            alert('이 브라우저에서는 위치 확인 기능을 지원하지 않습니다.');
+            return;
+        }
+
+        showLoading('현재 위치를 확인하는 중...');
+
+        navigator.geolocation.getCurrentPosition(
+            function (position) {
+                hideLoading();
+
+                var myLat = position.coords.latitude;
+                var myLng = position.coords.longitude;
+
+                var nearby = templeList.filter(function (temple) {
+                    return getDistanceKm(myLat, myLng, temple.latitude, temple.longitude) <= NEAR_ME_RADIUS_KM;
+                });
+
+                if (nearby.length === 0) {
+                    alert('반경 ' + NEAR_ME_RADIUS_KM + 'km 안에 등록된 사찰이 없습니다.');
+                    return;
+                }
+
+                // 검색 제한 목록에 넣어두면, 기존 applyFilters()가 마커 표시/숨김을 알아서 처리해줌.
+                searchMatchedIds = nearby.map(function (temple) {
+                    return temple.templeId;
+                });
+                applyFilters();
+
+                map.relayout();
+                map.setLevel(7);
+                map.setCenter(new kakao.maps.LatLng(myLat, myLng));
+            },
+            function () {
+                hideLoading();
+                alert('현재 위치를 가져올 수 없습니다. 브라우저의 위치 권한을 허용했는지 확인해 주세요.');
+            }
+        )
     });
     window.refreshFavoriteFilter = applyFilters;
 });
