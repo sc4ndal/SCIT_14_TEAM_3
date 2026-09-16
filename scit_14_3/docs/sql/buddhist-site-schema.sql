@@ -2,7 +2,7 @@
 -- 부울경 (불교 종합 사이트) DB 스키마
 -- 팀명: 佛법을 선도하는 자들(불선자)
 -- 대상 DBMS: MySQL 8.0
--- 총 16개 테이블
+-- 총 17개 테이블
 --
 -- 이번 정리에서 반영된 결정사항
 --   1) TEMPLE_STAY_PROGRAM.program_type은 당일형/체험형/휴식형 3종 유지(변경 없음)
@@ -453,6 +453,9 @@ CREATE TABLE TEMPLE_REGISTRATION_REQUEST (
         FOREIGN KEY (approved_temple_id) REFERENCES TEMPLE(temple_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='사찰 관계자가 제출한 사찰 등록 요청(관리자 승인 대기열)';
 
+-- =====================================================================
+-- 17. INQUIRY (1:1 문의)
+-- =====================================================================
 CREATE TABLE INQUIRY (
     inquiry_id   BIGINT       NOT NULL AUTO_INCREMENT COMMENT '고유 번호',
     login_id     VARCHAR(30)  NOT NULL COMMENT '작성 회원',
