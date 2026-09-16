@@ -35,22 +35,6 @@ public class PaymentService {
 
 	@Value("${kakaopay.callback-base}")
 	private String callbackBase;
-	public PaymentDTO getInfo(Long paymentId) {
-		PaymentEntity entity = pr.findById(paymentId).orElseThrow(() -> new EntityNotFoundException("해당 데이터가 존재하지 않습니다."));
-		
-		return PaymentDTO.builder()
-				.paymentId(entity.getPaymentId())
-				.reservationId(entity.getReservationId())
-				.paymentMethod(entity.getPaymentMethod())
-				.amount(entity.getAmount())
-				.status(entity.getStatus())
-				.depositorName(entity.getDepositorName())
-				.kakaoTid(entity.getKakaoTid())
-				.paidAt(entity.getPaidAt())
-				.createdAt(entity.getCreatedAt())
-				.build();
-	}
-	
 	/**
 	 * 결제 생성
 	 * @param dto

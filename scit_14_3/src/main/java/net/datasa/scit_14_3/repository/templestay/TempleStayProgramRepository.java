@@ -20,6 +20,11 @@ public interface TempleStayProgramRepository extends JpaRepository<TempleStayPro
 	@Query("select p from TempleStayProgramEntity p join fetch p.temple")
 	List<TempleStayProgramEntity> findAllWithTemple();
 
+	// 프로그램 상세보기(getInfo) 전용 - findById만 쓰면 toDto에서 entity.getTemple()을 쓸 때
+	// TEMPLE을 또 한 번 따로 불러온다(row 1건짜리 N+1). 목록 조회들과 같은 이유로 JOIN FETCH.
+	@Query("select p from TempleStayProgramEntity p join fetch p.temple where p.programId = :programId")
+	Optional<TempleStayProgramEntity> findByIdWithTemple(@Param("programId") Long programId);
+
 	@Query("select p from TempleStayProgramEntity p join fetch p.temple where p.temple.templeId = :templeId")
 	List<TempleStayProgramEntity> findByTemple_TempleIdWithTemple(@Param("templeId") Long templeId);
 

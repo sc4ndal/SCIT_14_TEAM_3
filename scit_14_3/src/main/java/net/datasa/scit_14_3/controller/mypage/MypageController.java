@@ -32,6 +32,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+
 /**
  * 마이페이지 - 사찰 계정(사찰정보수정)은 비밀번호 변경 + 대표이미지/영어지원여부/환불규정/유의사항을
  * 다룸. 일반회원(USER) 정보수정은 아직 없음 - 요청 들어오면 그때 추가.
@@ -53,18 +56,41 @@ public class MypageController {
 	private final TempleStayReviewService templeStayReviewService;
 	private final TempleStayReservationService templeStayReservationService;
 	private final SessionLoginService sessionLoginService;
+	private final ExecutorService mypageCountExecutor;
 
+	// 서로 무관한 배지 카운트 7개를 순차로 조회하면 원격 DB(Aiven) 왕복이 그대로 다 더해져서
+	// (왕복 1초씩만 잡아도 7초+) 느렸다 - CompletableFuture로 한 번에 동시에 날려서
+	// 제일 느린 쿼리 하나만큼의 시간으로 줄인다(mypageCountExecutor 참고).
 	@PreAuthorize("hasRole('USER')")
 	@GetMapping("/mypage")
 	public String mypage(@AuthenticationPrincipal AppUserDetails principal, Model model) {
 		String loginId = principal.getUsername();
-		model.addAttribute("reservationCount", templeStayReservationService.countMyReservations(loginId));
-		model.addAttribute("myReviewCount", templeStayReviewService.countMyReviews(loginId));
-		model.addAttribute("favoriteTempleCount", favoriteTempleService.countFavorites(loginId));
-		model.addAttribute("favoriteEventCount", templeEventService.countFavorites(loginId));
-		model.addAttribute("favoriteQuoteCount", dailyQuoteService.countFavorites(loginId));
-		model.addAttribute("favoriteFoodCount", templeFoodService.countFavorites(loginId));
-		model.addAttribute("favoriteReviewCount", templeStayReviewService.countFavoriteReviews(loginId));
+
+		CompletableFuture<Long> reservationCount = CompletableFuture.supplyAsync(
+				() -> templeStayReservationService.countMyReservations(loginId), mypageCountExecutor);
+		CompletableFuture<Long> myReviewCount = CompletableFuture.supplyAsync(
+				() -> templeStayReviewService.countMyReviews(loginId), mypageCountExecutor);
+		CompletableFuture<Long> favoriteTempleCount = CompletableFuture.supplyAsync(
+				() -> favoriteTempleService.countFavorites(loginId), mypageCountExecutor);
+		CompletableFuture<Long> favoriteEventCount = CompletableFuture.supplyAsync(
+				() -> templeEventService.countFavorites(loginId), mypageCountExecutor);
+		CompletableFuture<Long> favoriteQuoteCount = CompletableFuture.supplyAsync(
+				() -> dailyQuoteService.countFavorites(loginId), mypageCountExecutor);
+		CompletableFuture<Long> favoriteFoodCount = CompletableFuture.supplyAsync(
+				() -> templeFoodService.countFavorites(loginId), mypageCountExecutor);
+		CompletableFuture<Long> favoriteReviewCount = CompletableFuture.supplyAsync(
+				() -> templeStayReviewService.countFavoriteReviews(loginId), mypageCountExecutor);
+
+		CompletableFuture.allOf(reservationCount, myReviewCount, favoriteTempleCount, favoriteEventCount,
+				favoriteQuoteCount, favoriteFoodCount, favoriteReviewCount).join();
+
+		model.addAttribute("reservationCount", reservationCount.join());
+		model.addAttribute("myReviewCount", myReviewCount.join());
+		model.addAttribute("favoriteTempleCount", favoriteTempleCount.join());
+		model.addAttribute("favoriteEventCount", favoriteEventCount.join());
+		model.addAttribute("favoriteQuoteCount", favoriteQuoteCount.join());
+		model.addAttribute("favoriteFoodCount", favoriteFoodCount.join());
+		model.addAttribute("favoriteReviewCount", favoriteReviewCount.join());
 
 		return "mypage/mypage";
 	}
@@ -118,11 +144,14 @@ public class MypageController {
 		return "mypage/favorites/reviews";
 	}
 	
-	/** 회원정보수정 들어가기 전 본인 확인 - 비밀번호를 다시 입력받음. 카카오 회원은 비밀번호가
-	    없어 이 단계를 건너뛰고 바로 /mypage/edit로 보낸다(UserService.verifyPassword 주석 참고). */
+	/** 회원정보수정 들어가기 전 본인 확인 - 비밀번호를 다시 입력받음. 카카오 회원은 password 컬럼
+	    자체가 null이라(가입 시 비밀번호를 받지 않음) 재입력받을 비밀번호가 없으므로 건너뛴다.
+	    "카카오 로그인이냐"는 DB를 다시 조회할 필요 없이, 로그인 시점에 서버가 세션 principal에
+	    이미 심어둔 kakaoAccessToken으로 판단한다(SessionLoginService.loginAs 참고 - 폼로그인 경로는
+	    이 값이 항상 null). */
 	@GetMapping("/mypage/edit/verify")
 	public String editVerifyForm(@AuthenticationPrincipal AppUserDetails principal, Model model) {
-		if (!principal.isTempleAccount() && !mypageService.getEditView(principal.getUsername()).isLocalMember()) {
+		if (!principal.isTempleAccount() && principal.getKakaoAccessToken() != null) {
 			return "redirect:/mypage/edit";
 		}
 		model.addAttribute("nickname", principal.getNickname());

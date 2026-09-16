@@ -430,3 +430,30 @@ function hideLoading() {
         setTimeout(function () { overlay.hidden = true; }, 200);
     }
 }
+
+/* ===== 순수 form POST(페이지 전체 이동) 제출 시 로딩 표시 =====
+   fetch가 아니라 그냥 <form method="post">라서 hideLoading()을 부를 시점이 없다(페이지가
+   통째로 넘어가버림) - 그래도 showLoading()만 부르면 새 페이지가 뜨거나 브라우저가 그 위에
+   렌더링할 때까지 오버레이가 남아있어서 문제없다(탈퇴 신청/철회, 회원정보 수정처럼 원격 DB
+   왕복 + 리다이렉트가 겹쳐 느린 화면들이 대상 - Aiven처럼 원격 DB를 쓰면 로컬보다 왕복이 길어서
+   버튼 누른 뒤 아무 반응 없이 멈춘 것처럼 보였음).
+
+   버튼을 누르자마자 무조건 띄우면 그 폼에 달린 다른 제출 검증(예: 법명 중복확인 안 함, 약관
+   미동의)이 나중에 preventDefault()로 막아도 오버레이가 뜬 채로 남는다 - setTimeout(0)으로
+   한 틱 미뤄서, 같은 submit 이벤트의 다른 리스너들이 먼저 다 실행되고 난 뒤에
+   e.defaultPrevented를 확인한다(등록 순서와 무관하게 항상 안전하게 동작).
+
+   common.js는 commonIncludes 조각(각 페이지 body 맨 위)에서 defer 없이 바로 실행되므로,
+   그 아래에 있는 페이지 자신의 <form>은 이 시점엔 아직 파싱되지 않은 상태다 - DOMContentLoaded까지
+   기다렸다가 찾는다. */
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('form.page-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            setTimeout(function () {
+                if (!e.defaultPrevented) {
+                    showLoading('처리 중...');
+                }
+            }, 0);
+        });
+    });
+});

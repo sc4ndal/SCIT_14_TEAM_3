@@ -29,10 +29,10 @@
 			마음이 바뀌셨다면 아래에서 탈퇴를 철회할 수 있습니다.
 		</p>
 		<div class="form-actions">
-			<form th:action="@{/mypage/withdrawal/cancel}" method="post" style="display:contents;">
+			<form class="page-form" th:action="@{/mypage/withdrawal/cancel}" method="post" style="display:contents;">
 				<button class="submit" type="submit">탈퇴 철회하기</button>
 			</form>
-			<form th:action="@{/logout}" method="post" style="display:contents;">
+			<form class="page-form" th:action="@{/logout}" method="post" style="display:contents;">
 				<button class="btn-cancel" type="submit">로그아웃</button>
 			</form>
 		</div>

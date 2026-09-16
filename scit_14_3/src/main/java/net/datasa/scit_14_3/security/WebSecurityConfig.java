@@ -69,10 +69,8 @@ public class WebSecurityConfig {
 			"/events",              // 찾아보기 > 불교 행사 목록 페이지
 			"/events/*/favorite",   // 관심 행사 등록/해제 토글 - /info/food, /info/quote와 동일하게 URL은 공개,
 			                        // 인증 여부는 TempleEventViewController 내부에서 개별 처리(로그인 안 했으면 401)
-			"/maptemplestayviews/**",
 			"/findtemple",
 			"/templestayGuide",
-			"/maptest/**",
 			"/info/**",
 			"/etiquette-simulation",
 			"/temple-detail/**",
