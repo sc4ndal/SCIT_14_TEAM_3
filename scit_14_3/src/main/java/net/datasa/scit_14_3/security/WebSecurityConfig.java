@@ -40,6 +40,7 @@ public class WebSecurityConfig {
 			"/css/**",
 			"/js/**",
 			"/images/**",
+			"/sounds/**",
 			"/error",
 			"/error/**",
 

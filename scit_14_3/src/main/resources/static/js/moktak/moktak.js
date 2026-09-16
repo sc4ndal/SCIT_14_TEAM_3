@@ -1,24 +1,13 @@
 const IMAGE_URLS = {
-    basic: {
-        cushion: 'https://res.cloudinary.com/hquhccft/image/upload/v1789369660/basic_cushion.png',
-        body:    'https://res.cloudinary.com/hquhccft/image/upload/v1789368281/basic_body.png',
-    },
-    heart: {
-        cushion: 'https://res.cloudinary.com/hquhccft/image/upload/v1789369676/heart_cushion.png',
-        body:    'https://res.cloudinary.com/hquhccft/image/upload/v1789369676/heart_body.png',
-    },
-    cat: {
-        cushion: 'https://res.cloudinary.com/hquhccft/image/upload/v1789369675/cat_cushion.png',
-        body:    'https://res.cloudinary.com/hquhccft/image/upload/v1789369848/cat_body.png',
-    },
+    basic: { cushion: IMAGE_BASE + '/basicCushion.png', body: IMAGE_BASE + '/basicBody.png' },
+    heart: { cushion: IMAGE_BASE + '/heartCushion.png', body: IMAGE_BASE + '/heartBody.png' },
+    cat: { cushion: IMAGE_BASE + '/catCushion.png', body: IMAGE_BASE + '/catBody.png' },
 };
-const SOUND_URL = 'https://res.cloudinary.com/hquhccft/video/upload/v1789369674/moktak_hit_1.mp3';
 
-// ---- 3종 디자인 배치값 (2026-09-10, 슌이 배치 조정 도구로 직접 확정) ----
 const LAYOUT = {
-    basic: { cushion: { left: 24.8, top: 57.6, width: 51.3 }, body: { left: 35.4, top: 45.8, width: 43.0 } },
+    basic: { cushion: { left: 24.8, top: 53.6, width: 51.3 }, body: { left: 35.4, top: 41.8, width: 43.0 } },
     heart: { cushion: { left: 24.9, top: 56.7, width: 49.9 }, body: { left: 34.0, top: 41.2, width: 38.2 } },
-    cat:   { cushion: { left: 22.8, top: 62.4, width: 49.4 }, body: { left: 31.8, top: 43.3, width: 36.0 } },
+    cat:   { cushion: { left: 22.8, top: 59.4, width: 49.4 }, body: { left: 31.8, top: 40.3, width: 36.0 } },
 };
 const ORDER = ["basic", "heart", "cat"];
 const LABELS = { basic: "기본", heart: "하트", cat: "고양이" };
@@ -39,6 +28,12 @@ const infoBtn = document.getElementById('infoBtn');
 const infoPopover = document.getElementById('infoPopover');
 const chatFlow = document.getElementById('chatFlow');
 const chatInput = document.getElementById('chatInput');
+const soundSelectWrap = document.getElementById('soundSelectWrap');
+const soundSelectBtn = document.getElementById('soundSelectBtn');
+const soundSelectLabel = document.getElementById('soundSelectLabel');
+const soundSelectList = document.getElementById('soundSelectList');
+const soundOptions = Array.from(soundSelectList.children);
+
 
 let currentIndex = 0;
 let transitioning = false;
@@ -127,11 +122,44 @@ window.addEventListener('pointerup', () => {
 });
 
 // ---- 클릭(타격) + 사운드 ----
-// ⚠ 조장 피드백(2026-09-14)으로 Space바 타격 기능은 넣지 않음. 키보드는 좌/우 화살표만 처리.
+const SOUND_KEY = 'moktak_sound_choice';
+let soundIndex = parseInt(localStorage.getItem(SOUND_KEY) || '0', 10);
+if (isNaN(soundIndex) || soundIndex < 0 || soundIndex >= SOUND_URLS.length) soundIndex = 0;
+
+function updateSoundSelectUI() {
+    soundOptions.forEach((li, i) => li.classList.toggle('active', i === soundIndex));
+    soundSelectLabel.textContent = soundOptions[soundIndex].textContent;
+}
+updateSoundSelectUI();
+
+soundSelectBtn.addEventListener('click', () => {
+    const isOpen = soundSelectWrap.classList.toggle('open');
+    soundSelectList.hidden = !isOpen;
+    soundSelectBtn.setAttribute('aria-expanded', String(isOpen));
+});
+
+soundOptions.forEach((li, i) => {
+    li.addEventListener('click', () => {
+        soundIndex = i;
+        localStorage.setItem(SOUND_KEY, String(soundIndex));
+        updateSoundSelectUI();
+        soundSelectWrap.classList.remove('open');
+        soundSelectList.hidden = true;
+    });
+});
+
+document.addEventListener('click', (e) => {
+    if (!soundSelectWrap.contains(e.target)) {
+        soundSelectWrap.classList.remove('open');
+        soundSelectList.hidden = true;
+    }
+});
+
 function playHitSound() {
     if (!soundOn) return;
     try {
-        const a = new Audio(SOUND_URL);
+        const src = SOUND_URLS[soundIndex];
+        const a = new Audio(src);
         a.volume = 0.85;
         a.play().catch(() => {});
     } catch (e) {}
