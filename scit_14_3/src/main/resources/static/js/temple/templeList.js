@@ -28,10 +28,11 @@ kakao.maps.load(function () {
             currentOpenInfoWindow.close();
             currentOpenInfoWindow = null;
         }
-        if (currentOpenMarker)
+        if (currentOpenMarker) {
             currentOpenMarker.setImage(currentOpenMarker.normalImage);
             currentOpenMarker.setZIndex(1);
             currentOpenMarker = null;
+            }
     });
 
     // 검색 기능에서 쓰기 위해 사찰 데이터 + 마커를 기억해둔다 (templeId 기준)
@@ -247,7 +248,7 @@ kakao.maps.load(function () {
         document.getElementById('filter-support-english').classList.remove('active');
         document.getElementById('filter-favorite').classList.remove('active');
         searchMatchedIds = null; // 검색 제한 해제
-
+        document.getElementById('result-list').innerHTML = '';
         applyFilters(); // 위에서 다 껐으니 이제 anyFilterActive가 false가 되어 패널이 실제로 닫힘.
     });
 
@@ -263,7 +264,8 @@ kakao.maps.load(function () {
         var keyword = document.getElementById('search-keyword').value.trim();
 
         if (!keyword) {
-            alert('검색어를 입력해 주세요.');
+            searchMatchedIds = null;
+            applyFilters(true);
             return;
         }
 
@@ -305,9 +307,19 @@ kakao.maps.load(function () {
             return;
         }
 
+        searchMatchedIds = [found.templeId];
+        applyFilters();
+
+        // 해당 마커를 클릭한 것처럼 처리해서 정보창 띄우기
+        var marker = markerByTempleId[found.templeId];
+            if (marker) {
+                kakao.maps.event.trigger(marker, 'click');
+            }
         // 지도 중심을 검색된 사찰로 이동 + 좀 더 가깝게 확대
-        map.setCenter(new kakao.maps.LatLng(found.latitude, found.longitude));
+        map.relayout();
         map.setLevel(4);
+        map.setCenter(new kakao.maps.LatLng(found.latitude, found.longitude));
+
 
         // 해당 마커를 클릭한 것처럼 처리해서 정보창 띄우기
         var marker = markerByTempleId[found.templeId];
@@ -364,7 +376,7 @@ kakao.maps.load(function () {
         });
     });
 
-    function applyFilters() {
+    function applyFilters(forceShowList) {
 
         var activeTypeFields = [];
         document.querySelectorAll('#temple-filter-box button.active').forEach(function (btn){
@@ -400,7 +412,7 @@ kakao.maps.load(function () {
                 matchedTemples.push(temple); // 통과한 사찰은 목록에도 추가
             }
         });
-        if (anyFilterActive) {
+        if (anyFilterActive || forceShowList) {
             showResultList(matchedTemples); // 필터/검색 중이면 목록 패널 갱신 + 열기
         } else {
             resultPanel.classList.add('collapsed'); // 아무 조건도 없으면 목록 패널 접어두기
@@ -426,9 +438,21 @@ kakao.maps.load(function () {
     }
 
     var NEAR_ME_RADIUS_KM = 10; // 이 반경(km) 안의 사찰만 "내 주변"으로 취급 - 숫자만 바꾸면 반경 조절 가능
-
+    var myLocationMarker = null;
+    var myLocationCircle = null;
+    var nearMeActive = false;
     // 내 주변 사찰 - 브라우저 위치 정보를 받아서 반경 안의 사찰만 지도에 남김
     document.getElementById('near-me-btn').addEventListener('click', function() {
+        if (nearMeActive) {
+            if (myLocationMarker) { myLocationMarker.setMap(null); myLocationMarker = null; }
+            if (myLocationCircle) { myLocationCircle.setMap(null); myLocationCircle = null; }
+            nearMeActive = false;
+            document.getElementById('near-me-btn').classList.remove('active');
+            searchMatchedIds = null;
+            applyFilters();
+            return;
+        }
+
         if (!navigator.geolocation) {
             alert('이 브라우저에서는 위치 확인 기능을 지원하지 않습니다.');
             return;
@@ -442,20 +466,42 @@ kakao.maps.load(function () {
 
                 var myLat = position.coords.latitude;
                 var myLng = position.coords.longitude;
-
+                var myPosition = new kakao.maps.LatLng(myLat, myLng);
                 var nearby = templeList.filter(function (temple) {
                     return getDistanceKm(myLat, myLng, temple.latitude, temple.longitude) <= NEAR_ME_RADIUS_KM;
                 });
+                if (myLocationMarker) myLocationMarker.setMap(null);
+                if (myLocationCircle) myLocationCircle.setMap(null);
 
-                if (nearby.length === 0) {
-                    alert('반경 ' + NEAR_ME_RADIUS_KM + 'km 안에 등록된 사찰이 없습니다.');
-                    return;
-                }
-
-                // 검색 제한 목록에 넣어두면, 기존 applyFilters()가 마커 표시/숨김을 알아서 처리해줌.
-                searchMatchedIds = nearby.map(function (temple) {
-                    return temple.templeId;
+                var myMarkerImageUrl = 'data:image/svg+xml;base64,' + btoa(
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">' +
+                         '<circle cx="10" cy="10" r="7" fill="#b0453f" stroke="#fff" stroke-width="3"/>' +
+                    '</svg>'
+                );
+                myLocationMarker = new kakao.maps.Marker({
+                    position: myPosition,
+                    image: new kakao.maps.MarkerImage(myMarkerImageUrl, new kakao.maps.Size(20, 20), { offset: new kakao.maps.Point(10, 10) }),
+                    zIndex: 998
                 });
+                myLocationMarker.setMap(map);
+
+                myLocationCircle = new kakao.maps.Circle({
+                    center: myPosition,
+                    radius: NEAR_ME_RADIUS_KM * 1000,
+                    strokeWeight: 1,
+                    strokeColor: '#b0453f',
+                    strokeOpacity: 0.8,
+                    strokeStyle: 'shortdash',
+                    fillColor: '#b0453f',
+                    fillOpacity: 0.1
+                });
+                myLocationCircle.setMap(map);
+                nearMeActive = true;
+                document.getElementById('near-me-btn').classList.add('active');
+
+                if (nearby.length === 0) {alert('반경 ' + NEAR_ME_RADIUS_KM + 'km 안에 등록된 사찰이 없습니다.');}
+                // 검색 제한 목록에 넣어두면, 기존 applyFilters()가 마커 표시/숨김을 알아서 처리해줌.
+                searchMatchedIds = nearby.map(function (temple) { return temple.templeId;});
                 applyFilters();
 
                 map.relayout();

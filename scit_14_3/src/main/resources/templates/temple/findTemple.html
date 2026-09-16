@@ -25,7 +25,8 @@
     align-items: center;
     gap: 8px;
 
-    background: var(--paper);
+    background: color-mix(in srgb, var(--paper) 85%, transparent);
+    backdrop-filter: blur(6px);
     padding: 10px 14px;
     border-radius: 10px;
     border: 1px solid var(--line);
@@ -41,11 +42,25 @@
     font-family: var(--sans);
     font-size: 13px;
     color: var(--text);
+    height: 34px;
+    box-sizing: border-box;
 
     background: var(--bg);
     border: 1px solid var(--line);
     border-radius: 6px;
     padding: 7px 10px;
+
+    transition: border-color .15s ease;
+}
+
+#temple-search-box select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23968a7a' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 26px;
+    cursor: pointer;
 }
 
 #search-keyword {
@@ -84,7 +99,8 @@
 #type-filter-box,
 #language-filter-box,
 #favorite-filter-box {
-    background: var(--paper);
+    background:  color-mix(in srgb, var(--paper) 85%, transparent);
+    backdrop-filter: blur(6px);
     padding: 8px 12px;
     border-radius: 10px;
     border: 1px solid var(--line);
@@ -175,7 +191,8 @@
     color: #fff;
     border-color: var(--text);
 }
-        #controls {
+
+#controls {
     position: absolute;
     top: 12px;
     left: 12px;
@@ -185,20 +202,25 @@
     gap: 10px;
     align-items: flex-start;
 }
-        #filter-row {
+
+#filter-row {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
     gap: 10px;
+    max-width: calc(100vw - 24px);
 }
+
 #result-panel {
     position: fixed;
     top: 74px;
     right: 0;
     bottom: 0;
     width: 320px;
+    max-width: 100vw;
     z-index: 15;
-
-    background: var(--paper);
+    background: color-mix(in srgb, var(--paper) 85%, transparent);
+    backdrop-filter: blur(6px);
     border-left: 1px solid var(--line);
     box-shadow: -4px 0 20px rgba(39, 33, 27, .08);
 
@@ -243,7 +265,7 @@
 #result-panel-toggle {
     position: fixed;
     top: 50%;
-    right: 320px;
+    right: min(320px, 100vw);
     transform: translateY(-50%);
     z-index: 16;
 
@@ -365,8 +387,14 @@
 }
 
 #near-me-btn:hover {
-    background: var(--green);
+    background: #b0453f;
     color: #fff;
+}
+
+#near-me-btn.active {
+    background: #b0453f;
+    color: #fff;
+    border-color: #b0453f;
 }
     </style>
 </head>
