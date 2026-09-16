@@ -85,7 +85,7 @@ public class TempleStayProgramService {
 	// TempleStayReservationService의 예약 생성/취소)에서 이 캐시도 같이 비운다.
 	@Cacheable(value = "program", key = "#programId")
 	public TempleStayProgramDTO getInfo(Long programId) {
-		TempleStayProgramEntity entity = tspr.findById(programId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
+		TempleStayProgramEntity entity = tspr.findByIdWithTemple(programId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
 		return toDto(entity);
 	}
 

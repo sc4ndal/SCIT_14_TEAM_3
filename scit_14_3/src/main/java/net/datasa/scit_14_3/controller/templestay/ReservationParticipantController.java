@@ -25,11 +25,6 @@ public class ReservationParticipantController {
 	private final ReservationParticipantService rps;
 	private final TempleStayReservationService tsrs;
 
-	@GetMapping("/{participantId}")
-	public ReservationParticipantDTO getReservationParticipant(@PathVariable Long participantId) {
-		return rps.getInfo(participantId);
-	}
-
 	/** 본인 예약의 참가자 정보(이름/이메일/전화번호)만 조회 가능 - reservationId가 URL에 그대로
 	    노출되는 값이라, 확인 없이 열어두면 아무나 남의 참가자 개인정보를 그대로 볼 수 있었다. */
 	@GetMapping("/reservation/{reservationId}")

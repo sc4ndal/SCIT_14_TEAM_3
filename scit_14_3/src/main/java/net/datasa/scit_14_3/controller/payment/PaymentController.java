@@ -2,7 +2,6 @@ package net.datasa.scit_14_3.controller.payment;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.datasa.scit_14_3.domain.dto.payment.PaymentDTO;
 import net.datasa.scit_14_3.service.payment.PaymentService;
 import net.datasa.scit_14_3.service.templestay.TempleStayReservationService;
 import org.springframework.http.HttpStatus;
@@ -20,11 +19,6 @@ import java.util.Map;
 public class PaymentController {
 	private final PaymentService ps;
 	private final TempleStayReservationService reservationService;
-
-	@GetMapping("/{paymentId}")
-	public PaymentDTO getPayment(@PathVariable("paymentId") Long paymentId) {
-		return ps.getInfo(paymentId);
-	}
 
 	/** 결제 준비 - 성공하면 사용자를 보낼 카카오페이 결제 페이지 URL을 돌려준다(프론트에서 그 URL로 이동). */
 	@PostMapping("/kakao/ready")

@@ -12,6 +12,10 @@ public interface FavoriteEventRepository extends JpaRepository<FavoriteEventEnti
 
 	Optional<FavoriteEventEntity> findByLoginIdAndEvent_EventId(String loginId, Long eventId);
 
+	// FavoriteEventEntity.event, TempleEventEntity.temple 둘 다 @ManyToOne(기본 EAGER)이라
+	// JOIN FETCH 없이 쓰면 즐겨찾기 건수만큼 TEMPLE_EVENT, TEMPLE을 각각 따로 불러옴(N+1) -
+	// TempleEventService.getFavorites()가 toDto에서 event.getTemple()까지 바로 쓰므로 둘 다 같이 당겨온다.
+	@Query("select f from FavoriteEventEntity f join fetch f.event e join fetch e.temple where f.loginId = :loginId order by f.createdAt desc")
 	List<FavoriteEventEntity> findByLoginIdOrderByCreatedAtDesc(String loginId);
 
 	// 마이페이지 허브 카드의 "관심 행사 N건" 배지용
