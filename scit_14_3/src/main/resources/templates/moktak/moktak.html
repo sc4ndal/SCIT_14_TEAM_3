@@ -9,14 +9,22 @@
 </head>
 <body>
 
-<!-- TODO: 팀 결정 대기 - 언어 위젯만 쓸지, 전체 commonIncludes 헤더를 쓸지 아직 미정.
-     당장은 몰입형 단독 화면으로 헤더 없이 감. 필요하면 이 자리에
-     <div th:replace="~{fragments/common-includes :: commonIncludes}"></div> 추가 -->
 
 <div id="top-controls">
     <button id="soundToggleBtn" type="button" aria-label="소리 켜기/끄기">🔊</button>
     <button id="resetBtn" type="button" aria-label="카운터 초기화">초기화</button>
     <a id="homeLink" th:href="@{/}" aria-label="메인으로">메인으로</a>
+    <div class="custom-select" id="soundSelectWrap">
+        <button type="button" class="custom-select-btn" id="soundSelectBtn" aria-haspopup="listbox" aria-expanded="false">
+            <span id="soundSelectLabel">소리 1</span>
+            <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <ul class="custom-select-list" id="soundSelectList" role="listbox" hidden>
+            <li role="option" data-value="0" class="active">소리 1</li>
+            <li role="option" data-value="1">소리 2</li>
+            <li role="option" data-value="2">소리 3</li>
+        </ul>
+    </div>
 </div>
 
 <div class="heading">
@@ -29,8 +37,12 @@
 <div class="design-label" id="designLabel"></div>
 
 <div class="stage-outer">
-    <button class="nav-arrow" id="prevBtn" aria-label="이전 디자인">‹</button>
-
+    <button class="nav-arrow" id="prevBtn" aria-label="이전 디자인">
+        <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+            <path d="M8 2L2 8L8 14" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </button>
     <div class="stage-wrap" id="stageWrap">
         <!-- 흘러가는 댓글: 목탁 위쪽에 겹쳐지는 레이어 -->
         <div id="chatFlow" aria-hidden="true"></div>
@@ -41,7 +53,12 @@
         </div>
     </div>
 
-    <button class="nav-arrow" id="nextBtn" aria-label="다음 디자인">›</button>
+    <button class="nav-arrow" id="nextBtn" aria-label="다음 디자인">
+        <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+            <path d="M2 2L8 8L2 14" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </button>
 </div>
 
 <div class="dots" id="dots"></div>
@@ -71,6 +88,12 @@
 <script th:inline="javascript">
     /*<![CDATA[*/
     const WS_URL = /*[[@{/ws/moktak}]]*/ '/ws/moktak';
+    const IMAGE_BASE = /*[[@{/images/moktak}]]*/ '/images/moktak';
+    const SOUND_URLS = [
+        /*[[@{/sounds/moktak/moktakHit.mp3}]]*/ '/sounds/moktak/moktakHit.mp3',
+        /*[[@{/sounds/moktak/moktakHit2.mp3}]]*/ '/sounds/moktak/moktakHit2.mp3',
+        /*[[@{/sounds/moktak/moktakHit3.mp3}]]*/ '/sounds/moktak/moktakHit3.mp3'
+    ];
     /*]]>*/
 </script>
 <script th:src="@{/js/moktak/moktak.js}"></script>
