@@ -84,6 +84,10 @@ public class TempleService {
 		entity.setMustChangePassword(false);
 	}
 
+	// 사찰 상세보기(temple-detail) 페이지마다 매번 원격 DB(Aiven) 왕복이 나서 - getAll()처럼
+	// 사찰 정보는 관리자/사찰 본인이 수정할 때만 바뀌니 캐싱한다. 같은 evict 지점(getAll() 주석 참고)에서
+	// "temples" 캐시 전체를 비우니 key별로 따로 안 비워줘도 된다.
+	@Cacheable(value = "temples", key = "#templeId")
 	public TempleDTO getInfo(Long templeId) {
 		TempleEntity entity = tr.findById(templeId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
 		return toDto(entity, false);
