@@ -118,14 +118,11 @@ public class MypageController {
 		return "mypage/favorites/reviews";
 	}
 	
-	/** 회원정보수정 들어가기 전 본인 확인 - 비밀번호를 다시 입력받음. 카카오 회원은 password 컬럼
-	    자체가 null이라(가입 시 비밀번호를 받지 않음) 재입력받을 비밀번호가 없으므로 건너뛴다.
-	    "카카오 로그인이냐"는 DB를 다시 조회할 필요 없이, 로그인 시점에 서버가 세션 principal에
-	    이미 심어둔 kakaoAccessToken으로 판단한다(SessionLoginService.loginAs 참고 - 폼로그인 경로는
-	    이 값이 항상 null). */
+	/** 회원정보수정 들어가기 전 본인 확인 - 비밀번호를 다시 입력받음. 카카오 회원은 비밀번호가
+	    없어 이 단계를 건너뛰고 바로 /mypage/edit로 보낸다(UserService.verifyPassword 주석 참고). */
 	@GetMapping("/mypage/edit/verify")
 	public String editVerifyForm(@AuthenticationPrincipal AppUserDetails principal, Model model) {
-		if (!principal.isTempleAccount() && principal.getKakaoAccessToken() != null) {
+		if (!principal.isTempleAccount() && !mypageService.getEditView(principal.getUsername()).isLocalMember()) {
 			return "redirect:/mypage/edit";
 		}
 		model.addAttribute("nickname", principal.getNickname());
