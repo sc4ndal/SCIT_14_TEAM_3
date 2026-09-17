@@ -28,4 +28,5 @@ public class TempleEventDTO {
 	private LocalDate endDate;
 	private String linkUrl;
 	private boolean favorited; // 로그인한 회원이 이 행사를 즐겨찾기 했는지 - /events, 관심 행사 목록에서만 채워짐
+	private boolean past; // 종료일이 오늘보다 이전인지 - /events에서 지난 행사를 회색으로 표시하고 즐겨찾기를 막는 데 씀
 }
