@@ -195,7 +195,7 @@ function renderProgramList() {
   listEl.innerHTML = pageResults.map(p => {
     const full = remainingSeats(p) <= 0;
     return `
-    <article class="program-card ${state.checkedProgramId === p.programId ? 'picked' : ''}" data-program-id="${p.programId}">
+    <article class="program-card ${state.checkedProgramId === p.programId ? 'picked' : ''}" data-program-id="${p.programId}" data-type="${p.programType}">
       <div class="program-card-top">
       <div class="badge-group">
         <span class="program-type-badge" data-type="${p.programType}">${p.programType}</span>

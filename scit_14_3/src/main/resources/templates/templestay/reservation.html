@@ -282,13 +282,17 @@
           flex-direction: column;
           gap: 10px;
         }
+        .program-card[data-type="체험형"] { --card-color: var(--pine); --card-tint: var(--pine-tint); }
+        .program-card[data-type="휴식형"] { --card-color: var(--blue); --card-tint: var(--blue-tint); }
+        .program-card[data-type="당일형"] { --card-color: var(--gold); --card-tint: var(--gold-tint); }
+
         .program-card:hover {
-          border-color: var(--pine);
+          border-color: var(--card-color, var(--pine));
           transform: translateY(-2px);
         }
         .program-card.picked {
-          border: 2px solid var(--pine);
-          background-color: var(--pine-tint);
+          border: 2px solid var(--card-color, var(--pine));
+          background-color:  var(--card-tint, var(--pine-tint));
         }
         @media (prefers-reduced-motion: reduce) {
           .program-card { transition: none; }
