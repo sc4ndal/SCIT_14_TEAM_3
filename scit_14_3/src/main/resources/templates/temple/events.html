@@ -43,6 +43,7 @@
 
 		<div class="events-grid" id="events-grid" th:unless="${#lists.isEmpty(events)}">
 			<article class="event-card" th:each="event : ${events}"
+					  th:classappend="${event.past} ? ' is-past' : ''"
 					  th:attr="data-event-name=${event.title + ' ' + event.templeName}">
 
 				<div class="event-card__body">
@@ -51,6 +52,7 @@
 						<span th:text="${#temporals.format(event.startDate, 'yyyy.MM.dd')}">2026.01.01</span>
 						<span th:if="${event.endDate != event.startDate}"
 							  th:text="'~ ' + ${#temporals.format(event.endDate, 'yyyy.MM.dd')}">~ 2026.01.07</span>
+						<span class="event-card__past-badge" th:if="${event.past}">종료</span>
 					</div>
 
 					<h2 class="event-card__title" th:text="${event.title}">행사명</h2>

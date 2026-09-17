@@ -25,10 +25,12 @@
 
     <!-- 타이틀 -->
     <div class="screen" id="screen-title">
-        <h1 data-i18n="ui.titleH1">사찰 예절 시뮬레이션</h1>
-        <p><span data-i18n="ui.titleSub1">「미(스님)연(애)시(뮬레이션)」</span><br><span data-i18n="ui.titleSub2">선택을 통해 첫 사찰 방문을 경험해보세요.</span></p>
-        <button class="btn btn-primary" id="btn-start" data-i18n="ui.btnStart">시작하기</button>
-        <button class="btn" id="btn-open-collection" data-i18n="ui.btnCollection">엔딩 도감</button>
+        <div id="title-main">
+            <h1 data-i18n="ui.titleH1">사찰 예절 시뮬레이션</h1>
+            <p><span data-i18n="ui.titleSub1">「미(스님)연(애)시(뮬레이션)」</span><br><span data-i18n="ui.titleSub2">선택을 통해 첫 사찰 방문을 경험해보세요.</span></p>
+            <button class="btn btn-primary" id="btn-start" data-i18n="ui.btnStart">시작하기</button>
+            <button class="btn" id="btn-open-collection" data-i18n="ui.btnCollection">엔딩 도감</button>
+        </div>
         <a class="link-home" th:href="@{/}" data-i18n="ui.linkHome">메인으로 돌아가기</a>
     </div>
 
@@ -36,8 +38,20 @@
     <div class="screen" id="screen-scene">
         <div id="bg-layer">
             <span id="bg-label">BG</span>
-            <span id="dev-badge" title="개발자 패널 (또는 D 키)">⚙</span>
         </div>
+
+        <div class="scene-toolbar">
+            <button class="toolbar-btn" id="btn-history-back" type="button" title="이전 대화">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <button class="toolbar-btn" id="btn-toggle-dialogue" type="button" title="대화창 끄기">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+            </button>
+            <a class="toolbar-btn" th:href="@{/}" title="메인으로 돌아가기">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"></path></svg>
+            </a>
+        </div>
+
         <div id="dialogue-dock">
             <div id="text-box">
                 <div id="speaker"></div>
@@ -79,21 +93,6 @@
             <p style="font-size:13px;opacity:.6;margin:0;" data-i18n="ui.collectionDesc">아직 발견하지 못한 엔딩은 ???로 표시됩니다.</p>
             <div id="collection-grid"></div>
         </div>
-    </div>
-
-    <!-- 개발자 패널 (발표/시연용) -->
-    <div id="dev-panel">
-        <h3>DEV PANEL (시연용)</h3>
-        <button class="btn" data-force-hidden="1">다음에 히든씬 강제 발생 ON</button>
-        <button class="btn" data-force-hidden="0">히든씬 강제 발생 OFF (확률로 복귀)</button>
-        <h3>엔딩으로 바로 이동</h3>
-        <button class="btn" data-jump-ending="PERFECT">PERFECT END로 이동</button>
-        <button class="btn" data-jump-ending="NORMAL">NORMAL END로 이동</button>
-        <button class="btn" data-jump-ending="BAD">BAD END로 이동</button>
-        <button class="btn" data-jump-ending="ZEOLMANG">絶望 END로 이동</button>
-        <button class="btn" data-jump-ending="SECRET">SECRET END로 이동</button>
-        <h3></h3>
-        <button class="btn" id="dev-close">닫기</button>
     </div>
 
 </div>

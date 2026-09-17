@@ -266,6 +266,8 @@ kakao.maps.load(function () {
         if (!keyword) {
             searchMatchedIds = null;
             applyFilters(true);
+            map.setLevel(13);
+            map.setCenter(new kakao.maps.LatLng(35.9, 127.7));
             return;
         }
 

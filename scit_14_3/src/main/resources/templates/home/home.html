@@ -7,8 +7,10 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <link rel="stylesheet" th:href="@{/css/common.css}" type="text/css">
     <link rel="stylesheet" th:href="@{/css/home/home.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/css/home/chat.css}" type="text/css">
     <script defer th:src="@{/js/home/home.i18n.js}"></script>
     <script defer th:src="@{/js/home/home.js}"></script>
+    <script defer th:src="@{/js/home/chat.js}"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <title>佛선자</title>
 </head>
@@ -421,6 +423,43 @@
     ↑
 
 </button>
+
+
+<!-- =====================================================
+     챗봇 위젯 (홈 화면 전용 - 불교/사이트 안내 Q&A)
+===================================================== -->
+
+<button aria-label="챗봇 열기"
+        class="chat-toggle"
+        id="chatToggle"
+        type="button">
+    <span class="chat-toggle__icon-open">💬</span>
+    <span class="chat-toggle__icon-close">✕</span>
+</button>
+
+<section class="chat-panel"
+         id="chatPanel"
+         aria-hidden="true">
+
+    <header class="chat-panel__header">
+        <strong>佛선자 챗봇</strong>
+        <span class="chat-panel__subtitle">불교 상식과 사이트 이용을 안내해드려요</span>
+    </header>
+
+    <div class="chat-panel__messages" id="chatMessages">
+        <div class="chat-message chat-message--bot">안녕하세요! 불교에 대해 궁금한 점이나, 이 사이트를 어떻게 이용하면 되는지 무엇이든 물어보세요.</div>
+    </div>
+
+    <form class="chat-panel__form" id="chatForm">
+        <input type="text"
+               id="chatInput"
+               class="chat-panel__input"
+               placeholder="궁금한 점을 입력해보세요"
+               autocomplete="off">
+        <button type="submit" class="chat-panel__send" aria-label="보내기">↑</button>
+    </form>
+
+</section>
 
 
 <script th:if="${submitSuccess}">
