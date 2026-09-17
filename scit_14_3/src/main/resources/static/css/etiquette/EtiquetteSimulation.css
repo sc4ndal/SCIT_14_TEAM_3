@@ -7,31 +7,59 @@
 * { box-sizing: border-box; }
 body {
     margin: 0; font-family: "Pretendard", "Apple SD Gothic Neo", sans-serif;
-    background: #12100e; display: flex; justify-content: center; align-items: center;
-    min-height: 100vh; color: #222; padding: 24px;
+    background: #000; color: #222;
 }
 
-/* PC 웹 기준 16:9 와이드스크린 프레임.
-   실제 사이트에 들어갈 땐 이 프레임이 헤더/푸터 사이의 본문 영역이 되고,
-   아래 width 값들만 사이트 레이아웃(예: max-width 1200px 컨테이너)에 맞춰 조정하면 됨. */
+/* 풀블리드: 16:9 레터박싱 프레임 제거, 뷰포트 전체(100vw x 100vh)를 채움.
+   .screen들은 position:absolute; inset:0 이라 #game-root 크기만 바뀌면
+   자동으로 꽉 차게 따라옴 (씬/엔딩/결과 화면은 손 안 대도 됨). */
 #game-root {
-    width: min(1180px, 96vw, 173vh);
-    aspect-ratio: 16 / 9;
-    max-height: 92vh;
-    background: #000; position: relative; overflow: hidden; border-radius: 6px;
-    box-shadow: 0 0 60px rgba(0,0,0,.5);
+    width: 100vw;
+    height: 100vh;
+    background: #000; position: relative; overflow: hidden;
 }
 .screen { position: absolute; inset: 0; display: none; flex-direction: column; }
 .screen.active { display: flex; }
 
-/* 언어 전환 위젯 - #game-root 직속 자식이라 어떤 화면(.screen)이 떠 있든 항상 위에 보임 */
+/* 언어 전환 위젯 - #game-root 직속 자식이라 어떤 화면(.screen)이 떠 있든 항상 위에 보임.
+   씬 화면은 배경이 실사 이미지라 밝기가 제각각이므로, 텍스트만 얹지 않고
+   반투명 검은 배경(pill) + 블러를 깔아서 어떤 배경 위에서도 대비가 나오게 함. */
 .etiquette-language-widget {
     position: absolute; top: 10px; left: 10px; z-index: 60;
+    padding: 6px 12px;
+    background: rgba(0,0,0,.4);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    border-radius: 999px;
 }
 .etiquette-language-widget .language-area { gap: 8px; }
-.etiquette-language-widget .language-button { color: rgba(255,255,255,.55); font-size: 12px; }
-.etiquette-language-widget .language-button.active { color: #c99a4b; }
-.etiquette-language-widget .language-area span { color: rgba(255,255,255,.25); }
+.etiquette-language-widget .language-button {
+    color: rgba(255,255,255,.75);
+    font-size: 12px;
+    text-shadow: 0 1px 3px rgba(0,0,0,.6);
+}
+.etiquette-language-widget .language-button.active { color: #e0b568; }
+.etiquette-language-widget .language-area span { color: rgba(255,255,255,.4); }
+
+/* 씬 화면 오른쪽 위 아이콘 툴바 (이전 대화 / 대화창 끄기 / 메인으로) —
+   언어 위젯이랑 같은 pill 톤으로 짝을 맞춤 */
+.scene-toolbar {
+    position: absolute; top: 10px; right: 10px; z-index: 60;
+    display: flex; gap: 6px; padding: 6px;
+    background: rgba(0,0,0,.4);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    border-radius: 999px;
+}
+.toolbar-btn {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; border: none; background: transparent;
+    color: rgba(255,255,255,.75); cursor: pointer; text-decoration: none;
+    transition: background .15s, color .15s;
+}
+.toolbar-btn:hover { background: rgba(255,255,255,.14); color: #fff; }
+.toolbar-btn.active { background: rgba(201,154,75,.3); color: #e0b568; }
+.toolbar-btn:disabled { opacity: .3; cursor: default; }
+.toolbar-btn:disabled:hover { background: transparent; color: rgba(255,255,255,.75); }
 
 /* ---------- 로딩 ---------- */
 #screen-loading {
@@ -51,9 +79,14 @@ body {
 
 /* ---------- 타이틀 ---------- */
 #screen-title {
-    justify-content: center; align-items: center; gap: 22px;
+    align-items: center;
     background: linear-gradient(160deg, #3a2f28, #1c1712);
     color: #f3e9d8; text-align: center; padding: 40px;
+}
+#title-main {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 22px;
 }
 #screen-title h1 { font-size: 34px; margin: 0 0 6px; letter-spacing: 2px; }
 #screen-title p { font-size: 15px; opacity: .75; margin: 0 0 8px; line-height: 1.7; max-width: 520px; }
@@ -66,8 +99,10 @@ body {
 .btn-primary { background: #c99a4b; border-color: #c99a4b; color: #1c1712; font-weight: 700; }
 .btn-primary:hover { background: #d9ab5c; }
 
+/* 메인으로 돌아가기(타이틀 화면 전용): 버튼 그룹과 분리해서 화면 하단에 배치 */
 .link-home {
-    margin-top: 6px; color: rgba(243,233,216,.55); font-size: 13px;
+    position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%);
+    color: rgba(243,233,216,.55); font-size: 13px;
     text-decoration: none; border-bottom: 1px solid transparent;
 }
 .link-home:hover { color: rgba(243,233,216,.85); border-bottom-color: rgba(243,233,216,.55); }
@@ -77,12 +112,6 @@ body {
    PC 와이드스크린 VN 레이아웃: 배경이 프레임 전체를 채우고,
    대사창은 하단에 폭을 제한한 채(가운데 정렬) 오버레이되는 형태 */
 #screen-scene { background: #333; }
-/* 2026-09-03: bg-layer를 화면 전체를 덮는 절대배치로 바꿈.
-   원래는 flex:1이라 #dialogue-dock(대사창) 높이가 선택지 개수에 따라 늘어나면
-   그만큼 bg-layer가 눌려서(줄어들어서) background-size:cover인 이미지가
-   위로 밀려 올라가 보이는 문제가 있었음(선택지 뜰 때 사진이 움찔 올라가는 버그).
-   bg-layer를 inset:0으로 화면 전체 고정 크기로 깔고, 대사창은 그 위에
-   하단 오버레이로 얹는 구조로 바꿔서 대사창 높이가 배경 크기에 전혀 영향을 안 주게 함. */
 #bg-layer {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     color: rgba(255,255,255,.35); font-size: 14px; letter-spacing: 2px;
@@ -90,31 +119,16 @@ body {
     background-size: cover; background-position: center; background-repeat: no-repeat;
 }
 #bg-label { border: 1px dashed rgba(255,255,255,.25); padding: 8px 18px; border-radius: 6px; }
-/* 실제 배경 이미지가 있는 씬은 이 클래스를 붙여서 라벨(placeholder)을 숨김.
-   이미지 없는 씬은 클래스가 안 붙으므로 기존처럼 "BG: 이름" 라벨이 계속 보임 —
-   그림이 하나씩 채워질 때마다 그 씬만 자연스럽게 실사로 바뀌는 구조. */
 #bg-layer.has-image #bg-label { display: none; }
-#dev-badge {
-    position: absolute; top: 14px; right: 18px; font-size: 13px;
-    color: rgba(255,255,255,.4); cursor: pointer; user-select: none;
-    z-index: 2;
-}
-/* 2026-09-08: 슌이 정한 배치 기준 반영.
-   - 배경 상단 65~70%는 UI가 거의 침범하지 않음 / 대사창은 하단 25~30% 안에서 해결
-   - 대사창: 화면 하단에 고정, 폭은 조금 더 넓게(860→920px), 높이는 꼭 필요한
-     만큼만(고정 min-height 제거, 패딩/폰트 축소)
-   - 선택지 기본 상태: 대사창(.62)보다 살짝 더 옅은(.5) 짙은 반투명 카드로 구분.
-   - hover: 버튼 전체가 밝은 베이지색으로 변하던 것 제거 → 금색 테두리 + 아주 옅은
-     금색 틴트(.14)만 남김.
-   2026-09-08 추가 수정: 선택지를 화면 정중앙에 띄우는 버전도 만들어봤는데,
-   슌이 다시 "선택지 창은 수정하기 전으로" 되돌려달라고 해서 선택지는 원래대로
-   대사창 바로 위에 쌓이는 구조로 복귀. 대신 대사창 세로 크기만 살짝 키움
-   (패딩/줄간격 소폭 증가 — 아래 #text-box 참고). */
+
 #dialogue-dock {
     position: absolute; left: 0; right: 0; bottom: 2%; z-index: 1;
     padding: 0 6%;
     display: flex; flex-direction: column; align-items: center;
 }
+/* '대화창 끄기' 켜졌을 때 대사창+선택지 전체를 숨김 (배경만 보이게) */
+#dialogue-dock.dialogue-hidden { display: none; }
+
 #choice-layer {
     order: 1; width: 100%; max-width: 920px; margin: 0 0 8px;
     display: flex; flex-direction: column; gap: 6px;
@@ -130,14 +144,6 @@ body {
 }
 .choice-btn:hover { background: rgba(201,154,75,.14); border-color: #c99a4b; }
 
-/* 2026-09-08: 텍스트가 왼쪽 위에 붙어 보이던 문제 수정.
-   이전엔 #text-box가 flex-column으로 #story-text + #advance-hint를 세로로
-   묶어서 "그 묶음 전체"를 가운데 정렬했는데, 박스 높이가 min-height로 커지면서
-   그 묶음이 위쪽에 쏠려 보였음(#advance-hint 자리만큼 아래 공간을 차지해서).
-   지금은 #advance-hint("▶ 클릭해서 계속")를 흐름에서 빼서 박스 우측 하단에
-   고정(position:absolute)시키고, #text-box 자체는 min-height를 주고
-   align-items:center로 순수하게 #story-text 하나만 세로 중앙에 놓음 —
-   가로는 그대로 왼쪽 정렬 유지. */
 #text-box {
     position: relative;
     order: 2; color: #f0ead9; width: 100%; max-width: 920px;
@@ -201,13 +207,3 @@ body {
 }
 .collection-cell.unlocked { background: rgba(201,154,75,.18); border-color: #c99a4b; }
 .collection-cell .mark { font-size: 22px; margin-bottom: 6px; }
-
-/* ---------- 개발자 패널 ---------- */
-#dev-panel {
-    position: absolute; inset: 0; background: rgba(0,0,0,.85); display: none;
-    flex-direction: row; flex-wrap: wrap; align-content: flex-start; gap: 8px; padding: 24px;
-    z-index: 50; color: #fff; overflow-y: auto;
-}
-#dev-panel.active { display: flex; }
-#dev-panel h3 { flex-basis: 100%; font-size: 13px; margin: 6px 0 0; color: #c99a4b; }
-#dev-panel button { text-align: left; }
