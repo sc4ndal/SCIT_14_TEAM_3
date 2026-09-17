@@ -25,7 +25,7 @@ kakao.maps.load(function () {
     // 지도 빈 공간 클릭하면 열려있던 정보창 닫기
     kakao.maps.event.addListener(map, 'click', function () {
         if (currentOpenInfoWindow) {
-            currentOpenInfoWindow.close();
+            currentOpenInfoWindow.setMap(null);
             currentOpenInfoWindow = null;
         }
         if (currentOpenMarker) {
