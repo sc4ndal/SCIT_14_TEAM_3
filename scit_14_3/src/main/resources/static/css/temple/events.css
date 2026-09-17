@@ -126,6 +126,25 @@ body {
 	display: none;
 }
 
+/* 지난 행사 - 회색으로 흐리게 표시하고, 즐겨찾기 버튼은 아래에서 disabled로 따로 스타일링 */
+.event-card.is-past {
+	background: var(--muted-bg);
+	filter: grayscale(70%);
+	opacity: .72;
+}
+
+.event-card__past-badge {
+	margin-left: 8px;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: var(--text-tertiary);
+	color: #fff;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0;
+	vertical-align: middle;
+}
+
 .event-card__body {
 	padding: 22px;
 }
@@ -201,8 +220,14 @@ body {
 }
 
 .favorite-toggle:disabled {
-	opacity: .6;
-	cursor: default;
+	border-color: var(--line);
+	background: var(--muted-bg);
+	color: var(--text-tertiary);
+	cursor: not-allowed;
+}
+
+.favorite-toggle:disabled .favorite-toggle__icon::before {
+	content: "☆";
 }
 
 .favorite-toggle .favorite-toggle__icon::before {
