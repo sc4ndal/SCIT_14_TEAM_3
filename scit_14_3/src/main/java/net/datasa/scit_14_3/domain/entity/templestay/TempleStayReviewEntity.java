@@ -31,6 +31,9 @@ public class TempleStayReviewEntity {
 	@Column(name = "rating", nullable = false)
 	private byte rating;
 
+	@Column(name = "title", length = 100)
+	private String title;
+
 	@Column(name = "content", nullable = false, columnDefinition = "TEXT")
 	private String content;
 

@@ -31,6 +31,11 @@
 	border-radius: 16px;
 }
 
+/* mypage 밖으로 나가는 링크는 .favorites-more와 같은 색으로 통일 */
+.favorites-empty a {
+	color: var(--brown);
+}
+
 .favorites-more {
 	margin-top: 28px;
 	text-align: center;
@@ -232,6 +237,93 @@
 	justify-content: flex-end;
 }
 
+/* ---------- 좋아요한 리뷰 (나의 리뷰와 동일한 긴 박스 리스트) ---------- */
+
+.review-fav-list {
+	margin-top: 48px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.review-fav-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 20px 22px;
+}
+
+.review-fav-card[hidden] { display: none; }
+
+.review-fav-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 12px;
+}
+
+.review-fav-header h3 {
+	margin: 0;
+	font-family: var(--serif);
+	font-weight: 500;
+	font-size: 15.5px;
+	color: var(--text-primary);
+}
+
+.review-fav-rating {
+	flex-shrink: 0;
+	color: var(--gold);
+	font-size: 14px;
+	letter-spacing: 1px;
+}
+
+.review-fav-meta {
+	margin: 4px 0 0;
+	font-size: 12.5px;
+	color: var(--text-tertiary);
+}
+
+.review-fav-meta--date { margin-bottom: 12px; }
+
+.review-fav-meta .meta-link {
+	color: var(--blue);
+	text-decoration: none;
+	font-weight: 600;
+}
+
+.review-fav-meta .meta-link:hover { text-decoration: underline; }
+
+.review-fav-content {
+	margin: 0;
+	font-size: 13.5px;
+	line-height: 1.6;
+	color: var(--text-primary);
+	white-space: pre-line;
+	overflow-wrap: break-word;
+	word-break: break-word;
+}
+
+.review-fav-images {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 14px;
+}
+
+.review-fav-images img {
+	width: 84px;
+	height: 84px;
+	object-fit: cover;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+}
+
+.review-fav-footer {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 16px;
+}
+
 /* ---------- 즐겨찾기 해제 버튼 ----------
    buddhism.css의 .favorite-toggle과 같은 클래스명을 쓰지만(favoriteButton.js 공용),
    이 페이지는 buddhism.css를 안 불러오므로 마이페이지 색상 토큰으로 다시 정의한다. */
@@ -262,6 +354,12 @@
 
 .favorite-toggle .favorite-toggle__icon::before {
 	content: "★";
+}
+
+/* 좋아요한 리뷰만 "즐겨찾기(★)"가 아니라 "좋아요" 의미라 하트로 표시 - 다른 즐겨찾기
+   페이지(사찰/행사/음식/한마디)는 그대로 별 아이콘 유지 */
+.review-fav-footer .favorite-toggle .favorite-toggle__icon::before {
+	content: "♥";
 }
 
 .favorite-toggle.is-favorited {

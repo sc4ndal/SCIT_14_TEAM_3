@@ -52,8 +52,17 @@ async function loadMyReviews() {
       const program = reservation ? programMap.get(reservation.programId) : null;
       const temple = program ? templeMap.get(program.templeId) : null;
 
-      const title = program ? program.title : '(정보 없음)';
+      const programTitle = program ? program.title : '(정보 없음)';
+      // 리뷰 자체 제목이 있으면 그걸 헤더로 쓰고, 없는(예전) 리뷰는 기존처럼 프로그램명으로 대체한다.
+      const reviewTitle = review.title || programTitle;
       const templeName = temple ? temple.name : '';
+      // 절 이름/프로그램명을 누르면 각 상세 페이지로 이동 (templestay/reviews.js와 동일한 경로 규칙)
+      const templeLink = temple
+        ? `<a class="meta-link" href="/temple-detail/${encodeURIComponent(temple.templeId)}">${escapeHtml(templeName)}</a>`
+        : (templeName ? escapeHtml(templeName) : '-');
+      const programLink = program
+        ? `<a class="meta-link" href="/reservation/programs/${encodeURIComponent(program.programId)}">${escapeHtml(programTitle)}</a>`
+        : escapeHtml(programTitle);
       const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
       const images = (review.imageUrls || []).map(url =>
         `<img src="${url}" alt="리뷰 첨부 이미지">`
@@ -68,10 +77,11 @@ async function loadMyReviews() {
       return `
         <article class="review-item-card" data-review-id="${review.reviewId}">
           <div class="review-item-header">
-            <h3>${escapeHtml(title)}</h3>
+            <h3>${escapeHtml(reviewTitle)}</h3>
             <span class="review-item-rating">${stars}</span>
           </div>
-          <p class="review-item-meta">${escapeHtml(templeName)} · ${dateText}</p>
+          <p class="review-item-meta">${templeLink} · ${programLink}</p>
+          <p class="review-item-meta review-item-meta--date">${dateText}</p>
           <p class="review-item-content">${escapeHtml(review.content)}</p>
           ${images ? `<div class="review-item-images">${images}</div>` : ''}
           <div class="review-item-actions">
