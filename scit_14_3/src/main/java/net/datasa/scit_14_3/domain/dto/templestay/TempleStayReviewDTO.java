@@ -19,6 +19,7 @@ public class TempleStayReviewDTO {
 	// primitive int로 두면 요청 바디에 없는 필드(예: PATCH의 likeCount/viewCount)를 Jackson이
 	// null -> int로 매핑하려다 MismatchedInputException을 던진다 - 전부 Integer로 nullable하게 둠.
 	private Integer rating;
+	private String title;
 	private String content;
 	private List<String> imageUrls;
 	private Integer likeCount;

@@ -56,6 +56,18 @@
         }
         .rating-stars button.filled { color: var(--gold); }
 
+        .review-title-input {
+          width: 100%;
+          padding: 12px 14px;
+          border: 1px solid var(--line);
+          border-radius: 6px;
+          font-family: var(--sans);
+          font-size: 14px;
+          color: var(--text-primary);
+          margin-bottom: 22px;
+        }
+        .review-title-input:focus { outline: none; border-color: var(--blue); }
+
         .review-textarea {
           width: 100%;
           min-height: 160px;
@@ -187,6 +199,10 @@
                     <button type="button" data-value="4">★</button>
                     <button type="button" data-value="5">★</button>
                 </div>
+
+                <h4>제목</h4>
+                <input class="review-title-input" id="review-title" type="text" maxlength="100"
+                       placeholder="리뷰 제목을 입력해주세요.">
 
                 <h4>리뷰 내용</h4>
                 <textarea class="review-textarea" id="review-content"

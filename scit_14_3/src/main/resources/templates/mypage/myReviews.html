@@ -51,16 +51,25 @@
           letter-spacing: 1px;
         }
         .review-item-meta {
-          margin: 4px 0 12px;
+          margin: 4px 0 0;
           font-size: 12.5px;
           color: var(--text-tertiary);
         }
+        .review-item-meta--date { margin-bottom: 12px; }
+        .review-item-meta .meta-link {
+          color: var(--blue);
+          text-decoration: none;
+          font-weight: 600;
+        }
+        .review-item-meta .meta-link:hover { text-decoration: underline; }
         .review-item-content {
           margin: 0;
           font-size: 13.5px;
           line-height: 1.6;
           color: var(--text-primary);
           white-space: pre-line;
+          overflow-wrap: break-word;
+          word-break: break-word;
         }
         .review-item-images {
           display: flex;
@@ -109,6 +118,16 @@
           padding: 40px 0;
           font-size: 13.5px;
         }
+
+        .reviews-more {
+          margin-top: 20px;
+          text-align: center;
+          font-size: 14px;
+        }
+        .reviews-more a {
+          color: var(--brown);
+          text-decoration: none;
+        }
     </style>
 </head>
 
@@ -130,6 +149,7 @@
         <section id="review-list-section">
             <h2>리뷰 내역 (<span id="review-count-label">0</span>건)</h2>
             <div id="review-list"></div>
+            <p class="reviews-more"><a th:href="@{/reservation/reviews}">템플스테이 후기 보러가기 →</a></p>
         </section>
     </div>
 </main>
