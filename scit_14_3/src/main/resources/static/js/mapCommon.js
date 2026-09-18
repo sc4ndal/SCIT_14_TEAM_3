@@ -101,22 +101,21 @@ function createTempleMarker(map, temple) {
     marker.nameTooltip = nameTooltip; // 목록에서 마우스 올렸을 때도 이름표를 띄우기 위해 마커에 붙여둠
 
     // 5. 클릭했을 때 뜨는 상세 정보창 (이름 + 주소, X 버튼으로 닫기 가능)
-        var infoContent = document.createElement('div');
-        infoContent.style.cssText = 'padding:5px;position:relative;';
-        infoContent.innerHTML =
-            '<button type="button" class="info-close-btn" style="position:absolute;top:0;right:0;border:none;background:none;font-size:19px;line-height:1;cursor:pointer;color:#999;padding:2px 4px;">×</button>' +
-            '<div style="display:flex;align-items:center;gap:6px;white-space:nowrap;padding-right:16px;">' +
-            '  <div style="font-size:15px;font-weight:bold;">' + temple.name + '</div>' +
-            '  <span class = "favorite-wrapper" style="position:relative;display:inline-flex;">' +
-            '  <button type="button" class="favorite-star-btn" style="border:none;background:none;font-size:19px;line-height:1;cursor:pointer;color:' + (temple.favorited ? '#f4c25c' : '#ccc') + ';padding:0;">★</button>' +
-            '  </span>' +
-            '</div>' +
-            '<div style="font-size:13px;white-space:nowrap;">' + temple.address + '</div>' +
-            '<div style="margin-top:6px;white-space:nowrap;">' +
-            '  <a href="/temple-detail/' + temple.templeId + '" style="font-size:12px;color:#2e86de;text-decoration:none;">상세보기</a>' +
-            '  <a href="#" class="zoom-detail-link" style="font-size:12px;color:#2e86de; text-decoration:none;margin-left:10px;">가까이 보기</a>' +
-            '</div>';
-
+                       var infoContent = document.createElement('div');
+                       infoContent.style.cssText = 'padding:5px;position:relative;';
+                       infoContent.innerHTML =
+               '<button type="button" class="info-close-btn" style="position:absolute;top:0;right:0;border:none;background:none;font-size:19px;line-height:1;cursor:pointer;color:#999;padding:2px 4px;">×</button>' +
+                          '<div style="display:flex;align-items:center;gap:6px;white-space:nowrap;padding-right:16px;">' +
+                          '  <div style="font-size:15px;font-weight:bold;">' + temple.name + '</div>' +
+                          '  <span class = "favorite-wrapper" style="position:relative;display:inline-flex;">' +
+                          '  <button type="button" class="favorite-star-btn" style="border:none;background:none;font-size:19px;line-height:1;cursor:pointer;color:' + (temple.favorited ? '#f4c25c' : '#ccc') + ';padding:0;">★</button>' +
+                          '  </span>' +
+                          '</div>' +
+                          '<div style="font-size:13px;white-space:nowrap;">' + temple.address + '</div>' +
+                          '<div style="margin-top:6px;white-space:nowrap;">' +
+                          '  <a href="/temple-detail/' + temple.templeId + '" style="font-size:12px;color:#2e86de;text-decoration:none;">상세보기</a>' +
+                          '  <a href="#" class="zoom-detail-link" style="font-size:12px;color:#2e86de; text-decoration:none;margin-left:10px;">가까이 보기</a>' +
+                          '</div>';
     // *. 위치 확대 기능
     var zoomDetailLink = infoContent.querySelector('.zoom-detail-link');
     zoomDetailLink.addEventListener('click', function (e){
@@ -250,6 +249,18 @@ function createTempleMarker(map, temple) {
         removable: false,
         zIndex: 999999 // 마커 zIndex보다 훨씬 높게 잡아서 항상 마커 위에 뜨게 함
     });
+
+     // 번역기 등으로 infoContent 내부 텍스트 줄 수가 나중에 바뀌면(폭은 고정이라 높이만 바뀜)
+        // InfoWindow가 다시 측정하도록 닫았다 열어줌 (번역 후 하단 잘림 방지)
+        if (window.ResizeObserver) {
+            var infoResizeObserver = new ResizeObserver(function () {
+                if (currentOpenInfoWindow === infowindow) {
+                    infowindow.close();
+                    infowindow.open(map, marker);
+                }
+            });
+            infoResizeObserver.observe(infoContent);
+        }
 
     // 9. 이벤트 등록: 마우스 오버 → 이름표 표시 + 밝은 색 핀으로 교체
     kakao.maps.event.addListener(marker, 'mouseover', function () {
