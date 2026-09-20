@@ -138,15 +138,36 @@ function uniqueTemples(region) {
 
 // ------------------------- STEP 전환 (1/2/3) -------------------------
 function goToStep(step) {
-  state.step = step;
-  document.querySelectorAll('main > section[data-step]').forEach(sec => {
-    sec.hidden = Number(sec.dataset.step) !== step;
-  });
-  document.querySelectorAll('#progress-steps li').forEach((li, i) => {
-    li.classList.toggle('active', i === step - 1);
-  });
+  const sections = document.querySelectorAll('main > section[data-step]');
+  const current = Array.from(sections).find(sec => !sec.hidden);
+  const target = Array.from(sections).find(sec => Number(sec.dataset.step) === step);
 
-  window.scrollTo(0, 0);   // 추가: 화면 맨 위로 스크롤 (단계 바뀌는 느낌 확실하게)
+  state.step = step;
+
+  const swapSections = () => {
+    sections.forEach(sec => {
+      sec.hidden = Number(sec.dataset.step) !== step;
+    });
+    document.querySelectorAll('#progress-steps li').forEach((li, i) => {
+      li.classList.toggle('active', i === step - 1);
+    });
+    window.scrollTo(0, 0);
+
+    if (target) {
+      target.classList.add('step-fade');
+      // hidden 해제 직후에 바로 opacity:1로 가면 트랜지션이 안 먹으니, 한 프레임 쉬었다가 클래스 제거
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => target.classList.remove('step-fade'));
+      });
+    }
+  };
+
+  if (current && current !== target) {
+    current.classList.add('step-fade');
+    setTimeout(swapSections, 150); // 이전 화면 페이드아웃 끝난 뒤 전환
+  } else {
+    swapSections();
+  }
 }
 
 // ------------------------- STEP 1: 목록 렌더링 -------------------------
@@ -195,11 +216,13 @@ function renderProgramList() {
   listEl.innerHTML = pageResults.map(p => {
     const full = remainingSeats(p) <= 0;
     return `
-    <article class="program-card ${state.checkedProgramId === p.programId ? 'picked' : ''}" data-program-id="${p.programId}" data-type="${p.programType}">
+  <article class="program-card ${state.checkedProgramId === p.programId ? 'picked' : ''}" data-program-id="${p.programId}" data-type="${p.programType}">
+    <div class="program-card-thumb"><img src="${p.imageUrl || ''}" alt="${p.title}"></div>
+    <div class="program-card-body">
       <div class="program-card-top">
-      <div class="badge-group">
-        <span class="program-type-badge" data-type="${p.programType}">${p.programType}</span>
-        ${p.supportEnglish ? '<span class="lang-badge">EN</span>' : ''}
+        <div class="badge-group">
+          <span class="program-type-badge" data-type="${p.programType}">${p.programType}</span>
+          ${p.supportEnglish ? '<span class="lang-badge">EN</span>' : ''}
         </div>
         <p class="program-capacity">
           <span class="capacity-dot ${full ? 'full' : 'open'}"></span>
@@ -214,7 +237,8 @@ function renderProgramList() {
         </div>
         <a class="program-detail-btn" href="/reservation/programs/${p.programId}">상세보기</a>
       </div>
-    </article>
+    </div>
+  </article>
   `;
   }).join('');
 
