@@ -37,8 +37,12 @@ public class TempleStayReservationEntity {
 	@Column(name = "note", columnDefinition = "TEXT")
 	private String note;
 	
+	// 예약대기: 계좌이체(무통장입금) 결제 시 임시로 걸리는 상태 - 사찰이 입금을 확인하고
+	// "입금확인" 처리해야 예약확정으로 넘어간다. 신청 후 3일 안에 확정 안 되면
+	// TempleStayReservationScheduler가 자동으로 취소 처리한다. 카카오페이는 실시간
+	// 전자결제라 이 상태를 거치지 않고 바로 예약확정으로 생성된다.
 	public enum Status {
-		예약확정, 취소, 이용완료
+		예약대기, 예약확정, 취소, 이용완료
 	}
 
 	@Builder.Default

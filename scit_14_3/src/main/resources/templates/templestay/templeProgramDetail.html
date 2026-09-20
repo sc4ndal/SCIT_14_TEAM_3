@@ -12,11 +12,26 @@
 		.capacity-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
 		.capacity-dot.open { background:#2f6b5e; }
 		.capacity-dot.full { background:#b3402f; }
+
+		.status-badge {
+			display:inline-block; padding:4px 12px; border-radius:999px;
+			font-size:12.5px; font-weight:700; letter-spacing:.01em;
+		}
+		.status-예약대기 { background:rgba(201,138,46,.14); color:var(--amber); }
+		.status-예약확정 { background:rgba(92,122,98,.13); color:var(--teal); }
+		.status-취소     { background:rgba(192,57,43,.10); color:var(--red); }
+		.status-이용완료 { background:var(--cream); color:var(--ink-soft); }
+
+		/* 예약대기 뱃지는 곧 버튼이기도 함 - 누를 수 있다는 걸 티내기 위해 테두리+커서 추가 */
+		button.status-badge.status-예약대기 {
+			border:1px solid var(--amber); cursor:pointer; font-family:inherit;
+		}
+		button.status-badge.status-예약대기:hover { background:var(--amber); color:#fff; }
 	</style>
 </head>
 <body>
 
-<div class="card" style="max-width:1100px;">
+<div class="card" style="max-width:1400px;">
 	<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
 
 	<div class="header" style="padding-bottom:16px;">
@@ -51,17 +66,31 @@
 			</tr>
 			</thead>
 			<tbody>
-			<tr th:each="r : ${reservations}">
+			<tr th:each="r : ${reservations}" th:attr="data-status=${r.status},data-start-date=${r.startDate}">
 				<td th:text="${r.reservationId}"></td>
 				<td th:text="${r.representativeName}"></td>
 				<td th:text="${r.representativePhone}"></td>
 				<td th:text="${r.representativeEmail}"></td>
 				<td th:text="${r.participantCount} + '명'"></td>
 				<td th:text="${r.startDate == r.endDate} ? ${r.startDate} : (${r.startDate} + ' ~ ' + ${r.endDate})"></td>
-				<td class="status-cell" th:text="${r.status}"></td>
+				<td class="status-cell">
+					<!-- 예약대기는 상태 표시 자체를 버튼으로 만들어서, 누르면 바로 입금확인(예약확정 전환)까지
+					     되도록 함 - 관리 컬럼에 따로 "입금확인" 버튼을 안 둠. -->
+					<button type="button" class="status-badge status-예약대기 confirm-reservation-btn"
+					        th:if="${r.status.name() == '예약대기'}"
+					        th:attr="data-reservation-id=${r.reservationId}">예약대기</button>
+					<span class="status-badge" th:unless="${r.status.name() == '예약대기'}"
+					      th:classappend="'status-' + ${r.status}"
+					      th:text="${r.status.name() == '취소'} ? '예약취소' : ${r.status}"></span>
+				</td>
 				<td th:text="${#temporals.format(r.createdAt, 'yy/MM/dd HH:mm')}"></td>
 				<td>
-					<button type="button" class="cancel-reservation-btn danger" th:attr="data-reservation-id=${r.reservationId}">취소</button>
+					<!-- 이미 취소됐거나 이용 시작일이 지난 예약은 취소가 의미 없으니(서버도 같은 기준으로
+					     막음 - TempleStayReservationService.cancelByTempleAdmin) 버튼 자체를 안 보여줌
+					     (비활성 처리해서 "취소됨"으로 남겨두는 대신 아예 렌더링을 안 함). -->
+					<button type="button" class="cancel-reservation-btn btn-check btn-danger"
+					        th:if="${r.status.name() != '취소' and !r.startDate.isBefore(T(java.time.LocalDate).now())}"
+					        th:attr="data-reservation-id=${r.reservationId}">취소</button>
 				</td>
 			</tr>
 			</tbody>

@@ -25,6 +25,25 @@
 var currentOpenInfoWindow = null;
 var currentOpenMarker = null; // 지금 색이 바뀐 채로 "선택된" 마커를 기억해둠
 
+// 언어 전환 시 마커 이름표/정보창을 다시 그리기 위해 만들어둔 마커 전부를 기억해둠
+// (templeI18n.js가 로드된 페이지에서만 의미 있음 - 없으면 그냥 항상 한국어로 남음).
+window.__templeMarkerRegistry = window.__templeMarkerRegistry || [];
+
+/** 언어 버튼을 누르면 findTemple.i18n.js 등 각 페이지의 onLanguageChange가 이 함수를 불러서
+    이미 만들어져 있는 마커들의 이름표/정보창 문구를 사전 번역 값으로 다시 그림. */
+function refreshTempleMarkerLanguage(lang) {
+    if (typeof translateTempleName !== 'function') return; // 사전 파일 미로드 페이지는 무시
+    window.__templeMarkerRegistry.forEach(function (entry) {
+        var temple = entry.temple;
+        var name = translateTempleName(temple.name, lang);
+        var address = translateTempleAddress(temple.address, temple.name, lang);
+        if (entry.tooltipEl) entry.tooltipEl.innerText = name;
+        if (entry.infoNameEl) entry.infoNameEl.textContent = name;
+        if (entry.infoAddressEl) entry.infoAddressEl.textContent = address;
+    });
+}
+window.refreshTempleMarkerLanguage = refreshTempleMarkerLanguage;
+
 // templeList.js(사찰 찾아보기)에서만 window.favoriteTempleIds를 초기화해뒀음 - 이 파일은
 // 사찰 상세/예약/프로그램뷰 페이지에서도 같이 쓰이는데 그 페이지들은 이 배열을 안 만들어서
 // 없으면 여기서 만들어둠(즐겨찾기 필터가 없는 페이지에서도 에러 안 나게).
@@ -85,12 +104,18 @@ function createTempleMarker(map, temple) {
     marker.normalImage = markerImage; // 나중에 "선택 해제"할 때 되돌릴 원래 이미지를 마커에 붙여둠
     marker.hoverImage = hoverMarkerImage; // 목록에서 마우스 올렸을 때 쓸 밝은 이미지도 붙여둠
     marker.setZIndex(1); // 기본 쌓임 순서 - 선택되면 이보다 높게 올려서 다른 마커에 안 가려지게 함
+    // 현재 언어에 맞는 이름/주소(사전에 없으면 원문 그대로) - templeI18n.js가 로드 안 된
+    // 페이지에서는 translateTempleName이 아예 없으므로 원문을 그대로 씀.
+    var currentLang = (typeof i18nCurrentLang !== 'undefined') ? i18nCurrentLang : 'ko';
+    var displayName = (typeof translateTempleName === 'function') ? translateTempleName(temple.name, currentLang) : temple.name;
+    var displayAddress = (typeof translateTempleAddress === 'function') ? translateTempleAddress(temple.address, temple.name, currentLang) : temple.address;
+
     // 4. 마우스 올렸을 때(hover) 뜨는 이름표
     var nameTooltipContent = document.createElement('div');
     nameTooltipContent.style.cssText =
         'padding:2px 6px;font-size:11px;font-weight:bold;white-space:nowrap;' +
         'background:white;border:1px solid #ccc;border-radius:4px;';
-    nameTooltipContent.innerText = temple.name;
+    nameTooltipContent.innerText = displayName;
 
     var nameTooltip = new kakao.maps.CustomOverlay({
         position: position,
@@ -106,12 +131,12 @@ function createTempleMarker(map, temple) {
         infoContent.innerHTML =
             '<button type="button" class="info-close-btn" style="position:absolute;top:0;right:0;border:none;background:none;font-size:19px;line-height:1;cursor:pointer;color:#999;padding:2px 4px;">×</button>' +
             '<div style="display:flex;align-items:center;gap:6px;white-space:nowrap;padding-right:16px;">' +
-            '  <div style="font-size:15px;font-weight:bold;">' + temple.name + '</div>' +
+            '  <div class="temple-info-name" style="font-size:15px;font-weight:bold;">' + displayName + '</div>' +
             '  <span class = "favorite-wrapper" style="position:relative;display:inline-flex;">' +
             '  <button type="button" class="favorite-star-btn" style="border:none;background:none;font-size:19px;line-height:1;cursor:pointer;color:' + (temple.favorited ? '#f4c25c' : '#ccc') + ';padding:0;">★</button>' +
             '  </span>' +
             '</div>' +
-            '<div style="font-size:13px;white-space:nowrap;">' + temple.address + '</div>' +
+            '<div class="temple-info-address" style="font-size:13px;white-space:nowrap;">' + displayAddress + '</div>' +
             '<div style="margin-top:6px;white-space:nowrap;">' +
             '  <a href="/temple-detail/' + temple.templeId + '" style="font-size:12px;color:#2e86de;text-decoration:none;">상세보기</a>' +
             '  <a href="#" class="zoom-detail-link" style="font-size:12px;color:#2e86de; text-decoration:none;margin-left:10px;">가까이 보기</a>' +
@@ -280,6 +305,13 @@ function createTempleMarker(map, temple) {
         marker.setImage(hoverMarkerImage);  // 선택된 마커는 밝은 색으로 고정
         marker.setZIndex(999); // 다른 마커들 위로 올려서 안 가려지게 함
         currentOpenMarker = marker;
+    });
+
+    window.__templeMarkerRegistry.push({
+        temple: temple,
+        tooltipEl: nameTooltipContent,
+        infoNameEl: infoContent.querySelector('.temple-info-name'),
+        infoAddressEl: infoContent.querySelector('.temple-info-address')
     });
 
     return marker;

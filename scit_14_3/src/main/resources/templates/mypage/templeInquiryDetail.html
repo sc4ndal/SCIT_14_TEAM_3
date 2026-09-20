@@ -8,7 +8,7 @@
     <link rel="stylesheet" th:href="@{/css/common.css}" type="text/css">
     <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}" type="text/css">
     <link rel="stylesheet" th:href="@{/css/inquiry/inquiryDetail.css}" type="text/css">
-    <title>문의 상세 · 佛선자</title>
+    <title>사찰 문의 상세 · 佛선자</title>
 </head>
 <body>
 
@@ -24,16 +24,17 @@
 <main class="mypage-main">
     <div class="mypage-inner">
         <div class="inquiry-detail-wrap">
-            <a class="inquiry-back-btn" th:href="@{/mypage/inquiries}">← 목록으로</a>
+            <a class="inquiry-back-btn" th:href="@{/mypage/temple-inquiries}">← 목록으로</a>
 
             <div class="inquiry-card">
                 <div class="inquiry-hero">
-                    <p class="inquiry-hero-label">문의</p>
+                    <p class="inquiry-hero-label" th:text="${inquiry.templeName} + ' 문의'"></p>
                     <div class="inquiry-hero-top">
                         <h1 class="inquiry-hero-title" th:text="${inquiry.title}"></h1>
                         <span class="inquiry-status" th:classappend="'status-' + ${inquiry.status}" th:text="${inquiry.status}"></span>
                     </div>
                     <div class="inquiry-hero-meta">
+                        <span th:if="${inquiry.reservationId != null}" th:text="'관련 예약번호 #' + ${inquiry.reservationId}"></span>
                         <span th:text="${#temporals.format(inquiry.createdAt, 'yyyy.MM.dd HH:mm')}"></span>
                     </div>
                 </div>
@@ -44,7 +45,7 @@
                 </div>
 
                 <div class="inquiry-section answer" th:if="${inquiry.status.name() == '답변완료'}">
-                    <h4>관리자 답변</h4>
+                    <h4>사찰 답변</h4>
                     <p th:text="${inquiry.answer}"></p>
                     <p class="answer-date" th:text="'답변일 ' + ${#temporals.format(inquiry.answeredAt, 'yyyy.MM.dd HH:mm')}"></p>
                 </div>

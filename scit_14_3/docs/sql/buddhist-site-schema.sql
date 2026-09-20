@@ -2,7 +2,7 @@
 -- 부울경 (불교 종합 사이트) DB 스키마
 -- 팀명: 佛법을 선도하는 자들(불선자)
 -- 대상 DBMS: MySQL 8.0
--- 총 17개 테이블
+-- 총 18개 테이블
 --
 -- 이번 정리에서 반영된 결정사항
 --   1) TEMPLE_STAY_PROGRAM.program_type은 당일형/체험형/휴식형 3종 유지(변경 없음)
@@ -220,8 +220,10 @@ CREATE TABLE TEMPLE_STAY_RESERVATION (
     end_date            DATE     NOT NULL COMMENT '이용 종료일 (계산 결과를 명시적으로 저장)',
     participant_count   INT      NOT NULL COMMENT '신청 인원',
     note                TEXT     NULL COMMENT '전달사항(비고)',
-    -- 사찰 관리자 승인 절차 없이 선착순으로 바로 확정하는 정책이라 '예약대기' 상태는 없음.
-    status              ENUM('예약확정','취소','이용완료') NOT NULL DEFAULT '예약확정' COMMENT '진행 상태',
+    -- 카카오페이(즉시 전자결제)는 선착순으로 바로 '예약확정'. 계좌이체(무통장입금)는
+    -- 실제 입금 여부를 시스템이 확인할 수 없어서 일단 '예약대기'로 걸어두고, 사찰이
+    -- 입금을 확인하면 '예약확정'으로 바꾼다(3일 안에 안 바꾸면 배치가 자동 '취소').
+    status              ENUM('예약대기','예약확정','취소','이용완료') NOT NULL DEFAULT '예약확정' COMMENT '진행 상태',
     canceled_at         DATETIME NULL COMMENT '취소일시',
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '신청일시',
     PRIMARY KEY (reservation_id),
@@ -471,6 +473,32 @@ CREATE TABLE INQUIRY (
     CONSTRAINT fk_inquiry_user
         FOREIGN KEY (login_id) REFERENCES USER(login_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='일반회원이 사이트 관리자에게 남기는 1:1 문의';
+
+-- =====================================================================
+-- 18. TEMPLE_INQUIRY (사찰 1:1 문의)
+-- =====================================================================
+-- INQUIRY(회원 -> 사이트 관리자)와 별개 테이블 - 회원이 사찰에게 직접 문의하는 채널.
+-- 24시간 이내라 예약을 직접 취소할 수 없을 때, 사찰에 취소를 요청하는 용도로 만듦
+-- (그래서 reservation_id를 남겨서 어떤 예약 얘기인지 사찰이 바로 알 수 있게 함).
+CREATE TABLE TEMPLE_INQUIRY (
+    inquiry_id     BIGINT       NOT NULL AUTO_INCREMENT COMMENT '고유 번호',
+    login_id       VARCHAR(30)  NOT NULL COMMENT '작성 회원',
+    temple_id      BIGINT       NOT NULL COMMENT '문의 대상 사찰',
+    reservation_id BIGINT       NULL COMMENT '관련 예약(있으면) - 예약 취소 요청 등',
+    title          VARCHAR(100) NOT NULL COMMENT '제목',
+    content        TEXT         NOT NULL COMMENT '문의 내용',
+    answer         TEXT         NULL COMMENT '사찰 답변',
+    status         ENUM('대기','답변완료') NOT NULL DEFAULT '대기' COMMENT '처리 상태',
+    created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '작성일시',
+    answered_at    DATETIME     NULL COMMENT '답변일시',
+    PRIMARY KEY (inquiry_id),
+    CONSTRAINT fk_temple_inquiry_user
+        FOREIGN KEY (login_id) REFERENCES USER(login_id) ON DELETE CASCADE,
+    CONSTRAINT fk_temple_inquiry_temple
+        FOREIGN KEY (temple_id) REFERENCES TEMPLE(temple_id),
+    CONSTRAINT fk_temple_inquiry_reservation
+        FOREIGN KEY (reservation_id) REFERENCES TEMPLE_STAY_RESERVATION(reservation_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='회원이 사찰에게 남기는 1:1 문의(예약 취소 요청 등)';
 
 -- =====================================================================
 -- 초기 테스트 계정 (이 스크립트를 재실행해서 DB를 초기화할 때마다 같이 생성됨)

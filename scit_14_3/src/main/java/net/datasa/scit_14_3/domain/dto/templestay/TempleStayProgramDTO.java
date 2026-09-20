@@ -44,6 +44,9 @@ public class TempleStayProgramDTO {
 	private int reservedCount = 0;
 	@Builder.Default
 	private boolean supportEnglish = false;
+	// 사찰 프로그램 관리 목록에서 "이 프로그램에 확인할 예약대기가 있다" 빨간점 표시용
+	@Builder.Default
+	private boolean hasPendingReservation = false;
 	private BigDecimal latitude;
 	private BigDecimal longitude;
 	private LocalDateTime createdAt;

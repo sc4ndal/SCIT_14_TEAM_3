@@ -97,6 +97,9 @@
                             <!-- 사찰 등록 요청/문의 대기 알림 - 드롭다운 열지 않아도 바로 보이도록 닉네임 우측상단에 표시 -->
                             <span class="notice-dot nickname-dot" sec:authorize="hasRole('ADMIN')"
                                   th:if="${pendingTempleRequestCount > 0 or pendingInquiryCount > 0}"></span>
+                            <!-- 사찰 계정용 - 회원이 남긴 문의/입금확인 대기중인 예약대기 알림 -->
+                            <span class="notice-dot nickname-dot" sec:authorize="hasRole('TEMPLE')"
+                                  th:if="${pendingTempleInquiryCount > 0 or pendingBankTransferConfirmCount > 0}"></span>
 
                             <!-- 일반회원: 기존 8개 그대로 -->
                             <div class="mypage-dropdown" sec:authorize="hasRole('USER')">
@@ -144,8 +147,13 @@
                             <a th:href="@{/temple/programs/new}">
                                 사찰 프로그램 등록
                             </a>
-                            <a th:href="@{/temple/programs}">
-                                사찰 프로그램 관리
+                            <a th:href="@{/temple/programs}" class="notice-link">
+                                <span>사찰 프로그램 관리</span>
+                                <span class="notice-dot" th:if="${pendingBankTransferConfirmCount > 0}"></span>
+                            </a>
+                            <a th:href="@{/temple/inquiries}" class="notice-link">
+                                <span>1:1 문의</span>
+                                <span class="notice-dot" th:if="${pendingTempleInquiryCount > 0}"></span>
                             </a>
 
                             </div>

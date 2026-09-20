@@ -154,7 +154,9 @@ public class ReservationController {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "본인 예약만 취소할 수 있습니다."));
 		}
 		try {
-			return ResponseEntity.ok(tsrs.canceledMyReservation(reservationId));
+			TempleStayReservationDTO canceled = tsrs.canceledMyReservation(reservationId);
+			ps.notifyReservationCanceled(reservationId);
+			return ResponseEntity.ok(canceled);
 		} catch (IllegalStateException e) {
 			// 체크인 24시간 전 취소 마감 등 - 프론트에서 메시지 그대로 alert로 띄움
 			return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));

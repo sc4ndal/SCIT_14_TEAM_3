@@ -182,6 +182,7 @@ async function toggleLike(reviewId) {
 
 async function deleteReview(reviewId) {
   if (!confirm('이 리뷰를 삭제하시겠습니까?')) return;
+  showLoading('삭제하는 중...');
   try {
     const res = await fetch(`/reviews/${reviewId}`, { method: 'DELETE' });
     if (!res.ok) {
@@ -197,6 +198,8 @@ async function deleteReview(reviewId) {
   } catch (e) {
     console.error('리뷰 삭제 중 오류가 발생했습니다.', e);
     alert('리뷰 삭제 중 오류가 발생했습니다.');
+  } finally {
+    hideLoading();
   }
 }
 
@@ -211,7 +214,7 @@ function renderItem(r) {
   const meta = [
     r.templeName ? `<span class="temple">${escapeHtml(r.templeName)}</span>` : '',
     `<span class="stars">${stars(r.rating)}</span>`,
-    r.authorName ? `<span>${escapeHtml(r.authorName)}</span>` : '',
+    r.authorName ? `<span class="no-translate">${escapeHtml(r.authorName)}</span>` : '',
     `<span>${formatDate(r.createdAt)}</span>`,
   ].filter(Boolean).join('');
 
@@ -269,7 +272,7 @@ function renderItem(r) {
           <dt>별점</dt><dd><span class="stars">${stars(r.rating)}</span></dd>
           <dt>작성자</dt><dd>${
             authorName
-              ? `<button type="button" class="author-filter" data-author="${escapeAttr(r.authorName)}">${authorName}</button>`
+              ? `<button type="button" class="author-filter no-translate" data-author="${escapeAttr(r.authorName)}">${authorName}</button>`
               : '-'
           }</dd>
           <dt>작성일</dt><dd>${formatDate(r.createdAt)}</dd>

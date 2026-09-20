@@ -39,7 +39,7 @@
                         <a th:if="${review.templeId != null}" th:href="@{/temple-detail/{id}(id=${review.templeId})}"
                            th:text="${review.templeName}">사찰명</a>
                         <span th:unless="${review.templeId != null}" th:text="${review.templeName} ?: '-'">사찰명</span>
-                        · <span th:text="${review.authorName} ?: '익명'">작성자</span>
+                        · <span class="no-translate" th:text="${review.authorName} ?: '익명'">작성자</span>
                     </p>
 
                     <p class="food-favorite-card__desc" th:text="${review.content}">리뷰 내용</p>

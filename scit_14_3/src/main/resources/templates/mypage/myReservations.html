@@ -108,6 +108,7 @@
           font-weight: 600;
           letter-spacing: .01em;
         }
+        .status-예약대기 { background: rgba(201, 138, 46, .14); color: #c98a2e; }
         .status-예약확정 { background: rgba(92, 122, 98, .13); color: var(--green); }
         .status-취소     { background: rgba(192, 57, 43, .10); color: var(--destructive); }
         .status-이용완료 { background: var(--muted-bg); color: var(--text-tertiary); }
@@ -159,9 +160,15 @@
         }
 
         /* 상태별 버튼 색 */
+        .status-filter button[data-status="예약대기"] { color: #c98a2e; }
         .status-filter button[data-status="예약확정"] { color: var(--green); }
         .status-filter button[data-status="취소"] { color: var(--destructive); }
         .status-filter button[data-status="이용완료"] { color: var(--text-tertiary); }
+        .status-filter button[data-status="예약대기"].active {
+          background: #c98a2e;
+          border-color: #c98a2e;
+          color: #fff;
+        }
         .status-filter button[data-status="예약확정"].active {
           background: var(--green);
           border-color: var(--green);
@@ -319,6 +326,16 @@
           text-align: center;
           margin-top: 8px;
         }
+        .temple-inquiry-link {
+          display: block;
+          text-align: center;
+          margin-top: 10px;
+          font-size: 12.5px;
+          font-weight: 600;
+          color: var(--text-secondary);
+          text-decoration: underline;
+        }
+        .temple-inquiry-link:hover { color: var(--brown); }
     </style>
 </head>
 <body>
@@ -341,6 +358,7 @@
             <h2>예약 내역 (<span id="count-label">0</span>건)</h2>
             <div class="status-filter" id="status-filter">
                 <button type="button" data-status="" class="active">전체</button>
+                <button type="button" data-status="예약대기">예약대기</button>
                 <button type="button" data-status="예약확정">예약확정</button>
                 <button type="button" data-status="취소">예약취소</button>
                 <button type="button" data-status="이용완료">이용완료</button>
@@ -389,6 +407,9 @@
                     </div>
                     <button class="cancel-btn" id="cancel-btn">예약 취소</button>
                     <p class="cancel-note" id="cancel-note"></p>
+                    <!-- 체크인 24시간 전 취소 마감이 지나면 위 버튼은 서버가 거부하는데, 그럴 때
+                         사찰에 직접 취소를 요청할 수 있는 통로 - reservationId는 showDetail()이 채워줌. -->
+                    <a class="temple-inquiry-link" id="temple-inquiry-link" href="#">사찰에 문의하기</a>
                 </div>
             </div>
         </section>

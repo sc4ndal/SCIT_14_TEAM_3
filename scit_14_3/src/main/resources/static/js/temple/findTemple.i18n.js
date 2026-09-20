@@ -58,6 +58,15 @@ function onLanguageChange(lang){
     // common.js의 공용 사전(I18N_MANUAL_OVERRIDES)에 있음 - 같이 적용해줌.
     if (window.applyManualOverrideTranslations) window.applyManualOverrideTranslations(lang);
 
+    // 이 페이지는 defaultOnLanguageChange(common.js)를 안 타서 그 안에서만 켜지는
+    // MutationObserver(새로 생기는 텍스트 감시)가 원래 안 돎 - 그래서 지도 마커를
+    // 클릭할 때마다 새로 생기는 인포윈도우 문구("상세보기"/"가까이 보기" 등)가
+    // 언어를 바꿔도 그대로 한국어로 남아있었다. i18nCurrentLang/startI18nObserver는
+    // common.js와 같은 전역 스코프(같은 페이지의 다른 <script> 태그)라 여기서도
+    // 바로 쓸 수 있다 - 직접 켜서 그 문제를 없앤다.
+    if (typeof i18nCurrentLang !== 'undefined') i18nCurrentLang = lang;
+    if (typeof startI18nObserver === 'function') startI18nObserver();
+
     document.querySelectorAll('[data-i18n]').forEach(function(el){
         const key = el.getAttribute('data-i18n');
         if(t[key] !== undefined) el.textContent = t[key];
@@ -66,6 +75,11 @@ function onLanguageChange(lang){
         const key = el.getAttribute('data-i18n-placeholder');
         if(t[key] !== undefined) el.placeholder = t[key];
     });
+
+    // 사찰명/주소 사전 번역(templeI18n.js) - 이미 그려진 마커 이름표/정보창 + 검색 결과 목록을
+    // 지금 언어로 다시 그림. templeList.js(kakao.maps.load 콜백)가 아직 안 끝났으면
+    // (최초 onLanguageChange('ko') 호출 시점) 함수가 아직 없을 수 있어 존재 여부만 확인.
+    if (typeof window.refreshTempleMapLanguage === 'function') window.refreshTempleMapLanguage(lang);
 }
 
 onLanguageChange('ko');
