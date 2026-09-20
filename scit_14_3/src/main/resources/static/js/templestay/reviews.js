@@ -206,17 +206,25 @@ async function deleteReview(reviewId) {
 function renderItem(r) {
   const id = r.reviewId ?? '';
   const isOpen = String(state.openId) === String(id);
-  // 리뷰엔 별도 제목이 없어 프로그램명을 제목 자리에 쓴다(마이페이지 '내가 쓴 리뷰'와 동일).
-  const heading = r.programName || '(프로그램 정보 없음)';
+  // 접힘 = 요약(제목 또는 내용 미리보기 + 메타줄), 펼침 = 상세박스가 같은 정보를 이미 다 보여주므로
+  // 헤더는 제목만 남기고 미리보기/메타줄은 감춰서 중복을 없앤다(제목이 없는 리뷰는 절 이름으로 대체).
+  const heading = isOpen
+    ? (r.title || r.templeName || '(제목 없음)')
+    : (r.title || r.content || '(내용 없음)');
   const templeName = r.templeName ? escapeHtml(r.templeName) : '';
   const programName = r.programName ? escapeHtml(r.programName) : '';
   const authorName = r.authorName ? escapeHtml(r.authorName) : '';
-  const meta = [
+  // 절/프로그램명/별점 - 작성자/일시 두 줄로 나눠 보여준다.
+  const metaLine1 = [
     r.templeName ? `<span class="temple">${escapeHtml(r.templeName)}</span>` : '',
+    r.programName ? `<span class="prog">${escapeHtml(r.programName)}</span>` : '',
     `<span class="stars">${stars(r.rating)}</span>`,
+  ].filter(Boolean).join('');
+  const metaLine2 = [
     r.authorName ? `<span class="no-translate">${escapeHtml(r.authorName)}</span>` : '',
     `<span>${formatDate(r.createdAt)}</span>`,
   ].filter(Boolean).join('');
+  const meta = `<span class="meta-line">${metaLine1}</span><span class="meta-line">${metaLine2}</span>`;
 
   // 본인이 쓴 리뷰면 수정/삭제 버튼 노출 (수정은 reservationId 기준으로 진입 - reviewWrite.js가 그걸로 로드).
   // 실제 권한은 서버(PATCH·DELETE /reviews/{id})가 다시 검증한다.
@@ -244,9 +252,12 @@ function renderItem(r) {
         <button type="button" class="review-summary">
           <span class="col-main">
             <span class="review-title">${escapeHtml(heading)}</span>
-            <span class="review-meta">${meta}</span>
+            ${isOpen ? '' : `<span class="review-meta">${meta}</span>`}
           </span>
-          <span class="chevron">&#9660;</span>
+          <span class="chevron">
+            <span class="chevron-label">${isOpen ? '접기' : '자세히'}</span>
+            <span class="chevron-icon">&#9660;</span>
+          </span>
         </button>
         <button type="button" class="like-btn${liked ? ' is-liked' : ''}"
                 data-review-id="${escapeAttr(id)}" aria-pressed="${liked}">
@@ -276,8 +287,8 @@ function renderItem(r) {
               : '-'
           }</dd>
           <dt>작성일</dt><dd>${formatDate(r.createdAt)}</dd>
+          <dt>내용</dt><dd class="content-cell">${escapeHtml(r.content || '')}</dd>
         </dl>
-        <div class="review-content">${escapeHtml(r.content || '')}</div>
         ${images}
         ${actions}
       </div>

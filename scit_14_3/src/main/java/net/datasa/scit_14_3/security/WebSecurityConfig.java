@@ -85,7 +85,8 @@ public class WebSecurityConfig {
 
 			// 사찰 등록 요청 (비회원)
 			"/temple-requests/**",
-			"/api/location-type/**" // 등록 요청 폼의 장소 유형 AI 자동판별
+			"/api/location-type/**", // 등록 요청 폼의 장소 유형 AI 자동판별
+			"/api/chat"              // 홈 화면 챗봇 위젯 - 로그인 여부와 상관없이 누구나 물어볼 수 있음
 	);
 	
 	@Bean

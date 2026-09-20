@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /*
 	사찰 행사(불교행사) 조회 - 홈 화면 "월간 불교 행사" 캘린더(home.js)가 /templeevents로 가져다 쓴다.
@@ -36,15 +37,31 @@ public class TempleEventService {
 	}
 
 	/**
-	 * "불교 행사" 목록 페이지(/events)용 - 시작일 오름차순.
-	 * 종료일이 아니라 항상 시작일 기준으로 정렬한다 - 예를 들어 5/1~5/5인 행사와 5/5 하루짜리
-	 * 행사가 있으면, 종료일은 둘 다 5/5로 같아도 5/1에 시작하는 행사가 먼저 나와야 하기 때문이다.
+	 * "불교 행사" 목록 페이지(/events)용 - [진행 중(현재) → 예정(미래) → 종료(과거)] 순.
+	 * 같은 그룹 안에서는 항상 시작일 기준으로 정렬한다(종료일 아님) - 예를 들어 5/1~5/5인 행사와
+	 * 5/5 하루짜리 행사가 있으면, 종료일은 둘 다 5/5로 같아도 5/1에 시작하는 행사가 먼저 나와야
+	 * 하기 때문이다. 과거 그룹만 예외로, 최근에 끝난 것부터 보이도록 종료일 내림차순으로 묶는다.
 	 */
 	public List<TempleEventDTO> getAllSortedByDate(String loginId) {
 		Set<Long> favoritedIds = favoritedIds(loginId);
+		LocalDate today = LocalDate.now();
+		List<TempleEventEntity> entities = templeEventRepository.findAllWithTemple();
 
-		return templeEventRepository.findAllWithTemple().stream()
+		List<TempleEventEntity> current = entities.stream()
+				.filter(e -> !e.getStartDate().isAfter(today) && !e.getEndDate().isBefore(today))
 				.sorted(Comparator.comparing(TempleEventEntity::getStartDate))
+				.toList();
+		List<TempleEventEntity> future = entities.stream()
+				.filter(e -> e.getStartDate().isAfter(today))
+				.sorted(Comparator.comparing(TempleEventEntity::getStartDate))
+				.toList();
+		List<TempleEventEntity> past = entities.stream()
+				.filter(e -> e.getEndDate().isBefore(today))
+				.sorted(Comparator.comparing(TempleEventEntity::getEndDate).reversed())
+				.toList();
+
+		return Stream.of(current, future, past)
+				.flatMap(List::stream)
 				.map(event -> toDto(event, favoritedIds))
 				.toList();
 	}
@@ -110,6 +127,7 @@ public class TempleEventService {
 				.endDate(entity.getEndDate())
 				.linkUrl(entity.getLinkUrl())
 				.favorited(favoritedIds.contains(entity.getEventId()))
+				.past(entity.getEndDate().isBefore(LocalDate.now()))
 				.build();
 	}
 }

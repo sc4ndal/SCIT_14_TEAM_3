@@ -6,15 +6,78 @@
 //       해당 사찰로 지도 중심을 옮기고 마커를 클릭한 것처럼 정보창을 띄운다.
 
 kakao.maps.load(function () {
-    // 카드 박스 정렬 맞게끔 설정함.
-    function syncSearchBoxWidth() {
-        var filterRow = document.getElementById('filter-row');
-        var searchBox = document.getElementById('temple-search-box');
-        searchBox.style.width = filterRow.offsetWidth + 'px';
+    // 이전 검색어를 표시하기 위한 설정.
+    var SEARCH_HISTORY_KEY = 'templeSearchHistory';
+    var searchHistoryDropdown = document.getElementById('search-history-dropdown');
+    var searchKeywordInput = document.getElementById('search-keyword');
+
+    function getSearchHistory() {
+        try {
+            return JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY)) || [];
+        } catch (e) {
+            return [];
+        }
     }
 
-    syncSearchBoxWidth();
-    window.addEventListener('resize', syncSearchBoxWidth);
+    function saveSearchHistory(keyword) {
+        var history = getSearchHistory().filter(function (item) { return item !== keyword; });
+        history.unshift(keyword);
+        if (history.length > 8) history = history.slice(0, 8);
+        localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history));
+    }
+
+    function removeSearchHistoryItem(keyword) {
+        var history = getSearchHistory().filter(function (item) { return item !== keyword; });
+        localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history));
+        renderSearchHistory();
+    }
+
+    function renderSearchHistory() {
+        var history = getSearchHistory();
+        searchHistoryDropdown.innerHTML = '';
+        if (history.length === 0) {
+            searchHistoryDropdown.classList.remove('show');
+            return;
+        }
+        history.forEach(function (keyword) {
+            var item = document.createElement('div');
+            item.className = 'search-history-item';
+
+            var text = document.createElement('span');
+            text.textContent = keyword;
+
+            var removeBtn = document.createElement('button');
+
+            removeBtn.type = 'button';
+            removeBtn.className = 'history-remove';
+            removeBtn.innerHTML = '&times;';
+            removeBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            removeSearchHistoryItem(keyword);
+            });
+
+            item.addEventListener('click', function () {
+            searchKeywordInput.value = keyword;
+            searchHistoryDropdown.classList.remove('show');
+            runSearch();
+            });
+
+            item.appendChild(text);
+            item.appendChild(removeBtn);
+            searchHistoryDropdown.appendChild(item);
+        });
+        searchHistoryDropdown.classList.add('show');
+    }
+
+    searchKeywordInput.addEventListener('focus', function () {
+        renderSearchHistory();
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!searchHistoryDropdown.contains(e.target) && e.target !== searchKeywordInput) {
+            searchHistoryDropdown.classList.remove('show');
+        }
+    });
 
     // 대한민국 전체가 보이도록 넓게 설정 (사찰들이 전국에 퍼져있으므로)
     var map = new kakao.maps.Map(document.getElementById('map'), {
@@ -272,8 +335,13 @@ kakao.maps.load(function () {
         if (!keyword) {
             searchMatchedIds = null;
             applyFilters(true);
+            map.setLevel(13);
+            map.setCenter(new kakao.maps.LatLng(35.9, 127.7));
             return;
         }
+        // 이전 검색어
+        saveSearchHistory(keyword);
+        searchHistoryDropdown.classList.remove('show');
 
     if (type === 'address') {
         // 주소/지역 검색 - 조건에 맞는 사찰을 전부 찾는다
@@ -315,17 +383,6 @@ kakao.maps.load(function () {
 
         searchMatchedIds = [found.templeId];
         applyFilters();
-
-        // 해당 마커를 클릭한 것처럼 처리해서 정보창 띄우기
-        var marker = markerByTempleId[found.templeId];
-            if (marker) {
-                kakao.maps.event.trigger(marker, 'click');
-            }
-        // 지도 중심을 검색된 사찰로 이동 + 좀 더 가깝게 확대
-        map.relayout();
-        map.setLevel(4);
-        map.setCenter(new kakao.maps.LatLng(found.latitude, found.longitude));
-
 
         // 해당 마커를 클릭한 것처럼 처리해서 정보창 띄우기
         var marker = markerByTempleId[found.templeId];

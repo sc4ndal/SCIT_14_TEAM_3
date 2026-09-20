@@ -22,18 +22,23 @@
 
         <section class="favorites-hero">
             <h1>좋아요한 리뷰</h1>
-            <p>공감을 눌러 둔 다른 사람의 후기입니다.</p>
         </section>
 
         <p class="favorites-empty" th:if="${#lists.isEmpty(reviews)}">
             아직 좋아요한 리뷰가 없습니다. <a th:href="@{/reservation/reviews}">템플스테이 후기 보러 가기 →</a>
         </p>
 
-        <div class="food-favorite-grid" data-favorites-grid="review-pagination" th:unless="${#lists.isEmpty(reviews)}">
-            <article class="food-favorite-card" th:each="review : ${reviews}" data-remove-on-unfavorite>
+        <!-- 나의 리뷰(myReviews.html)와 동일한 긴 박스 형태 - 리스트형으로 한 줄씩 세로로 쌓는다.
+             data-favorites-grid는 favoritesPagination.js가 직계 자식 개수만 세므로 그리드가 아니어도 그대로 동작한다. -->
+        <div class="review-fav-list" data-favorites-grid="review-pagination" th:unless="${#lists.isEmpty(reviews)}">
+            <article class="review-fav-card" th:each="review : ${reviews}" data-remove-on-unfavorite>
 
-                <div class="food-favorite-card__body">
-                    <h2 class="food-favorite-card__title" th:text="${review.programName} ?: '(프로그램 정보 없음)'">프로그램명</h2>
+                <div class="review-fav-header">
+                    <h3 th:text="${review.title ?: (review.programName ?: '(정보 없음)')}">제목</h3>
+                    <span class="review-fav-rating">
+                        <th:block th:each="i : ${#numbers.sequence(1, 5)}"><span th:text="${i <= review.rating ? '★' : '☆'}">★</span></th:block>
+                    </span>
+                </div>
 
                     <p class="food-favorite-card__desc">
                         <a th:if="${review.templeId != null}" th:href="@{/temple-detail/{id}(id=${review.templeId})}"
@@ -41,11 +46,27 @@
                         <span th:unless="${review.templeId != null}" th:text="${review.templeName} ?: '-'">사찰명</span>
                         · <span class="no-translate" th:text="${review.authorName} ?: '익명'">작성자</span>
                     </p>
+                <p class="review-fav-meta">
+                    <a th:if="${review.templeId != null}" class="meta-link" th:href="@{/temple-detail/{id}(id=${review.templeId})}"
+                       th:text="${review.templeName}">사찰명</a>
+                    <span th:unless="${review.templeId != null}" th:text="${review.templeName} ?: '-'">사찰명</span>
+                    ·
+                    <a th:if="${review.programId != null}" class="meta-link" th:href="@{/reservation/programs/{id}(id=${review.programId})}"
+                       th:text="${review.programName ?: '(정보 없음)'}">프로그램명</a>
+                    <span th:unless="${review.programId != null}" th:text="${review.programName ?: '(정보 없음)'}">프로그램명</span>
+                </p>
+                <p class="review-fav-meta review-fav-meta--date">
+                    <span class="no-translate" th:text="${review.authorName ?: '익명'}">작성자</span>
+                    · <span th:text="${#temporals.format(review.createdAt, 'yyyy-MM-dd')}">작성일</span>
+                </p>
 
-                    <p class="food-favorite-card__desc" th:text="${review.content}">리뷰 내용</p>
+                <p class="review-fav-content" th:text="${review.content}">리뷰 내용</p>
+
+                <div class="review-fav-images" th:if="${review.imageUrls != null and !review.imageUrls.isEmpty()}">
+                    <img th:each="url : ${review.imageUrls}" th:src="${url}" alt="리뷰 첨부 이미지">
                 </div>
 
-                <div class="food-favorite-card__footer">
+                <div class="review-fav-footer">
                     <button type="button" class="favorite-toggle is-favorited like-toggle"
                             th:attr="data-review-id=${review.reviewId}" aria-pressed="true">
                         <span class="favorite-toggle__icon"></span>
@@ -59,7 +80,7 @@
         <div class="pagination" id="review-pagination" th:unless="${#lists.isEmpty(reviews)}"></div>
 
         <p class="favorites-more" th:unless="${#lists.isEmpty(reviews)}">
-            <a th:href="@{/reservation/reviews}">다른 리뷰 보러가기 →</a>
+            <a th:href="@{/reservation/reviews}">템플스테이 후기 보러가기 →</a>
         </p>
 
     </div>

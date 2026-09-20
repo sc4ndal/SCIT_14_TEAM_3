@@ -284,6 +284,7 @@ CREATE TABLE TEMPLE_STAY_REVIEW (
     reservation_id  BIGINT   NOT NULL COMMENT '대상 예약(1예약=1리뷰)',
     login_id        VARCHAR(30) NOT NULL COMMENT '작성 회원',
     rating          TINYINT  NOT NULL COMMENT '평점(1~5)',
+    title           VARCHAR(100) NULL COMMENT '리뷰 제목 (선택 입력)',
     content         TEXT     NOT NULL COMMENT '리뷰 내용',
     image_urls      JSON     NULL COMMENT '첨부 이미지 목록',
     like_count      INT      NOT NULL DEFAULT 0 COMMENT '추천 수 (캐시값)',

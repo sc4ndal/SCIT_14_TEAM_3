@@ -160,6 +160,7 @@ async function init() {
 
       selectedRating = existingReview.rating;
       renderStars();
+      document.getElementById('review-title').value = existingReview.title || '';
       document.getElementById('review-content').value = existingReview.content;
 
       existingImageUrls = existingReview.imageUrls ? [...existingReview.imageUrls] : [];
@@ -178,6 +179,11 @@ async function init() {
 document.getElementById('review-submit-btn').addEventListener('click', async () => {
   if (selectedRating < 1) {
     alert('평점을 선택해주세요.');
+    return;
+  }
+  const title = document.getElementById('review-title').value.trim();
+  if (!title) {
+    alert('제목을 입력해주세요.');
     return;
   }
   const content = document.getElementById('review-content').value.trim();
@@ -204,13 +210,13 @@ document.getElementById('review-submit-btn').addEventListener('click', async () 
       res = await fetch(`/reviews/${editingReviewId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating: selectedRating, content, imageUrls }),
+        body: JSON.stringify({ rating: selectedRating, title, content, imageUrls }),
       });
     } else {
       res = await fetch('/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reservationId, rating: selectedRating, content, imageUrls }),
+        body: JSON.stringify({ reservationId, rating: selectedRating, title, content, imageUrls }),
       });
     }
 
@@ -223,7 +229,8 @@ document.getElementById('review-submit-btn').addEventListener('click', async () 
     }
 
     alert(isEditMode ? '리뷰가 수정되었습니다.' : '리뷰가 등록되었습니다.');
-    location.replace('/mypage/myReservations');
+    // 수정은 나의 리뷰에서 들어오는 경우가 많아 나의 리뷰로, 새로 작성은 예약목록에서 들어오므로 그대로 예약목록으로 보낸다.
+    location.replace(isEditMode ? '/mypage/myReviews' : '/mypage/myReservations');
   } catch (err) {
     console.error(err);
     alert('리뷰 저장 중 오류가 발생했습니다.');
@@ -249,7 +256,7 @@ document.getElementById('review-delete-btn').addEventListener('click', async () 
       return;
     }
     alert('리뷰가 삭제되었습니다.');
-    location.replace('/mypage/myReservations');
+    location.replace('/mypage/myReviews');
   } catch (err) {
     console.error('리뷰 삭제 중 오류가 발생했습니다.', err);
     alert('리뷰 삭제 중 오류가 발생했습니다.');

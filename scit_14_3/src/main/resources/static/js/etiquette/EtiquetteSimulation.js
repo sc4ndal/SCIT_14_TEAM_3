@@ -1,23 +1,5 @@
 /* =========================================================================
    1. SCENE DATA
-   ------------------------------------------------------------------------
-   모든 대사/선택지는 이 객체 하나에서 관리합니다.
-   화면 출력 로직(4번)은 이 데이터를 순서대로 읽어서 그릴 뿐, 내용을 모릅니다.
-   => 시나리오 텍스트만 여기서 수정하면 화면에 그대로 반영됩니다.
-
-   scene 필드 설명
-   - type: 'story' (선택지 없음, 클릭하면 next로) | 'choice' (선택지로 분기)
-   - bg:   배경 placeholder 라벨 (실제 배경 이미지 나오면 background-image로 교체)
-   - speaker: 화자 표시 (없으면 생략)
-   - lines: 순서대로 출력할 대사 배열 (한 줄씩 클릭으로 넘김)
-   - choices: [{ id, label, correct, next, after, setSecret }]
-     - id: 선택지 식별자(①②③ 순번). state.answers에 실제 선택 기록할 때 사용
-     - correct: 결과 화면 판정에 쓰임 (judged scene에서만 의미 있음)
-     - after: 선택 직후 보여줄 반응 대사 배열(0개 이상). 확정 시나리오에 대사가
-       있는 선택지만 채워져 있음 — 없으면 바로 next로 진행. 정오답 노출 없이
-       자연스러운 대사만 보여주고, 이 줄들도 다른 대사와 동일하게 클릭해서 넘김
-   - judged: 결과 판정(8개 Scene)에 포함되는지 여부
-   - resultId: 결과 화면에서 쓸 표시번호/제목 (judged 씬만)
 ========================================================================= */
 const SCENES = {
 
@@ -208,12 +190,6 @@ const JUDGED_ORDER = ['scene01', 'scene03', 'scene04', 'scene05', 'scene06', 'sc
 
 /* =========================================================================
    2. 오늘의 참배 돌아보기 — 오답 해설 데이터
-   ------------------------------------------------------------------------
-   결과 화면에서 "다시 알아볼 예절" 블록에 쓰이는 문구.
-   "내가 선택한 행동"은 이제 이 객체가 아니라 state.answers[id].label
-   (플레이어가 실제로 고른 선택지 문구)에서 그대로 가져와 보여줍니다.
-   이 객체는 "올바른 행동"과 "설명"만 담당합니다.
-   설명 문구는 claude/사찰예절_리서치.md에서 확인한 출처 기반 내용을 근거로 작성함.
 ========================================================================= */
 const RESULT_EXPLAIN = {
     scene01: { done: true,
@@ -269,32 +245,29 @@ function judgeEnding(score, secretFlag) {
 
 /* =========================================================================
    4. 게임 상태 + 렌더 엔진
-   ------------------------------------------------------------------------
-   engine은 SCENES 데이터를 "읽기만" 합니다. 텍스트/선택지를 바꿀 때
-   이 아래 코드는 건드릴 필요가 없습니다.
 ========================================================================= */
 const state = {
     currentSceneId: 'prologue',
     lineIndex: 0,
-    answers: {},        // { scene01: { choiceId, label, correct }, ... } 판정 대상 씬에서 실제 고른 선택지 기록
+    answers: {},
     secretFlag: false,
     forceHiddenNext: false,
-    isPlayingAfter: false  // true인 동안은 playLines()가 클릭을 전담하고, 기존 advanceLine()은 끼어들지 않음
+    isPlayingAfter: false,
+    // --- 이전 대화 보기용, 게임 진행 상태에는 영향 없음 ---
+    log: [],
+    lastLoggedKey: null,
+    viewIndex: null,
+    liveText: ''
 };
 
 const el = (id) => document.getElementById(id);
 
-// ---------- 사전형식 번역 ----------
-// SCENES/RESULT_EXPLAIN/ENDINGS의 한국어 문자열이 그 자체로 "ko" 원본이자 폴백이라
-// TRANSLATIONS(EtiquetteSimulation.i18n.js)에는 en/ja만 있으면 됨 - t()가 없는 키/ko일 때는
-// 그대로 fallback(한국어 원문)을 돌려줌. 정적 UI(타이틀/버튼 등)는 data-i18n 속성으로 따로 처리.
 let currentLang = 'ko';
 function t(key, fallback) {
     const dict = window.SIM_TRANSLATIONS && window.SIM_TRANSLATIONS[currentLang];
     return (dict && dict[key] !== undefined) ? dict[key] : fallback;
 }
 
-// Fisher-Yates - 선택지 표시 순서를 매번 섞을 때 씀
 function shuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -308,9 +281,6 @@ function showScreen(id) {
     el(id).classList.add('active');
 }
 
-// 씬 진입 시점에야 background-image를 걸어서 그때 로드가 시작돼 버벅였음 - 페이지 로드하자마자
-// 전체 씬 배경 이미지를 미리 fetch해서 브라우저 캐시에 데워두고, 그동안 로딩 화면에 %를 보여줌
-// (같은 URL이 여러 씬에서 재사용되니 중복 제거). 다 받아지면(실패해도 카운트는 함) 타이틀로 넘어감.
 (function preloadSceneImages() {
     const urls = [...new Set(Object.values(SCENES).map(scene => scene.bgImage).filter(Boolean))];
     const fill = el('loading-bar-fill');
@@ -343,7 +313,13 @@ function startGame() {
     state.answers = {};
     state.secretFlag = false;
     state.isPlayingAfter = false;
-    state.forceHiddenNext = false; // 개발자 패널에서 강제 히든을 켜둔 채 재시작해도 다음 판까지 남지 않도록 초기화
+    state.forceHiddenNext = false;
+    state.log = [];
+    state.lastLoggedKey = null;
+    state.viewIndex = null;
+    state.liveText = '';
+    el('dialogue-dock').classList.remove('dialogue-hidden');
+    el('btn-toggle-dialogue').classList.remove('active');
     showScreen('screen-scene');
     renderScene();
 }
@@ -351,8 +327,6 @@ function startGame() {
 function renderScene() {
     const scene = SCENES[state.currentSceneId];
     el('bg-label').textContent = 'BG: ' + scene.bg;
-    // 2026-09-03: bgImage가 있는 씬은 실제 이미지를 배경으로 깔고 라벨은 숨김(has-image 클래스로 CSS에서 처리).
-    // 없는 씬은 기존처럼 배경 없이 "BG: 이름" 텍스트 라벨만 보임 — 그림이 채워질 때마다 한 씬씩 자연스럽게 전환됨.
     const bgLayer = el('bg-layer');
     if (scene.bgImage) {
         bgLayer.style.backgroundImage = "url('" + scene.bgImage + "')";
@@ -361,7 +335,17 @@ function renderScene() {
         bgLayer.style.backgroundImage = '';
         bgLayer.classList.remove('has-image');
     }
-    el('story-text').textContent = t(state.currentSceneId + '.line' + state.lineIndex, scene.lines[state.lineIndex]);
+
+    const lineText = t(state.currentSceneId + '.line' + state.lineIndex, scene.lines[state.lineIndex]);
+    el('story-text').textContent = lineText;
+    state.liveText = lineText;
+    const logKey = state.currentSceneId + '#' + state.lineIndex;
+    if (state.lastLoggedKey !== logKey) {
+        state.log.push(lineText);
+        state.lastLoggedKey = logKey;
+    } else if (state.log.length) {
+        state.log[state.log.length - 1] = lineText; // 언어 전환 시 최신 번역으로 동기화
+    }
 
     const isLastLine = state.lineIndex === scene.lines.length - 1;
     const choiceLayer = el('choice-layer');
@@ -369,8 +353,6 @@ function renderScene() {
 
     if (isLastLine && scene.type === 'choice') {
         el('advance-hint').style.display = 'none';
-        // 정답이 항상 1번에 몰려있으면 눈치로 맞힐 수 있어서 매번 보여줄 때마다 순서를 섞음.
-        // 판정/기록은 choice 객체(정답 여부, label) 값 기준이라 표시 순서만 바꿔도 로직엔 영향 없음.
         shuffle([...scene.choices]).forEach((choice) => {
             const btn = document.createElement('button');
             btn.className = 'choice-btn';
@@ -381,12 +363,12 @@ function renderScene() {
     } else {
         el('advance-hint').style.display = 'block';
     }
+
+    updateHistoryButtonState();
 }
 
 function selectChoice(scene, choice) {
     if (scene.judged) {
-        // 정오답 여부뿐 아니라 실제로 고른 선택지(id/문구)까지 기록 —
-        // 결과 화면 "내가 선택한 행동"에 이 label을 그대로 보여줌
         state.answers[state.currentSceneId] = {
             choiceId: choice.id,
             label: choice.label,
@@ -397,7 +379,6 @@ function selectChoice(scene, choice) {
         state.secretFlag = true;
     }
     if (choice.after && choice.after.length) {
-        // 선택 직후 반응 대사(1줄 이상)를 다른 대사와 동일하게 한 줄씩 보여주고 넘어감 (정오답 노출 없음)
         const afterKeyPrefix = state.currentSceneId + '.choice' + choice.id + '.after';
         const translatedAfter = choice.after.map((line, i) => t(afterKeyPrefix + i, line));
         playLines(translatedAfter, 0, () => advanceTo(choice.next));
@@ -407,23 +388,19 @@ function selectChoice(scene, choice) {
 }
 
 function playLines(lines, index, onDone) {
-    // 씬 사이에 임시 대사(선택 후 반응 등)를 끼워 보여줄 때 사용.
-    // 기존 대사 진행과 동일하게 배경(#bg-layer)이든 대사창(#text-box)이든
-    // 어디를 클릭해도 다음 줄 → 마지막 줄에서는 onDone으로 넘어감.
-    //
-    // isPlayingAfter를 켜두는 이유: bg-layer/text-box에는 이미 advanceLine()을
-    // 부르는 전역 클릭 리스너가 등록돼 있음. 여기서 추가로 handleClick을 붙이면
-    // 같은 클릭에 두 리스너가 함께 실행될 수 있으므로, advanceLine() 쪽에서
-    // 이 플래그를 보고 스스로 아무 것도 하지 않도록 막아둠(아래 advanceLine 참고).
     state.isPlayingAfter = true;
-    el('story-text').textContent = lines[index];
+    const lineText = lines[index];
+    el('story-text').textContent = lineText;
+    state.liveText = lineText;
+    state.log.push(lineText);
+    updateHistoryButtonState();
     el('choice-layer').innerHTML = '';
     el('advance-hint').style.display = 'block';
     const isLast = index === lines.length - 1;
 
     const targets = [el('bg-layer'), el('text-box')];
-    const handleClick = (e) => {
-        if (e.target.id === 'dev-badge') return;
+    const handleClick = () => {
+        if (state.viewIndex !== null) { exitHistoryMode(); return; }
         targets.forEach(t => t.removeEventListener('click', handleClick));
         if (isLast) {
             state.isPlayingAfter = false;
@@ -437,7 +414,7 @@ function playLines(lines, index, onDone) {
 
 function advanceTo(nextId) {
     if (nextId === 'HIDDEN_CHECK') {
-        const trigger = state.forceHiddenNext || Math.random() < 0.35; // 30~40% 고정 확률
+        const trigger = state.forceHiddenNext || Math.random() < 0.35;
         state.forceHiddenNext = false;
         nextId = trigger ? 'hidden1' : 'scene10';
     }
@@ -451,7 +428,8 @@ function advanceTo(nextId) {
 }
 
 function advanceLine() {
-    if (state.isPlayingAfter) return; // after-대사 재생 중에는 일반 진행 로직을 막고 playLines()에게만 맡김
+    if (state.viewIndex !== null) { exitHistoryMode(); return; }
+    if (state.isPlayingAfter) return;
     const scene = SCENES[state.currentSceneId];
     if (state.lineIndex < scene.lines.length - 1) {
         state.lineIndex++;
@@ -461,14 +439,54 @@ function advanceLine() {
     if (scene.type === 'story') {
         advanceTo(scene.next);
     }
-    // type === 'choice'이고 마지막 줄이면 선택지 클릭을 기다림 (아무 동작 없음)
 }
 
-el('bg-layer').addEventListener('click', (e) => {
-    if (e.target.id === 'dev-badge') return;
-    advanceLine();
-});
+/* ---------- 이전 대화 보기 (게임 상태는 건드리지 않는 읽기 전용 되감기) ---------- */
+function updateHistoryButtonState() {
+    const canGoBack = state.viewIndex !== null ? state.viewIndex > 0 : state.log.length >= 2;
+    el('btn-history-back').disabled = !canGoBack;
+}
+
+function showHistoryLine() {
+    el('story-text').textContent = state.log[state.viewIndex];
+    el('choice-layer').innerHTML = '';
+    el('advance-hint').style.display = 'none';
+    el('btn-history-back').classList.add('active');
+    updateHistoryButtonState();
+}
+
+function exitHistoryMode() {
+    state.viewIndex = null;
+    el('btn-history-back').classList.remove('active');
+    if (state.isPlayingAfter) {
+        el('story-text').textContent = state.liveText;
+        el('choice-layer').innerHTML = '';
+        el('advance-hint').style.display = 'block';
+    } else {
+        renderScene();
+    }
+    updateHistoryButtonState();
+}
+
+el('bg-layer').addEventListener('click', advanceLine);
 el('text-box').addEventListener('click', advanceLine);
+
+el('btn-history-back').addEventListener('click', () => {
+    if (state.viewIndex === null) {
+        if (state.log.length < 2) return;
+        state.viewIndex = state.log.length - 2;
+    } else if (state.viewIndex > 0) {
+        state.viewIndex--;
+    } else {
+        return;
+    }
+    showHistoryLine();
+});
+
+el('btn-toggle-dialogue').addEventListener('click', () => {
+    const hidden = el('dialogue-dock').classList.toggle('dialogue-hidden');
+    el('btn-toggle-dialogue').classList.toggle('active', hidden);
+});
 
 /* ---------- 엔딩 계산 + 화면 ---------- */
 function showEnding(forcedKey) {
@@ -479,7 +497,6 @@ function showEnding(forcedKey) {
     }
     state.lastEndingKey = key;
     const ending = ENDINGS[key];
-    // name(PERFECT END 등)은 원래도 영문/한자로 스타일링된 표기라 언어별로 안 바꿈
     el('ending-name').textContent = ending.name;
     el('ending-title').textContent = '「' + t(key + '.title', ending.title) + '」';
     el('ending-score').textContent = ending.scoreLabel;
@@ -493,14 +510,11 @@ function showResult() {
     const total = JUDGED_ORDER.length;
     const correctCount = JUDGED_ORDER.reduce((sum, id) => sum + (state.answers[id]?.correct ? 1 : 0), 0);
 
-    // SECRET END는 엔딩 화면(screen-ending)에서만 점수를 숨김(ENDINGS.SECRET.scoreLabel === '').
-    // 결과 화면(오늘의 참배 돌아보기)에서는 다른 엔딩과 동일하게 실제 정답 개수를 보여줌.
     const summaryTemplate = t('ui.resultSummary', '{total}가지 예절 중 {correct}가지를 잘 지켰어요');
     el('result-summary').innerHTML =
         summaryTemplate.replace('{total}', total).replace('{correct}', correctCount) +
         `<small>${t('ui.resultSummarySub', '아래에서 오늘 방문을 다시 확인해보세요.')}</small>`;
 
-    // 체크리스트 — 잘 지킨 예절만 제목 위주로 간단히 표시
     const checklist = el('checklist');
     checklist.innerHTML = '';
     const correctIds = JUDGED_ORDER.filter(id => state.answers[id]?.correct);
@@ -512,8 +526,6 @@ function showResult() {
         checklist.appendChild(row);
     });
 
-    // 다시 알아볼 예절 (오답 중심) — "내가 선택한 행동"은 state.answers에 저장된 실제 선택(choiceId)을
-    // 현재 언어로 다시 번역해서 보여줌(선택 당시 언어가 아니라 지금 보고 있는 언어 기준)
     const reviewList = el('review-list');
     reviewList.innerHTML = '';
     const wrongIds = JUDGED_ORDER.filter(id => !state.answers[id]?.correct);
@@ -526,7 +538,6 @@ function showResult() {
       <button class="btn btn-primary" id="btn-guide-cta">${t('ui.guideCta', '사찰 예절 자세히 알아보기')}</button>
     `;
         reviewList.appendChild(cta);
-        // 예절 가이드는 대분류를 쿼리스트링으로 받으므로 한글 값을 인코딩해서 넘긴다.
         el('btn-guide-cta').onclick = () => {
             location.href = '/info?category=' + encodeURIComponent('예절가이드');
         };
@@ -594,9 +605,6 @@ function renderCollection() {
 }
 
 /* ---------- 사전형식 번역: 언어 전환 훅 ---------- */
-// common.js가 언어 버튼 클릭 시 호출함(다른 페이지들과 동일한 컨벤션). 이 페이지는 게임 상태에 따라
-// 화면이 계속 다시 그려지는 구조라, 정적 UI(data-i18n)뿐 아니라 "지금 떠 있는 화면"도 같은 렌더
-// 함수를 다시 호출해서 새 언어로 즉시 갱신한다.
 function onLanguageChange(lang) {
     currentLang = lang;
     if (window.applyManualOverrideTranslations) window.applyManualOverrideTranslations(lang);
@@ -608,7 +616,8 @@ function onLanguageChange(lang) {
     });
 
     if (el('screen-scene').classList.contains('active')) {
-        if (state.isPlayingAfter) return; // after-대사 재생 중엔 굳이 안 건드림(다음 진행에서 이미 새 언어로 나감)
+        if (state.isPlayingAfter) return;
+        if (state.viewIndex !== null) return;
         renderScene();
     } else if (el('screen-ending').classList.contains('active') && state.lastEndingKey) {
         showEnding(state.lastEndingKey);
@@ -626,22 +635,3 @@ el('btn-close-collection').onclick = () => showScreen('screen-title');
 el('btn-goto-result').onclick = showResult;
 el('btn-result-replay').onclick = startGame;
 el('btn-result-title').onclick = () => showScreen('screen-title');
-
-/* ---------- 개발자 패널 (발표/시연용 강제 트리거) ---------- */
-el('dev-badge').onclick = () => el('dev-panel').classList.add('active');
-el('dev-close').onclick = () => el('dev-panel').classList.remove('active');
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'd' || e.key === 'D') el('dev-panel').classList.toggle('active');
-});
-document.querySelectorAll('[data-force-hidden]').forEach(btn => {
-    btn.onclick = () => {
-        state.forceHiddenNext = btn.dataset.forceHidden === '1';
-        el('dev-panel').classList.remove('active');
-    };
-});
-document.querySelectorAll('[data-jump-ending]').forEach(btn => {
-    btn.onclick = () => {
-        el('dev-panel').classList.remove('active');
-        showEnding(btn.dataset.jumpEnding);
-    };
-});

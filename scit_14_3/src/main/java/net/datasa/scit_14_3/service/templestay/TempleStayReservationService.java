@@ -167,6 +167,11 @@ public class TempleStayReservationService {
 	public TempleStayReservationDTO canceledMyReservation(Long reservationId) {
 		TempleStayReservationEntity entity = tsrr.findById(reservationId).orElseThrow(() -> new EntityNotFoundException("해당되는 템플스테이 예약 번호가 존재하지 않습니다."));
 		
+		if (entity.getStatus() == TempleStayReservationEntity.Status.취소
+				|| entity.getStatus() == TempleStayReservationEntity.Status.이용완료) {
+			throw new IllegalStateException("이미 취소되었거나 이용이 완료된 예약입니다.");
+		}
+		
 		LocalDateTime checkIn = entity.getStartDate().atStartOfDay();
 		if (LocalDateTime.now().isAfter(checkIn.minusHours(24))) {
 			throw new IllegalStateException("체크인 24시간 전까지만 취소할 수 있습니다.");

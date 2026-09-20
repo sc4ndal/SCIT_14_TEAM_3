@@ -26,7 +26,6 @@
 
         <section class="favorites-hero">
             <h1>관심 행사</h1>
-            <p>관심 등록한 행사와 법회 일정입니다.</p>
         </section>
 
         <p class="favorites-empty" th:if="${#lists.isEmpty(events)}">
@@ -35,7 +34,7 @@
 
         <div class="food-favorite-grid event-favorite-grid" th:unless="${#lists.isEmpty(events)}">
             <article class="food-favorite-card event-favorite-card"
-                     th:classappend="${event.endDate.isBefore(T(java.time.LocalDate).now())} ? 'event-favorite-card--past' : ''"
+                     th:classappend="${event.past} ? 'event-favorite-card--past' : ''"
                      th:each="event : ${events}" data-remove-on-unfavorite>
 
                 <div class="food-favorite-card__body">
@@ -43,6 +42,7 @@
                         <span th:text="${#temporals.format(event.startDate, 'yyyy.MM.dd')}">2026.01.01</span>
                         <span th:if="${event.endDate != event.startDate}"
                               th:text="'~ ' + ${#temporals.format(event.endDate, 'yyyy.MM.dd')}">~ 2026.01.07</span>
+                        <span class="event-favorite-card__past-badge" th:if="${event.past}">종료</span>
                     </p>
 
                     <h2 class="food-favorite-card__title" th:text="${event.title}">행사명</h2>

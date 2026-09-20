@@ -273,8 +273,21 @@ function createTempleMarker(map, temple) {
     var infowindow = new kakao.maps.InfoWindow({
         content: infoContent,
         removable: false,
-        zIndex: 999999 // 마커 zIndex보다 훨씬 높게 잡아서 항상 마커 위에 뜨게 함
+        zIndex: 999999, // 마커 zIndex보다 훨씬 높게 잡아서 항상 마커 위에 뜨게 함
+        disableAutoPan: true // 자동 이동 금지
     });
+
+     // 번역기 등으로 infoContent 내부 텍스트 줄 수가 나중에 바뀌면(폭은 고정이라 높이만 바뀜)
+        // InfoWindow가 다시 측정하도록 닫았다 열어줌 (번역 후 하단 잘림 방지)
+        if (window.ResizeObserver) {
+            var infoResizeObserver = new ResizeObserver(function () {
+                if (currentOpenInfoWindow === infowindow) {
+                    infowindow.close();
+                    infowindow.open(map, marker);
+                }
+            });
+            infoResizeObserver.observe(infoContent);
+        }
 
     // 9. 이벤트 등록: 마우스 오버 → 이름표 표시 + 밝은 색 핀으로 교체
     kakao.maps.event.addListener(marker, 'mouseover', function () {
@@ -290,17 +303,25 @@ function createTempleMarker(map, temple) {
             }
     });
 
-    kakao.maps.event.addListener(marker, 'click', function () {
-        // 이전에 열려있던 정보창이 있으면 닫기
-        if (currentOpenInfoWindow) {
-            currentOpenInfoWindow.close();
-        }
-        // 이전에 선택돼있던 다른 마커가 있으면 색 원래대로 복구
-        if (currentOpenMarker && currentOpenMarker !== marker) {
-            currentOpenMarker.setImage(currentOpenMarker.normalImage);
-            currentOpenMarker.setZIndex(1);
-        }
-        infowindow.open(map, marker);
+        kakao.maps.event.addListener(marker, 'click', function () {
+            // 이전에 열려있던 정보창이 있으면 닫기
+            if (currentOpenInfoWindow) {
+                currentOpenInfoWindow.close();
+            }
+            // 이전에 선택돼있던 다른 마커가 있으면 색 원래대로 복구
+            if (currentOpenMarker && currentOpenMarker !== marker) {
+                currentOpenMarker.setImage(currentOpenMarker.normalImage);
+                currentOpenMarker.setZIndex(1);
+            }
+
+            // 마커가 화면 위쪽(검색창/필터 패널에 가려지는 영역)에 있으면
+            // 정보창이 패널 밑에 깔리지 않게 지도를 살짝 아래로 밀어줌
+            var TOP_SAFE_AREA = 130; // 컨트롤 패널이 차지하는 대략적인 높이 + 여유
+            var point = map.getProjection().pointFromCoords(position);
+                    console.log('marker point.y =', point.y);
+
+            infowindow.open(map, marker);
+
         currentOpenInfoWindow = infowindow; // 지금 연 걸 "현재 열린 것"으로 기억
         marker.setImage(hoverMarkerImage);  // 선택된 마커는 밝은 색으로 고정
         marker.setZIndex(999); // 다른 마커들 위로 올려서 안 가려지게 함

@@ -63,6 +63,9 @@ public class TempleStayReviewService {
 			if (dto.getRating() == null || dto.getRating() < 1 || dto.getRating() > 5) {
 				throw new IllegalStateException("평점은 1~5점 사이로 입력해주세요.");
 			}
+			if (dto.getTitle() == null || dto.getTitle().isBlank()) {
+				throw new IllegalStateException("제목을 입력해주세요.");
+			}
 			if (dto.getContent() == null || dto.getContent().isBlank()) {
 				throw new IllegalStateException("리뷰 내용을 입력해주세요.");
 			}
@@ -72,6 +75,7 @@ public class TempleStayReviewService {
 					.reservationId(dto.getReservationId())
 					.loginId(dto.getLoginId())
 					.rating((byte) (int) dto.getRating())
+					.title(normalizeTitle(dto.getTitle()))
 					.content(dto.getContent())
 					.imageUrls(dto.getImageUrls())
 					.build();
@@ -194,6 +198,7 @@ public class TempleStayReviewService {
 					.programId(program != null ? program.getProgramId() : null)
 					.programName(program != null ? program.getTitle() : null)
 					.rating((int) review.getRating())
+					.title(review.getTitle())
 					.authorName(authorDisplayName(authorMap.get(review.getLoginId())))
 					.content(review.getContent())
 					.imageUrls(review.getImageUrls())
@@ -231,6 +236,9 @@ public class TempleStayReviewService {
 			if (dto.getRating() == null || dto.getRating() < 1 || dto.getRating() > 5) {
 				throw new IllegalStateException("평점은 1~5점 사이로 입력해주세요.");
 			}
+			if (dto.getTitle() == null || dto.getTitle().isBlank()) {
+				throw new IllegalStateException("제목을 입력해주세요.");
+			}
 			if (dto.getContent() == null || dto.getContent().isBlank()) {
 				throw new IllegalStateException("리뷰 내용을 입력해주세요.");
 			}
@@ -245,6 +253,7 @@ public class TempleStayReviewService {
 			}
 
 			entity.setRating((byte) (int) dto.getRating());
+			entity.setTitle(normalizeTitle(dto.getTitle()));
 			entity.setContent(dto.getContent());
 			// 컨트롤러가 "유지할 기존 URL + 새로 업로드한 URL"을 합쳐서 넘겨준다 - 그대로 덮어쓰면 첨삭이 반영됨
 			entity.setImageUrls(dto.getImageUrls());
@@ -276,6 +285,15 @@ public class TempleStayReviewService {
 				cloudinaryService.delete(url);
 			}
 		}
+	}
+
+	/** 제목은 선택 입력 - 공백만 입력했으면 null로 저장(빈 문자열로 남기지 않음) */
+	private String normalizeTitle(String title) {
+		if (title == null) {
+			return null;
+		}
+		String trimmed = title.trim();
+		return trimmed.isEmpty() ? null : trimmed;
 	}
 
 	/** 사진 장수 제한 + 우리 Cloudinary 계정 소유가 아닌 URL(조작/외부 URL) 차단 */
@@ -329,6 +347,7 @@ public class TempleStayReviewService {
 				.reservationId(entity.getReservationId())
 				.loginId(entity.getLoginId())
 				.rating((int) entity.getRating())
+				.title(entity.getTitle())
 				.content(entity.getContent())
 				.imageUrls(entity.getImageUrls())
 				.likeCount(entity.getLikeCount())
