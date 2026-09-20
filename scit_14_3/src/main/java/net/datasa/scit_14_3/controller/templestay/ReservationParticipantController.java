@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 
 @Slf4j
-// @Controller
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/reservationparticipants")
@@ -31,7 +30,11 @@ public class ReservationParticipantController {
 	public ResponseEntity<?> getByReservation(@PathVariable Long reservationId,
 			@AuthenticationPrincipal AppUserDetails principal) {
 		TempleStayReservationDTO reservation = tsrs.getInfo(reservationId);
-		boolean isOwner = principal != null && reservation != null
+		if (reservation == null) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND)
+					.body(Map.of("message", "존재하지 않는 예약입니다."));
+		}
+		boolean isOwner = principal != null
 				&& reservation.getLoginId() != null
 				&& reservation.getLoginId().equals(principal.getUsername());
 		if (!isOwner) {
