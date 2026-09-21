@@ -509,8 +509,6 @@ CREATE TABLE TEMPLE_INQUIRY (
 -- 비밀번호는 전부 BCryptPasswordEncoder로 해시된 값 - 아래는 원문 비밀번호 기록용 주석.
 --   사이트 관리자: admin / admin1234!
 --   일반 회원:     testuser1 / Test1234!, testuser2 / Test1234!
---   사찰 계정:     @templetest1 / Test1234!, @templetest2 / Test1234!
--- 템플스테이 프로그램 더미값도 테스트사찰/테스트사찰2 앞으로 하나씩 같이 생성됨.
 -- =====================================================================
 INSERT INTO USER (login_id, password, nickname, name, phone, email, role, login_type) VALUES
     ('admin', '$2a$10$TbOlPSKCFHWSjqp963flveOwYKYD6EueH1VxSE2Bm/wdB1NqN5fum', '사이트관리자', 'Admin', NULL, NULL, 'ADMIN', 'LOCAL'),

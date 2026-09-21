@@ -282,6 +282,16 @@ function startI18nObserver(){
     i18nObserver.observe(document.body, { childList: true, characterData: true, subtree: true });
 }
 
+/** 지도 마커의 사찰명/주소는 번역기가 아니라 사전(templeI18n.js)으로 그림 - 번역기가 텍스트를 다 적용한
+    뒤에 mapCommon.js의 갱신 함수를 불러서 그 값으로 다시 덮음(사찰찾기 페이지는 자기 훅에서 따로 부름). */
+function refreshTempleMapText(lang){
+    if(typeof window.refreshTempleMarkerLanguage === 'function') window.refreshTempleMarkerLanguage(lang);
+    // 페이지가 자기 사전(예: programI18n.js)으로 덮어쓸 함수를 window.i18nAfterApplyHooks에 등록해두면 같이 실행
+    (window.i18nAfterApplyHooks || []).forEach(function(fn){
+        try { fn(lang); } catch(e){ console.warn('[common.js] 번역 후처리 훅 오류', e); }
+    });
+}
+
 async function defaultOnLanguageChange(lang, btn){
     if(!i18nOriginalTextNodes){
         i18nOriginalTextNodes = collectI18nTextNodes().map(node => ({node, text: node.textContent}));
@@ -293,11 +303,15 @@ async function defaultOnLanguageChange(lang, btn){
     if(lang === I18N_SOURCE_LANG){
         i18nCurrentLang = lang;
         applyOriginalText();
+        refreshTempleMapText(lang);
         return;
     }
 
     if(!('Translator' in self)){
         console.warn('[common.js] 이 브라우저는 Translator API를 지원하지 않습니다. Chrome/Edge 138 이상 데스크톱 버전으로 업데이트해보세요(모바일/타 브라우저는 미지원).');
+        // 기계번역은 못 해도 사전으로 그리는 부분(지도 사찰명, 프로그램 지역/유형 등)은 적용 가능
+        i18nCurrentLang = lang;
+        refreshTempleMapText(lang);
         return;
     }
 
@@ -318,6 +332,7 @@ async function defaultOnLanguageChange(lang, btn){
         applyTranslatedText(i18nOriginalTextNodes, lang);
         applyTranslatedPlaceholders(i18nOriginalPlaceholders, lang);
         startI18nObserver();
+        refreshTempleMapText(lang);
     } catch(e){
         console.warn('[common.js] 번역 중 오류가 발생했습니다.', e);
     } finally {
@@ -457,6 +472,20 @@ function hideLoading() {
         setTimeout(function () { overlay.hidden = true; }, 200);
     }
 }
+
+/* ===== 뒤로가기(bfcache 복원) 시 로딩 오버레이 강제 해제 =====
+   링크 클릭/폼 제출 때 띄운 오버레이는 새 페이지가 뜨면 저절로 사라진다. 그런데 새 페이지로 갔다가
+   뒤로가기를 누르면 브라우저가 이전 페이지를 다시 만들지 않고 떠나기 직전 화면 그대로(오버레이가
+   켜진 채로) 통째로 복원하는 경우가 있다(bfcache). 이때는 스크립트가 다시 실행되지 않아서
+   hideLoading()이 호출되지 않아 무한 로딩처럼 보였다. pageshow 이벤트의 persisted가 true면
+   bfcache 복원이라는 뜻이므로 오버레이와 카운터를 초기화한다. */
+window.addEventListener('pageshow', function (e) {
+    if (!e.persisted) return;
+    _loadingCount = 0;
+    clearInterval(_loadingTimer);
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) overlay.hidden = true;
+});
 
 /* ===== 순수 form POST(페이지 전체 이동) 제출 시 로딩 표시 =====
    fetch가 아니라 그냥 <form method="post">라서 hideLoading()을 부를 시점이 없다(페이지가

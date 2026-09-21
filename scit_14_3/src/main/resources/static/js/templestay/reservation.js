@@ -176,24 +176,29 @@ function renderFilterOptions() {
   const templeSelect = document.getElementById('filter-temple');
   const headcountSelect = document.getElementById('filter-headcount');
 
-  regionSelect.innerHTML = '<option value="">전체</option>' +
-    uniqueRegions().map(r => `<option value="${r}">${r}</option>`).join('');
+  // 화면에 보이는 글자만 사전(programI18n.js)으로 바꾸고 value는 한국어 원문 유지(필터 비교용).
+  // 번역기가 다시 덮어쓰지 않도록 option에 .no-translate를 붙인다.
+  regionSelect.innerHTML = `<option value="" class="no-translate">${trUi('all')}</option>` +
+    uniqueRegions().map(r => `<option value="${r}" class="no-translate">${trRegion(r)}</option>`).join('');
+  regionSelect.value = state.filter.region;
 
-  renderTempleOptions('');
+  renderTempleOptions(state.filter.region);
 
   // 프로그램들의 max_participant 중 가장 큰 값까지 1명 단위로 옵션 생성 (지금은 전부 20명)
   const maxOfAll = Math.max(...state.programs.map(p => p.maxParticipant));
   const headcountOptions = Array.from({ length: maxOfAll }, (_, i) => i + 1);
 
-  headcountSelect.innerHTML = '<option value="">전체</option>' +
-    headcountOptions.map(n => `<option value="${n}">${n}명</option>`).join('');
+  headcountSelect.innerHTML = `<option value="" class="no-translate">${trUi('all')}</option>` +
+    headcountOptions.map(n => `<option value="${n}" class="no-translate">${trPeople(n)}</option>`).join('');
+  headcountSelect.value = state.filter.headcount;
 }
 
 // 지역 필터에 맞춰 사찰 셀렉박스 옵션만 다시 그림 (region이 빈 문자열이면 전체 사찰)
 function renderTempleOptions(region) {
   const templeSelect = document.getElementById('filter-temple');
-  templeSelect.innerHTML = '<option value="">전체</option>' +
-    uniqueTemples(region).map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
+  templeSelect.innerHTML = `<option value="" class="no-translate">${trUi('all')}</option>` +
+    uniqueTemples(region).map(([id, name]) => `<option value="${id}" class="no-translate">${trTempleName(name)}</option>`).join('');
+  templeSelect.value = state.filter.templeId;
 }
 
 const PROGRAM_PAGE_SIZE = 9; // 3줄 x 3개
@@ -203,7 +208,7 @@ function renderProgramList() {
   const results = filteredPrograms();
 
   if (results.length === 0) {
-    listEl.innerHTML = '<p>조건에 맞는 프로그램이 없습니다.</p>';
+    listEl.innerHTML = `<p class="no-translate">${trUi('noProgram')}</p>`;
     document.getElementById('program-pagination').innerHTML = '';
     return;
   }
@@ -221,19 +226,19 @@ function renderProgramList() {
     <div class="program-card-body">
       <div class="program-card-top">
         <div class="badge-group">
-          <span class="program-type-badge" data-type="${p.programType}">${p.programType}</span>
+          <span class="program-type-badge no-translate" data-type="${p.programType}">${trType(p.programType)}</span>
           ${p.supportEnglish ? '<span class="lang-badge">EN</span>' : ''}
         </div>
-        <p class="program-capacity">
+        <p class="program-capacity no-translate">
           <span class="capacity-dot ${full ? 'full' : 'open'}"></span>
-          ${p.reservedCount || 0} / ${p.maxParticipant}명
+          ${p.reservedCount || 0} / ${trPeople(p.maxParticipant)}
         </p>
       </div>
       <h3 class="program-title">${p.title}</h3>
-      <p class="program-temple-region">${p.templeName} · ${p.region}</p>
+      <p class="program-temple-region no-translate">${trTempleRegion(p.templeName, p.region)}</p>
       <div class="program-card-footer">
         <div class="program-price">
-          <span class="price-adult">${p.price.toLocaleString()}원</span>
+          <span class="price-adult no-translate">${trWon(p.price)}</span>
         </div>
         <a class="program-detail-btn" href="/reservation/programs/${p.programId}">상세보기</a>
       </div>
@@ -341,7 +346,9 @@ function renderStep2() {
 
   const summary = document.getElementById('selected-program-summary');
   summary.querySelector('.program-title').textContent = p.title;
-  summary.querySelector('.program-temple-region').textContent = `${p.templeName} · ${p.region}`;
+  const summaryRegionEl = summary.querySelector('.program-temple-region');
+  summaryRegionEl.classList.add('no-translate');
+  summaryRegionEl.textContent = trTempleRegion(p.templeName, p.region);
   summary.querySelector('.program-price').textContent = `${p.price.toLocaleString()}원 / 1인`;
 
   document.getElementById('res-login-id').value = state.loginId;
@@ -761,7 +768,9 @@ async function renderStep3() {
   document.getElementById('result-reservation-id').textContent = `예약번호 ${reservation.reservationId}`;
   document.getElementById('result-applied-at').textContent = formatAppliedAt(reservation.createdAt);
   document.getElementById('result-program-title').textContent = program.title || '';
-  document.getElementById('result-temple-name').textContent = `${program.templeName || ''} · ${program.region || ''}`;
+  const resultTempleEl = document.getElementById('result-temple-name');
+  resultTempleEl.classList.add('no-translate');
+  resultTempleEl.textContent = trTempleRegion(program.templeName || '', program.region || '');
   document.getElementById('result-date-range').textContent =
     reservation.startDate === reservation.endDate ? `${reservation.startDate} (당일)` : `${reservation.startDate} ~ ${reservation.endDate}`;
   document.getElementById('result-participant-count').textContent = `${reservation.participantCount}명`;
@@ -871,6 +880,14 @@ async function loadPrograms() {
     hideLoading();
   }
 }
+
+// 언어가 바뀌면 common.js가 번역기 적용 후 불러줌 - 필터 옵션/카드를 지금 언어 사전으로 다시 그림.
+// 선택값은 state.filter에 한국어 원문으로 들어있어서 그대로 복원된다.
+window.onProgramI18nRefresh = function () {
+  if (!document.getElementById('filter-region')) return;
+  renderFilterOptions();
+  renderProgramList();
+};
 
 // ------------------------- 초기화 -------------------------
 async function init() {
