@@ -91,6 +91,10 @@ const I18N_MANUAL_OVERRIDES = {
     // 있었음 - favoriteButton.js가 이 사전을 직접 참조하도록 고쳐서 해결함 ──
     '즐겨찾기됨': { ja: 'お気に入り済み', en: 'Favorited' },
     '즐겨찾기': { ja: 'お気に入り', en: 'Favorite' },
+
+    // 탈퇴한 회원의 리뷰 작성자 자리에 서버(TempleStayReviewService.authorDisplayName)가 넣는
+    // 고정 문구 - 닉네임과 달리 사용자 입력값이 아니라서 번역 대상(.no-translate를 안 붙임)
+    '탈퇴한 회원': { ja: '退会した会員', en: 'Withdrawn member' },
     '사찰 등록 요청 목록': { ja: '寺院登録リクエスト一覧', en: 'Temple Registration Requests' },
     '로그아웃': { ja: 'ログアウト', en: 'Log Out' },
 

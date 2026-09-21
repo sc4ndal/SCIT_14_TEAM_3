@@ -113,7 +113,7 @@ public class PaymentService {
 					return;
 				}
 				emailVerificationService.sendReservationCanceledNotice(
-						representative.getEmail(), reservationId, program.getTitle(), program.getTempleName(),
+						representative.getEmail(), reservation.getLang(), reservationId, program.getTitle(), program.getTempleName(),
 						reservation.getStartDate(), reservation.getEndDate()
 				);
 			} catch (Exception e) {
@@ -226,7 +226,7 @@ public class PaymentService {
 				}
 				if (pending) {
 					emailVerificationService.sendReservationPendingNotice(
-							representative.getEmail(), reservationId, program.getTitle(), program.getTempleName(),
+							representative.getEmail(), reservation.getLang(), reservationId, program.getTitle(), program.getTempleName(),
 							program.getTempleAddress(), reservation.getStartDate(), reservation.getEndDate(),
 							reservation.getParticipantCount(), amount, paymentMethod,
 							representative.getName(), representative.getPhone(),
@@ -234,7 +234,7 @@ public class PaymentService {
 					);
 				} else {
 					emailVerificationService.sendReservationReceipt(
-							representative.getEmail(), reservationId, program.getTitle(), program.getTempleName(),
+							representative.getEmail(), reservation.getLang(), reservationId, program.getTitle(), program.getTempleName(),
 							program.getTempleAddress(), reservation.getStartDate(), reservation.getEndDate(),
 							reservation.getParticipantCount(), amount, paymentMethod,
 							representative.getName(), representative.getPhone(),

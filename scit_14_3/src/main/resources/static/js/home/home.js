@@ -107,6 +107,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (t[key] !== undefined) el.textContent = t[key];
         });
 
+        // chat.js(별도 스크립트)가 "생각하는 중..."/오류 문구를 지금 언어로 쓰려고 참조함
+        window.homeCurrentLang = currentLang;
+
+        document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+            const key = el.getAttribute("data-i18n-placeholder");
+            if (t[key] !== undefined) el.placeholder = t[key];
+        });
+
         const ariaT = HOME_ARIA_TRANSLATIONS[currentLang];
         document.querySelectorAll("[data-i18n-aria]").forEach(el => {
             const key = el.getAttribute("data-i18n-aria");

@@ -458,7 +458,7 @@
 </select>
         <input type="text" id="search-keyword" data-i18n-placeholder="searchPlaceholder" placeholder="검색어를 입력하세요" autocomplete="off">
         <div id="search-history-dropdown" class="search-history-dropdown"></div>
-        <button type="button" id="search-btn" aria-label="검색">            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <button type="button" id="search-btn" aria-label="검색" data-i18n-aria="searchBtn">            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="10.5" cy="10.5" r="7"/>
                 <line x1="16" y1="16" x2="21" y2="21"/>
             </svg>
@@ -488,9 +488,9 @@
     </div>
 <div id="map"></div>
     <div id="map-controls-bottom">
-            <button type="button" id="reset-map-btn">지도 전체보기</button>
+            <button type="button" id="reset-map-btn" data-i18n="resetMapBtn">지도 전체보기</button>
     </div>
-    <button type="button" id="near-me-btn" aria-label="내 주변 사찰">
+    <button type="button" id="near-me-btn" aria-label="내 주변 사찰" data-i18n-aria="nearMeAria">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"/>
             <line x1="12" y1="2" x2="12" y2="5"/>
@@ -503,7 +503,7 @@
 <button type="button" id="result-panel-toggle">></button>
 <div id="result-panel" class="collapsed">
     <div id="result-panel-header">
-        <span id="result-panel-title">사찰 목록</span>
+        <span id="result-panel-title" data-i18n="resultPanelTitle">사찰 목록</span>
         <button type="button" id="result-panel-close">x</button>
     </div>
     <ul id="result-list"></ul>

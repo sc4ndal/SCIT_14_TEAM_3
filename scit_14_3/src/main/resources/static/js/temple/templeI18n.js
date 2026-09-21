@@ -199,9 +199,16 @@ function translateTempleName(name, lang) {
     return name;
 }
 
-/** 주소는 영어 데이터만 있어서(가타카나 주소 데이터 없음) 일본어는 원문 그대로 둠. */
+/** 주소는 영어 데이터만 있어서(가타카나 주소 데이터 없음) 일본어(ja)도 영어 주소를 그대로 씀. */
 function translateTempleAddress(address, name, lang) {
-    if (lang !== 'en' || !name) return address;
+    if (lang === 'ko' || !name) return address;
     var entry = TEMPLE_I18N[name];
     return (entry && entry.addressEn) ? entry.addressEn : address;
+}
+
+/** 사전으로 그린 텍스트를 common.js의 MutationObserver가 "새로 생긴 한국어"로 오해해서 크롬 번역기로
+    다시 덮어쓰지 않도록, 사전 값이 들어간 요소에 .no-translate를 붙이는지 판단함.
+    이름/주소 모두 ja/en에서 사전 값(주소는 ja도 영어 주소)이라 항상 보호. */
+function isTempleTextFromDict(name, kind, lang) {
+    return lang !== 'ko' && !!TEMPLE_I18N[name];
 }

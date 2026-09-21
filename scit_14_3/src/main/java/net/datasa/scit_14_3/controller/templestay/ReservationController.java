@@ -53,7 +53,10 @@ public class ReservationController {
 	 */
 	@PostMapping("/templestayreservations")
 	@ResponseBody
-	public ResponseEntity<?> TempleStayReservation(@RequestBody TempleStayReservationDTO TempleStayReservationDTO) {
+	public ResponseEntity<?> TempleStayReservation(@RequestBody TempleStayReservationDTO TempleStayReservationDTO,
+			@CookieValue(value = "preferredLang", defaultValue = "ko") String preferredLang) {
+		// 화면 언어는 common.js가 쿠키(preferredLang)로 저장해둠 - 안내 메일을 그 언어로 보내려고 예약에 같이 저장
+		TempleStayReservationDTO.setLang(preferredLang);
 		try {
 			return ResponseEntity.ok(tsrs.reserved(TempleStayReservationDTO));
 		} catch (IllegalStateException e) {

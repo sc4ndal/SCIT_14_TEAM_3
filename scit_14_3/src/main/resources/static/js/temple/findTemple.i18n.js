@@ -17,7 +17,10 @@ const TRANSLATIONS = {
         typeUrban: "도심",
         languageFilterLabel: "언어지원",
         supportEnglish: "영어 지원",
-        favoriteFilterLabel: "즐겨찾기"
+        favoriteFilterLabel: "즐겨찾기",
+        resetMapBtn: "지도 전체보기",
+        resultPanelTitle: "사찰 목록",
+        nearMeAria: "내 주변 사찰"
     },
     ja: {
         searchTypeName: "寺院検索",
@@ -31,21 +34,27 @@ const TRANSLATIONS = {
         typeUrban: "都心",
         languageFilterLabel: "言語対応",
         supportEnglish: "英語対応",
-        favoriteFilterLabel: "お気に入り"
+        favoriteFilterLabel: "お気に入り",
+        resetMapBtn: "地図全体を見る",
+        resultPanelTitle: "寺院一覧",
+        nearMeAria: "現在地周辺の寺院"
     },
     en: {
         searchTypeName: "Search by name",
         searchTypeAddress: "Search by address",
         searchPlaceholder: "Enter a search term",
         searchBtn: "Search",
-        typeFilterLabel: "Find by type",
+        typeFilterLabel: "Find by Type",
         typeSea: "Sea",
         typeMountain: "Mountain",
         typeRiver: "River",
         typeUrban: "Urban",
-        languageFilterLabel: "Language support",
-        supportEnglish: "English support",
-        favoriteFilterLabel: "Favorites"
+        languageFilterLabel: "Language Support",
+        supportEnglish: "English Support",
+        favoriteFilterLabel: "Favorites",
+        resetMapBtn: "View Full Map",
+        resultPanelTitle: "Temple List",
+        nearMeAria: "Temples near me"
     }
 };
 
@@ -53,6 +62,14 @@ const TRANSLATIONS = {
 function onLanguageChange(lang){
     const t = TRANSLATIONS[lang];
     if(!t) return;
+
+    // 이 페이지 사전(data-i18n / data-i18n-placeholder)으로 그리는 요소는 아래에서 켜는
+    // MutationObserver(common.js)가 "새로 생긴 한국어"로 오해해서 크롬 번역기로 다시 덮어쓰지
+    // 않도록 .no-translate로 보호함(안 하면 "강"이 こんにちは로, "Language support"가 대소문자가
+    // 뒤섞여 바뀜). 공용 사전 처리(applyManualOverrideTranslations)보다 먼저 붙여야 스냅샷에서도 빠짐.
+    document.querySelectorAll('[data-i18n], [data-i18n-placeholder]').forEach(function(el){
+        el.classList.add('no-translate');
+    });
 
     // 프래그먼트(로그인/회원가입 링크, 드롭다운 등)는 이 페이지 전용 사전이 아니라
     // common.js의 공용 사전(I18N_MANUAL_OVERRIDES)에 있음 - 같이 적용해줌.
@@ -74,6 +91,10 @@ function onLanguageChange(lang){
     document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
         const key = el.getAttribute('data-i18n-placeholder');
         if(t[key] !== undefined) el.placeholder = t[key];
+    });
+    document.querySelectorAll('[data-i18n-aria]').forEach(function(el){
+        const key = el.getAttribute('data-i18n-aria');
+        if(t[key] !== undefined) el.setAttribute('aria-label', t[key]);
     });
 
     // 사찰명/주소 사전 번역(templeI18n.js) - 이미 그려진 마커 이름표/정보창 + 검색 결과 목록을

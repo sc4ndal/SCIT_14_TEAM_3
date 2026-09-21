@@ -220,6 +220,9 @@ CREATE TABLE TEMPLE_STAY_RESERVATION (
     end_date            DATE     NOT NULL COMMENT '이용 종료일 (계산 결과를 명시적으로 저장)',
     participant_count   INT      NOT NULL COMMENT '신청 인원',
     note                TEXT     NULL COMMENT '전달사항(비고)',
+    -- 예약 시점에 사용자가 보고 있던 화면 언어(ko/ja/en). 사찰 관리자의 입금확인/취소, 자동취소
+    -- 배치처럼 예약자 본인의 요청이 아닌 시점에도 안내 메일을 예약자 언어로 보내기 위해 저장한다.
+    lang                VARCHAR(2) NOT NULL DEFAULT 'ko' COMMENT '예약 시점 화면 언어(ko/ja/en) - 안내 메일 언어',
     -- 카카오페이(즉시 전자결제)는 선착순으로 바로 '예약확정'. 계좌이체(무통장입금)는
     -- 실제 입금 여부를 시스템이 확인할 수 없어서 일단 '예약대기'로 걸어두고, 사찰이
     -- 입금을 확인하면 '예약확정'으로 바꾼다(3일 안에 안 바꾸면 배치가 자동 '취소').

@@ -28,6 +28,12 @@
             setOpen(!panel.classList.contains("open"));
         });
 
+        // 지금 보고 있는 언어의 고정 문구(home.i18n.js의 HOME_TRANSLATIONS) - home.js가 언어 전환 시 window.homeCurrentLang을 갱신함
+        function chatText(key) {
+            const t = HOME_TRANSLATIONS[window.homeCurrentLang] || HOME_TRANSLATIONS.ko;
+            return t[key] !== undefined ? t[key] : HOME_TRANSLATIONS.ko[key];
+        }
+
         function appendMessage(text, role) {
             const bubble = document.createElement("div");
             bubble.className = "chat-message chat-message--" + (role === "user" ? "user" : "bot");
@@ -48,7 +54,7 @@
             input.disabled = true;
 
             appendMessage(text, "user");
-            const pending = appendMessage("생각하는 중...", "bot");
+            const pending = appendMessage(chatText("chatPending"), "bot");
             pending.classList.add("chat-message--pending");
 
             try {
@@ -68,7 +74,7 @@
                 history.push({ role: "user", text });
                 history.push({ role: "model", text: data.reply });
             } catch (err) {
-                pending.textContent = "지금은 답변을 가져오지 못했어요. 잠시 후 다시 시도해주세요.";
+                pending.textContent = chatText("chatError");
                 pending.classList.remove("chat-message--pending");
             } finally {
                 sending = false;

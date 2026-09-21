@@ -32,15 +32,29 @@ window.__templeMarkerRegistry = window.__templeMarkerRegistry || [];
 /** 언어 버튼을 누르면 findTemple.i18n.js 등 각 페이지의 onLanguageChange가 이 함수를 불러서
     이미 만들어져 있는 마커들의 이름표/정보창 문구를 사전 번역 값으로 다시 그림. */
 function refreshTempleMarkerLanguage(lang) {
-    if (typeof translateTempleName !== 'function') return; // 사전 파일 미로드 페이지는 무시
+    var hasTempleDict = typeof translateTempleName === 'function'; // 사전 파일 미로드 페이지는 사찰명/주소는 건너뜀
+    var favoriteText = favoriteTooltipText(lang);
     window.__templeMarkerRegistry.forEach(function (entry) {
         var temple = entry.temple;
-        var name = translateTempleName(temple.name, lang);
-        var address = translateTempleAddress(temple.address, temple.name, lang);
-        if (entry.tooltipEl) entry.tooltipEl.innerText = name;
-        if (entry.infoNameEl) entry.infoNameEl.textContent = name;
-        if (entry.infoAddressEl) entry.infoAddressEl.textContent = address;
+        if (hasTempleDict) {
+            var name = translateTempleName(temple.name, lang);
+            var address = translateTempleAddress(temple.address, temple.name, lang);
+            // 클래스를 먼저 바꾼 뒤 텍스트를 써야 관찰자가 새 텍스트를 볼 때 이미 보호돼 있음
+            var protectName = isTempleTextFromDict(temple.name, 'name', lang);
+            var protectAddress = isTempleTextFromDict(temple.name, 'address', lang);
+            if (entry.tooltipEl) { entry.tooltipEl.classList.toggle('no-translate', protectName); entry.tooltipEl.innerText = name; }
+            if (entry.infoNameEl) { entry.infoNameEl.classList.toggle('no-translate', protectName); entry.infoNameEl.textContent = name; }
+            if (entry.infoAddressEl) { entry.infoAddressEl.classList.toggle('no-translate', protectAddress); entry.infoAddressEl.textContent = address; }
+        }
+        if (entry.favoriteTooltipEl) entry.favoriteTooltipEl.innerText = favoriteText;
     });
+}
+
+/** 즐겨찾기 별 버튼 말풍선 문구 - common.js 전역 사전(I18N_MANUAL_OVERRIDES)을 그대로 씀. */
+function favoriteTooltipText(lang) {
+    var override = (lang !== 'ko' && typeof I18N_MANUAL_OVERRIDES !== 'undefined')
+        && I18N_MANUAL_OVERRIDES['즐겨찾기'] && I18N_MANUAL_OVERRIDES['즐겨찾기'][lang];
+    return override || '즐겨찾기';
 }
 window.refreshTempleMarkerLanguage = refreshTempleMarkerLanguage;
 
@@ -115,6 +129,10 @@ function createTempleMarker(map, temple) {
     nameTooltipContent.style.cssText =
         'padding:2px 6px;font-size:11px;font-weight:bold;white-space:nowrap;' +
         'background:white;border:1px solid #ccc;border-radius:4px;';
+    var hasDict = typeof isTempleTextFromDict === 'function';
+    var protectName = hasDict && isTempleTextFromDict(temple.name, 'name', currentLang);
+    var protectAddress = hasDict && isTempleTextFromDict(temple.name, 'address', currentLang);
+    if (protectName) nameTooltipContent.classList.add('no-translate');
     nameTooltipContent.innerText = displayName;
 
     var nameTooltip = new kakao.maps.CustomOverlay({
@@ -131,12 +149,12 @@ function createTempleMarker(map, temple) {
         infoContent.innerHTML =
             '<button type="button" class="info-close-btn" style="position:absolute;top:0;right:0;border:none;background:none;font-size:19px;line-height:1;cursor:pointer;color:#999;padding:2px 4px;">×</button>' +
             '<div style="display:flex;align-items:center;gap:6px;white-space:nowrap;padding-right:16px;">' +
-            '  <div class="temple-info-name" style="font-size:15px;font-weight:bold;">' + displayName + '</div>' +
+            '  <div class="temple-info-name' + (protectName ? ' no-translate' : '') + '" style="font-size:15px;font-weight:bold;">' + displayName + '</div>' +
             '  <span class = "favorite-wrapper" style="position:relative;display:inline-flex;">' +
             '  <button type="button" class="favorite-star-btn" style="border:none;background:none;font-size:19px;line-height:1;cursor:pointer;color:' + (temple.favorited ? '#f4c25c' : '#ccc') + ';padding:0;">★</button>' +
             '  </span>' +
             '</div>' +
-            '<div class="temple-info-address" style="font-size:13px;white-space:nowrap;">' + displayAddress + '</div>' +
+            '<div class="temple-info-address' + (protectAddress ? ' no-translate' : '') + '" style="font-size:13px;white-space:nowrap;">' + displayAddress + '</div>' +
             '<div style="margin-top:6px;white-space:nowrap;">' +
             '  <a href="/temple-detail/' + temple.templeId + '" style="font-size:12px;color:#2e86de;text-decoration:none;">상세보기</a>' +
             '  <a href="#" class="zoom-detail-link" style="font-size:12px;color:#2e86de; text-decoration:none;margin-left:10px;">가까이 보기</a>' +
@@ -177,7 +195,7 @@ function createTempleMarker(map, temple) {
             'padding:2px 6px;font-size:11px;font-weight:bold;white-space:nowrap;' +
             'background:white;border:1px solid #ccc;border-radius:4px;' +
             'display:none;';
-    favoriteTooltip.innerText = '즐겨찾기';
+    favoriteTooltip.innerText = favoriteTooltipText(currentLang);
     favoriteWrapper.appendChild(favoriteTooltip);
 
     favoriteBtn.addEventListener('mouseenter', function() {
@@ -332,7 +350,8 @@ function createTempleMarker(map, temple) {
         temple: temple,
         tooltipEl: nameTooltipContent,
         infoNameEl: infoContent.querySelector('.temple-info-name'),
-        infoAddressEl: infoContent.querySelector('.temple-info-address')
+        infoAddressEl: infoContent.querySelector('.temple-info-address'),
+        favoriteTooltipEl: favoriteTooltip
     });
 
     return marker;

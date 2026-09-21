@@ -63,6 +63,7 @@ public class TempleStayReservationService {
 				.endDate(entity.getEndDate())
 				.participantCount(entity.getParticipantCount())
 				.note(entity.getNote())
+				.lang(entity.getLang())
 				.status(entity.getStatus())
 				.canceledAt(entity.getCanceledAt())
 				.createdAt(entity.getCreatedAt())
@@ -116,6 +117,7 @@ public class TempleStayReservationService {
 				.endDate(dto.getEndDate())
 				.participantCount(dto.getParticipantCount())
 				.note(dto.getNote())
+				.lang(normalizeLang(dto.getLang()))
 				.status(TempleStayReservationEntity.Status.예약확정)
 				.build();
 
@@ -133,6 +135,11 @@ public class TempleStayReservationService {
 				.build();
 	}
 	
+	/** 쿠키/요청에서 들어온 값이라 신뢰할 수 없음 - 지원 언어(ko/ja/en) 외에는 전부 ko로 */
+	private static String normalizeLang(String lang) {
+		return "ja".equals(lang) || "en".equals(lang) ? lang : "ko";
+	}
+
 	/** 마이페이지 허브 카드의 "예약 N건" 배지용 */
 	public long countMyReservations(String loginId) {
 		return tsrr.countByLoginId(loginId);
