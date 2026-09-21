@@ -110,6 +110,10 @@ function renderList() {
     listEl.innerHTML = `<div class="review-empty">${
       state.query ? '검색 결과가 없습니다.' : '등록된 후기가 없습니다.'
     }</div>`;
+    // 아코디언 펼치기/정렬/검색마다 목록을 통째로 다시 그려서, 번역해둔 언어라면 그 순간
+    // 원문(한국어)이 화면에 잠깐 보였다가 번역으로 바뀌는 게 눈에 띄었다 - MutationObserver의
+    // 디바운스를 기다리지 않고 그린 직후 바로 재번역을 건다(common.js).
+    window.i18nRetranslateNow && window.i18nRetranslateNow();
     return;
   }
 
@@ -117,6 +121,7 @@ function renderList() {
   const pageRows = state.filtered.slice(start, start + PAGE_SIZE);
 
   listEl.innerHTML = pageRows.map(renderItem).join('');
+  window.i18nRetranslateNow && window.i18nRetranslateNow();
 
   listEl.querySelectorAll('.review-summary').forEach((btn) => {
     btn.addEventListener('click', () => {

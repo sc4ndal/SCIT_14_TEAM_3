@@ -109,7 +109,7 @@ kakao.maps.load(function () {
     var isLoggedIn = !!document.getElementById('auth-info');
     // null = 검색으로 제한된 게 없음(전체 대상), 배열이면 그 안의 templeId만 허용
     var searchMatchedIds = null;
-
+    if (!IS_TEMPLE_ACCOUNT) {
     fetch('/api/favoritetemples')
         .then(function (response) {
             if (!response.ok) throw new Error('로그인이 필요합니다.')
@@ -124,6 +124,7 @@ kakao.maps.load(function () {
         .catch(function () {
             favoriteTempleIds.length = 0;
         });
+        }
     showLoading('사찰 정보를 불러오는 중...');
     fetch('/api/temples')
         .then(function (response) {
@@ -208,25 +209,29 @@ kakao.maps.load(function () {
             var li = document.createElement('li');
             var displayName = (typeof translateTempleName === 'function') ? translateTempleName(temple.name, listLang) : temple.name;
             var displayAddress = (typeof translateTempleAddress === 'function') ? translateTempleAddress(temple.address, temple.name, listLang) : temple.address;
-            // 검색 결과 리스트에 사찰 이름이랑 주소 표시
-            li.innerHTML =
-                '<div class="result-row" style="display:flex;align-items:center;justify-content:space-between;gap:6px;">' +
-                '  <div class="result-name' + (isTempleTextFromDict(temple.name, 'name', listLang) ? ' no-translate' : '') + '">' + displayName + '</div>' +
-                '  <button type="button" class="result-favorite-btn" style="border:none;background:none;font-size:16px;line-height:1;cursor:pointer;color:#ccc;padding:0;">★</button>' +
-                '</div>' +
-                '<div class="result-address' + (isTempleTextFromDict(temple.name, 'address', listLang) ? ' no-translate' : '') + '">' + displayAddress + '</div>' +
-                '<div class="result-types" style="margin-top:4px;">' + buildTypeTagsHtml(temple, listLang) + '</div>';
+            // 검색 결과 리스트에 사찰 이름이랑 주소 표시, 사찰 관리자 계정은 즐겨찾기가 보이지 않도록 설정
+             var resultFavoriteHtml = IS_TEMPLE_ACCOUNT ? '' :
+                '  <button type="button" class="result-favorite-btn" style="border:none;background:none;font-size:16px;line-height:1;cursor:pointer;color:#ccc;padding:0;">★</button>';
 
-            var favoriteBtn = li.querySelector('.result-favorite-btn');
+                        li.innerHTML =
+                            '<div class="result-row" style="display:flex;align-items:center;justify-content:space-between;gap:6px;">' +
+                            '  <div class="result-name' + (isTempleTextFromDict(temple.name, 'name', listLang) ? ' no-translate' : '') + '">' + displayName + '</div>' +
+                            resultFavoriteHtml +
+                            '</div>' +
+                            '<div class="result-address' + (isTempleTextFromDict(temple.name, 'address', listLang) ? ' no-translate' : '') + '">' + displayAddress + '</div>' +
+                            '<div class="result-types" style="margin-top:4px;">' + buildTypeTagsHtml(temple, listLang) + '</div>';
 
-            // 이미 즐겨찾기 되어있는 사찰이면 처음부터 별표를 채워서 보여줌
-            if (favoriteTempleIds.indexOf(temple.templeId) !== -1) {
-                favoriteBtn.classList.add('active');
-                favoriteBtn.style.color = '#f4c25c';
-            }
+                        if (!IS_TEMPLE_ACCOUNT) {
+                        var favoriteBtn = li.querySelector('.result-favorite-btn');
 
-            // 별표 클릭 - 토글 요청 보내기
-            favoriteBtn.addEventListener('click', function (e) {
+                        // 이미 즐겨찾기 되어있는 사찰이면 처음부터 별표를 채워서 보여줌
+                        if (favoriteTempleIds.indexOf(temple.templeId) !== -1) {
+                            favoriteBtn.classList.add('active');
+                            favoriteBtn.style.color = '#f4c25c';
+                        }
+
+                        // 별표 클릭 - 토글 요청 보내기
+                        favoriteBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
 
                 fetch('/api/favoritetemples/' + temple.templeId + '/toggle', {
@@ -257,12 +262,14 @@ kakao.maps.load(function () {
                         }
                         applyFilters();
                     })
-                    .catch(function (error) {
-                        console.error(error);
-                        alert('로그인 후 즐겨찾기가 가능합니다.');
-                        location.href = '/login';
-                    });
-            });
+                                  .catch(function (error) {
+                                      console.error(error);
+                                      alert('로그인 후 즐겨찾기가 가능합니다.');
+                                      location.href = '/login';
+                                  });
+                          });
+                          }
+
 
         // 목록 항목에 마우스 올리면 지도 위 해당 마커도 밝은 색으로 눈에 띄게
         li.addEventListener('mouseenter', function() {
@@ -406,7 +413,19 @@ kakao.maps.load(function () {
         }
     });
 
-    var favoriteFilterBtn = document.getElementById('filter-favorite');
+               var favoriteFilterBtn = document.getElementById('filter-favorite');
+
+               if (IS_TEMPLE_ACCOUNT) {
+                   var favoriteSection = favoriteFilterBtn && favoriteFilterBtn.closest('.filter-section');
+                   if (favoriteSection) {
+                       // 즐겨찾기 섹션 바로 앞의 구분선(|)도 같이 숨겨야 끝에 구분선만 덩그러니 안 남음
+                       var prevDivider = favoriteSection.previousElementSibling;
+                       if (prevDivider && prevDivider.classList.contains('filter-divider')) {
+                           prevDivider.style.display = 'none';
+                       }
+                       favoriteSection.style.display = 'none';
+                   }
+               }
     favoriteFilterBtn.addEventListener('click', function () {
         if (!isLoggedIn) {
             alert('로그인 후 회원의 즐겨찾기 사찰을 볼 수 있습니다.\n로그인 페이지로 이동합니다.');

@@ -165,11 +165,17 @@
         #progress-steps li.active {
           color: var(--pine-deep);
         }
+        #progress-steps li.active::before {
+          background: var(--pine);
+        }
         #progress-steps li.active::after {
           border-color: var(--pine);
           background: var(--pine);
         }
-        #progress-steps li.active::before {
+        #progress-steps li:has(~ li.active)::before {
+          background: var(--pine);
+        }
+        #progress-steps li:has(~ li.active)::after {
           background: var(--pine);
         }
 
@@ -453,7 +459,7 @@
         }
 
         /* ---------- Buttons (shared) ---------- */
-        .btn-primary, #go-to-reserve-btn, #step2-submit-btn {
+        .btn-primary, #go-to-reserve-btn, #step2-submit-btn, #go-to-my-reservations-btn {
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -470,7 +476,7 @@
           transition: transform 0.15s ease, opacity 0.15s ease;
         }
         .btn-primary:hover, #go-to-reserve-btn:not(:disabled):hover,
-        #step2-submit-btn:hover {
+        #step2-submit-btn:hover, #go-to-my-reservations-btn:hover {
           transform: translateY(-1px);
         }
         #go-to-reserve-btn:disabled {
@@ -501,7 +507,7 @@
         }
 
         .btn-ghost, #step2-back-btn,
-        #step3-back-to-list-btn, #go-to-my-reservations-btn {
+        #step3-back-to-list-btn {
           background: none;
           border: 1px solid var(--line);
           color: var(--ink-soft);
@@ -512,16 +518,16 @@
           cursor: pointer;
         }
         .btn-ghost:hover, #step2-back-btn:hover,
-        #step3-back-to-list-btn:hover, #go-to-my-reservations-btn:hover {
+        #step3-back-to-list-btn:hover {
           border-color: var(--pine);
           color: var(--pine-deep);
         }
-        #go-to-my-reservations-btn {
-          border-color: var(--pine);
-          color: var(--pine-deep);
+        .step3-actions #step3-back-to-list-btn {
+          padding: 13px 26px;
+          font-size: 15px;
         }
         @media (prefers-reduced-motion: reduce) {
-          .btn-primary, #go-to-reserve-btn, #step2-submit-btn { transition: none; }
+          .btn-primary, #go-to-reserve-btn, #step2-submit-btn, #go-to-my-reservations-btn { transition: none; }
         }
 
         /* ---------- Step 2 ---------- */
@@ -535,6 +541,11 @@
           flex-wrap: wrap;
           gap: 4px 18px;
           align-items: baseline;
+        }
+        .price-note {
+          font-size: 11.5px;
+          color: var(--ink-faint);
+          font-weight: 500;
         }
         #selected-program-summary .program-title { font-size: 16px; }
         #selected-program-summary .program-temple-region { margin: 0; font-size: 13px; }
@@ -715,12 +726,27 @@
           flex-direction: column;
           gap: 4px;
         }
+        #step-3 {
+          display: flex;
+          flex-direction: column;
+          gap: 32px;
+        }
+        .step3-actions {
+          margin-top: 0;
+        }
+        #step-3[hidden] {
+          display: none;
+        }
         #reservation-result-summary p { margin: 0 0 10px; font-size: 14.5px; color: var(--ink-soft); }
         #result-reservation-id {
           font-family: "IBM Plex Mono", monospace;
           font-weight: 700;
           color: var(--pine-deep);
           font-size: 16px;
+          padding-bottom: 14px;
+          margin-bottom: 14px !important;
+          border-bottom: 1px solid var(--line-soft);
+          font-size: 17px;
         }
         .result-row {
           display: flex;
@@ -739,47 +765,97 @@
           letter-spacing: 0.02em;
         }
         .result-row > span:last-child { text-align: right; }
-        #result-program-title { font-family: "Noto Serif KR", serif; font-weight: 700; font-size: 18px; color: var(--ink); }
+        #result-program-title { font-family: "Noto Serif KR", serif; font-weight: 700; font-size: 19px; color: var(--ink); }
+        #result-date-range {
+          font-weight: 700;
+          color: var(--ink);
+          font-family: "IBM Plex Mono", monospace;
+          font-variant-numeric: tabular-nums;
+        }
+        #result-total-amount {
+          font-family: "IBM Plex Mono", monospace;
+          font-weight: 700;
+          font-size: 17px;
+          color: var(--pine-deep);
+        }
         #result-status {
           display: inline-block;
           width: fit-content;
           font-family: "IBM Plex Mono", monospace;
-          font-size: 12px;
+          font-size: 13px;
           font-weight: 600;
           color: var(--gold);
           background: var(--gold-tint);
           border-radius: 100px;
-          padding: 3px 10px;
+          padding: 4px 12px;
+        }
+        #result-applied-at,
+        #result-participant-count,
+        #result-payment-method {
+          color: var(--ink-faint);
+          font-size: 13.5px;
+        }
+        .result-row:has(#result-date-range) {
+          margin-top: 6px;
+          border-top: 1px solid var(--line-soft);
+          padding-top: 16px;
+        }
+        .result-row:has(#result-total-amount) {
+          margin-top: 6px;
+          border-top: 1px solid var(--line-soft);
+          padding-top: 16px;
         }
         .result-section { padding: 10px 14px; border-bottom: 1px solid var(--line-soft); }
         .result-section .result-label { display: block; margin-bottom: 10px; }
         #result-map {
           width: 100%;
-          height: 200px;
+          height: 250px;
           border-radius: 10px;
           border: 1px solid var(--line);
           margin-top: 4px;
         }
-        .result-participant-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-        .result-participant-table th, .result-participant-table td {
+        .result-participant-table {
+          width: 100%;
+          border: 1px solid var(--line-soft);
+          border-radius: 10px;
+          border-collapse: separate;
+          border-spacing: 0;
+          overflow: hidden;
+          font-size: 13.5px;
+                }
+        .result-participant-table th {
           text-align: left;
-          padding: 7px 8px;
+          padding: 9px 10px;
+          background: var(--pine-tint);
+          color: var(--pine-deep);
+          font-family: "IBM Plex Mono", monospace;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          font-size: 11px;
+          font-weight: 600;
+         }
+        .result-participant-table td {
+          text-align: left;
+          padding: 10px;
+          color: var(--ink-soft);
           border-bottom: 1px solid var(--line-soft);
         }
-        .result-participant-table th { color: var(--ink-faint); font-weight: 600; font-size: 12px; }
-        .result-participant-table tr:last-child td { border-bottom: none; }
-        .step3-actions {
-          display: flex;
-          justify-content: center;
-          gap: 12px;
-          margin-top: 24px;
+        .result-participant-table td:first-child {
+          font-weight: 600;
+          color: var(--ink);
+        }
+        .result-participant-table tbody tr:nth-child(even) {
+          background: var(--bg);
+        }
+        .result-participant-table tbody tr:last-child td {
+          border-bottom: none;
         }
     </style>
 </head>
 <body>
 <div id="auth-info" style="display:none;"
      sec:authorize="isAuthenticated()"
-     th:attr="data-login-id=${#authentication.principal.username}, data-nickname=${#authentication.principal.nickname}">
+     th:attr="data-login-id=${#authentication.principal.username}, data-nickname=${#authentication.principal.nickname}, data-temple-account=${#authentication.principal.templeAccount}">
 </div>
 <header>
     <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
@@ -864,7 +940,7 @@
                 <div class="program-card-footer">
                     <div class="program-price">
                         <span class="price-adult"><!-- 성인 가격 --></span>
-                        <span class="price-minor"><!-- 미성년 가격 (있다면) --></span>
+                        <span class="price-note">(성인 가격 기준)</span>
                     </div>
                     <button type="button" class="program-detail-btn">상세보기</button>
                 </div>

@@ -145,11 +145,7 @@ public class TempleStayReservationService {
 		return tsrr.countByLoginId(loginId);
 	}
 
-	/**
-	 * 회원의 템플스테이 예약 목록
-	 * @param loginId
-	 * @return
-	 */
+	/** 회원의 템플스테이 예약 목록 */
 	public List<TempleStayReservationDTO> findByMyReservation(String loginId) {
 		List<TempleStayReservationDTO> dtoList = new ArrayList<>();
 		List<TempleStayReservationEntity> list = tsrr.findByLoginId(loginId);
@@ -170,6 +166,11 @@ public class TempleStayReservationService {
 		}
 		return dtoList;
 	}
+	
+	/**
+	 * 회원 예약 취소
+	 * 예약 취소 요청이 오면, 취소 가능한 상태인지 검증한 다음 상태(status)를 '취소'로 바꾼다.
+	 */
 	@CacheEvict(value = {"programs", "programsByTemple", "program"}, allEntries = true)
 	public TempleStayReservationDTO canceledMyReservation(Long reservationId) {
 		TempleStayReservationEntity entity = tsrr.findById(reservationId).orElseThrow(() -> new EntityNotFoundException("해당되는 템플스테이 예약 번호가 존재하지 않습니다."));

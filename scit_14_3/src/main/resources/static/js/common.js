@@ -95,6 +95,17 @@ const I18N_MANUAL_OVERRIDES = {
     // 탈퇴한 회원의 리뷰 작성자 자리에 서버(TempleStayReviewService.authorDisplayName)가 넣는
     // 고정 문구 - 닉네임과 달리 사용자 입력값이 아니라서 번역 대상(.no-translate를 안 붙임)
     '탈퇴한 회원': { ja: '退会した会員', en: 'Withdrawn member' },
+
+    // ── 전체 후기 모아보기(templestay/reviews.js) 아코디언 토글 라벨 - 펼치기 전엔 화면에 없다가
+    // 처음 펼칠 때 새로 생기는 문구라, 사전에 없으면 그 순간 Translator API를 호출해야 해서
+    // (캐시 미스) i18nRetranslateNow를 써도 그 찰나에는 여전히 원문이 잠깐 보일 수 있었다 -
+    // 다른 고정 UI 라벨처럼 사전에 미리 박아 API 호출 자체를 없앤다.
+    '자세히': { ja: '詳細', en: 'Details' },
+    '접기': { ja: '閉じる', en: 'Collapse' },
+    // 검색 결과가 0건일 때만 새로 생기는 안내문 - 정상 목록엔 아예 없던 문구라 마찬가지로
+    // 검색해보기 전까진 캐시가 비어 있어 API 호출 지연(수백ms) 동안 원문이 보였다.
+    '검색 결과가 없습니다.': { ja: '検索結果がありません。', en: 'No results were found for your search.' },
+    '등록된 후기가 없습니다.': { ja: '登録されたレビューがありません。', en: 'No reviews have been registered yet.' },
     '사찰 등록 요청 목록': { ja: '寺院登録リクエスト一覧', en: 'Temple Registration Requests' },
     '로그아웃': { ja: 'ログアウト', en: 'Log Out' },
 
@@ -270,6 +281,18 @@ async function retranslateNewContent(lang){
         console.warn('[common.js] 새로 생긴 텍스트 번역 중 오류가 발생했습니다.', e);
     }
 }
+
+/** reviews.js처럼 목록을 통째로 innerHTML로 다시 그리는 페이지가, 그 직후 바로 불러서 쓰는 용도.
+    MutationObserver(startI18nObserver)에만 맡기면 150ms 디바운스 + 그다음 setTimeout 콜백까지
+    기다리는 동안 새로 그려진 원문(한국어)이 그대로 화면에 페인트됐다가 번역으로 바뀌는 게 눈에
+    보였다(아코디언을 펼칠 때 한국어가 잠깐 보이는 현상). 렌더링한 쪽이 직접, 같은 이벤트 처리
+    안에서 곧바로 재번역을 걸면 - 이미 번역해둔 문구는 캐시에서 바로 채워지므로(Translator API를
+    다시 안 부름) 마이크로태스크 큐에서 끝나 브라우저가 그 사이에 화면을 그릴 틈이 없다. */
+window.i18nRetranslateNow = function(){
+    if(i18nOriginalTextNodes && i18nCurrentLang !== I18N_SOURCE_LANG){
+        retranslateNewContent(i18nCurrentLang);
+    }
+};
 
 function startI18nObserver(){
     if(i18nObserver) return;

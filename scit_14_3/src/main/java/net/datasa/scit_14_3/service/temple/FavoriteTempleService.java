@@ -23,10 +23,10 @@ public class FavoriteTempleService {
 	private final TempleService ts;
 	private final TempleRepository tr;
 	
+	/** 즐겨찾기가 되어 있으면 취소로 변경, 즐겨찾기가 되어 있지 않으면 등록 */
 	public boolean toggleFavoriteTemple(String loginId, Long templeId) {
 		boolean alreadyFavoriteTemple = ftr.existsByLoginIdAndTemple_TempleId(loginId, templeId);
 		
-		// 즐겨찾기가 되어 있으면 취소로 변경, 즐겨찾기가 되어 있지 않으면 등록
 		if(alreadyFavoriteTemple) {
 			ftr.deleteByLoginIdAndTemple_TempleId(loginId, templeId);
 			return false;
@@ -42,21 +42,12 @@ public class FavoriteTempleService {
 		}
 	}
 	
-	/**
-	 * 즐겨찾기 여부(확인용)
-	 * @param loginId
-	 * @param templeId
-	 * @return ftr.existsByLoginIdAndTemple_TempleId(loginId, templeId);
-	 */
+	/** 즐겨찾기 여부(확인용) */
 	public boolean isFavoriteTemple(String loginId, Long templeId) {
 		return ftr.existsByLoginIdAndTemple_TempleId(loginId, templeId);
 	}
 	
-	/**
-	 * 마이페이지 즐겨찾기 목록
-	 * @param loginId
-	 * @return ftr.findByLoginId(loginId);
-	 */
+	/** 마이페이지 즐겨찾기 목록 */
 	public List<FavoriteTempleEntity> getMyFavoriteTemple(String loginId) {
 		return ftr.findByLoginId(loginId);
 	}

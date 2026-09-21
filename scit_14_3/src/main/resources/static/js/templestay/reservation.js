@@ -40,7 +40,7 @@ const API = {
   //   POST /payments  body: { reservationId, paymentMethod, depositorName, kakaoTid }
   createPayment: '/payments',
 };
- 
+
 // ------------------------- 목데이터 (findAll 만들기 전까지 임시) -------------------------
 // 실제로는 GET /temples + GET /templestayprograms 응답을 합쳐서 아래와 같은 모양을 만들면 됨.
 // TempleStayProgramDTO 필드명(programId, templeId, title, programType, price, duration, maxParticipant,
@@ -78,7 +78,7 @@ const MOCK_PROGRAMS = [
     templePrecautions: '식이 제한(알레르기 등)이 있으면 사전에 알려주세요.',
   },
 ];
- 
+
 // ------------------------- state -------------------------
 const state = {
   step: 1,                    // 1: 목록/상세, 2: 예약신청, 3: 신청완료
@@ -239,6 +239,7 @@ function renderProgramList() {
       <div class="program-card-footer">
         <div class="program-price">
           <span class="price-adult no-translate">${trWon(p.price)}</span>
+          <span class="price-note">(성인 가격 기준)</span>
         </div>
         <a class="program-detail-btn" href="/reservation/programs/${p.programId}">상세보기</a>
       </div>
@@ -784,31 +785,11 @@ async function renderStep3() {
   if (program.programId != null) loadResultMap(program);
 }
 
-// 신청 완료 화면의 위치 지도. templestayView.js의 loadDetailMap과 같은 패턴이지만
-// #result-map 컨테이너용으로 별도 지도 인스턴스를 씀(같은 지도 객체를 두 컨테이너에서 못 씀).
-var _resultMap = null;
-var _resultMarker = null;
+// 신청 완료 화면의 위치 지도. #result-map 컨테이너용 상태는 여기서 따로 들고 있고,
+// 실제 생성/갱신 로직은 mapCommon.js의 loadTempleDetailMap을 공유해서 씀.
+var _resultMapState = { map: null, marker: null };
 function loadResultMap(program) {
-  if (typeof kakao === 'undefined' || !program.latitude || !program.longitude) return;
-  kakao.maps.load(() => {
-    const position = new kakao.maps.LatLng(program.latitude, program.longitude);
-    if (!_resultMap) {
-      _resultMap = new kakao.maps.Map(document.getElementById('result-map'), { center: position, level: 4 });
-    }
-    // 지도를 만들 때 #step-3가 막 hidden이 풀린 직후라 컨테이너 크기가 0으로 측정돼서
-    // 마커 위치가 어긋나던 문제 - relayout으로 컨테이너 크기를 다시 재게 함.
-    _resultMap.relayout();
-    _resultMap.setCenter(position);
-    if (_resultMarker) _resultMarker.setMap(null);
-    _resultMarker = createTempleMarker(_resultMap, {
-      templeId: program.templeId,
-      lat: program.latitude,
-      lng: program.longitude,
-      name: program.templeName,
-      address: program.templeAddress,
-      iconUrl: '/images/temple-marker.svg',
-    });
-  });
+  loadTempleDetailMap('result-map', program, _resultMapState);
 }
 
 document.getElementById('go-to-my-reservations-btn').addEventListener('click', () => {

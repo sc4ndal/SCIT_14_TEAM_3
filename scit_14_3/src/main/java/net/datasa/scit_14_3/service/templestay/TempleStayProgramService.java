@@ -88,14 +88,10 @@ public class TempleStayProgramService {
 				.toList();
 	}
 
-	/**
-	 * 데이터 불러오기
-	 * @param programId
-	 * @return
-	 */
-	// 프로그램 상세보기 화면 전용 - getAll()과 같은 이유(원격 DB 왕복 + reservedCount가
-	// 예약 생성/취소로 바뀜)로 캐싱하고, 같은 evict 지점들(아래 register/update/delete,
-	// TempleStayReservationService의 예약 생성/취소)에서 이 캐시도 같이 비운다.
+	/** 상세보기 페이지에 해당 템플스테이 프로그램 데이터 불러오기
+	 프로그램 상세보기 화면 전용 - getAll()과 같은 이유(원격 DB 왕복 + reservedCount가
+	예약 생성/취소로 바뀜)로 캐싱하고, 같은 evict 지점들(아래 register/update/delete,
+	TempleStayReservationService의 예약 생성/취소)에서 이 캐시도 같이 비운다. */
 	@Cacheable(value = "program", key = "#programId")
 	public TempleStayProgramDTO getInfo(Long programId) {
 		TempleStayProgramEntity entity = tspr.findByIdWithTemple(programId).orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
@@ -103,13 +99,11 @@ public class TempleStayProgramService {
 	}
 
 	/**
-	 * 전제조회
-	 * @return
-	 */
-	// 프로그램 목록 화면에서 페이지 이동마다 호출되는데 Aiven(원격 DB) 왕복 + 대용량 description
-	// 텍스트 전송이 겹쳐서 체감이 큼 - 캐싱하되, reservedCount(예약된 인원)가 섞여 있어서
-	// 예약 생성/취소로도 값이 바뀐다. 그래서 프로그램 등록/수정/삭제뿐 아니라
-	// TempleStayReservationService의 예약 생성/취소 지점들에서도 같은 캐시("programs")를 비운다.
+	 * 예약 페이지 목록 화면에 템플스테이 프로그램 목록 전체조회
+	 프로그램 목록 화면에서 페이지 이동마다 호출되는데 Aiven(원격 DB) 왕복 + 대용량 description
+	 텍스트 전송이 겹쳐서 체감이 큼 - 캐싱하되, reservedCount(예약된 인원)가 섞여 있어서
+	 예약 생성/취소로도 값이 바뀐다. 그래서 프로그램 등록/수정/삭제뿐 아니라
+	 TempleStayReservationService의 예약 생성/취소 지점들에서도 같은 캐시("programs")를 비운다. */
 	@Cacheable("programs")
 	public List<TempleStayProgramDTO> getAll() {
 		return toDtoList(tspr.findAllWithTemple());

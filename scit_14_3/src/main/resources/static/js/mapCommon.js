@@ -58,6 +58,14 @@ function favoriteTooltipText(lang) {
 }
 window.refreshTempleMarkerLanguage = refreshTempleMarkerLanguage;
 
+// 사찰 관리자(TEMPLE 계정)는 즐겨찾기 기능이 없으므로, 마커/목록/필터의 즐겨찾기 UI를
+// 전부 숨기는 데 이 값을 씀. #auth-info의 data-temple-account는 각 페이지의 th:attr에서
+// AppUserDetails.isTempleAccount()를 그대로 넘겨받음.
+var IS_TEMPLE_ACCOUNT = (function () {
+    var authInfo = document.getElementById('auth-info');
+    return !!(authInfo && authInfo.dataset.templeAccount === 'true');
+})();
+
 // templeList.js(사찰 찾아보기)에서만 window.favoriteTempleIds를 초기화해뒀음 - 이 파일은
 // 사찰 상세/예약/프로그램뷰 페이지에서도 같이 쓰이는데 그 페이지들은 이 배열을 안 만들어서
 // 없으면 여기서 만들어둠(즐겨찾기 필터가 없는 페이지에서도 에러 안 나게).
@@ -144,22 +152,25 @@ function createTempleMarker(map, temple) {
     marker.nameTooltip = nameTooltip; // 목록에서 마우스 올렸을 때도 이름표를 띄우기 위해 마커에 붙여둠
 
     // 5. 클릭했을 때 뜨는 상세 정보창 (이름 + 주소, X 버튼으로 닫기 가능)
-        var infoContent = document.createElement('div');
-        infoContent.style.cssText = 'padding:5px;position:relative;';
-        infoContent.innerHTML =
-            '<button type="button" class="info-close-btn" style="position:absolute;top:0;right:0;border:none;background:none;font-size:19px;line-height:1;cursor:pointer;color:#999;padding:2px 4px;">×</button>' +
-            '<div style="display:flex;align-items:center;gap:6px;white-space:nowrap;padding-right:16px;">' +
-            '  <div class="temple-info-name' + (protectName ? ' no-translate' : '') + '" style="font-size:15px;font-weight:bold;">' + displayName + '</div>' +
-            '  <span class = "favorite-wrapper" style="position:relative;display:inline-flex;">' +
-            '  <button type="button" class="favorite-star-btn" style="border:none;background:none;font-size:19px;line-height:1;cursor:pointer;color:' + (temple.favorited ? '#f4c25c' : '#ccc') + ';padding:0;">★</button>' +
-            '  </span>' +
-            '</div>' +
-            '<div class="temple-info-address' + (protectAddress ? ' no-translate' : '') + '" style="font-size:13px;white-space:nowrap;">' + displayAddress + '</div>' +
-            '<div style="margin-top:6px;white-space:nowrap;">' +
-            '  <a href="/temple-detail/' + temple.templeId + '" style="font-size:12px;color:#2e86de;text-decoration:none;">상세보기</a>' +
-            '  <a href="#" class="zoom-detail-link" style="font-size:12px;color:#2e86de; text-decoration:none;margin-left:10px;">가까이 보기</a>' +
-            '</div>';
+    // 5-1 : 정보창 안의 ★ 버튼을 조건부로만 넣기(사찰 관리자 계정)
+          var favoriteStarHtml = IS_TEMPLE_ACCOUNT ? '' :
+                    '  <span class = "favorite-wrapper" style="position:relative;display:inline-flex;">' +
+                    '  <button type="button" class="favorite-star-btn" style="border:none;background:none;font-size:19px;line-height:1;cursor:pointer;color:' + (temple.favorited ? '#f4c25c' : '#ccc') + ';padding:0;">★</button>' +
+                    '  </span>';
 
+                var infoContent = document.createElement('div');
+                infoContent.style.cssText = 'padding:5px;position:relative;';
+                infoContent.innerHTML =
+                    '<button type="button" class="info-close-btn" style="position:absolute;top:0;right:0;border:none;background:none;font-size:19px;line-height:1;cursor:pointer;color:#999;padding:2px 4px;">×</button>' +
+                    '<div style="display:flex;align-items:center;gap:6px;white-space:nowrap;padding-right:16px;">' +
+                    '  <div class="temple-info-name' + (protectName ? ' no-translate' : '') + '" style="font-size:15px;font-weight:bold;">' + displayName + '</div>' +
+                    favoriteStarHtml +
+                    '</div>' +
+                    '<div class="temple-info-address' + (protectAddress ? ' no-translate' : '') + '" style="font-size:13px;white-space:nowrap;">' + displayAddress + '</div>' +
+                    '<div style="margin-top:6px;white-space:nowrap;">' +
+                    '  <a href="/temple-detail/' + temple.templeId + '" style="font-size:12px;color:#2e86de;text-decoration:none;">상세보기</a>' +
+                    '  <a href="#" class="zoom-detail-link" style="font-size:12px;color:#2e86de; text-decoration:none;margin-left:10px;">가까이 보기</a>' +
+                    '</div>';
     // *. 위치 확대 기능
     var zoomDetailLink = infoContent.querySelector('.zoom-detail-link');
     zoomDetailLink.addEventListener('click', function (e){
@@ -169,131 +180,135 @@ function createTempleMarker(map, temple) {
         map.setCenter(position);
     })
 
-    var favoriteBtn = infoContent.querySelector('.favorite-star-btn');
-    var favoriteWrapper = infoContent.querySelector('.favorite-wrapper');
-    if (temple.favorited) favoriteBtn.classList.add('active');
+       var favoriteBtn = null;
+       var favoriteWrapper = null;
+       var favoriteTooltip = null;
+       if (!IS_TEMPLE_ACCOUNT) {
+           favoriteBtn = infoContent.querySelector('.favorite-star-btn');
+           favoriteWrapper = infoContent.querySelector('.favorite-wrapper');
+           if (temple.favorited) favoriteBtn.classList.add('active');
+       }
 
-     // * 커스텀 닫기 버튼: 정보창 닫으면서 선택된 마커 색도 원래대로 복구
-        var infoCloseBtn = infoContent.querySelector('.info-close-btn');
-        infoCloseBtn.addEventListener('click', function (e) {
-            e.stopPropagation(); // 지도까지 클릭이 전파돼서 다른 로직이 겹쳐 도는 걸 막음
-            infowindow.close();
-            marker.setZIndex(1); // 쌓임 순서도 원래대로 복구
-            marker.setImage(marker.normalImage); // 선택 색 원래대로 복구
-            if (currentOpenInfoWindow === infowindow) {
-                currentOpenInfoWindow = null;
-            }
-            if (currentOpenMarker === marker) {
-                currentOpenMarker = null;
-            }
+        // * 커스텀 닫기 버튼: 정보창 닫으면서 선택된 마커 색도 원래대로 복구
+           var infoCloseBtn = infoContent.querySelector('.info-close-btn');
+           infoCloseBtn.addEventListener('click', function (e) {
+               e.stopPropagation(); // 지도까지 클릭이 전파돼서 다른 로직이 겹쳐 도는 걸 막음
+               infowindow.close();
+               marker.setZIndex(1); // 쌓임 순서도 원래대로 복구
+               marker.setImage(marker.normalImage); // 선택 색 원래대로 복구
+               if (currentOpenInfoWindow === infowindow) {
+                   currentOpenInfoWindow = null;
+               }
+               if (currentOpenMarker === marker) {
+                   currentOpenMarker = null;
+               }
+           });
+
+       // 사찰 관리자(TEMPLE 계정)는 즐겨찾기 기능이 없으므로 6~8번(말풍선/조회/토글) 전부 건너뜀
+       if (!IS_TEMPLE_ACCOUNT) {
+           // 6. 즐겨찾기 버튼에 마우스 올렸을 때 뜨는 말풍선 (이름표랑 같은 스타일)
+           favoriteTooltip = document.createElement('div');
+           favoriteTooltip.style.cssText =
+               'position:absolute;bottom:120%;left:50%;transform:translateX(-50%);' +
+                   'padding:2px 6px;font-size:11px;font-weight:bold;white-space:nowrap;' +
+                   'background:white;border:1px solid #ccc;border-radius:4px;' +
+                   'display:none;';
+           favoriteTooltip.innerText = favoriteTooltipText(currentLang);
+           favoriteWrapper.appendChild(favoriteTooltip);
+
+           favoriteBtn.addEventListener('mouseenter', function() {
+               favoriteTooltip.style.display = 'block';
+           });
+           favoriteBtn.addEventListener('mouseleave', function() {
+               favoriteTooltip.style.display = 'none';
+           });
+
+           // 7. 정보창 열릴 때, 이미 즐겨찾기 되어있는지 서버에 물어봐서 별표 색 맞춰놓기
+           if (temple.favorited !== undefined) {
+               if (temple.favorited) {
+                   if (window.favoriteTempleIds.indexOf(temple.templeId) === -1) {
+                       window.favoriteTempleIds.push(temple.templeId);
+                   }
+               }
+           } else if (document.getElementById('auth-info')) {
+               fetch('/api/favoritetemples/' + temple.templeId)
+               .then(function (response){
+                   if (!response.ok) {
+                       throw new Error('즐겨찾기 상태 확인 실패');
+                   }
+                   return response.json();
+               })
+               .then(function (data) {
+                   if (data.favorite) {
+                       favoriteBtn.classList.add('active');
+                       favoriteBtn.style.color = '#f4c25c';
+                       if (window.favoriteTempleIds.indexOf(temple.templeId) === -1) {
+                           window.favoriteTempleIds.push(temple.templeId);
+                       }
+                   } else {
+                       favoriteBtn.classList.remove('active');
+                       favoriteBtn.style.color = '#ccc';
+                       var idx = window.favoriteTempleIds.indexOf(temple.templeId);
+                       if (idx !== -1) {
+                           window.favoriteTempleIds.splice(idx, 1)
+                       }
+                   }
+                   if (typeof window.refreshFavoriteFilter === 'function') {
+                       window.refreshFavoriteFilter();
+                   }
+               })
+               .catch(function (error) {
+                   console.error(error);
+               });
+           }
+
+           // 8. 별표 클릭하면 서버에 토글 요청 보내서 실제로 저장/삭제
+           favoriteBtn.addEventListener('click', function(e){
+                e.stopPropagation();
+                fetch('/api/favoritetemples/' + temple.templeId + '/toggle', {
+                   method: 'POST'
+               })
+                   .then(function (response) {
+                       if (!response.ok) {
+                           throw new Error('즐겨찾기 처리 실패 (로그인이 필요할 수 있어요.)');
+                       }
+                       return response.json();
+                   })
+                   .then(function (data) {
+                       if (data.favorite) {
+                           favoriteBtn.classList.add('active');
+                           favoriteBtn.style.color = '#f4c25c';
+                           if (window.favoriteTempleIds.indexOf(temple.templeId) === -1) {
+                               window.favoriteTempleIds.push(temple.templeId);
+                           }
+                       } else {
+                           favoriteBtn.classList.remove('active');
+                           favoriteBtn.style.color = '#ccc';
+                           var idx = window.favoriteTempleIds.indexOf(temple.templeId);
+                           if (idx !== -1) {
+                               window.favoriteTempleIds.splice(idx, 1);
+                           }
+                       }
+                       if (typeof window.refreshFavoriteFilter === 'function') {
+                           window.refreshFavoriteFilter();
+                       }
+                   })
+                   .catch(function (error) {
+                       console.error(error);
+                       alert('로그인 후 즐겨찾기가 가능합니다.')
+                       location.href = '/login';
+                   });
+           });
+       }
+        var infowindow = new kakao.maps.InfoWindow({
+            content: infoContent,
+            removable: false,
+            zIndex: 999999, // 마커 zIndex보다 훨씬 높게 잡아서 항상 마커 위에 뜨게 함
+            // 검색 지도(findTemple)는 위에 뜬 패널 때문에 autoPan을 꺼두지만,
+            // temple.autoPan을 true로 넘긴 페이지(상세보기 등)는 카카오가 알아서
+            // 위치를 보정하도록 autoPan을 켜준다.
+            disableAutoPan: !temple.autoPan
         });
-
-    // 6. 즐겨찾기 버튼에 마우스 올렸을 때 뜨는 말풍선 (이름표랑 같은 스타일)
-    var favoriteTooltip = document.createElement('div');
-    favoriteTooltip.style.cssText =
-        'position:absolute;bottom:120%;left:50%;transform:translateX(-50%);' +
-            'padding:2px 6px;font-size:11px;font-weight:bold;white-space:nowrap;' +
-            'background:white;border:1px solid #ccc;border-radius:4px;' +
-            'display:none;';
-    favoriteTooltip.innerText = favoriteTooltipText(currentLang);
-    favoriteWrapper.appendChild(favoriteTooltip);
-
-    favoriteBtn.addEventListener('mouseenter', function() {
-        favoriteTooltip.style.display = 'block';
-    });
-    favoriteBtn.addEventListener('mouseleave', function() {
-        favoriteTooltip.style.display = 'none';
-    });
-
-    // 7. 정보창 열릴 때, 이미 즐겨찾기 되어있는지 서버에 물어봐서 별표 색 맞춰놓기
-    // 호출부가 temple.favorited를 이미 넘겨준 경우(templeList.js처럼 /api/temples가 한 번에
-    // 다 채워서 내려준 경우)는 위 3번/6번에서 이미 별색을 맞춰놨으니 같은 정보를 또
-    // 물어보지 않고 favoriteTempleIds만 맞춰준다. 안 넘겨준 경우(templeDetail.js,
-    // reservation.js, templestayView.js - 단일 마커라 미리 조회 안 함)만 여기서 조회.
-    if (temple.favorited !== undefined) {
-        if (temple.favorited) {
-            if (window.favoriteTempleIds.indexOf(temple.templeId) === -1) {
-                window.favoriteTempleIds.push(temple.templeId);
-            }
-        }
-    } else if (document.getElementById('auth-info')) {
-        // 로그인 상태일 때만 조회 - 이 API는 인증이 필요해서(@PreAuthorize), 비로그인
-        // 방문자가 마커를 열 때마다 호출하면 401만 쌓이고 별색도 어차피 항상 회색이라 의미 없음.
-        fetch('/api/favoritetemples/' + temple.templeId)
-        .then(function (response){
-            if (!response.ok) {
-                throw new Error('즐겨찾기 상태 확인 실패');
-            }
-            return response.json();
-        })
-        .then(function (data) {
-            if (data.favorite) {
-                favoriteBtn.classList.add('active');
-                favoriteBtn.style.color = '#f4c25c';
-                if (window.favoriteTempleIds.indexOf(temple.templeId) === -1) {
-                    window.favoriteTempleIds.push(temple.templeId);
-                }
-            } else {
-                favoriteBtn.classList.remove('active');
-                favoriteBtn.style.color = '#ccc';
-                var idx = window.favoriteTempleIds.indexOf(temple.templeId);
-                if (idx !== -1) {
-                    window.favoriteTempleIds.splice(idx, 1)
-                }
-            }
-            if (typeof window.refreshFavoriteFilter === 'function') {
-                window.refreshFavoriteFilter();
-            }
-        })
-        .catch(function (error) {
-            console.error(error);
-        });
-    }
-
-    // 8. 별표 클릭하면 서버에 토글 요청 보내서 실제로 저장/삭제
-    favoriteBtn.addEventListener('click', function(e){
-         e.stopPropagation(); // 클릭이 지도까지 전파돼서 정보창이 닫히는 걸 막음
-         fetch('/api/favoritetemples/' + temple.templeId + '/toggle', {
-            method: 'POST'
-        })
-            .then(function (response) {
-                if (!response.ok) {
-                    throw new Error('즐겨찾기 처리 실패 (로그인이 필요할 수 있어요.)');
-                }
-                return response.json();
-            })
-            .then(function (data) {
-                if (data.favorite) {
-                    favoriteBtn.classList.add('active');
-                    favoriteBtn.style.color = '#f4c25c';
-                    if (window.favoriteTempleIds.indexOf(temple.templeId) === -1) {
-                        window.favoriteTempleIds.push(temple.templeId);
-                    }
-                } else {
-                    favoriteBtn.classList.remove('active');
-                    favoriteBtn.style.color = '#ccc';
-                    var idx = window.favoriteTempleIds.indexOf(temple.templeId);
-                    if (idx !== -1) {
-                        window.favoriteTempleIds.splice(idx, 1);
-                    }
-                }
-                if (typeof window.refreshFavoriteFilter === 'function') {
-                    window.refreshFavoriteFilter();
-                }
-            })
-            .catch(function (error) {
-                console.error(error);
-                alert('로그인 후 즐겨찾기가 가능합니다.')
-                location.href = '/login';
-            });
-    });
-
-    var infowindow = new kakao.maps.InfoWindow({
-        content: infoContent,
-        removable: false,
-        zIndex: 999999, // 마커 zIndex보다 훨씬 높게 잡아서 항상 마커 위에 뜨게 함
-        disableAutoPan: true // 자동 이동 금지
-    });
 
      // 번역기 등으로 infoContent 내부 텍스트 줄 수가 나중에 바뀌면(폭은 고정이라 높이만 바뀜)
         // InfoWindow가 다시 측정하도록 닫았다 열어줌 (번역 후 하단 잘림 방지)
@@ -356,6 +371,50 @@ function createTempleMarker(map, temple) {
 
     return marker;
 }
+/**
+ * 단일 마커 상세 지도(프로그램 상세보기, 예약 신청 완료 등)를 만들거나 갱신한다.
+ * 호출하는 쪽은 자기 페이지 전용 상태 객체({map:null, marker:null})를 만들어서 넘기면 됨 -
+ * 지도 인스턴스는 컨테이너마다 하나씩 따로 관리해야 해서(같은 지도 객체를 두 컨테이너에서 못 씀)
+ * 상태를 호출하는 쪽에 둔다.
+ *
+ * @param {string} containerId - 지도를 그릴 div의 id (예: 'detail-map', 'result-map')
+ * @param {Object} program - templeId/latitude/longitude/templeName/templeAddress를 담은 객체
+ * @param {Object} mapState - { map: kakao.maps.Map|null, marker: kakao.maps.Marker|null } - 페이지에서 만들어서 넘김
+ */
+function loadTempleDetailMap(containerId, program, mapState) {
+    if (typeof kakao === 'undefined' || !program.latitude || !program.longitude) return;
+
+    kakao.maps.load(function () {
+        var position = new kakao.maps.LatLng(program.latitude, program.longitude);
+
+        if (!mapState.map) {
+            mapState.map = new kakao.maps.Map(document.getElementById(containerId), {
+                center: position,
+                level: 4
+            });
+        }
+
+        // 지도를 만들 때 컨테이너가 hidden이 막 풀린 직후일 수 있어서(크기가 0으로
+        // 측정돼 마커 위치가 어긋남) relayout으로 컨테이너 크기를 다시 재게 함.
+        mapState.map.relayout();
+        mapState.map.setCenter(position);
+
+        if (mapState.marker) {
+            mapState.marker.setMap(null);
+        }
+
+        mapState.marker = createTempleMarker(mapState.map, {
+            templeId: program.templeId,
+            lat: program.latitude,
+            lng: program.longitude,
+            name: program.templeName,
+            address: program.templeAddress,
+            autoPan: true // 이 지도들은 위에 덮이는 패널이 없으니 카카오가 알아서 위치 보정하게 함
+        });
+        kakao.maps.event.trigger(mapState.marker, 'click');
+    });
+}
+
 
 /**
  * 지도의 빈 공간(마커 아닌 곳)을 클릭하면 특정 정보창을 닫아주는 헬퍼.
