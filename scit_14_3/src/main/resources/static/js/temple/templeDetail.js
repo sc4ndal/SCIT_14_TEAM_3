@@ -15,7 +15,7 @@ kakao.maps.load(function () {
         lng: TEMPLE_LNG,
         name: TEMPLE_NAME,
         address: TEMPLE_ADDRESS,
-        iconUrl: '/images/temple-marker.svg'
+        autoPan: true
     });
 
     kakao.maps.event.trigger(marker, 'click'); // 정보창도 바로 열어줌

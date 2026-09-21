@@ -44,7 +44,7 @@ const TRANSLATIONS = {
         searchTypeAddress: "Search by address",
         searchPlaceholder: "Enter a search term",
         searchBtn: "Search",
-        typeFilterLabel: "Find by Type",
+        typeFilterLabel: "Type",
         typeSea: "Sea",
         typeMountain: "Mountain",
         typeRiver: "River",

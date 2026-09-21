@@ -44,9 +44,6 @@ public class FavoriteTempleService {
 	
 	/**
 	 * 즐겨찾기 여부(확인용)
-	 * @param loginId
-	 * @param templeId
-	 * @return ftr.existsByLoginIdAndTemple_TempleId(loginId, templeId);
 	 */
 	public boolean isFavoriteTemple(String loginId, Long templeId) {
 		return ftr.existsByLoginIdAndTemple_TempleId(loginId, templeId);
@@ -54,8 +51,6 @@ public class FavoriteTempleService {
 	
 	/**
 	 * 마이페이지 즐겨찾기 목록
-	 * @param loginId
-	 * @return ftr.findByLoginId(loginId);
 	 */
 	public List<FavoriteTempleEntity> getMyFavoriteTemple(String loginId) {
 		return ftr.findByLoginId(loginId);
