@@ -245,12 +245,15 @@ function createTempleMarker(map, temple) {
             });
     });
 
-    var infowindow = new kakao.maps.InfoWindow({
-        content: infoContent,
-        removable: false,
-        zIndex: 999999, // 마커 zIndex보다 훨씬 높게 잡아서 항상 마커 위에 뜨게 함
-        disableAutoPan: true // 자동 이동 금지
-    });
+        var infowindow = new kakao.maps.InfoWindow({
+            content: infoContent,
+            removable: false,
+            zIndex: 999999, // 마커 zIndex보다 훨씬 높게 잡아서 항상 마커 위에 뜨게 함
+            // 검색 지도(findTemple)는 위에 뜬 패널 때문에 autoPan을 꺼두지만,
+            // temple.autoPan을 true로 넘긴 페이지(상세보기 등)는 카카오가 알아서
+            // 위치를 보정하도록 autoPan을 켜준다.
+            disableAutoPan: !temple.autoPan
+        });
 
      // 번역기 등으로 infoContent 내부 텍스트 줄 수가 나중에 바뀌면(폭은 고정이라 높이만 바뀜)
         // InfoWindow가 다시 측정하도록 닫았다 열어줌 (번역 후 하단 잘림 방지)

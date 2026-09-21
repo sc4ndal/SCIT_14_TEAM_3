@@ -39,8 +39,6 @@ public class ReservationParticipantService {
 	 * 참가자 예약 생성 - 참가자 수만큼 save()를 따로 부르면 건마다 왕복이 나서(원격 DB일수록 체감 큼)
 	 * saveAll()로 한 번에 묶어 보낸다(application.properties의 hibernate.jdbc.batch_size +
 	 * datasource url의 rewriteBatchedStatements=true가 실제로 한 번에 묶이게 해줌).
-	 * @param reservationParticipantDTO
-	 * @return
 	 */
 	public List<ReservationParticipantDTO> reserved(List<ReservationParticipantDTO> reservationParticipantDTO) {
 		List<ReservationParticipantEntity> entities = reservationParticipantDTO.stream()

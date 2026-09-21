@@ -48,8 +48,7 @@ public class ReservationController {
 
 	/**
 	 * 템플스테이 프로그램 생성
-	 * @param TempleStayReservationDTO
-	 * @return
+	 *
 	 */
 	@PostMapping("/templestayreservations")
 	@ResponseBody
@@ -64,8 +63,7 @@ public class ReservationController {
 	
 	/**
 	 * 참가자 생성
-	 * @param ReservationParticipantDTO
-	 * @return
+	 *
 	 */
 	@PostMapping("/reservationparticipants")
 	@ResponseBody
@@ -75,8 +73,7 @@ public class ReservationController {
 	
 	/**
 	 * 결제 생성
-	 * @param paymentDTO
-	 * @return
+	 *
 	 */
 	@PostMapping("/payments")
 	@ResponseBody
