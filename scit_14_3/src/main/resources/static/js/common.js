@@ -52,6 +52,11 @@ let i18nRetranslateTimer = null;
 // 매번 API 호출할 필요 없이 여기 사전으로 바로 처리함.
 const I18N_MANUAL_OVERRIDES = {
     '로그인': { ja: 'ログイン', en: 'Log In' },
+
+    // ── 지도 마커 인포윈도우(mapCommon.js) - 마커 클릭할 때마다 새로 생기는 문구라
+    // MutationObserver가 새 텍스트로 잡아서 원래는 Translator API로 넘어가던 걸 고정함 ──
+    '상세보기': { ja: '詳細を見る', en: 'View Details' },
+    '가까이 보기': { ja: '近くで見る', en: 'Zoom In' },
     '회원가입': { ja: '会員登録', en: 'Sign Up' },
     '계정이 없으신가요?': { ja: 'アカウントをお持ちではありませんか？', en: "Don't have an account?" },
     '이미 계정이 있으신가요?': { ja: 'すでにアカウントをお持ちですか？', en: 'Already have an account?' },
@@ -80,6 +85,16 @@ const I18N_MANUAL_OVERRIDES = {
     '사찰 프로그램 등록': { ja: '寺院プログラム登録', en: 'Register Program' },
     '사찰 프로그램 관리': { ja: '寺院プログラム管理', en: 'Manage Programs' },
     '관리': { ja: '管理', en: 'Manage' },
+
+    // ── 즐겨찾기 토글 버튼(favoriteButton.js) - 클릭할 때마다 이 파일이 라벨을 직접
+    // 다시 쓰는데, 그때 항상 한국어로 박아 넣어서 번역해둔 언어가 원상복구되는 문제가
+    // 있었음 - favoriteButton.js가 이 사전을 직접 참조하도록 고쳐서 해결함 ──
+    '즐겨찾기됨': { ja: 'お気に入り済み', en: 'Favorited' },
+    '즐겨찾기': { ja: 'お気に入り', en: 'Favorite' },
+
+    // 탈퇴한 회원의 리뷰 작성자 자리에 서버(TempleStayReviewService.authorDisplayName)가 넣는
+    // 고정 문구 - 닉네임과 달리 사용자 입력값이 아니라서 번역 대상(.no-translate를 안 붙임)
+    '탈퇴한 회원': { ja: '退会した会員', en: 'Withdrawn member' },
     '사찰 등록 요청 목록': { ja: '寺院登録リクエスト一覧', en: 'Temple Registration Requests' },
     '로그아웃': { ja: 'ログアウト', en: 'Log Out' },
 
@@ -468,4 +483,36 @@ document.addEventListener('DOMContentLoaded', function () {
             }, 0);
         });
     });
+});
+
+/* ===== 일반 <a> 링크 클릭(페이지 이동) 시 로딩 표시 =====
+   위 form.page-form과 똑같은 문제 - 사찰 프로그램 관리 "상세보기"처럼 그냥 <a href="...">
+   링크 하나로 원격 DB(Aiven) 조회가 여러 건 걸리는 페이지로 이동하면, 페이지 그려질 때까지
+   아무 반응 없이 멈춘 것처럼 보였다. 일일이 페이지마다 찾아 고치는 대신 클릭 이벤트를
+   document 레벨에서 한 번에 잡아서 전체 사이트 링크에 공통 적용한다.
+
+   지도 인포윈도우의 "가까이 보기"(href="#")나 드롭다운 토글처럼 자기 JS가 preventDefault()로
+   실제 이동을 막는 링크까지 오버레이가 뜨면 안 되므로, submit과 동일하게 setTimeout(0)으로
+   한 틱 미뤄서 다른 클릭 리스너가 먼저 다 실행된 뒤 e.defaultPrevented를 확인한다. 새 탭으로
+   여는 경우(target, ctrl/cmd/휠클릭)와 페이지 이동이 아닌 링크(#, javascript:, mailto:, tel:,
+   download)는 애초에 현재 페이지가 안 넘어가므로 제외한다. */
+document.addEventListener('click', function (e) {
+    if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+
+    const link = e.target.closest('a[href]');
+    if (!link) return;
+    if (link.target && link.target !== '_self') return; // 새 탭으로 열리는 링크는 현재 페이지 안 떠남
+    if (link.hasAttribute('download')) return;
+
+    const href = link.getAttribute('href');
+    if (!href || href.charAt(0) === '#'
+        || href.indexOf('javascript:') === 0 || href.indexOf('mailto:') === 0 || href.indexOf('tel:') === 0) {
+        return;
+    }
+
+    setTimeout(function () {
+        if (!e.defaultPrevented) {
+            showLoading('불러오는 중...');
+        }
+    }, 0);
 });

@@ -165,26 +165,33 @@ kakao.maps.load(function () {
             // 사찰의 유형(바다/산/강/도심)을 작은 태그 뱃지로 만들어주는 헬퍼.
             // 필터 버튼(#data-type-*)이랑 같은 색을 써서 서로 연결되어 보이게 함.
             var TEMPLE_TYPE_TAGS = [
-                { field: 'supportSea', label: '바다', color: 'var(--blue)'},
-                { field: 'supportMountain', label: '산', color: 'var(--green)'},
-                { field: 'supportRiver', label: '강', color: 'var(--brown)'},
-                { field: 'supportUrban', label: '도심', color: 'var(--gold)'},
-                { field: 'supportEnglish', label: '영어지원', color: 'var(--text)'}
+                { field: 'supportSea', key: 'typeSea', label: '바다', color: 'var(--blue)'},
+                { field: 'supportMountain', key: 'typeMountain', label: '산', color: 'var(--green)'},
+                { field: 'supportRiver', key: 'typeRiver', label: '강', color: 'var(--brown)'},
+                { field: 'supportUrban', key: 'typeUrban', label: '도심', color: 'var(--gold)'},
+                { field: 'supportEnglish', key: 'supportEnglish', label: '영어지원', color: 'var(--text)'}
 
             ];
 
-            function buildTypeTagsHtml(temple) {
+            // 라벨은 findTemple.i18n.js의 필터 버튼 사전(TRANSLATIONS)과 같은 값을 써서
+            // 번역기(MutationObserver)에 맡기지 않고 사전으로 그리고, .no-translate로 덮어쓰기를 막는다.
+            function buildTypeTagsHtml(temple, lang) {
+                var dict = (typeof TRANSLATIONS !== 'undefined' && TRANSLATIONS[lang]) || null;
                 return TEMPLE_TYPE_TAGS
                 .filter(function (t) { return temple[t.field]; })
                 .map(function (t) {
-                    return '<span style="font-size:10px;font-weight:700;color:' + t.color + ';border:1px solid ' + t.color + ';border-radius:999px;padding:1px 6px;margin-right:4px;">' + t.label + '</span>';
+                    var label = (lang !== 'ko' && dict && dict[t.key]) ? dict[t.key] : t.label;
+                    return '<span class="no-translate" style="font-size:10px;font-weight:700;color:' + t.color + ';border:1px solid ' + t.color + ';border-radius:999px;padding:1px 6px;margin-right:4px;">' + label + '</span>';
                 })
                 .join('');
             }
 
 
     // ------------------------- 검색 -------------------------
+    var lastShownTemples = null; // 언어 전환 시 같은 목록을 사전 번역만 새로 적용해서 다시 그리기 위해 기억해둠
+
     function showResultList(temples) {
+        lastShownTemples = temples;
         // 즐겨찾기한 사찰을 목록 맨 위로 오게 정렬
         // (temples 원본 배열은 그대로 두고, 복사본(slice())을 정렬해서 사용 - 원본을 건드리면 다른 곳에서 꼬일 수 있음)
         var sortedTemples = temples.slice().sort(function (a, b){
@@ -196,16 +203,19 @@ kakao.maps.load(function () {
         var list = document.getElementById('result-list');
         list.innerHTML = ''; // 이전 검색 결과 지우기
 
+        var listLang = (typeof i18nCurrentLang !== 'undefined') ? i18nCurrentLang : 'ko';
         sortedTemples.forEach(function (temple){
             var li = document.createElement('li');
+            var displayName = (typeof translateTempleName === 'function') ? translateTempleName(temple.name, listLang) : temple.name;
+            var displayAddress = (typeof translateTempleAddress === 'function') ? translateTempleAddress(temple.address, temple.name, listLang) : temple.address;
             // 검색 결과 리스트에 사찰 이름이랑 주소 표시
             li.innerHTML =
                 '<div class="result-row" style="display:flex;align-items:center;justify-content:space-between;gap:6px;">' +
-                '  <div class="result-name">' + temple.name + '</div>' +
+                '  <div class="result-name' + (isTempleTextFromDict(temple.name, 'name', listLang) ? ' no-translate' : '') + '">' + displayName + '</div>' +
                 '  <button type="button" class="result-favorite-btn" style="border:none;background:none;font-size:16px;line-height:1;cursor:pointer;color:#ccc;padding:0;">★</button>' +
                 '</div>' +
-                '<div class="result-address">' + temple.address + '</div>' +
-                '<div class="result-types" style="margin-top:4px;">' + buildTypeTagsHtml(temple) + '</div>';
+                '<div class="result-address' + (isTempleTextFromDict(temple.name, 'address', listLang) ? ' no-translate' : '') + '">' + displayAddress + '</div>' +
+                '<div class="result-types" style="margin-top:4px;">' + buildTypeTagsHtml(temple, listLang) + '</div>';
 
             var favoriteBtn = li.querySelector('.result-favorite-btn');
 
@@ -572,4 +582,11 @@ kakao.maps.load(function () {
         )
     });
     window.refreshFavoriteFilter = applyFilters;
+
+    // findTemple.i18n.js가 언어 버튼 클릭 시 불러줌 - 마커 이름표/정보창 + 검색 결과 목록을
+    // 전부 사전 번역 값으로 다시 그림. 이미 만들어진 마커/목록만 갱신하고 새로 fetch하진 않음.
+    window.refreshTempleMapLanguage = function (lang) {
+        if (typeof refreshTempleMarkerLanguage === 'function') refreshTempleMarkerLanguage(lang);
+        if (lastShownTemples) showResultList(lastShownTemples);
+    };
 });

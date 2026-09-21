@@ -50,7 +50,14 @@ const HOME_TRANSLATIONS = {
         modalClose: "닫기",
 
         footerText: "사찰 관계자이신가요?",
-        footerBtn: "문의하기"
+        footerBtn: "문의하기",
+
+        chatTitle: "佛선자 챗봇",
+        chatSubtitle: "불교 상식과 사이트 이용을 안내해드려요",
+        chatGreeting: "안녕하세요! 불교에 대해 궁금한 점이나, 이 사이트를 어떻게 이용하면 되는지 무엇이든 물어보세요.",
+        chatPlaceholder: "궁금한 점을 입력해보세요",
+        chatPending: "생각하는 중...",
+        chatError: "지금은 답변을 가져오지 못했어요. 잠시 후 다시 시도해주세요."
     },
     ja: {
         heroTitle: "はじめての仏教、むずかしくない",
@@ -99,7 +106,14 @@ const HOME_TRANSLATIONS = {
         modalClose: "閉じる",
 
         footerText: "寺院関係者の方ですか？",
-        footerBtn: "お問い合わせ"
+        footerBtn: "お問い合わせ",
+
+        chatTitle: "佛선자 チャットボット",
+        chatSubtitle: "仏教の基礎知識やサイトの使い方をご案内します",
+        chatGreeting: "こんにちは！仏教について気になることや、このサイトの使い方など、何でもお聞きください。",
+        chatPlaceholder: "気になることを入力してください",
+        chatPending: "考え中...",
+        chatError: "現在、回答を取得できませんでした。しばらくしてからもう一度お試しください。"
     },
     en: {
         heroTitle: "Discovering Buddhism, Made Simple",
@@ -148,12 +162,19 @@ const HOME_TRANSLATIONS = {
         modalClose: "Close",
 
         footerText: "Are you a temple representative?",
-        footerBtn: "Contact Us"
+        footerBtn: "Contact Us",
+
+        chatTitle: "佛선자 Chatbot",
+        chatSubtitle: "Ask about Buddhism or how to use this site",
+        chatGreeting: "Hello! Feel free to ask anything about Buddhism or how to use this site.",
+        chatPlaceholder: "Type your question",
+        chatPending: "Thinking...",
+        chatError: "Sorry, I couldn't get an answer right now. Please try again in a moment."
     }
 };
 
 const HOME_ARIA_TRANSLATIONS = {
-    ko: { prevMonth: "이전 달", nextMonth: "다음 달", backToTop: "페이지 위로 이동" },
-    ja: { prevMonth: "前の月", nextMonth: "次の月", backToTop: "ページ上部へ移動" },
-    en: { prevMonth: "Previous month", nextMonth: "Next month", backToTop: "Back to top" }
+    ko: { prevMonth: "이전 달", nextMonth: "다음 달", backToTop: "페이지 위로 이동", chatOpen: "챗봇 열기", chatSend: "보내기" },
+    ja: { prevMonth: "前の月", nextMonth: "次の月", backToTop: "ページ上部へ移動", chatOpen: "チャットボットを開く", chatSend: "送信" },
+    en: { prevMonth: "Previous month", nextMonth: "Next month", backToTop: "Back to top", chatOpen: "Open chatbot", chatSend: "Send" }
 };

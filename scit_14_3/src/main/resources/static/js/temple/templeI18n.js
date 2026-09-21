@@ -1,0 +1,214 @@
+/* ============================================================
+   templeI18n.js — 사찰명/주소 사전 번역 (지도 마커/정보창 전용)
+   ------------------------------------------------------------
+   DB로 안 올리고 하드코딩한 이유: 172개 사찰명이 자주 바뀌는 값이 아니고,
+   크롬 내장 번역기(Translator API)에 맡기면 로마자 표기가 매번 다르게
+   나오거나 어색하게 나와서(예: 고유명사를 음역 대신 의역) 공식 로마자
+   표기/가타카나 표기를 직접 박아둠. login.js/signup.js/findTemple.i18n.js와
+   같은 사전(TRANSLATIONS) 패턴.
+
+   사찰이 새로 추가/삭제되면 이 파일도 같이 갱신해야 함 - 갱신을 깜빡해도
+   사전에 없는 사찰은 아래 translateTempleName/translateTempleAddress가
+   원본(한글) 그대로 돌려주므로 깨지지 않음(그냥 번역이 안 될 뿐).
+
+   일본어 주소는 별도 데이터가 없어 주소는 영어(en)만 사전으로 두고,
+   일본어(ja)는 원본 주소를 그대로 씀(가타카나는 이름에만 적용).
+============================================================ */
+
+const TEMPLE_I18N = {
+    "감산사": { en: "Gamsansa", ja: "カンサンサ", addressEn: "117-20 Apdeung-gil, Oedong-eup, Gyeongju-si, Gyeongsangbuk-do" },
+    "갑사": { en: "Gapsa", ja: "カッサ", addressEn: "567-3 Gapsa-ro, Gyeryong-myeon, Gongju-si, Chungcheongnam-do" },
+    "개암사": { en: "Gaeamsa", ja: "ケアンサ", addressEn: "248 Gaeam-ro, Sangseo-myeon, Buan-gun, Jeollabuk-do" },
+    "건봉사": { en: "Geonbongsa", ja: "コンボンサ", addressEn: "723 Geonbongsa-ro, Geojin-eup, Goseong-gun, Gangwon-do" },
+    "경국사": { en: "Gyeongguksa", ja: "キョングッサ", addressEn: "113-10 Bogukmun-ro, Seongbuk-gu, Seoul" },
+    "고운사": { en: "Gounsa", ja: "コウンサ", addressEn: "415 Gounsa-gil, Danchon-myeon, Uiseong-gun, Gyeongsangbuk-do" },
+    "골굴사": { en: "Golgulsa", ja: "コルグルサ", addressEn: "101-5 Girim-ro, Munmudaewang-myeon, Gyeongju-si, Gyeongsangbuk-do" },
+    "관문사": { en: "Gwanmunsa", ja: "クァンムンサ", addressEn: "111 Baumoe-ro 7-gil, Seocho-gu, Seoul" },
+    "관음사(제주)": { en: "Gwaneumsa (Jeju)", ja: "クァンウンサ(チェジュ)", addressEn: "660 Sanrokbuk-ro, Jeju-si, Jeju-do" },
+    "광제사": { en: "Gwangjesa", ja: "クァンジェサ", addressEn: "94 Morongji-ro, Sejong-si" },
+    "구룡사": { en: "Guryongsa", ja: "クリョンサ", addressEn: "500 Guryongsa-ro, Socho-myeon, Wonju-si, Gangwon-do" },
+    "구인사": { en: "Guinsa", ja: "クインサ", addressEn: "73 Guinsa-gil, Yeongchun-myeon, Danyang-gun, Chungcheongbuk-do" },
+    "국제선센터": { en: "Gukjeseonsenteo", ja: "クッチェソンセント", addressEn: "167 Mokdongdong-ro, Yangcheon-gu, Seoul" },
+    "귀정사": { en: "Gwijeongsa", ja: "クィジョンサ", addressEn: "246 Daesang 2-gil, Sandong-myeon, Namwon-si, Jeollabuk-do" },
+    "금강정사": { en: "Geumgangjeongsa", ja: "クンガンジョンサ", addressEn: "58 Seorwol-ro, Gwangmyeong-si, Gyeonggi-do" },
+    "금당사": { en: "Geumdangsa", ja: "クンダンサ", addressEn: "217 Maisannam-ro, Maryeong-myeon, Jinan-gun, Jeollabuk-do" },
+    "금룡사": { en: "Geumryongsa", ja: "クンリョンサ", addressEn: "148-11 Gimnyeong-ro, Gujwa-eup, Jeju-si, Jeju-do" },
+    "금산사": { en: "Geumsansa", ja: "クンサンサ", addressEn: "1 Moak 15-gil, Geumsan-myeon, Gimje-si, Jeollabuk-do" },
+    "금선사": { en: "Geumseonsa", ja: "クンソンサ", addressEn: "137 Bibong-gil, Jongro-gu, Seoul" },
+    "금수암": { en: "Geumsuam", ja: "クンスアン", addressEn: "57-98 Saeteo-gil, Geumseo-myeon, Sancheong-gun, Gyeongsangnam-do" },
+    "기림사": { en: "Girimsa", ja: "キリンサ", addressEn: "437-17 Girim-ro, Yangbuk-myeon, Gyeongju-si, Gyeongsangbuk-do" },
+    "길상사": { en: "Gilsangsa", ja: "キルサンサ", addressEn: "68 Seonjam-ro 5-gil, Seongbuk-gu, Seoul" },
+    "낙산사": { en: "Naksansa", ja: "ナッサンサ", addressEn: "100 Naksansa-ro, Ganghyeon-myeon, Yangyang-gun, Gangwon-do" },
+    "내소사": { en: "Naesosa", ja: "ネソサ", addressEn: "243 Naesosa-ro, Jinseo-myeon, Buan-gun, Jeollabuk-do" },
+    "내원정사": { en: "Naewonjeongsa", ja: "ネウォンジョンサ", addressEn: "80 Eomgwangsan-ro 40beon-gil, Seo-gu, Busan" },
+    "능가사": { en: "Neunggasa", ja: "ヌンガサ", addressEn: "21 Palbong-gil, Jeomam-myeon, Goheung-gun, Jeollanam-do" },
+    "대광사(성남)": { en: "Daegwangsa (Seongnam)", ja: "テグァンサ(ソンナン)", addressEn: "30 Gumi-ro 185beon-gil, Bundang-gu, Seongnam-si, Gyeonggi-do" },
+    "대광사(창원)": { en: "Daegwangsa (Changwon)", ja: "テグァンサ(チャンウォン)", addressEn: "303 Jinhaedae-ro, Jinhae-gu, Changwon-si, Gyeongsangnam-do" },
+    "대승사": { en: "Daeseungsa", ja: "テスンサ", addressEn: "283 Daeseungsa-gil, Sanbuk-myeon, Mungyeong-si, Gyeongsangbuk-do" },
+    "대원사(가평)": { en: "Daewonsa (Gapyeong)", ja: "テウォンサ(カピョン)", addressEn: "21-162 Baekdun-ro, Buk-myeon, Gapyeong-gun, Gyeonggi-do" },
+    "대원사(보성)": { en: "Daewonsa (Boseong)", ja: "テウォンサ(ポソン)", addressEn: "506-8 Juksan-gil, Mundeok-myeon, Boseong-gun, Jeollanam-do" },
+    "대원사(산청)": { en: "Daewonsa (Sancheong)", ja: "テウォンサ(サンチョン)", addressEn: "455 Daewonsa-gil, Samjang-myeon, Sancheong-gun, Gyeongsangnam-do" },
+    "대흥사": { en: "Daeheungsa", ja: "テフンサ", addressEn: "400 Daeheungsa-gil, Samsan-myeon, Haenam-gun, Jeollanam-do" },
+    "도갑사": { en: "Dogapsa", ja: "トガッサ", addressEn: "306 Dogapsa-ro, Gunseo-myeon, Yeongam-gun, Jeollanam-do" },
+    "도리사": { en: "Dorisa", ja: "トリサ", addressEn: "526 Dorisa-ro, Haepyeong-myeon, Gumi-si, Gyeongsangbuk-do" },
+    "도림사(곡성)": { en: "Dorimsa (Gokseong)", ja: "トリンサ(コッソン)", addressEn: "175 Dorim-ro, Gokseong-gun, Jeollanam-do" },
+    "도림사(대구)": { en: "Dorimsa (Daegu)", ja: "トリンサ(テグ)", addressEn: "242 Insan-ro, Dong-gu, Daegu" },
+    "도선사": { en: "Doseonsa", ja: "トソンサ", addressEn: "278 Doseonsa-gil, Gangbuk-gu, Seoul" },
+    "동화사": { en: "Donghwasa", ja: "トンファサ", addressEn: "1 Donghwasa 1-gil, Dong-gu, Daegu" },
+    "마곡사": { en: "Magoksa", ja: "マゴッサ", addressEn: "966 Magoksa-ro, Sagok-myeon, Gongju-si, Chungcheongnam-do" },
+    "망경산사": { en: "Manggyeongsansa", ja: "マンギョンサンサ", addressEn: "135-6 Manggyeongdaesan-gil, Yeongwol-gun, Gangwon-do" },
+    "명주사": { en: "Myeongjusa", ja: "ミョンジュサ", addressEn: "62 Muran-gil, Sinrim-myeon, Wonju-si, Gangwon-do" },
+    "묘각사": { en: "Myogaksa", ja: "ミョガッサ", addressEn: "31 Jong-ro 63ga-gil, Jongro-gu, Seoul" },
+    "묘적사": { en: "Myojeoksa", ja: "ミョジョッサ", addressEn: "174 Sure-ro 661beon-gil, Wabu-eup, Namyangju-si, Gyeonggi-do" },
+    "무각사": { en: "Mugaksa", ja: "ムガッサ", addressEn: "230 Uncheon-ro, Seo-gu, Gwangju" },
+    "무량사": { en: "Muryangsa", ja: "ムリャンサ", addressEn: "203 Muryang-ro, Oesan-myeon, Buyeo-gun, Chungcheongnam-do" },
+    "무위사": { en: "Muwisa", ja: "ムウィサ", addressEn: "308 Muwisa-ro, Seongjeon-myeon, Gangjin-gun, Jeollanam-do" },
+    "문수암": { en: "Munsuam", ja: "ムンスアン", addressEn: "173-17 Mageundam-gil, Sicheon-myeon, Sancheong-gun, Gyeongsangnam-do" },
+    "미륵대흥사": { en: "Mireukdaeheungsa", ja: "ミルッテフンサ", addressEn: "423 Hwangjeongsan-ro, Daegang-myeon, Danyang-gun, Chungcheongbuk-do" },
+    "미륵사": { en: "Mireuksa", ja: "ミルッサ", addressEn: "408-64 Senam-ro, Bonghwang-myeon, Naju-si, Jeollanam-do" },
+    "미타사": { en: "Mitasa", ja: "ミタサ", addressEn: "164 Soi-ro 61beon-gil, Soi-myeon, Eumseong-gun, Chungcheongbuk-do" },
+    "미황사": { en: "Mihwangsa", ja: "ミファンサ", addressEn: "164 Mihwangsa-gil, Songji-myeon, Haenam-gun, Jeollanam-do" },
+    "반야사": { en: "Banyasa", ja: "パンヤサ", addressEn: "652 Baekhwasan-ro, Hwanggan-myeon, Yeongdong-gun, Chungcheongbuk-do" },
+    "백담사": { en: "Baekdamsa", ja: "ペッタンサ", addressEn: "746 Baekdam-ro, Buk-myeon, Inje-gun, Gangwon-do" },
+    "백련사(가평)": { en: "Baekryeonsa (Gapyeong)", ja: "ペッリョンサ(カピョン)", addressEn: "159-50 Saemgol-gil, Sang-myeon, Gapyeong-gun, Gyeonggi-do" },
+    "백련사(강진)": { en: "Baekryeonsa (Gangjin)", ja: "ペッリョンサ(カンジン)", addressEn: "145 Baekryeonsa-gil, Doam-myeon, Gangjin-gun, Jeollanam-do" },
+    "백양사": { en: "Baegyangsa", ja: "ペッヤンサ", addressEn: "1239 Baegyang-ro, Bukha-myeon, Jangseong-gun, Jeollanam-do" },
+    "백제사": { en: "Baekjesa", ja: "ペッチェサ", addressEn: "54 Gwangryeongnam 6-gil, Aewol-eup, Jeju-si, Jeju-do" },
+    "범어사": { en: "Beomeosa", ja: "ポンオサ", addressEn: "20 Sangma 1-gil, Geumjeong-gu, Busan" },
+    "법륜사": { en: "Beopryunsa", ja: "ポッリュンサ", addressEn: "126 Nongchonpakeu-ro, Wonsam-myeon, Cheoin-gu, Yongin-si, Gyeonggi-do" },
+    "법주사": { en: "Beopjusa", ja: "ポッチュサ", addressEn: "405 Beopjusa-ro, Sokrisan-myeon, Boeun-gun, Chungcheongbuk-do" },
+    "보경사": { en: "Bogyeongsa", ja: "ポギョンサ", addressEn: "523 Bogyeong-ro, Songra-myeon, Buk-gu, Pohang-si, Gyeongsangbuk-do" },
+    "보광사(파주)": { en: "Bogwangsa (Paju)", ja: "ポグァンサ(パジュ)", addressEn: "87 Bogwang-ro 474beon-gil, Gwangtan-myeon, Paju-si, Gyeonggi-do" },
+    "보덕관음사": { en: "Bodeokgwaneumsa", ja: "ポドックァンウンサ", addressEn: "187 Unhak-ro, Cheoin-gu, Yongin-si, Gyeonggi-do" },
+    "보림사(장흥)": { en: "Borimsa (Jangheung)", ja: "ポリンサ(チャンフン)", addressEn: "224 Borimsa-ro, Yuchi-myeon, Jangheung-gun, Jeollanam-do" },
+    "보현사": { en: "Bohyeonsa", ja: "ポヒョンサ", addressEn: "396 Bohyeon-gil, Seongsan-myeon, Gangreung-si, Gangwon-do" },
+    "봉녕사": { en: "Bongnyeongsa", ja: "ポンニョンサ", addressEn: "236-54 Changryongdae-ro, Paldal-gu, Suwon-si, Gyeonggi-do" },
+    "봉선사": { en: "Bongseonsa", ja: "ポンソンサ", addressEn: "32 Bongseonsa-gil, Jinjeop-eup, Namyangju-si, Gyeonggi-do" },
+    "봉은사": { en: "Bongeunsa", ja: "ポンウンサ", addressEn: "531 Bongeunsa-ro, Gangnam-gu, Seoul" },
+    "봉인사": { en: "Bonginsa", ja: "ポンインサ", addressEn: "295 Sareung-ro 156beon-gil, Jingeon-eup, Namyangju-si, Gyeonggi-do" },
+    "봉정사": { en: "Bongjeongsa", ja: "ポンジョンサ", addressEn: "222 Bongjeongsa-gil, Seohu-myeon, Andong-si, Gyeongsangbuk-do" },
+    "부석사": { en: "Buseoksa", ja: "プソッサ", addressEn: "243 Buseoksa-gil, Buseok-myeon, Seosan-si, Chungcheongnam-do" },
+    "불갑사": { en: "Bulgapsa", ja: "プルガッサ", addressEn: "450 Bulgapsa-ro, Bulgap-myeon, Yeonggwang-gun, Jeollanam-do" },
+    "불국사": { en: "Bulguksa", ja: "プルグッサ", addressEn: "385 Bulguk-ro, Gyeongju-si, Gyeongsangbuk-do" },
+    "불회사": { en: "Bulhoesa", ja: "プルフェサ", addressEn: "1224-142 Dado-ro, Naju-si, Jeollanam-do" },
+    "붓다선원": { en: "Butdaseonwon", ja: "プッタソンウォン", addressEn: "397-115 Gaehwa-gil, Ungyang-myeon, Geochang-gun, Gyeongsangnam-do" },
+    "사나사": { en: "Sanasa", ja: "サナサ", addressEn: "329 Sanasa-gil, Okcheon-myeon, Yangpyeong-gun, Gyeonggi-do" },
+    "사성암": { en: "Saseongam", ja: "サソンアン", addressEn: "303 Saseongam-gil, Muncheok-myeon, Gurye-gun, Jeollanam-do" },
+    "삼운사": { en: "Samunsa", ja: "サンウンサ", addressEn: "12 Huseok-ro 441beon-gil, Chuncheon-si, Gangwon-do" },
+    "삼화사": { en: "Samhwasa", ja: "サンファサ", addressEn: "584 Samhwa-ro, Donghae-si, Gangwon-do" },
+    "서고사": { en: "Seogosa", ja: "ソゴサ", addressEn: "1010-90 Jeongyeorip-ro, Jeonju-si, Jeollabuk-do" },
+    "서광사": { en: "Seogwangsa", ja: "ソグァンサ", addressEn: "44 Buchunsan 1-ro, Seosan-si, Chungcheongnam-do" },
+    "석불사": { en: "Seokbulsa", ja: "ソップルサ", addressEn: "23-6 Mapodae-ro 4da-gil, Mapo-gu, Seoul" },
+    "석왕사": { en: "Seogwangsa", ja: "ソッワンサ", addressEn: "367 Sosa-ro, Wonmi-gu, Bucheon-si, Gyeonggi-do" },
+    "석종사": { en: "Seokjongsa", ja: "ソッチョンサ", addressEn: "271-56 Jikdong-gil, Chungju-si, Chungcheongbuk-do" },
+    "선본사": { en: "Seonbonsa", ja: "ソンボンサ", addressEn: "699 Gatbawi-ro, Gyeongsan-si, Gyeongsangbuk-do" },
+    "선암사(부산)": { en: "Seonamsa (Busan)", ja: "ソンアンサ(プサン)", addressEn: "138 Baegyangsan-ro, Busanjin-gu, Busan" },
+    "선암사(순천)": { en: "Seonamsa (Suncheon)", ja: "ソンアンサ(スンチョン)", addressEn: "450 Seonamsa-gil, Seungju-eup, Suncheon-si, Jeollanam-do" },
+    "선운사": { en: "Seonunsa", ja: "ソンウンサ", addressEn: "250 Seonunsa-ro, Asan-myeon, Gochang-gun, Jeollabuk-do" },
+    "설악산신흥사": { en: "Seoraksansinheungsa", ja: "ソルアッサンシンフンサ", addressEn: "1137 Seoraksan-ro, Sokcho-si, Gangwon-do" },
+    "성주사": { en: "Seongjusa", ja: "ソンジュサ", addressEn: "191 Gomjeol-gil, Seongsan-gu, Changwon-si, Gyeongsangnam-do" },
+    "성흥사": { en: "Seongheungsa", ja: "ソンフンサ", addressEn: "273 Daejang-ro, Jinhae-gu, Changwon-si, Gyeongsangnam-do" },
+    "송광사(순천)": { en: "Songgwangsa (Suncheon)", ja: "ソングァンサ(スンチョン)", addressEn: "100 Songgwangsaan-gil, Songgwang-myeon, Suncheon-si, Jeollanam-do" },
+    "송광사(완주)": { en: "Songgwangsa (Wanju)", ja: "ソングァンサ(ワンジュ)", addressEn: "255-16 Songgwangsuman-ro, Soyang-myeon, Wanju-gun, Jeollabuk-do" },
+    "수국사": { en: "Suguksa", ja: "スグッサ", addressEn: "8-5 Seooreung-ro 23-gil, Eunpyeong-gu, Seoul" },
+    "수덕사": { en: "Sudeoksa", ja: "スドッサ", addressEn: "79 Sudeoksaan-gil, Deoksan-myeon, Yesan-gun, Chungcheongnam-do" },
+    "수원사": { en: "Suwonsa", ja: "スウォンサ", addressEn: "300 Suwoncheon-ro, Paldal-gu, Suwon-si, Gyeonggi-do" },
+    "수진사": { en: "Sujinsa", ja: "スジンサ", addressEn: "115-13 Cheonmasan-ro, Namyangju-si, Gyeonggi-do" },
+    "신광사": { en: "Singwangsa", ja: "シングァンサ", addressEn: "108 Oryang 2-gil, Sadeung-myeon, Geoje-si, Gyeongsangnam-do" },
+    "신륵사": { en: "Sinreuksa", ja: "シンルッサ", addressEn: "73 Sinreuksa-gil, Yeoju-si, Gyeonggi-do" },
+    "신안사": { en: "Sinansa", ja: "シンアンサ", addressEn: "970 Sinansa-ro, Jewon-myeon, Geumsan-gun, Chungcheongnam-do" },
+    "신흥사(완도)": { en: "Sinheungsa (Wando)", ja: "シンフンサ(ワンド)", addressEn: "101-1 Cheonghaejinnam-ro, Wando-eup, Wando-gun, Jeollanam-do" },
+    "실상사": { en: "Silsangsa", ja: "シルサンサ", addressEn: "265 Silsangsa-gil, Sannae-myeon, Namwon-si, Jeollabuk-do" },
+    "심원사(성주)": { en: "Simwonsa (Seongju)", ja: "シンウォンサ(ソンジュ)", addressEn: "17-56 Gayasansikmurwon-gil, Suryun-myeon, Seongju-gun, Gyeongsangbuk-do" },
+    "심택사": { en: "Simtaeksa", ja: "シンテッサ", addressEn: "5-23 Eunpyeong-ro 20na-gil, Eunpyeong-gu, Seoul" },
+    "쌍계사(하동)": { en: "Ssanggyesa (Hadong)", ja: "サンゲサ(ハドン)", addressEn: "59 Ssanggyesa-gil, Hwagae-myeon, Hadong-gun, Gyeongsangnam-do" },
+    "쌍봉사": { en: "Ssangbongsa", ja: "サンボンサ", addressEn: "459 Ssangsanui-ro, Iyang-myeon, Hwasun-gun, Jeollanam-do" },
+    "안국사": { en: "Anguksa", ja: "アングッサ", addressEn: "1050 Sanseong-ro, Jeoksang-myeon, Muju-gun, Jeollabuk-do" },
+    "약수사": { en: "Yaksusa", ja: "ヤッスサ", addressEn: "28 Yaksuam 1-gil, Gwanak-gu, Seoul" },
+    "약천사": { en: "Yakcheonsa", ja: "ヤッチョンサ", addressEn: "293-28 Ieodo-ro, Seogwipo-si, Jeju-do" },
+    "연곡사": { en: "Yeongoksa", ja: "ヨンゴッサ", addressEn: "774 Piagol-ro, Toji-myeon, Gurye-gun, Jeollanam-do" },
+    "연등국제선원": { en: "Yeondeunggukjeseonwon", ja: "ヨンドゥングッチェソンウォン", addressEn: "349-60 Ganghwadong-ro, Gilsang-myeon, Ganghwa-gun, Incheon" },
+    "연운사": { en: "Yeonunsa", ja: "ヨンウンサ", addressEn: "48-11 Seokmo-ro 5beon-gil, Yangchon-eup, Gimpo-si, Gyeonggi-do" },
+    "연주암": { en: "Yeonjuam", ja: "ヨンジュアン", addressEn: "63 Jahadong-gil, Gwacheon-si, Gyeonggi-do" },
+    "영국사": { en: "Yeongguksa", ja: "ヨングッサ", addressEn: "225-35 Yeonggukdong-gil, Yangsan-myeon, Yeongdong-gun, Chungcheongbuk-do" },
+    "영랑사": { en: "Yeongrangsa", ja: "ヨンランサ", addressEn: "142-52 Jingwan-ro, Godae-myeon, Dangjin-si, Chungcheongnam-do" },
+    "영평사": { en: "Yeongpyeongsa", ja: "ヨンピョンサ", addressEn: "124 Yeongpyeongsa-gil, Janggun-myeon, Sejong-si" },
+    "옥천사": { en: "Okcheonsa", ja: "オッチョンサ", addressEn: "471-9 Yeonhwasan 1-ro, Gaecheon-myeon, Goseong-gun, Gyeongsangnam-do" },
+    "옥천암": { en: "Okcheonam", ja: "オッチョンアン", addressEn: "1-38 Hongjimun-gil, Seodaemun-gu, Seoul" },
+    "용문사(남해)": { en: "Yongmunsa (Namhae)", ja: "ヨンムンサ(ナンヘ)", addressEn: "166-11 Yongmunsa-gil, Idong-myeon, Namhae-gun, Gyeongsangnam-do" },
+    "용문사(양평)": { en: "Yongmunsa (Yangpyeong)", ja: "ヨンムンサ(ヤンピョン)", addressEn: "782 Yongmunsan-ro, Yongmun-myeon, Yangpyeong-gun, Gyeonggi-do" },
+    "용문사(예천)": { en: "Yongmunsa (Yecheon)", ja: "ヨンムンサ(エチョン)", addressEn: "285-30 Yongmunsa-gil, Yongmun-myeon, Yecheon-gun, Gyeongsangbuk-do" },
+    "용연사": { en: "Yongyeonsa", ja: "ヨンヨンサ", addressEn: "961 Jungangseo-ro, Sacheon-myeon, Gangreung-si, Gangwon-do" },
+    "용주사": { en: "Yongjusa", ja: "ヨンジュサ", addressEn: "135-6 Yongju-ro, Hwaseong-si, Gyeonggi-do" },
+    "용화사(청주)": { en: "Yonghwasa (Cheongju)", ja: "ヨンファサ(チョンジュ)", addressEn: "565 Musimseo-ro, Seowon-gu, Cheongju-si, Chungcheongbuk-do" },
+    "용화사(통영)": { en: "Yonghwasa (Tongyeong)", ja: "ヨンファサ(トンヨン)", addressEn: "107-82 Bongsu-ro, Tongyeong-si, Gyeongsangnam-do" },
+    "용흥사": { en: "Yongheungsa", ja: "ヨンフンサ", addressEn: "442 Yongheungsa-gil, Wolsan-myeon, Damyang-gun, Jeollanam-do" },
+    "운주사": { en: "Unjusa", ja: "ウンジュサ", addressEn: "91-44 Cheontae-ro, Doam-myeon, Hwasun-gun, Jeollanam-do" },
+    "원효사": { en: "Wonhyosa", ja: "ウォンヒョサ", addressEn: "1514-35 Mudeung-ro, Buk-gu, Gwangju" },
+    "월정사": { en: "Woljeongsa", ja: "ウォルジョンサ", addressEn: "374-8 Odaesan-ro, Jinbu-myeon, Pyeongchang-gun, Gangwon-do" },
+    "육지장사": { en: "Yukjijangsa", ja: "ユッチジャンサ", addressEn: "190 Gisan-ro 471beon-gil, Baekseok-eup, Yangju-si, Gyeonggi-do" },
+    "은해사": { en: "Eunhaesa", ja: "ウンヘサ", addressEn: "300 Eunhaesa-ro, Cheongtong-myeon, Yeongcheon-si, Gyeongsangbuk-do" },
+    "이제사": { en: "Ijesa", ja: "イジェサ", addressEn: "73-6 Dabokgol-gil, Sagok-myeon, Gongju-si, Chungcheongnam-do" },
+    "자비선사": { en: "Jabiseonsa", ja: "チャビソンサ", addressEn: "208 Gyejeong-gil, Suryun-myeon, Seongju-gun, Gyeongsangbuk-do" },
+    "장육사": { en: "Jangyuksa", ja: "チャンユッサ", addressEn: "172 Jangyuksa 1-gil, Changsu-myeon, Yeongdeok-gun, Gyeongsangbuk-do" },
+    "전등사": { en: "Jeondeungsa", ja: "チョンドゥンサ", addressEn: "37-41 Jeondeungsa-ro, Gilsang-myeon, Ganghwa-gun, Incheon" },
+    "정토사": { en: "Jeongtosa", ja: "チョントサ", addressEn: "3 Yetgol-ro 42beon-gil, Sujeong-gu, Seongnam-si, Gyeonggi-do" },
+    "정혜사": { en: "Jeonghyesa", ja: "チョンヘサ", addressEn: "32 Jeonghyesa-gil, Seo-myeon, Suncheon-si, Jeollanam-do" },
+    "조계사": { en: "Jogyesa", ja: "チョゲサ", addressEn: "55 Ujeongguk-ro, Jongro-gu, Seoul" },
+    "죽림사": { en: "Jukrimsa", ja: "チュッリンサ", addressEn: "279-57 Jukbang-gil, Geumho-eup, Yeongcheon-si, Gyeongsangbuk-do" },
+    "죽림사(포항)": { en: "Jukrimsa (Pohang)", ja: "チュッリンサ(ポハン)", addressEn: "11-4 Tapsan-gil 10beon-gil, Buk-gu, Pohang-si, Gyeongsangbuk-do" },
+    "중흥사": { en: "Jungheungsa", ja: "チュンフンサ", addressEn: "393 Daeseomun-gil, Deogyang-gu, Goyang-si, Gyeonggi-do" },
+    "증심사": { en: "Jeungsimsa", ja: "チュンシンサ", addressEn: "177 Jeungsimsa-gil, Dong-gu, Gwangju" },
+    "지장정사": { en: "Jijangjeongsa", ja: "チジャンジョンサ", addressEn: "103 Hwagogan-gil, Noseong-myeon, Nonsan-si, Chungcheongnam-do" },
+    "직지사": { en: "Jikjisa", ja: "チッチサ", addressEn: "95 Jikjisa-gil, Daehang-myeon, Gimcheon-si, Gyeongsangbuk-do" },
+    "진관사": { en: "Jingwansa", ja: "チングァンサ", addressEn: "73 Jingwan-gil, Eunpyeong-gu, Seoul" },
+    "천은사": { en: "Cheoneunsa", ja: "チョンウンサ", addressEn: "209 Nogodan-ro, Gwangui-myeon, Gurye-gun, Jeollanam-do" },
+    "천축사": { en: "Cheonchuksa", ja: "チョンチュッサ", addressEn: "92-2 Dobongsan-gil, Dobong-gu, Seoul" },
+    "청계사": { en: "Cheonggyesa", ja: "チョンゲサ", addressEn: "67-182 Angye-gil, Okjong-myeon, Hadong-gun, Gyeongsangnam-do" },
+    "청량사": { en: "Cheongryangsa", ja: "チョンリャンサ", addressEn: "199-152 Cheongryangsan-gil, Bonghwa-gun, Gyeongsangbuk-do" },
+    "청련사": { en: "Cheongryeonsa", ja: "チョンリョンサ", addressEn: "112 Gobigogae-ro 188beon-gil, Ganghwa-eup, Ganghwa-gun, Incheon" },
+    "청평사": { en: "Cheongpyeongsa", ja: "チョンピョンサ", addressEn: "810 Obongsan-gil, Buksan-myeon, Chuncheon-si, Gangwon-do" },
+    "축서사": { en: "Chukseosa", ja: "チュッソサ", addressEn: "739 Wolgye-gil, Murya-myeon, Bonghwa-gun, Gyeongsangbuk-do" },
+    "통도사": { en: "Tongdosa", ja: "トンドサ", addressEn: "108 Tongdosa-ro, Habuk-myeon, Yangsan-si, Gyeongsangnam-do" },
+    "통합정보센터": { en: "Tonghapjeongbosenteo", ja: "トンハッチョンボセント", addressEn: "56 Ujeongguk-ro, Jongro-gu, Seoul" },
+    "팔공산석굴암": { en: "Palgongsanseokguram", ja: "パルゴンサンソックルアン", addressEn: "24 Namsan 4-gil, Bugye-myeon, Gunwi-gun, Daegu" },
+    "표충사": { en: "Pyochungsa", ja: "ピョチュンサ", addressEn: "1338 Pyochung-ro, Miryang-si, Gyeongsangnam-do" },
+    "학림사": { en: "Hakrimsa", ja: "ハッリンサ", addressEn: "35-45 Jeseokgol-gil, Banpo-myeon, Gongju-si, Chungcheongnam-do" },
+    "한국문화연수원": { en: "Hangukmunhwayeonsuwon", ja: "ハングッムンファヨンスウォン", addressEn: "1065 Magoksa-ro, Sagok-myeon, Gongju-si, Chungcheongnam-do" },
+    "해인사": { en: "Haeinsa", ja: "ヘインサ", addressEn: "122 Haeinsa-gil, Gaya-myeon, Hapcheon-gun, Gyeongsangnam-do" },
+    "향일암": { en: "Hyangiram", ja: "ヒャンイルアン", addressEn: "60 Hyangiram-ro, Dolsan-eup, Yeosu-si, Jeollanam-do" },
+    "현덕사": { en: "Hyeondeoksa", ja: "ヒョンドッサ", addressEn: "170 Ssarigol-gil, Yeongok-myeon, Gangreung-si, Gangwon-do" },
+    "홍법사": { en: "Hongbeopsa", ja: "ホンボッサ", addressEn: "202 Dugu-ro 33beon-gil, Geumjeong-gu, Busan" },
+    "화계사": { en: "Hwagyesa", ja: "ファゲサ", addressEn: "117 Hwagyesa-gil, Gangbuk-gu, Seoul" },
+    "화암사": { en: "Hwaamsa", ja: "ファアンサ", addressEn: "100 Hwaamsa-gil, Toseong-myeon, Goseong-gun, Gangwon-do" },
+    "화엄사": { en: "Hwaeomsa", ja: "ファオンサ", addressEn: "539 Hwaeomsa-ro, Masan-myeon, Gurye-gun, Jeollanam-do" },
+    "화운사": { en: "Hwaunsa", ja: "ファウンサ", addressEn: "111-14 Dongbaekjukjeondae-ro, Cheoin-gu, Yongin-si, Gyeonggi-do" },
+    "회암사(양주)": { en: "Hoeamsa (Yangju)", ja: "フェアンサ(ヤンジュ)", addressEn: "281 Hoeamsa-gil, Yangju-si, Gyeonggi-do" },
+    "흥국사(고양)": { en: "Heungguksa (Goyang)", ja: "フングッサ(コヤン)", addressEn: "82 Heungguksa-gil, Deogyang-gu, Goyang-si, Gyeonggi-do" },
+    "흥국사(여수)": { en: "Heungguksa (Yeosu)", ja: "フングッサ(ヨス)", addressEn: "160 Heungguksa-gil, Yeosu-si, Jeollanam-do" },
+    "희방사": { en: "Huibangsa", ja: "ヒバンサ", addressEn: "278 Jukryeong-ro 1720beon-gil, Punggi-eup, Yeongju-si, Gyeongsangbuk-do" }
+};
+
+/** 사전에 없는 사찰(새로 추가돼서 아직 이 파일이 안 갱신된 경우)은 원문(한글) 그대로 반환 - 안 깨짐. */
+function translateTempleName(name, lang) {
+    if (lang === 'ko' || !name) return name;
+    var entry = TEMPLE_I18N[name];
+    if (!entry) return name;
+    if (lang === 'ja') return entry.ja || name;
+    if (lang === 'en') return entry.en || name;
+    return name;
+}
+
+/** 주소는 영어 데이터만 있어서(가타카나 주소 데이터 없음) 일본어(ja)도 영어 주소를 그대로 씀. */
+function translateTempleAddress(address, name, lang) {
+    if (lang === 'ko' || !name) return address;
+    var entry = TEMPLE_I18N[name];
+    return (entry && entry.addressEn) ? entry.addressEn : address;
+}
+
+/** 사전으로 그린 텍스트를 common.js의 MutationObserver가 "새로 생긴 한국어"로 오해해서 크롬 번역기로
+    다시 덮어쓰지 않도록, 사전 값이 들어간 요소에 .no-translate를 붙이는지 판단함.
+    이름/주소 모두 ja/en에서 사전 값(주소는 ja도 영어 주소)이라 항상 보호. */
+function isTempleTextFromDict(name, kind, lang) {
+    return lang !== 'ko' && !!TEMPLE_I18N[name];
+}

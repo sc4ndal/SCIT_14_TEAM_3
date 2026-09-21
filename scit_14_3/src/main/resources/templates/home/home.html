@@ -430,6 +430,7 @@
 ===================================================== -->
 
 <button aria-label="챗봇 열기"
+        data-i18n-aria="chatOpen"
         class="chat-toggle"
         id="chatToggle"
         type="button">
@@ -442,12 +443,12 @@
          aria-hidden="true">
 
     <header class="chat-panel__header">
-        <strong>佛선자 챗봇</strong>
-        <span class="chat-panel__subtitle">불교 상식과 사이트 이용을 안내해드려요</span>
+        <strong data-i18n="chatTitle">佛선자 챗봇</strong>
+        <span class="chat-panel__subtitle" data-i18n="chatSubtitle">불교 상식과 사이트 이용을 안내해드려요</span>
     </header>
 
     <div class="chat-panel__messages" id="chatMessages">
-        <div class="chat-message chat-message--bot">안녕하세요! 불교에 대해 궁금한 점이나, 이 사이트를 어떻게 이용하면 되는지 무엇이든 물어보세요.</div>
+        <div class="chat-message chat-message--bot" data-i18n="chatGreeting">안녕하세요! 불교에 대해 궁금한 점이나, 이 사이트를 어떻게 이용하면 되는지 무엇이든 물어보세요.</div>
     </div>
 
     <form class="chat-panel__form" id="chatForm">
@@ -455,8 +456,9 @@
                id="chatInput"
                class="chat-panel__input"
                placeholder="궁금한 점을 입력해보세요"
+               data-i18n-placeholder="chatPlaceholder"
                autocomplete="off">
-        <button type="submit" class="chat-panel__send" aria-label="보내기">↑</button>
+        <button type="submit" class="chat-panel__send" aria-label="보내기" data-i18n-aria="chatSend">↑</button>
     </form>
 
 </section>
