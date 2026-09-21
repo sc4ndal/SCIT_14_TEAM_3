@@ -1,0 +1,261 @@
+/* ============================================================
+   문의 상세 화면 공용 스타일 - 마이페이지(mypage/inquiryDetail.html)와
+   관리자(admin/inquiryDetail.html)가 같이 쓴다. 관리자 페이지가 signup.css의
+   body{display:flex;justify-content:center} 방식에 의존하면서 body 바로 아래
+   형제 엘리먼트가 여러 개라 가운데 정렬이 깨지던 문제가 있었음 - 이 파일은
+   .inquiry-detail-wrap 자체에 margin:0 auto를 직접 줘서 그 문제와 무관하게
+   항상 가운데 정렬되도록 함. 색상 등 토큰은 common.css의 공식 값(--paper,
+   --text-primary 등)을 그대로 씀 - 별도 사전 없이 두 페이지가 같은 값을 봄.
+   ============================================================ */
+
+.inquiry-detail-wrap { max-width: 860px; margin: 0 auto; }
+
+.inquiry-back-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 20px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--text-primary);
+	font-family: var(--sans);
+	font-size: 14px;
+	font-weight: 600;
+	text-decoration: none;
+	cursor: pointer;
+	padding: 11px 20px;
+	border-radius: 999px;
+	transition: border-color .15s, background .15s;
+}
+.inquiry-back-btn:hover { border-color: var(--brown); background: var(--secondary); }
+
+.inquiry-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	overflow: hidden;
+	box-shadow: 0 1px 2px rgba(39, 33, 27, .04), 0 16px 40px -20px rgba(39, 33, 27, .22);
+}
+
+.inquiry-hero {
+	position: relative;
+	padding: 40px 40px 30px;
+	background: linear-gradient(160deg, var(--secondary) 0%, var(--paper) 75%);
+}
+/* 왼쪽 세로 악센트 바 - 카드 전체에 포인트를 하나 줘서 밋밋함을 없앤다 */
+.inquiry-hero::before {
+	content: "";
+	position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+	background: var(--brown);
+}
+.inquiry-hero-label {
+	margin: 0 0 10px;
+	font-family: var(--sans);
+	font-size: 11.5px;
+	font-weight: 700;
+	letter-spacing: .1em;
+	text-transform: uppercase;
+	color: var(--text-tertiary);
+}
+.inquiry-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.inquiry-hero-title {
+	margin: 0;
+	font-family: var(--serif);
+	font-weight: 700;
+	font-size: 22px;
+	line-height: 1.5;
+	color: var(--text-primary);
+	word-break: break-word;
+}
+.inquiry-hero-meta {
+	margin-top: 16px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 20px;
+	font-size: 13px;
+	color: var(--text-secondary);
+}
+.inquiry-hero-meta strong { color: var(--text-primary); font-weight: 600; }
+
+.inquiry-status {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 15px 6px 11px;
+	border-radius: 999px;
+	font-size: 12.5px;
+	font-weight: 700;
+	letter-spacing: .01em;
+	white-space: nowrap;
+}
+.inquiry-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; }
+.inquiry-status.status-대기 { background: rgba(155, 104, 69, .12); color: var(--brown); }
+.inquiry-status.status-대기::before { background: var(--brown); }
+.inquiry-status.status-답변완료 { background: rgba(92, 122, 98, .13); color: var(--green); }
+.inquiry-status.status-답변완료::before { background: var(--green); }
+
+.inquiry-section { padding: 28px 40px; border-top: 1px solid var(--line); }
+.inquiry-section h4 {
+	margin: 0 0 14px;
+	font-family: var(--sans);
+	font-size: 11.5px;
+	font-weight: 700;
+	letter-spacing: .1em;
+	text-transform: uppercase;
+	color: var(--text-tertiary);
+}
+.inquiry-section p {
+	margin: 0;
+	font-size: 14.5px;
+	line-height: 1.85;
+	color: var(--text-primary);
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+.inquiry-section.answer { background: linear-gradient(180deg, rgba(92, 122, 98, .07), rgba(92, 122, 98, .02)); }
+.inquiry-section.no-answer p { color: var(--text-tertiary); font-style: italic; }
+.inquiry-section .answer-date { margin: 12px 0 0; font-size: 12.5px; color: var(--text-tertiary); }
+
+.inquiry-answer-form { padding: 30px 40px 38px; border-top: 1px solid var(--line); }
+.inquiry-answer-form label {
+	display: block;
+	margin-bottom: 12px;
+	font-family: var(--sans);
+	font-size: 11.5px;
+	font-weight: 700;
+	letter-spacing: .1em;
+	text-transform: uppercase;
+	color: var(--text-tertiary);
+}
+.inquiry-answer-form textarea {
+	width: 100%;
+	min-height: 220px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 16px;
+	font-family: inherit;
+	font-size: 14.5px;
+	line-height: 1.7;
+	color: var(--text-primary);
+	background: var(--bg);
+	resize: vertical;
+}
+.inquiry-answer-form textarea:focus { outline: none; border-color: var(--brown); }
+.inquiry-answer-form .form-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
+.inquiry-answer-form button {
+	padding: 12px 30px;
+	border: none;
+	border-radius: 999px;
+	background: var(--brown);
+	color: #fff;
+	font-family: var(--sans);
+	font-size: 14px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: transform .12s ease, box-shadow .12s ease;
+}
+.inquiry-answer-form button:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -10px rgba(155, 104, 69, .55); }
+
+/* ============================================================
+   문의 목록 화면(mypage/inquiryList.html, admin/inquiryList.html) 공용.
+   상태 배지(.inquiry-status)는 위 상세 화면 것을 그대로 재사용한다.
+   ============================================================ */
+
+.inquiry-page-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 26px;
+}
+.inquiry-page-header .inquiry-page-title {
+	margin: 0;
+	font-family: var(--serif);
+	font-weight: 700;
+	font-size: 23px;
+	color: var(--text-primary);
+}
+.inquiry-page-header .inquiry-page-subtitle {
+	margin: 6px 0 0;
+	font-size: 13px;
+	color: var(--text-tertiary);
+}
+
+.inquiry-write-btn {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 12px 24px;
+	background: var(--brown);
+	border: none;
+	border-radius: 999px;
+	color: #fff;
+	font-family: var(--sans);
+	font-size: 14px;
+	font-weight: 700;
+	text-decoration: none;
+	transition: transform .12s ease, box-shadow .12s ease;
+}
+.inquiry-write-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -10px rgba(155, 104, 69, .55); }
+
+.inquiry-list { display: flex; flex-direction: column; gap: 12px; }
+
+.inquiry-row {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 20px;
+	overflow: hidden;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	padding: 20px 26px;
+	text-decoration: none;
+	color: inherit;
+	transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.inquiry-row::before {
+	content: "";
+	position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+	background: var(--line);
+	transition: background .15s ease;
+}
+.inquiry-row:hover {
+	border-color: rgba(155, 104, 69, .35);
+	box-shadow: 0 12px 30px -20px rgba(39, 33, 27, .35);
+	transform: translateY(-1px);
+}
+.inquiry-row:hover::before { background: var(--brown); }
+
+.inquiry-row .info { flex: 1; min-width: 0; }
+.inquiry-row .info h3 {
+	margin: 0 0 6px;
+	font-family: var(--serif);
+	font-weight: 600;
+	font-size: 16px;
+	color: var(--text-primary);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.inquiry-row .info p {
+	margin: 0;
+	font-size: 12.5px;
+	color: var(--text-tertiary);
+}
+.inquiry-row .info p strong { color: var(--text-secondary); font-weight: 600; }
+
+.inquiry-empty {
+	text-align: center;
+	padding: 64px 24px;
+	color: var(--text-tertiary);
+	font-size: 14px;
+	background: var(--paper);
+	border: 1px dashed var(--line);
+	border-radius: 16px;
+}
+.inquiry-empty a { color: var(--brown); font-weight: 700; text-decoration: none; }
+.inquiry-empty a:hover { text-decoration: underline; }

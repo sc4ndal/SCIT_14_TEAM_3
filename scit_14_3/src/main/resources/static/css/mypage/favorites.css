@@ -144,6 +144,11 @@
 	align-items: start;
 }
 
+/* 관심 사찰도 관심 행사랑 동일하게 카드 폭 좁혀서 한 줄에 4개가 들어가게 함 */
+.temple-favorite-grid {
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
 /* 카드 높이를 고정하고, 본문(body)이 남는 공간을 다 채우게 해서 즐겨찾기 버튼이 항상
    카드 우측 하단(.food-favorite-card__footer가 이미 justify-content:flex-end)에 붙게 함.
    제목/소개는 길이가 제각각이라 줄 수를 강제로 잘라서(line-clamp) 높이가 안 흔들리게 막는다. */

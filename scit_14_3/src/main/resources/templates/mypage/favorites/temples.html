@@ -32,7 +32,7 @@
             아직 즐겨찾기한 사찰이 없습니다. <a th:href="@{/findtemple}">사찰 찾아보러 가기 →</a>
         </p>
 
-        <div class="food-favorite-grid" data-favorites-grid="temple-pagination" th:unless="${#lists.isEmpty(temples)}">
+        <div class="food-favorite-grid temple-favorite-grid" data-favorites-grid="temple-pagination" th:unless="${#lists.isEmpty(temples)}">
             <article class="food-favorite-card" th:each="temple : ${temples}" data-remove-on-unfavorite>
 
                 <img class="food-favorite-card__image" th:if="${temple.imageUrl}"

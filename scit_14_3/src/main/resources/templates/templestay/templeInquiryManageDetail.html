@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>문의 상세 · 사찰 커뮤니티</title>
+	<title>사찰 문의 상세 · 사찰 커뮤니티</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 	<link rel="stylesheet" th:href="@{/css/common.css}">
@@ -14,21 +14,25 @@
 <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
 
 <div class="inquiry-detail-wrap">
-	<a class="inquiry-back-btn" th:href="@{/admin/inquiries}">← 목록으로</a>
+	<a class="inquiry-back-btn" th:href="@{/temple/inquiries}">← 목록으로</a>
 
 	<p class="admin-alert admin-alert--ok" th:if="${answerSuccess}">
 		답변이 등록되었습니다.
 	</p>
+	<p class="admin-alert admin-alert--err" th:if="${answerError}" th:text="${answerError}"></p>
 
 	<div class="inquiry-card">
 		<div class="inquiry-hero">
-			<p class="inquiry-hero-label">문의 상세</p>
+			<p class="inquiry-hero-label">사찰 문의 상세</p>
 			<div class="inquiry-hero-top">
 				<h1 class="inquiry-hero-title" th:text="${inquiry.title}"></h1>
 				<span class="inquiry-status" th:classappend="'status-' + ${inquiry.status}" th:text="${inquiry.status}"></span>
 			</div>
 			<div class="inquiry-hero-meta">
 				<span class="no-translate"><strong th:text="${inquiry.nickname}"></strong>&nbsp;(<span th:text="${inquiry.loginId}"></span>)</span>
+				<span th:if="${inquiry.reservationId != null}">
+					관련 예약: <a th:href="@{/temple/programs}" style="color:var(--brown);font-weight:600;" th:text="'#' + ${inquiry.reservationId}"></a>
+				</span>
 				<span th:text="${#temporals.format(inquiry.createdAt, 'yyyy.MM.dd HH:mm')}"></span>
 			</div>
 		</div>
@@ -45,7 +49,7 @@
 		</div>
 
 		<form class="inquiry-answer-form" th:if="${inquiry.status.name() != '답변완료'}"
-		      th:action="@{/admin/inquiries/{id}/answer(id=${inquiry.inquiryId})}" method="post">
+		      th:action="@{/temple/inquiries/{id}/answer(id=${inquiry.inquiryId})}" method="post">
 			<label for="answer-text">답변 작성</label>
 			<textarea id="answer-text" name="answer" placeholder="문의하신 내용에 대한 답변을 작성해주세요." required></textarea>
 			<div class="form-actions">

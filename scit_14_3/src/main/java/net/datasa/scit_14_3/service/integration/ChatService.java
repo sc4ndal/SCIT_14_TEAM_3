@@ -66,8 +66,31 @@ public class ChatService {
 			- 확실하지 않은 내용을 단정적으로 지어내지 말고, 모르면 모른다고 말한다.
 			""";
 
+	private static final String KOREAN_RULE = "- 반드시 한국어로, 친근하고 정중한 말투로 답한다.";
+
+	// 화면 언어(쿠키 preferredLang)에 맞춰 답변 언어만 바꿔 끼운다. 그 외 규칙은 그대로 유지.
+	private static String instructionFor(String lang) {
+		if ("ja".equals(lang)) {
+			return SYSTEM_INSTRUCTION.replace(KOREAN_RULE,
+					"- 반드시 일본어(です・ます調)로 친근하고 정중하게 답한다. 사용자가 다른 언어로 질문해도 일본어로 답한다. "
+					+ "홈 화면 섹션명/메뉴명은 위 한국어 원문을 자연스러운 일본어로 옮겨서 안내하고, 거절 안내 문구도 일본어로 말한다.");
+		}
+		if ("en".equals(lang)) {
+			return SYSTEM_INSTRUCTION.replace(KOREAN_RULE,
+					"- 반드시 영어로 친근하고 정중하게 답한다. 사용자가 다른 언어로 질문해도 영어로 답한다. "
+					+ "홈 화면 섹션명/메뉴명은 위 한국어 원문을 자연스러운 영어로 옮겨서 안내하고, 거절 안내 문구도 영어로 말한다.");
+		}
+		return SYSTEM_INSTRUCTION;
+	}
+
+	private static String failureMessage(String lang) {
+		return "ja".equals(lang) ? "現在、回答を取得できませんでした。しばらくしてからもう一度お試しください。"
+				: "en".equals(lang) ? "Sorry, I couldn't get an answer right now. Please try again in a moment."
+				: "지금은 답변을 가져오지 못했어요. 잠시 후 다시 시도해주세요.";
+	}
+
 	/** 실패하면(키 미설정/API 오류/응답 파싱 실패) 사용자에게 보여줄 안내 문구를 그대로 반환한다. */
-	public String reply(String message, List<ChatTurnDTO> history) {
+	public String reply(String message, List<ChatTurnDTO> history, String lang) {
 		try {
 			List<Map<String, Object>> contents = new ArrayList<>();
 			if (history != null) {
@@ -80,7 +103,7 @@ public class ChatService {
 			contents.add(Map.of("role", "user", "parts", List.of(Map.of("text", message))));
 
 			Map<String, Object> requestBody = Map.of(
-					"system_instruction", Map.of("parts", List.of(Map.of("text", SYSTEM_INSTRUCTION))),
+					"system_instruction", Map.of("parts", List.of(Map.of("text", instructionFor(lang)))),
 					"contents", contents
 			);
 
@@ -96,7 +119,7 @@ public class ChatService {
 			return extractText(response);
 		} catch (Exception e) {
 			log.warn("챗봇 응답 생성 실패: {}", e.getMessage());
-			return "지금은 답변을 가져오지 못했어요. 잠시 후 다시 시도해주세요.";
+			return failureMessage(lang);
 		}
 	}
 

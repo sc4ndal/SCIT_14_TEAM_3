@@ -48,8 +48,8 @@
 			<tbody>
 			<tr th:each="u : ${users}">
 				<td th:text="${u.loginId}"></td>
-				<td th:text="${u.nickname}"></td>
-				<td th:text="${u.name}"></td>
+				<td class="no-translate" th:text="${u.nickname}"></td>
+				<td class="no-translate" th:text="${u.name}"></td>
 				<td th:text="${u.phone}"></td>
 				<td th:text="${u.email}"></td>
 				<td th:text="${u.role}"></td>

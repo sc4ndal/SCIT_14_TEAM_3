@@ -52,7 +52,10 @@ public class ReservationController {
 	 */
 	@PostMapping("/templestayreservations")
 	@ResponseBody
-	public ResponseEntity<?> TempleStayReservation(@RequestBody TempleStayReservationDTO TempleStayReservationDTO) {
+	public ResponseEntity<?> TempleStayReservation(@RequestBody TempleStayReservationDTO TempleStayReservationDTO,
+			@CookieValue(value = "preferredLang", defaultValue = "ko") String preferredLang) {
+		// 화면 언어는 common.js가 쿠키(preferredLang)로 저장해둠 - 안내 메일을 그 언어로 보내려고 예약에 같이 저장
+		TempleStayReservationDTO.setLang(preferredLang);
 		try {
 			return ResponseEntity.ok(tsrs.reserved(TempleStayReservationDTO));
 		} catch (IllegalStateException e) {
@@ -166,7 +169,9 @@ public class ReservationController {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "본인 예약만 취소할 수 있습니다."));
 		}
 		try {
-			return ResponseEntity.ok(tsrs.canceledMyReservation(reservationId));
+			TempleStayReservationDTO canceled = tsrs.canceledMyReservation(reservationId);
+			ps.notifyReservationCanceled(reservationId);
+			return ResponseEntity.ok(canceled);
 		} catch (IllegalStateException e) {
 			// 체크인 24시간 전 취소 마감 등 - 프론트에서 메시지 그대로 alert로 띄움
 			return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));

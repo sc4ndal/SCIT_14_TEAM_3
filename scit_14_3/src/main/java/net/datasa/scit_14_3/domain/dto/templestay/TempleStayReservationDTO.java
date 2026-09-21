@@ -21,6 +21,9 @@ public class TempleStayReservationDTO {
 	private LocalDate endDate;
 	private int participantCount;
 	private String note;
+	// 서버가 쿠키(preferredLang)에서 채움 - 클라이언트가 보낸 값은 컨트롤러에서 덮어씀
+	@Builder.Default
+	private String lang = "ko";
 	@Builder.Default
 	private TempleStayReservationEntity.Status status = TempleStayReservationEntity.Status.예약확정;
 	private LocalDateTime canceledAt;

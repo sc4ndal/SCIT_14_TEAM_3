@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import net.datasa.scit_14_3.domain.dto.templestay.TempleStayProgramDTO;
 import net.datasa.scit_14_3.security.AppUserDetails;
 import net.datasa.scit_14_3.service.integration.CloudinaryService;
+import net.datasa.scit_14_3.service.payment.PaymentService;
 import net.datasa.scit_14_3.service.templestay.TempleStayProgramService;
 import net.datasa.scit_14_3.service.templestay.TempleStayReservationService;
 import org.springframework.http.HttpStatus;
@@ -38,6 +39,7 @@ public class TempleProgramManageController {
 	private final TempleStayProgramService templeStayProgramService;
 	private final TempleStayReservationService templeStayReservationService;
 	private final CloudinaryService cloudinaryService;
+	private final PaymentService paymentService;
 
 	@GetMapping
 	public String list(@AuthenticationPrincipal AppUserDetails principal, Model model) {
@@ -61,7 +63,22 @@ public class TempleProgramManageController {
 												@PathVariable Long reservationId) {
 		try {
 			templeStayReservationService.cancelByTempleAdmin(reservationId, principal.getTempleId());
+			paymentService.notifyReservationCanceled(reservationId);
 			return ResponseEntity.ok(Map.of("status", "취소"));
+		} catch (IllegalStateException e) {
+			return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+		}
+	}
+
+	/** 계좌이체(무통장입금) 예약대기 건의 입금을 사찰이 직접 확인하고 예약확정으로 전환. */
+	@PatchMapping("/{programId}/reservations/{reservationId}/confirm")
+	@ResponseBody
+	public ResponseEntity<?> confirmReservation(@AuthenticationPrincipal AppUserDetails principal,
+												 @PathVariable Long reservationId) {
+		try {
+			templeStayReservationService.confirmByTempleAdmin(reservationId, principal.getTempleId());
+			paymentService.notifyBankTransferConfirmed(reservationId); // 이제서야 "확정" 메일 발송
+			return ResponseEntity.ok(Map.of("status", "예약확정"));
 		} catch (IllegalStateException e) {
 			return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
 		}

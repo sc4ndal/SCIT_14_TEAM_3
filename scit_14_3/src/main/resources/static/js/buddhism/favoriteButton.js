@@ -15,13 +15,25 @@
    쉬우니 확인창 없이 바로 처리한다.
    ============================================================ */
 
+/* 클릭 시 라벨을 이 파일이 직접 다시 그리는데, 항상 한국어로 박아 넣으면 이미
+   번역해둔 언어가 원상복구돼버림 - common.js의 전역 사전(I18N_MANUAL_OVERRIDES)과
+   현재 언어(i18nCurrentLang)를 그대로 참조해서 지금 보고 있는 언어를 유지한다. */
+function favoriteLabelText(korean) {
+	var lang = (typeof i18nCurrentLang !== 'undefined') ? i18nCurrentLang : 'ko';
+	if (lang !== 'ko' && typeof I18N_MANUAL_OVERRIDES !== 'undefined') {
+		var override = I18N_MANUAL_OVERRIDES[korean] && I18N_MANUAL_OVERRIDES[korean][lang];
+		if (override) return override;
+	}
+	return korean;
+}
+
 function applyFavoriteState(btn, favorited) {
 	btn.dataset.favorited = String(favorited);
 	btn.classList.toggle('is-favorited', favorited);
 	btn.setAttribute('aria-pressed', String(favorited));
 	var label = btn.querySelector('.favorite-toggle__label');
 	if (label) {
-		label.textContent = favorited ? '즐겨찾기됨' : '즐겨찾기';
+		label.textContent = favoriteLabelText(favorited ? '즐겨찾기됨' : '즐겨찾기');
 	}
 }
 

@@ -159,6 +159,10 @@
       cancelNote.textContent = '';
     }
 
+    // 24시간 이내라 위 버튼으로 취소가 막히는 경우(서버가 거부) 사찰에 직접 요청할 수 있게
+    // 문의 작성 링크를 항상 걸어둔다(어느 상태든 예약번호만 있으면 문의는 가능해야 함).
+    document.getElementById('temple-inquiry-link').href = `/mypage/temple-inquiries/new?reservationId=${r.reservationId}`;
+
     // 리뷰 작성/수정/삭제 버튼: 이용완료 상태에서만 노출. 이미 작성한 리뷰가 있으면
     // "리뷰 작성" 대신 "리뷰 수정"+"리뷰 삭제"로 바뀐다.
     updateReviewButtons(r);
@@ -226,6 +230,7 @@
     const ok = confirm('작성한 리뷰를 삭제하시겠습니까?');
     if (!ok) return;
 
+    showLoading('삭제하는 중...');
     try {
       const res = await fetch(`/reviews/${reviewId}`, { method: 'DELETE' });
       if (!res.ok) {
@@ -238,6 +243,8 @@
     } catch (err) {
       console.error('리뷰 삭제 중 오류가 발생했습니다.', err);
       alert('리뷰 삭제 중 오류가 발생했습니다.');
+    } finally {
+      hideLoading();
     }
   });
 

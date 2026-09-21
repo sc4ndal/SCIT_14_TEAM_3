@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>문의 목록 · 사찰 커뮤니티</title>
+	<title>사찰 문의 목록 · 사찰 커뮤니티</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 	<link rel="stylesheet" th:href="@{/css/common.css}">
@@ -16,8 +16,8 @@
 <div class="inquiry-detail-wrap">
 	<div class="inquiry-page-header">
 		<div>
-			<h1 class="inquiry-page-title">문의 목록</h1>
-			<p class="inquiry-page-subtitle">일반회원이 남긴 1:1 문의입니다. 답변 대기중인 문의가 먼저 표시됩니다.</p>
+			<h1 class="inquiry-page-title">사찰 문의 목록</h1>
+			<p class="inquiry-page-subtitle">회원이 이 사찰로 남긴 1:1 문의입니다(예약 취소 요청 등). 답변 대기중인 문의가 먼저 표시됩니다.</p>
 		</div>
 	</div>
 
@@ -27,10 +27,13 @@
 
 	<div class="inquiry-list" th:if="${!#lists.isEmpty(inquiries)}">
 		<a class="inquiry-row" th:each="q : ${inquiries}"
-		   th:href="@{/admin/inquiries/{id}(id=${q.inquiryId})}">
+		   th:href="@{/temple/inquiries/{id}(id=${q.inquiryId})}">
 			<div class="info">
 				<h3 th:text="${q.title}"></h3>
-				<p><strong class="no-translate" th:text="${q.nickname}"></strong>&nbsp;·&nbsp;<span th:text="${#temporals.format(q.createdAt, 'yyyy.MM.dd HH:mm')}"></span></p>
+				<p>
+					<strong class="no-translate" th:text="${q.nickname}"></strong>&nbsp;·&nbsp;<span th:text="${#temporals.format(q.createdAt, 'yyyy.MM.dd HH:mm')}"></span>
+					<span th:if="${q.reservationId != null}" th:text="' · 예약번호 #' + ${q.reservationId}"></span>
+				</p>
 			</div>
 			<span class="inquiry-status" th:classappend="'status-' + ${q.status}" th:text="${q.status}"></span>
 		</a>

@@ -17,8 +17,10 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -32,6 +34,10 @@ public class TempleStayProgramService {
 	private final CloudinaryService cloudinaryService;
 
 	private TempleStayProgramDTO toDto(TempleStayProgramEntity entity, int reservedCount) {
+		return toDto(entity, reservedCount, false);
+	}
+
+	private TempleStayProgramDTO toDto(TempleStayProgramEntity entity, int reservedCount, boolean hasPendingReservation) {
 		return TempleStayProgramDTO.builder()
 				.programId(entity.getProgramId())
 				.templeId(entity.getTemple().getTempleId()) // entity.getTemple()로 한 번 거쳐서 ID 꺼냄
@@ -52,6 +58,7 @@ public class TempleStayProgramService {
 				.maxParticipant(entity.getMaxParticipant())
 				.reservedCount(reservedCount)
 				.supportEnglish(entity.isSupportEnglish())
+				.hasPendingReservation(hasPendingReservation)
 				.latitude(entity.getTemple().getLatitude())
 				.longitude(entity.getTemple().getLongitude())
 				.createdAt(entity.getCreatedAt())
@@ -70,8 +77,14 @@ public class TempleStayProgramService {
 				.stream()
 				.collect(Collectors.toMap(row -> (Long) row[0], row -> ((Long) row[1]).intValue()));
 
+		// 사찰 프로그램 관리 목록의 빨간점(예약대기 있음) 표시용 - 프로그램마다 따로 물어보면
+		// N+1이라 예약대기인 프로그램 id들을 한 번에 모아서 Set으로 매칭한다.
+		Set<Long> pendingProgramIds = new HashSet<>(
+				tsrr.findDistinctProgramIdsByStatus(TempleStayReservationEntity.Status.예약대기));
+
 		return entities.stream()
-				.map(entity -> toDto(entity, reservedCounts.getOrDefault(entity.getProgramId(), 0)))
+				.map(entity -> toDto(entity, reservedCounts.getOrDefault(entity.getProgramId(), 0),
+						pendingProgramIds.contains(entity.getProgramId())))
 				.toList();
 	}
 

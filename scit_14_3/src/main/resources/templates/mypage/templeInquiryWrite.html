@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <link rel="stylesheet" th:href="@{/css/common.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}" type="text/css">
+    <title>사찰 문의 작성 · 佛선자</title>
+    <style>
+        .inquiry-hero {
+          max-width: 760px;
+          margin: 0 auto 28px;
+          text-align: center;
+        }
+        .inquiry-hero h1 {
+          margin: 0;
+          font-family: var(--serif);
+          font-weight: 500;
+          font-size: 30px;
+          letter-spacing: -.03em;
+          color: var(--text-primary);
+        }
+        .inquiry-hero p {
+          margin: 14px 0 0;
+          font-size: 14px;
+          line-height: 1.7;
+          color: var(--text-tertiary);
+        }
+
+        .inquiry-card {
+          max-width: 760px;
+          margin: 0 auto;
+          background: var(--paper);
+          border: 1px solid var(--line);
+          border-radius: 12px;
+          overflow: hidden;
+        }
+
+        .inquiry-section { padding: 32px; }
+        .inquiry-section + .inquiry-section { border-top: 1px solid var(--line); }
+        .inquiry-section h4 {
+          margin: 0 0 14px;
+          font-size: 12.5px;
+          font-weight: 700;
+          letter-spacing: .02em;
+          color: var(--text-tertiary);
+        }
+
+        .reservation-ref {
+          margin: 0 0 14px;
+          padding: 12px 14px;
+          background: var(--muted-bg);
+          border-radius: 6px;
+          font-size: 13px;
+          color: var(--text-secondary);
+        }
+
+        .inquiry-title-input {
+          width: 100%;
+          padding: 14px 16px;
+          border: 1px solid var(--line);
+          border-radius: 6px;
+          font-family: var(--sans);
+          font-size: 15px;
+          color: var(--text-primary);
+        }
+        .inquiry-title-input:focus { outline: none; border-color: var(--blue); }
+
+        .inquiry-textarea {
+          width: 100%;
+          min-height: 220px;
+          padding: 16px;
+          border: 1px solid var(--line);
+          border-radius: 6px;
+          font-family: var(--sans);
+          font-size: 15px;
+          line-height: 1.6;
+          color: var(--text-primary);
+          resize: vertical;
+        }
+        .inquiry-textarea:focus { outline: none; border-color: var(--blue); }
+
+        .inquiry-actions { display: flex; gap: 10px; padding: 0 32px 32px; }
+        .inquiry-back-btn,
+        .inquiry-submit-btn {
+          flex: 1;
+          padding: 15px;
+          border-radius: 6px;
+          font-family: var(--sans);
+          font-size: 14.5px;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .inquiry-back-btn {
+          background: var(--paper);
+          border: 1px solid var(--line);
+          color: var(--text-primary);
+        }
+        .inquiry-back-btn:hover { border-color: rgba(39, 33, 27, 0.25); background: var(--secondary); }
+        .inquiry-submit-btn {
+          background: var(--blue);
+          border: 1px solid var(--blue);
+          color: #fff;
+        }
+        .inquiry-submit-btn:hover { opacity: .88; }
+    </style>
+</head>
+<body>
+
+<div id="auth-info" style="display:none;"
+     sec:authorize="isAuthenticated()"
+     th:attr="data-login-id=${#authentication.principal.username}">
+</div>
+
+<header>
+    <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+</header>
+
+<main class="mypage-main">
+    <div class="mypage-inner">
+        <div class="inquiry-hero">
+            <h1>사찰에 문의하기</h1>
+            <p>예약 취소 기한(24시간 전)이 지났거나 그 외 요청사항이 있으면 사찰에 직접 남겨주세요.<br>사찰이 확인 후 답변드립니다.</p>
+        </div>
+
+        <form class="inquiry-card" th:action="@{/mypage/temple-inquiries}" method="post">
+            <div class="inquiry-section">
+                <p class="reservation-result fail" style="color:var(--destructive);" th:if="${submitError}" th:text="${submitError}"></p>
+                <p class="reservation-ref" th:text="'관련 예약번호: #' + ${reservationId}"></p>
+                <input type="hidden" name="reservationId" th:value="${reservationId}">
+                <h4>제목</h4>
+                <input class="inquiry-title-input" type="text" name="title" maxlength="100"
+                       placeholder="예: 예약 취소 요청" required>
+            </div>
+            <div class="inquiry-section">
+                <h4>내용</h4>
+                <textarea class="inquiry-textarea" name="content"
+                          placeholder="취소를 원하시는 이유 등을 자세히 작성해주시면 더 빠르게 처리해드릴 수 있습니다."
+                          required></textarea>
+            </div>
+            <div class="inquiry-actions">
+                <button class="inquiry-back-btn" type="button" onclick="location.href='/mypage/myReservations'">취소</button>
+                <button class="inquiry-submit-btn" type="submit">문의 등록</button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+
+</body>
+</html>
