@@ -142,6 +142,11 @@
         .like-btn .like-btn__icon::before { content: "\2661"; font-size: 16px; }
         .like-btn.is-liked { color: var(--gold); }
         .like-btn.is-liked .like-btn__icon::before { content: "\2665"; }
+        /* 관리자 계정은 좋아요를 누를 순 없어도 개수는 보여준다(reviews.js) - 버튼이 아니라
+           span이라 클릭은 애초에 안 되지만, hover 시 금색으로 바뀌는 건 눌러도 되는 것처럼
+           보여서 취소한다. */
+        .like-btn--readonly { cursor: default; }
+        .like-btn--readonly:hover { color: var(--ink-faint); }
         .review-summary .col-main { flex: 1; min-width: 0; }
         .review-summary .review-title {
           display: block; /* span은 인라인이라 overflow/text-overflow가 적용 안 돼 말줄임이 무시됨 */
@@ -293,8 +298,12 @@
 
 <div id="auth-info" style="display:none;"
      sec:authorize="isAuthenticated()"
-     th:attr="data-login-id=${#authentication.principal.username}">
+     th:attr="data-login-id=${#authentication.principal.username}, data-temple-account=${#authentication.principal.templeAccount}">
 </div>
+<!-- 관리자 계정 + 사찰 계정은 좋아요를 못 쓰게 서버(ReviewController)에서 막아뒀다 - reviews.js가
+     카드를 JS로 직접 그리므로(renderItem), 존재 여부만으로 판별하는 #auth-info와 같은 방식으로
+     이 표식을 두고 좋아요 버튼 자체를 안 그리게 한다(사찰 계정은 #auth-info의 data-temple-account로 판별). -->
+<div id="admin-info" style="display:none;" sec:authorize="hasRole('ADMIN')"></div>
 
 <header>
     <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>

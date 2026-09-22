@@ -98,46 +98,58 @@ public class MypageController {
 	// ===== 마이페이지 허브(/mypage) 카드에서 연결되는 하위 페이지들 =====
 	// 지금은 화면 껍데기만 있는 상태. 실제 데이터 바인딩은 각 기능 담당이 채운다.
 	
+	// 마이페이지 허브(/mypage)와 즐겨찾기 5종처럼, 예약목록/내가 쓴 리뷰도 관리자·사찰 계정은
+	// URL을 직접 쳐서 못 들어오게 막아야 한다 - 지금까지 principal==null(로그인) 체크만 있던 곳.
+	@PreAuthorize("hasRole('USER')")
 	@GetMapping("/mypage/myReservations")
 	public String reservations() {
 		return "mypage/myReservations";
 	}
 
+	@PreAuthorize("hasRole('USER')")
 	@GetMapping("/mypage/myReviews") // 내가 작성한 리뷰
 	public String reviews() {
 		return "mypage/myReviews";
 	}
 
 	// 예약목록의 "리뷰 작성" 버튼에서 연결 - 실제 데이터 조회/검증은 reviewWrite.js가 REST API로 처리
+	@PreAuthorize("hasRole('USER')")
 	@GetMapping("/mypage/reviews/write")
 	public String reviewWrite() {
 		return "mypage/reviewWrite";
 	}
 	
+	// 즐겨찾기 모아보기 5종 전부 관리자 계정은 못 들어오게 막는다 - 토글 자체가 관리자에게 막혀있어
+	// 실제로 쌓인 데이터는 없지만, URL을 직접 쳐서 들어오는 것까지 막아야 완전한 방어다.
+	@PreAuthorize("hasRole('USER')")
 	@GetMapping("/mypage/favorites/temples")
 	public String favoriteTemples(@AuthenticationPrincipal AppUserDetails principal, Model model) {
 		model.addAttribute("temples", favoriteTempleService.getFavorites(principal.getUsername()));
 		return "mypage/favorites/temples";
 	}
-	
+
+	@PreAuthorize("hasRole('USER')")
 	@GetMapping("/mypage/favorites/events")
 	public String favoriteEvents(@AuthenticationPrincipal AppUserDetails principal, Model model) {
 		model.addAttribute("events", templeEventService.getFavorites(principal.getUsername()));
 		return "mypage/favorites/events";
 	}
-	
+
+	@PreAuthorize("hasRole('USER')")
 	@GetMapping("/mypage/favorites/quotes")
 	public String favoriteQuotes(@AuthenticationPrincipal AppUserDetails principal, Model model) {
 		model.addAttribute("quotes", dailyQuoteService.getFavorites(principal.getUsername()));
 		return "mypage/favorites/quotes";
 	}
 
+	@PreAuthorize("hasRole('USER')")
 	@GetMapping("/mypage/favorites/foods")
 	public String favoriteFoods(@AuthenticationPrincipal AppUserDetails principal, Model model) {
 		model.addAttribute("foods", templeFoodService.getFavorites(principal.getUsername()));
 		return "mypage/favorites/foods";
 	}
-	
+
+	@PreAuthorize("hasRole('USER')")
 	@GetMapping("/mypage/favorites/reviews") // 내가 좋아요 한 리뷰
 	public String favoriteReviews(@AuthenticationPrincipal AppUserDetails principal, Model model) {
 		model.addAttribute("reviews", templeStayReviewService.getFavoriteReviews(principal.getUsername()));

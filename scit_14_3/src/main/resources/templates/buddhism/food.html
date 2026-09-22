@@ -55,7 +55,10 @@
 					</a>
 				</div>
 
-				<div class="food-card__footer">
+				<!-- 관리자 계정은 즐겨찾기를 못 쓰게 서버(TempleFoodController)에서 막아뒀다 - 버튼만
+				     숨기면 padding-top만 남은 빈 줄이 카드 아래에 생겨서(food-card__footer가
+				     이 버튼 하나만 담는 전용 div), 컨테이너째로 안 그린다. -->
+				<div class="food-card__footer" sec:authorize="!hasRole('ADMIN')">
 					<button type="button" class="favorite-toggle"
 							th:classappend="${food.favorited()} ? 'is-favorited' : ''"
 							th:attr="data-favorite-url=@{'/info/food/' + ${food.recommendationId()} + '/favorite'}, aria-pressed=${food.favorited()}"

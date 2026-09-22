@@ -87,8 +87,8 @@ public class ReviewController {
 		if (principal == null) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요합니다."));
 		}
-		if (principal.isAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "관리자 계정은 좋아요를 할 수 없습니다."));
+		if (principal.isAdmin() || principal.isTempleAccount()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "관리자·사찰 계정은 좋아요를 할 수 없습니다."));
 		}
 		try {
 			boolean liked = reviewService.toggleLike(principal.getUsername(), reviewId);

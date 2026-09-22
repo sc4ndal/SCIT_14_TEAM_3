@@ -109,7 +109,7 @@ kakao.maps.load(function () {
     var isLoggedIn = !!document.getElementById('auth-info');
     // null = 검색으로 제한된 게 없음(전체 대상), 배열이면 그 안의 templeId만 허용
     var searchMatchedIds = null;
-    if (!IS_TEMPLE_ACCOUNT) {
+    if (!HIDE_TEMPLE_FAVORITE) {
     fetch('/api/favoritetemples')
         .then(function (response) {
             if (!response.ok) throw new Error('로그인이 필요합니다.')
@@ -210,7 +210,7 @@ kakao.maps.load(function () {
             var displayName = (typeof translateTempleName === 'function') ? translateTempleName(temple.name, listLang) : temple.name;
             var displayAddress = (typeof translateTempleAddress === 'function') ? translateTempleAddress(temple.address, temple.name, listLang) : temple.address;
             // 검색 결과 리스트에 사찰 이름이랑 주소 표시, 사찰 관리자 계정은 즐겨찾기가 보이지 않도록 설정
-             var resultFavoriteHtml = IS_TEMPLE_ACCOUNT ? '' :
+             var resultFavoriteHtml = HIDE_TEMPLE_FAVORITE ? '' :
                 '  <button type="button" class="result-favorite-btn" style="border:none;background:none;font-size:16px;line-height:1;cursor:pointer;color:#ccc;padding:0;">★</button>';
 
                         li.innerHTML =
@@ -221,7 +221,7 @@ kakao.maps.load(function () {
                             '<div class="result-address' + (isTempleTextFromDict(temple.name, 'address', listLang) ? ' no-translate' : '') + '">' + displayAddress + '</div>' +
                             '<div class="result-types" style="margin-top:4px;">' + buildTypeTagsHtml(temple, listLang) + '</div>';
 
-                        if (!IS_TEMPLE_ACCOUNT) {
+                        if (!HIDE_TEMPLE_FAVORITE) {
                         var favoriteBtn = li.querySelector('.result-favorite-btn');
 
                         // 이미 즐겨찾기 되어있는 사찰이면 처음부터 별표를 채워서 보여줌
@@ -415,7 +415,7 @@ kakao.maps.load(function () {
 
                var favoriteFilterBtn = document.getElementById('filter-favorite');
 
-               if (IS_TEMPLE_ACCOUNT) {
+               if (HIDE_TEMPLE_FAVORITE) {
                    var favoriteSection = favoriteFilterBtn && favoriteFilterBtn.closest('.filter-section');
                    if (favoriteSection) {
                        // 즐겨찾기 섹션 바로 앞의 구분선(|)도 같이 숨겨야 끝에 구분선만 덩그러니 안 남음

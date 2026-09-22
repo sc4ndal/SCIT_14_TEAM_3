@@ -855,7 +855,7 @@
 <body>
 <div id="auth-info" style="display:none;"
      sec:authorize="isAuthenticated()"
-     th:attr="data-login-id=${#authentication.principal.username}, data-nickname=${#authentication.principal.nickname}, data-temple-account=${#authentication.principal.templeAccount}">
+     th:attr="data-login-id=${#authentication.principal.username}, data-nickname=${#authentication.principal.nickname}, data-temple-account=${#authentication.principal.templeAccount}, data-is-admin=${#authentication.principal.admin}">
 </div>
 <header>
     <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
