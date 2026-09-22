@@ -531,27 +531,10 @@ a {
 	gap: 8px;
 }
 
-.term-card__badge {
-	font-size: 12px;
-	letter-spacing: -.05em;
-	padding: 2px 8px;
-	border-radius: 999px;
-	background: var(--accent-soft);
-	color: var(--accent);
-}
-
 .term-card__content {
 	margin: 0;
 	color: var(--ink-soft);
 	font-size: 14.5px;
-}
-
-.terms-empty {
-	max-width: 720px;
-	margin: 0 auto;
-	padding: 40px 24px;
-	text-align: center;
-	color: var(--ink-soft);
 }
 
 .terms-back {

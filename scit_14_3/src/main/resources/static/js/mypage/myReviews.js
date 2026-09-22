@@ -3,7 +3,7 @@ const authInfo = document.getElementById('auth-info');
 const isLoggedIn = !!authInfo;
 
 if (!isLoggedIn) {
-  alert('로그인이 필요합니다.');
+  alert(i18nMsg('loginRequired'));
   location.href = '/login';
 }
 
@@ -98,28 +98,28 @@ async function loadMyReviews() {
     });
   } catch (err) {
     console.error('내가 쓴 리뷰를 불러오지 못했습니다.', err);
-    alert('리뷰 목록을 불러오는 중 오류가 발생했습니다.');
+    alert(i18nMsg('errLoadReviewList'));
   } finally {
     hideLoading();
   }
 }
 
 async function deleteReview(reviewId) {
-  const ok = confirm('이 리뷰를 삭제하시겠습니까?');
+  const ok = confirm(i18nMsg('confirmDeleteReview'));
   if (!ok) return;
 
   try {
     const res = await fetch(`/reviews/${reviewId}`, { method: 'DELETE' });
     if (!res.ok) {
       const err = await res.json().catch(() => null);
-      alert(err && err.message ? err.message : '리뷰 삭제 중 오류가 발생했습니다.');
+      alert(err && err.message ? i18nSrv(err.message) : i18nMsg('errDeleteReview'));
       return;
     }
-    alert('리뷰가 삭제되었습니다.');
+    alert(i18nMsg('reviewDeleted'));
     loadMyReviews();
   } catch (err) {
     console.error('리뷰 삭제 중 오류가 발생했습니다.', err);
-    alert('리뷰 삭제 중 오류가 발생했습니다.');
+    alert(i18nMsg('errDeleteReview'));
   }
 }
 

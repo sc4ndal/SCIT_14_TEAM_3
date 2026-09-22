@@ -82,7 +82,7 @@
 	</form>
 
 	<form id="removeImageForm" th:action="@{/mypage/temple-info/remove-image}" method="post"
-	      onsubmit="return confirm('등록된 이미지를 삭제하시겠습니까?');"></form>
+	      onsubmit="return confirm(i18nMsg('confirmDeleteImage'));"></form>
 
 	<form class="page-form" th:action="@{/mypage/temple-password}" method="post" id="pwForm">
 		<fieldset>

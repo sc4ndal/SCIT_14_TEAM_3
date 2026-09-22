@@ -65,7 +65,7 @@
 		</p>
 		<a th:href="@{/admin/temple-requests}" class="btn-cancel" style="flex:none;width:110px;">목록으로</a>
 		<form th:if="${request.status.name() == '대기'}" th:action="@{/admin/temple-requests/{id}/approve(id=${request.requestId})}"
-		      method="post" style="margin:0;" onsubmit="return confirm('이 요청을 승인하고 사찰 계정을 생성하시겠습니까? 계정 정보가 즉시 이메일로 발송됩니다.');">
+		      method="post" style="margin:0;" onsubmit="return confirm(i18nMsg('confirmApproveRequest'));">
 			<button type="submit" class="submit" style="width:110px;">등록</button>
 		</form>
 	</div>

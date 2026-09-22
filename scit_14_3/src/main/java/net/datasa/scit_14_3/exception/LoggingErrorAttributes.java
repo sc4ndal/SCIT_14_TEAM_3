@@ -19,7 +19,7 @@ import java.util.UUID;
  * 매핑되지 않은 URL(404), 정적 리소스 404, {@code error/error.html} 자체의 렌더링 실패 등 —
  * 은 예외 리졸버 체인을 타지 않아 그동안 로그가 전혀 남지 않았다.
  *
- * <p>이 클래스는 {@code /error} 디스패치마다 한 번 호출되는 {@link #getErrorAttributes} 를 가로채,
+ * <p>이 클래스는 {@code /error} 디스패치마다 한 번 호출되는 {@code getErrorAttributes} 를 가로채,
  * 원본 예외와 root cause / 상태코드 / 경로를 {@code log.debug}(스택트레이스 포함)로 기록한다.
  * 화면에는 여전히 traceId 만 노출하고, 상세는 로그에서 traceId 로 찾는다.
  * (debug 레벨: application.properties 의 {@code logging.level.net.datasa.scit_14_3=debug})

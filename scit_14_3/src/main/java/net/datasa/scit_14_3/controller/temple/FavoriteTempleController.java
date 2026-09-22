@@ -1,7 +1,6 @@
 package net.datasa.scit_14_3.controller.temple;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.security.AppUserDetails;
 import net.datasa.scit_14_3.service.temple.FavoriteTempleService;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/favoritetemples")

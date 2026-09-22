@@ -8,7 +8,9 @@ const TRANSLATIONS = {
     ko: {
         searchTypeName: "사찰 검색",
         searchTypeAddress: "주소 검색",
+        searchTypeAria: "검색 종류",
         searchPlaceholder: "검색어를 입력하세요",
+        searchInputAria: "검색어 입력",
         searchBtn: "검색",
         typeFilterLabel: "유형",
         typeSea: "바다",
@@ -25,7 +27,9 @@ const TRANSLATIONS = {
     ja: {
         searchTypeName: "寺院検索",
         searchTypeAddress: "住所検索",
+        searchTypeAria: "検索種類",
         searchPlaceholder: "検索語を入力してください",
+        searchInputAria: "検索語入力",
         searchBtn: "検索",
         typeFilterLabel: "タイプ",
         typeSea: "海",
@@ -42,7 +46,9 @@ const TRANSLATIONS = {
     en: {
         searchTypeName: "Search by name",
         searchTypeAddress: "Search by address",
+        searchTypeAria: "Search type",
         searchPlaceholder: "Enter a search term",
+        searchInputAria: "Search keyword",
         searchBtn: "Search",
         typeFilterLabel: "Type",
         typeSea: "Sea",

@@ -22,22 +22,23 @@
 
 		<section class="events-hero">
 			<span class="eyebrow no-translate"><span></span>EVENTS<span></span></span>
-			<h1>불교 행사</h1>
-			<p>박람회·법회·전통문화 행사 등 전국 사찰에서 열리는 불교 행사를 모았습니다.</p>
+			<h1 data-pi18n="evTitle">불교 행사</h1>
+			<p data-pi18n="evLead">박람회·법회·전통문화 행사 등 전국 사찰에서 열리는 불교 행사를 모았습니다.</p>
 		</section>
 
 		<div class="events-divider"></div>
 
 		<div class="events-search" th:unless="${#lists.isEmpty(events)}">
 			<input type="search" id="events-search-input" class="events-search__input"
+				   data-pi18n-placeholder="evSearchPh" data-pi18n-aria="evSearchAria" aria-label="검색"
 				   placeholder="행사 이름이나 사찰 이름으로 검색 (예: 박람회, 조계사...)" autocomplete="off">
 		</div>
 
-		<p class="events-empty" th:if="${#lists.isEmpty(events)}">
+		<p class="events-empty" th:if="${#lists.isEmpty(events)}" data-pi18n="evNone">
 			아직 등록된 행사가 없습니다.
 		</p>
 
-		<p class="events-empty" id="events-search-empty" hidden>
+		<p class="events-empty" id="events-search-empty" hidden data-pi18n="evNoResult">
 			검색 결과가 없습니다.
 		</p>
 
@@ -52,21 +53,21 @@
 						<span th:text="${#temporals.format(event.startDate, 'yyyy.MM.dd')}">2026.01.01</span>
 						<span th:if="${event.endDate != event.startDate}"
 							  th:text="'~ ' + ${#temporals.format(event.endDate, 'yyyy.MM.dd')}">~ 2026.01.07</span>
-						<span class="event-card__past-badge" th:if="${event.past}">종료</span>
+						<span class="event-card__past-badge" th:if="${event.past}" data-pi18n="evPast">종료</span>
 					</div>
 
 					<h2 class="event-card__title" th:text="${event.title}">행사명</h2>
 
 					<p class="event-card__temple">
 						<span aria-hidden="true">⌖</span>
-						<span th:text="${event.templeName}">사찰명</span>
+						<span th:text="${event.templeName}" th:attr="data-pi18n-temple=${event.templeName}">사찰명</span>
 					</p>
 
 					<p class="event-card__desc" th:if="${event.description != null}" th:text="${event.description}">
 						행사 소개
 					</p>
 
-					<a class="event-card__link" th:if="${event.linkUrl != null}" th:href="${event.linkUrl}"
+					<a class="event-card__link" data-pi18n="evLink" th:if="${event.linkUrl != null}" th:href="${event.linkUrl}"
 					   target="_blank" rel="noopener noreferrer">
 						자세히 보기 →
 					</a>
@@ -90,12 +91,14 @@
 		</div>
 
 		<p class="events-more" th:unless="${#lists.isEmpty(events)}">
-			<a th:href="@{/mypage/favorites/events}" sec:authorize="isAuthenticated()">관심 행사 모아보기 →</a>
+			<a th:href="@{/mypage/favorites/events}" sec:authorize="isAuthenticated()" data-pi18n="evMyFavorites">관심 행사 모아보기 →</a>
 		</p>
 
 	</div>
 </main>
 
+<script th:src="@{/js/temple/templeI18n.js}"></script>
+<script th:src="@{/js/templestay/programI18n.js}"></script>
 <script defer th:src="@{/js/buddhism/favoriteButton.js}"></script>
 <script defer th:src="@{/js/temple/events.js}"></script>
 

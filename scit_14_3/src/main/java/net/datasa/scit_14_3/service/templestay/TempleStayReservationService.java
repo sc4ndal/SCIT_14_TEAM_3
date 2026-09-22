@@ -3,7 +3,6 @@ package net.datasa.scit_14_3.service.templestay;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.templestay.ProgramReservationDTO;
 import net.datasa.scit_14_3.domain.dto.templestay.TempleStayReservationDTO;
 import net.datasa.scit_14_3.domain.entity.templestay.ReservationParticipantEntity;
@@ -24,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 
-@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor

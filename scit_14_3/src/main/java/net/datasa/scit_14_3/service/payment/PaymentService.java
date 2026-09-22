@@ -9,7 +9,6 @@ import net.datasa.scit_14_3.domain.dto.templestay.TempleStayProgramDTO;
 import net.datasa.scit_14_3.domain.dto.templestay.TempleStayReservationDTO;
 import net.datasa.scit_14_3.domain.entity.payment.PaymentEntity;
 import net.datasa.scit_14_3.domain.entity.templestay.ReservationParticipantEntity;
-import net.datasa.scit_14_3.domain.entity.templestay.TempleStayReservationEntity;
 import net.datasa.scit_14_3.repository.payment.PaymentRepository;
 import net.datasa.scit_14_3.repository.templestay.ReservationParticipantRepository;
 import net.datasa.scit_14_3.service.templestay.TempleStayProgramService;

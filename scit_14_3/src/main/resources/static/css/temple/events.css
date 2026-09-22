@@ -114,6 +114,7 @@ body {
 }
 
 .event-card {
+	position: relative; /* 종료 뱃지를 카드 오른쪽 위에 고정하는 기준 */
 	display: flex;
 	flex-direction: column;
 	border: 1px solid var(--line);
@@ -144,7 +145,15 @@ body {
 }
 
 .event-card__past-badge {
+	/* 날짜 바로 옆에 두면 날짜 길이(하루짜리 vs 기간)나 글꼴(한/일/영)에 따라 위치가 카드마다 달라졌다 -
+	   카드 오른쪽 위에 고정해서 모든 카드에서 같은 자리에 오게 한다. 카드 안쪽 여백(22px)에 맞춰
+	   위/오른쪽을 띄우고, 날짜 줄과 세로 중심이 맞도록 위 여백을 잡는다. */
+	position: absolute;
+	top: 18px;
+	right: 18px;
+	margin: 0;
 	padding: 2px 8px;
+	line-height: 1.4;
 	border-radius: 999px;
 	background: var(--text-tertiary);
 	color: #fff;
@@ -152,14 +161,24 @@ body {
 	font-weight: 700;
 	letter-spacing: 0;
 	white-space: nowrap;
-	margin-left: auto;
 }
 
 .event-card__body {
 	padding: 22px;
 }
 
+/* 날짜(시작 ~ 종료)와 "종료" 뱃지를 한 줄에 세로 가운데로 맞춘다. 예전에는 글자(inline)와
+   뱃지가 baseline 기준으로 섞여서, 글꼴이 바뀌는 일본어/영어에서 뱃지가 날짜보다 위나 아래로
+   어긋나 보였다 - flex + align-items:center로 언어와 상관없이 항상 같은 높이에 놓이게 한다. */
+.event-card.is-past .event-card__date {
+	padding-right: 56px; /* 오른쪽 위에 고정된 종료 뱃지 자리 */
+}
+
 .event-card__date {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 6px;
 	font-size: 12px;
 	letter-spacing: .03em;
 	color: var(--brown);

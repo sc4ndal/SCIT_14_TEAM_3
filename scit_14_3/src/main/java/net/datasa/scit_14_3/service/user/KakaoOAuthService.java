@@ -105,28 +105,8 @@ public class KakaoOAuthService {
 				Map.class
 		);
 		
-		// ===== [디버그] 카카오가 실제로 주는 모든 키:값 출력 - 확인 끝나면 이 블록 지우세요 =====
-		System.out.println("========== 카카오 사용자 정보 (전체 필드) ==========");
-		printMap(rawResponse.getBody(), "");
-		System.out.println("===================================================");
-		// ===== 디버그 끝 =====
-		
 		// 위에서 받은 원본 Map을 그대로 우리 DTO 형태로 다시 변환해서 리턴
 		// (API를 두 번 호출하지 않기 위함)
 		return jsonMapper.convertValue(rawResponse.getBody(), KakaoUserInfoResponse.class);
-	}
-	
-	@SuppressWarnings("unchecked")
-	private void printMap(Map<?, ?> map, String indent) {
-		if (map == null) return;
-		for (Map.Entry<?, ?> entry : map.entrySet()) {
-			Object value = entry.getValue();
-			if (value instanceof Map) {
-				System.out.println(indent + entry.getKey() + ":");
-				printMap((Map<?, ?>) value, indent + "  ");
-			} else {
-				System.out.println(indent + entry.getKey() + " : " + value);
-			}
-		}
 	}
 }

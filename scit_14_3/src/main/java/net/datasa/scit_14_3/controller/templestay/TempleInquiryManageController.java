@@ -3,8 +3,6 @@ package net.datasa.scit_14_3.controller.templestay;
 import lombok.RequiredArgsConstructor;
 import net.datasa.scit_14_3.security.AppUserDetails;
 import net.datasa.scit_14_3.service.inquiry.TempleInquiryService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -14,8 +12,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.util.Map;
 
 /** 사찰 계정(ROLE_TEMPLE) 전용 - 회원이 자기 사찰로 남긴 1:1 문의 목록/상세 확인 + 답변 등록.
     사이트 관리자용 admin/inquiries와는 별개(그건 회원->사이트관리자 문의). */

@@ -3,7 +3,6 @@ package net.datasa.scit_14_3.service.templestay;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.templestay.TempleStayProgramDTO;
 import net.datasa.scit_14_3.domain.entity.temple.TempleEntity;
 import net.datasa.scit_14_3.domain.entity.templestay.TempleStayProgramEntity;
@@ -23,7 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -143,7 +141,7 @@ public class TempleStayProgramService {
 	/**
 	 * 사찰 계정이 자기 사찰 소속으로 프로그램을 새로 등록.
 	 * support_english/latitude/longitude는 DB 트리거가 소속 TEMPLE 값으로 저장 시점에
-	 * 덮어쓰므로(docs/sql/buddhist-site-schema.sql 참고) 여기서 안 채워도 됨.
+	 * 덮어쓰므로(docs/sql/01-buddhist-site-schema.sql 참고) 여기서 안 채워도 됨.
 	 */
 	@CacheEvict(value = {"programs", "programsByTemple", "program"}, allEntries = true)
 	public void register(TempleStayProgramDTO dto, Long templeId) {

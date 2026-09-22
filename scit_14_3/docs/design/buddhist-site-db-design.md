@@ -13,12 +13,12 @@
 6. 회원가입/로그인(일반+카카오)/정보수정/탈퇴, 1:1 문의
 7. 사찰 관리자 계정 및 사찰 등록 요청(승인제)
 
-실제 DB 생성용 DDL(CREATE TABLE) 스크립트는 [`buddhist-site-schema.sql`](../sql/buddhist-site-schema.sql)에 있습니다.
-더미 데이터는 [`buddhist-site-program-data.sql`](../sql/buddhist-site-program-data.sql)(템플스테이 프로그램),
-[`temple-stay-seed-data.sql`](../sql/temple-stay-seed-data.sql)(예약/리뷰),
-[`temple-event-seed.sql`](../sql/temple-event-seed.sql)(사찰 행사),
-[`temple-food-seed.sql`](../sql/temple-food-seed.sql)(사찰음식),
-[`buddhist-site-content-data.sql`](../sql/buddhist-site-content-data.sql)(오늘의 한마디)를 참고하세요.
+실제 DB 생성용 DDL(CREATE TABLE) 스크립트는 [`01-buddhist-site-schema.sql`](../sql/01-buddhist-site-schema.sql)에 있습니다.
+더미 데이터는 [`03-buddhist-site-program-data.sql`](../sql/03-buddhist-site-program-data.sql)(템플스테이 프로그램),
+[`07-temple-stay-seed-data.sql`](../sql/07-temple-stay-seed-data.sql)(예약/리뷰),
+[`04-temple-event-seed.sql`](../sql/04-temple-event-seed.sql)(사찰 행사),
+[`05-temple-food-seed.sql`](../sql/05-temple-food-seed.sql)(사찰음식),
+[`02-buddhist-site-content-data.sql`](../sql/02-buddhist-site-content-data.sql)(오늘의 한마디)를 참고하세요.
 
 ### 주요 설계 결정
 
@@ -365,4 +365,4 @@
 
 - **회원 탈퇴 이력 보존이 필요해지면**: `status`/`withdrawn_at`을 다시 추가하거나, 탈퇴 회원 정보를 별도 로그 테이블에 옮겨 담는 방식을 고려할 수 있습니다.
 - **COMMENT(댓글)**: 리뷰에 댓글 기능을 붙일 때 필요.
-- **TEMPLE_FOOD_RECOMMENDATION.recipe_url**: 2026-09-10 정식 컬럼으로 추가되기 전엔 `recipe` 텍스트 마지막 줄에 `참고 레시피: <url>` 형식으로 임시 저장했었습니다. 지금은 `recipe_url`로 분리되어 있고, 시드는 [`temple-food-seed.sql`](../sql/temple-food-seed.sql)이 관리합니다.
+- **TEMPLE_FOOD_RECOMMENDATION.recipe_url**: 2026-09-10 정식 컬럼으로 추가되기 전엔 `recipe` 텍스트 마지막 줄에 `참고 레시피: <url>` 형식으로 임시 저장했었습니다. 지금은 `recipe_url`로 분리되어 있고, 시드는 [`05-temple-food-seed.sql`](../sql/05-temple-food-seed.sql)이 관리합니다.

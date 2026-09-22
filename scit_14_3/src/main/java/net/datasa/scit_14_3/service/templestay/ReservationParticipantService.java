@@ -2,7 +2,6 @@ package net.datasa.scit_14_3.service.templestay;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.templestay.ReservationParticipantDTO;
 import net.datasa.scit_14_3.domain.entity.templestay.ReservationParticipantEntity;
 import net.datasa.scit_14_3.repository.templestay.ReservationParticipantRepository;
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
-@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor

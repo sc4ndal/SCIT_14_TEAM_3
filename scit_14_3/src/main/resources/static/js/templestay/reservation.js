@@ -180,27 +180,31 @@ function goToStep(step) {
 // ------------------------- STEP 1: 목록 렌더링 -------------------------
 function renderFilterOptions() {
   const regionSelect = document.getElementById('filter-region');
-  const templeSelect = document.getElementById('filter-temple');
   const headcountSelect = document.getElementById('filter-headcount');
 
-  regionSelect.innerHTML = '<option value="">전체</option>' +
-    uniqueRegions().map(r => `<option value="${r}">${r}</option>`).join('');
+  // 화면에 보이는 글자만 사전(programI18n.js)으로 바꾸고 value는 한국어 원문 유지(필터 비교용).
+  // 번역기가 다시 덮어쓰지 않도록 option에 .no-translate를 붙인다.
+  regionSelect.innerHTML = `<option value="" class="no-translate">${trUi('all')}</option>` +
+    uniqueRegions().map(r => `<option value="${r}" class="no-translate">${trRegion(r)}</option>`).join('');
+  regionSelect.value = state.filter.region;
 
-  renderTempleOptions('');
+  renderTempleOptions(state.filter.region);
 
   // 프로그램들의 max_participant 중 가장 큰 값까지 1명 단위로 옵션 생성 (지금은 전부 20명)
   const maxOfAll = Math.max(...state.programs.map(p => p.maxParticipant));
   const headcountOptions = Array.from({ length: maxOfAll }, (_, i) => i + 1);
 
-  headcountSelect.innerHTML = '<option value="">전체</option>' +
-    headcountOptions.map(n => `<option value="${n}">${n}명</option>`).join('');
+  headcountSelect.innerHTML = `<option value="" class="no-translate">${trUi('all')}</option>` +
+    headcountOptions.map(n => `<option value="${n}" class="no-translate">${trPeople(n)}</option>`).join('');
+  headcountSelect.value = state.filter.headcount;
 }
 
 // 지역 필터에 맞춰 사찰 셀렉박스 옵션만 다시 그림 (region이 빈 문자열이면 전체 사찰)
 function renderTempleOptions(region) {
   const templeSelect = document.getElementById('filter-temple');
-  templeSelect.innerHTML = '<option value="">전체</option>' +
-    uniqueTemples(region).map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
+  templeSelect.innerHTML = `<option value="" class="no-translate">${trUi('all')}</option>` +
+    uniqueTemples(region).map(([id, name]) => `<option value="${id}" class="no-translate">${trTempleName(name)}</option>`).join('');
+  templeSelect.value = state.filter.templeId;
 }
 
 const PROGRAM_PAGE_SIZE = 9; // 3줄 x 3개
@@ -210,7 +214,7 @@ function renderProgramList() {
   const results = filteredPrograms();
 
   if (results.length === 0) {
-    listEl.innerHTML = '<p>조건에 맞는 프로그램이 없습니다.</p>';
+    listEl.innerHTML = `<p class="no-translate">${trUi('noProgram')}</p>`;
     document.getElementById('program-pagination').innerHTML = '';
     return;
   }
@@ -228,20 +232,20 @@ function renderProgramList() {
     <div class="program-card-body">
       <div class="program-card-top">
         <div class="badge-group">
-          <span class="program-type-badge" data-type="${p.programType}">${p.programType}</span>
+          <span class="program-type-badge no-translate" data-type="${p.programType}">${trType(p.programType)}</span>
           ${p.supportEnglish ? '<span class="lang-badge">EN</span>' : ''}
         </div>
-        <p class="program-capacity">
+        <p class="program-capacity no-translate">
           <span class="capacity-dot ${full ? 'full' : 'open'}"></span>
-          ${p.reservedCount || 0} / ${p.maxParticipant}명
+          ${p.reservedCount || 0} / ${trPeople(p.maxParticipant)}
         </p>
       </div>
       <h3 class="program-title">${p.title}</h3>
-      <p class="program-temple-region">${p.templeName} · ${p.region}</p>
+      <p class="program-temple-region no-translate">${trTempleRegion(p.templeName, p.region)}</p>
       <div class="program-card-footer">
         <div class="program-price">
-          <span class="price-adult">${p.price.toLocaleString()}원</span>
-          <span class="price-note">(성인 가격 기준)</span>
+          <span class="price-adult no-translate">${trWon(p.price)}</span>
+          <span class="price-note no-translate" data-pi18n="priceNote">${trUi('priceNote')}</span>
         </div>
         <a class="program-detail-btn" href="/reservation/programs/${p.programId}">상세보기</a>
       </div>
@@ -320,7 +324,7 @@ document.getElementById('step3-back-to-list-btn').addEventListener('click', () =
 
 function selectProgram(programId) {
   if(!isLoggedIn) {
-    alert('로그인이 필요합니다.');
+    alert(trUi('loginRequired'));
     // 목록에서 카드 체크 후 "신청" 버튼으로 들어온 경로는 URL에 programId가 없어서(?startBooking=
     // 파라미터 없이 그냥 /reservation) 로그인 후 돌아와도 어떤 프로그램을 고르려 했는지 알 수 없었음.
     // programDetail.js에서 들어온 경로(이미 ?startBooking= 붙어있음)와 동일하게 항상 붙여서 보냄.
@@ -349,8 +353,12 @@ function renderStep2() {
 
   const summary = document.getElementById('selected-program-summary');
   summary.querySelector('.program-title').textContent = p.title;
-  summary.querySelector('.program-temple-region').textContent = `${p.templeName} · ${p.region}`;
-  summary.querySelector('.program-price').textContent = `${p.price.toLocaleString()}원 / 1인`;
+  const summaryRegionEl = summary.querySelector('.program-temple-region');
+  summaryRegionEl.classList.add('no-translate');
+  summaryRegionEl.textContent = trTempleRegion(p.templeName, p.region);
+  const summaryPriceEl = summary.querySelector('.program-price');
+  summaryPriceEl.classList.add('no-translate');
+  summaryPriceEl.textContent = `${trWon(p.price)} / ${trUi('detailPerPerson')}`;
 
   document.getElementById('res-login-id').value = state.loginId;
   document.getElementById('res-program-id').value = p.programId;
@@ -363,7 +371,7 @@ function renderStep2() {
   const today = new Date();
   calendarState.year = today.getFullYear();
   calendarState.month = today.getMonth();
-  document.getElementById('cal-selected-range').textContent = '날짜를 선택해 주세요.';
+  renderSelectedRange();
   renderCalendar();
 
   renderRepresentativeRow();
@@ -397,7 +405,8 @@ function renderCalendar() {
   const monthLabel = document.getElementById('cal-month-label');
   const grid = document.getElementById('cal-grid');
 
-  monthLabel.textContent = `${year}년 ${month + 1}월`;
+  monthLabel.classList.add('no-translate');
+  monthLabel.textContent = trMonthLabel(year, month);
 
   const firstWeekday = new Date(year, month, 1).getDay();   // 0(일)~6(토)
   const totalDays = new Date(year, month + 1, 0).getDate(); // 그 달의 마지막 날
@@ -415,8 +424,9 @@ function renderCalendar() {
   const cells = [];
 
   // 요일 헤더
-  ['일', '월', '화', '수', '목', '금', '토'].forEach(d => {
-    cells.push(`<div class="cal-dow">${d}</div>`);
+  // 요일 머리글은 한글이 아닌 사전 값이라 .no-translate로 번역기가 다시 손대지 못하게 한다
+  trWeekdays().forEach(d => {
+    cells.push(`<div class="cal-dow no-translate">${d}</div>`);
   });
 
   // 1일이 시작하기 전까지 빈 칸
@@ -455,12 +465,21 @@ function selectStartDate(dateStr) {
   document.getElementById('res-start-date').value = state.startDate;
   document.getElementById('res-end-date').value = state.endDate;
 
-  const rangeEl = document.getElementById('cal-selected-range');
-  rangeEl.textContent = state.startDate === state.endDate
-    ? `선택한 날짜: ${state.startDate} (당일)`
-    : `선택한 날짜: ${state.startDate} ~ ${state.endDate} (1박2일)`;
-
+  renderSelectedRange();
   renderCalendar();
+}
+
+/** 달력 아래 "선택한 날짜: ..." 안내 - 아직 고르기 전이면 "날짜를 선택해 주세요." (사전 문구) */
+function renderSelectedRange() {
+  const rangeEl = document.getElementById('cal-selected-range');
+  rangeEl.classList.add('no-translate');
+  if (!state.startDate || !state.endDate) {
+    rangeEl.textContent = trUi('rsvPickDate');
+    return;
+  }
+  rangeEl.textContent = state.startDate === state.endDate
+    ? `${trUi('selectedDate')} ${state.startDate} ${trUi('dayTrip')}`
+    : `${trUi('selectedDate')} ${state.startDate} ~ ${state.endDate} ${trUi('overnight')}`;
 }
 
 document.getElementById('cal-prev-month').addEventListener('click', () => {
@@ -500,20 +519,20 @@ function renderParticipantRows() {
     row.dataset.index = i;
     row.innerHTML = `
       <div class="form-item">
-        <label for="participant-name-${i}">이름</label>
+        <label for="participant-name-${i}" class="no-translate" data-pi18n="name">${trUi('name')}</label>
         <input type="text" id="participant-name-${i}" data-p-field="name" data-p-index="${i}" value="${pt.name}">
       </div>
       <div class="form-item">
-        <label for="participant-gender-${i}">성별</label>
+        <label for="participant-gender-${i}" class="no-translate" data-pi18n="gender">${trUi('gender')}</label>
         <select id="participant-gender-${i}" data-p-field="gender" data-p-index="${i}">
-          <option value="" ${pt.gender === '' ? 'selected' : ''}>선택</option>
-          <option value="남성" ${pt.gender === '남성' ? 'selected' : ''}>남성</option>
-          <option value="여성" ${pt.gender === '여성' ? 'selected' : ''}>여성</option>
+          <option value="" class="no-translate" data-pi18n="genderSelect" ${pt.gender === '' ? 'selected' : ''}>${trUi('genderSelect')}</option>
+          <option value="남성" class="no-translate" data-pi18n="male" ${pt.gender === '남성' ? 'selected' : ''}>${trUi('male')}</option>
+          <option value="여성" class="no-translate" data-pi18n="female" ${pt.gender === '여성' ? 'selected' : ''}>${trUi('female')}</option>
         </select>
       </div>
       <div class="form-item">
-        <label for="participant-email-${i}">이메일</label>
-        <input type="email" id="participant-email-${i}" data-p-field="email" data-p-index="${i}" value="${pt.email}" placeholder="예) abc123@example.com">
+        <label for="participant-email-${i}" class="no-translate" data-pi18n="email">${trUi('email')}</label>
+        <input type="email" id="participant-email-${i}" data-p-field="email" data-p-index="${i}" value="${pt.email}" data-pi18n-placeholder="emailPh" placeholder="${trUi('emailPh')}">
       </div>
     `;
     container.appendChild(row);
@@ -541,8 +560,10 @@ function updatePaymentTotal() {
   const p = state.selectedProgram;
   if (!p) return;
   const total = p.price * state.participantCount;
-  document.getElementById('payment-total-amount').textContent =
-    `${p.price.toLocaleString()}원 x ${state.participantCount}명 = ${total.toLocaleString()}원`;
+  const totalEl = document.getElementById('payment-total-amount');
+  totalEl.classList.add('no-translate');
+  totalEl.textContent =
+    `${trWon(p.price)} x ${trPeople(state.participantCount)} = ${trWon(total)}`;
 }
 
 function togglePaymentFields() {
@@ -555,8 +576,7 @@ function togglePaymentFields() {
 // (시작일/종료일은 이제 달력 클릭으로 정해짐 - selectStartDate() 참고. 이 두 input은 hidden이라 change 리스너 불필요)
 
 document.getElementById('res-participant-count').addEventListener('change', (e) => {
-  const count = Math.max(1, Number(e.target.value) || 1);
-  state.participantCount = count;
+  state.participantCount = Math.max(1, Number(e.target.value) || 1);
   renderParticipantRows();
   updatePaymentTotal();
 });
@@ -589,7 +609,7 @@ document.getElementById('reservation-form').addEventListener('submit', async (e)
 // ------------------------- 제출 -------------------------
 async function submitReservation() {
   if (state.isSubmitting) {
-    alert('결제가 진행 중입니다. 잠시만 기다려 주세요.');
+    alert(trUi('alertPaying'));
     return; // 서버 응답 오기 전에 또 눌러도 무시 (중복 신청 방지)
   }
 
@@ -597,15 +617,15 @@ async function submitReservation() {
 
   // 최소한의 유효성 검사
   if (!state.startDate || !state.endDate) {
-    alert('시작일을 선택해 주세요.');
+    alert(trUi('alertPickStart'));
     return;
   }
   if (state.participants.some(pt => !pt.name || !pt.gender || !pt.email)) {
-    alert('대표자와 참가자 정보를 모두 입력해 주세요.');
+    alert(trUi('alertFillAll'));
     return;
   }
   if (!state.participants[0] || !state.participants[0].phone) {
-    alert('대표자 연락처를 입력해 주세요.');
+    alert(trUi('alertRepPhone'));
     return;
   }
 
@@ -620,17 +640,18 @@ async function submitReservation() {
   };
 
   const totalAmount = p.price * state.participantCount;
-  const dateLabel = state.startDate === state.endDate ? `${state.startDate} (당일)` : `${state.startDate} ~ ${state.endDate}`;
+  const dateLabel = trDateRange(state.startDate, state.endDate);
 
+  // 확인창은 브라우저 대화상자라 번역기가 못 건드림 - 지금 언어의 사전 문구로 직접 만든다
   const confirmMessage =
-  `아래 내용으로 예약하시겠습니까?\n\n` +
-  `프로그램: ${p.title}\n` +
-  `사찰: ${p.templeName} (${p.region})\n` +
-  `기간: ${dateLabel}\n` +
-  `인원: ${state.participantCount}명\n` +
-  `결제 수단: ${state.paymentMethod}` +
-  (state.paymentMethod === '계좌이체' ? `\n입금자명: ${state.depositorName || '(미입력)'}` : '') +
-  `\n총 금액: ${totalAmount.toLocaleString()}원`;
+  `${trUi('confirmTitle')}\n\n` +
+  `${trUi('cProgram')}: ${p.title}\n` +
+  `${trUi('cTemple')}: ${trTempleName(p.templeName)} (${trRegion(p.region)})\n` +
+  `${trUi('cPeriod')}: ${dateLabel}\n` +
+  `${trUi('cHeadcount')}: ${trPeople(state.participantCount)}\n` +
+  `${trUi('cPayMethod')}: ${trPayMethod(state.paymentMethod)}` +
+  (state.paymentMethod === '계좌이체' ? `\n${trUi('cDepositor')}: ${state.depositorName || trUi('cNotEntered')}` : '') +
+  `\n${trUi('cTotal')}: ${trWon(totalAmount)}`;
 
   const ok = confirm(confirmMessage);
   if (!ok) return;
@@ -639,7 +660,7 @@ async function submitReservation() {
   setSubmitLoading(true);
   // 예약/참가자/결제 생성 + (계좌이체는) 결제확인 화면 데이터 조회까지 전부 여기 안에서
   // 순차로 왕복하므로, 그 사이 화면이 멈춰 보이지 않게 전체를 로딩 오버레이로 감싼다.
-  showLoading('예약을 처리하는 중...');
+  showLoading(trUi('loadingReserve'));
   try {
     const resRes = await fetch(API.createReservation, {
         method: 'POST',
@@ -649,7 +670,7 @@ async function submitReservation() {
     if (!resRes.ok) {
       // 정원 초과처럼 신청 시점에 이미 자리가 없어진 경우 - 서버가 내려준 메시지 그대로 보여줌
       const err = await resRes.json().catch(() => null);
-      alert(err && err.message ? err.message : '예약 신청에 실패했습니다.');
+      alert(err && err.message ? i18nSrv(err.message) : trUi('failReserve'));
       return;
     }
     const reservation = await resRes.json();
@@ -668,11 +689,9 @@ async function submitReservation() {
     });
     if (!partRes.ok) {
       const err = await partRes.json().catch(() => null);
-      alert(err && err.message ? err.message : '참가자 정보 등록에 실패했습니다.');
+      alert(err && err.message ? i18nSrv(err.message) : trUi('failParticipants'));
       return;
     }
-    const participants = await partRes.json();
-
     if (state.paymentMethod === '카카오페이') {
       // 페이지를 완전히 떠났다 돌아오므로(카카오 결제창 리다이렉트) state가 사라짐 - 돌아왔을 때는
       // resumeAfterKakaoPay()가 서버에서 예약을 다시 조회하고, 프로그램 정보는 state.programs(항상
@@ -688,7 +707,7 @@ async function submitReservation() {
       });
       if (!readyRes.ok) {
         const err = await readyRes.json().catch(() => null);
-        alert(err && err.message ? err.message : '카카오페이 결제 준비에 실패했습니다.');
+        alert(err && err.message ? i18nSrv(err.message) : trUi('failKakaoReady'));
         return;
       }
       const { redirectUrl } = await readyRes.json();
@@ -712,7 +731,7 @@ async function submitReservation() {
     });
     if (!payRes.ok) {
       const err = await payRes.json().catch(() => null);
-      alert(err && err.message ? err.message : '결제 정보 등록에 실패했습니다.');
+      alert(err && err.message ? i18nSrv(err.message) : trUi('failPayment'));
       return;
     }
     const payment = await payRes.json();
@@ -725,7 +744,7 @@ async function submitReservation() {
     await goToStep(3);      // 지도 컨테이너가 hidden 상태에서 생성되면 크기가 0으로 잡혀 마커 위치가 어긋나므로 먼저 보이게 함
     await renderStep3();
   } catch (err) {
-    alert('예약 신청 중 오류가 발생했습니다.');
+    alert(trUi('failGeneric'));
     console.error(err);
   } finally {
     // 성공 시엔 카카오페이면 페이지를 완전히 떠나고, 계좌이체면 step3로 넘어가서 이 버튼 자체가
@@ -742,10 +761,10 @@ function setSubmitLoading(loading) {
   if (loading) {
     btn.dataset.originalText = btn.textContent;
     btn.disabled = true;
-    btn.innerHTML = '<span class="btn-spinner"></span> 처리 중...';
+    btn.innerHTML = '<span class="btn-spinner"></span> ' + trUi('processing');
   } else {
     btn.disabled = false;
-    btn.textContent = btn.dataset.originalText || '예약 및 결제 신청';
+    btn.textContent = btn.dataset.originalText || trUi('submitBtn');
   }
 }
 
@@ -768,19 +787,32 @@ async function renderStep3() {
     console.error('참가자 정보를 불러오지 못했습니다.', err);
   }
 
-  document.getElementById('result-reservation-id').textContent = `예약번호 ${reservation.reservationId}`;
+  const resultIdEl = document.getElementById('result-reservation-id');
+  resultIdEl.classList.add('no-translate');
+  resultIdEl.textContent = `${trUi('reservationNo')} ${reservation.reservationId}`;
   document.getElementById('result-applied-at').textContent = formatAppliedAt(reservation.createdAt);
   document.getElementById('result-program-title').textContent = program.title || '';
-  document.getElementById('result-temple-name').textContent = `${program.templeName || ''} · ${program.region || ''}`;
-  document.getElementById('result-date-range').textContent =
-    reservation.startDate === reservation.endDate ? `${reservation.startDate} (당일)` : `${reservation.startDate} ~ ${reservation.endDate}`;
-  document.getElementById('result-participant-count').textContent = `${reservation.participantCount}명`;
+  const resultTempleEl = document.getElementById('result-temple-name');
+  resultTempleEl.classList.add('no-translate');
+  resultTempleEl.textContent = trTempleRegion(program.templeName || '', program.region || '');
+  const resultDateEl = document.getElementById('result-date-range');
+  resultDateEl.classList.add('no-translate');
+  resultDateEl.textContent = trDateRange(reservation.startDate, reservation.endDate);
+  const resultCountEl = document.getElementById('result-participant-count');
+  resultCountEl.classList.add('no-translate');
+  resultCountEl.textContent = trPeople(reservation.participantCount);
   document.getElementById('result-participant-list').innerHTML = participants.length
-    ? participants.map(pt => `<tr><td>${pt.name}</td><td>${pt.gender}</td><td>${pt.email}</td><td>${pt.phone || '-'}</td></tr>`).join('')
-    : '<tr><td colspan="4">참가자 정보 없음</td></tr>';
-  document.getElementById('result-total-amount').textContent = `${payment.amount.toLocaleString()}원`;
-  document.getElementById('result-payment-method').textContent = payment.paymentMethod;
-  document.getElementById('result-status').textContent = reservation.status;
+    ? participants.map(pt => `<tr><td class="no-translate">${pt.name}</td><td class="no-translate">${trGender(pt.gender)}</td><td class="no-translate">${pt.email}</td><td class="no-translate">${pt.phone || '-'}</td></tr>`).join('')
+    : `<tr><td colspan="4" class="no-translate">${trUi('noParticipantInfo')}</td></tr>`;
+  const resultAmountEl = document.getElementById('result-total-amount');
+  resultAmountEl.classList.add('no-translate');
+  resultAmountEl.textContent = trWon(payment.amount);
+  const resultMethodEl = document.getElementById('result-payment-method');
+  resultMethodEl.classList.add('no-translate');
+  resultMethodEl.textContent = trPayMethod(payment.paymentMethod);
+  const resultStatusEl = document.getElementById('result-status');
+  resultStatusEl.classList.add('no-translate');
+  resultStatusEl.textContent = trStatus(reservation.status);
 
   if (program.programId != null) loadResultMap(program);
 }
@@ -859,12 +891,41 @@ async function loadPrograms() {
         });
   } catch (err) {
     console.error('프로그램 목록을 불러오는 데 실패했습니다.', err);
-    alert('프로그램 목록을 불러오지 못했습니다. 목데이터로 대신 보여줄게요.');
+    alert(i18nMsg('errLoadPrograms'));
     // 실패하면 state.programs는 원래 MOCK_PROGRAMS 그대로 유지됨
   } finally {
     hideLoading();
   }
 }
+
+// 언어가 바뀌면 common.js가 번역기 적용 후 불러줌 - 필터 옵션/카드를 지금 언어 사전으로 다시 그림.
+// 선택값은 state.filter에 한국어 원문으로 들어있어서 그대로 복원된다.
+window.onProgramI18nRefresh = function () {
+  if (!document.getElementById('filter-region')) return;
+  renderFilterOptions();
+  renderProgramList();
+
+  // step 2: 예약 신청 화면이 열려 있으면 요약/달력/참가자 행/결제 총액도 새 언어로
+  // (달력 클릭 선택값과 입력값은 state에 있으므로 그대로 유지된다)
+  if (state.step === 2 && state.selectedProgram) {
+    const p = state.selectedProgram;
+    const summary = document.getElementById('selected-program-summary');
+    const regionEl = summary.querySelector('.program-temple-region');
+    regionEl.classList.add('no-translate');
+    regionEl.textContent = trTempleRegion(p.templeName, p.region);
+    const priceEl = summary.querySelector('.program-price');
+    priceEl.classList.add('no-translate');
+    priceEl.textContent = `${trWon(p.price)} / ${trUi('detailPerPerson')}`;
+    renderSelectedRange();
+    renderCalendar();
+    renderParticipantRows();
+    updatePaymentTotal();
+  }
+  // step 3: 신청 완료 화면의 값들(날짜, 인원, 결제수단, 예약 상태 등)도 새 언어로
+  if (state.step === 3 && state.reservationResult) {
+    renderStep3();
+  }
+};
 
 // ------------------------- 초기화 -------------------------
 async function init() {
@@ -899,11 +960,11 @@ async function resumeAfterKakaoPay() {
   history.replaceState({}, '', location.pathname); // 새로고침해도 다시 안 뜨게 쿼리스트링 지움
 
   if (paid === 'cancel') {
-    alert('결제를 취소했습니다. 예약도 함께 취소되었습니다.');
+    alert(trUi('payCanceled'));
     return;
   }
   if (paid === 'fail') {
-    alert('결제에 실패했습니다. 예약도 함께 취소되었습니다.');
+    alert(trUi('payFailed'));
     return;
   }
   if (paid !== 'success') return;
@@ -919,7 +980,7 @@ async function resumeAfterKakaoPay() {
     await renderStep3();
   } catch (err) {
     console.error(err);
-    alert('결제는 완료됐지만 결과를 불러오지 못했습니다. 마이페이지에서 예약 내역을 확인해 주세요.');
+    alert(trUi('payDoneNoResult'));
   } finally {
     hideLoading();
   }

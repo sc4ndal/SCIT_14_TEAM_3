@@ -39,7 +39,6 @@ public class SessionLoginService {
         AppUserDetails principal = new AppUserDetails(
                 user.getLoginId(),
                 null,
-//                user.getPassword(),
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())),
                 null, // 사찰 계정이 아니므로 templeId 없음
                 user.getNickname(),
