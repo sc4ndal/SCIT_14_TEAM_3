@@ -74,7 +74,10 @@
 
 				</div>
 
-				<div class="event-card__footer">
+				<!-- 관리자 계정은 즐겨찾기를 못 쓰게 서버(TempleEventViewController)에서 막아뒀다 -
+				     food.html과 같은 이유로(event-card__footer가 이 버튼 하나만 담는 전용 div,
+				     padding만 남은 빈 줄이 생김) 컨테이너째로 안 그린다. -->
+				<div class="event-card__footer" sec:authorize="!hasRole('ADMIN')">
 					<button type="button" class="favorite-toggle"
 							th:classappend="${event.favorited} ? 'is-favorited' : ''"
 							th:attr="data-favorite-url=@{'/events/' + ${event.eventId} + '/favorite'}, aria-pressed=${event.favorited}"

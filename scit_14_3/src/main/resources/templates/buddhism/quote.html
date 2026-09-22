@@ -33,7 +33,11 @@
 				다른 한마디 보기
 			</button>
 
+			<!-- 관리자 계정은 즐겨찾기를 못 쓰게 서버(DailyQuoteController)에서 막아뒀다 - 이 버튼은
+			     "다른 한마디 보기" 버튼과 같은 justify-content:center 줄에 있어서, 숨겨도
+			     남은 버튼이 자연스럽게 가운데로 모이니 컨테이너까지 숨길 필요는 없다. -->
 			<button type="button" class="favorite-toggle" id="quote-favorite-btn"
+					sec:authorize="!hasRole('ADMIN')"
 					th:classappend="${quote.favorited()} ? 'is-favorited' : ''"
 					th:attr="data-favorite-url=@{'/info/quote/' + ${quote.quoteId()} + '/favorite'}, aria-pressed=${quote.favorited()}"
 					th:data-favorited="${quote.favorited()}">

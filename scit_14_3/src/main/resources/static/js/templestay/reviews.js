@@ -27,6 +27,13 @@ const searchBtnEl = document.getElementById('review-search-btn');
 // 본인이 쓴 리뷰에만 "수정하기" 링크를 노출하는 용도 - 실제 수정 권한은 서버(PATCH /reviews/{id})가 검증한다.
 const currentLoginId = document.getElementById('auth-info')?.dataset.loginId || null;
 
+// 관리자 계정 + 사찰 계정은 좋아요를 못 쓰게 서버(ReviewController.toggleLike)에서 막아뒀다 -
+// 관리자는 #admin-info 존재 여부로, 사찰 계정은 #auth-info의 data-temple-account로 판별해서
+// 둘 다 좋아요 버튼 대신 읽기 전용 개수만 보여준다.
+const isAdmin = !!document.getElementById('admin-info');
+const isTempleAccount = document.getElementById('auth-info')?.dataset.templeAccount === 'true';
+const cannotLike = isAdmin || isTempleAccount;
+
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
@@ -154,8 +161,9 @@ function renderList() {
     btn.addEventListener('click', () => deleteReview(btn.dataset.reviewId));
   });
 
-  // 좋아요 토글 - review-summary(아코디언 펼치기 버튼)와 별개 버튼이라 클릭이 겹치지 않는다
-  listEl.querySelectorAll('.like-btn').forEach((btn) => {
+  // 좋아요 토글 - review-summary(아코디언 펼치기 버튼)와 별개 버튼이라 클릭이 겹치지 않는다.
+  // 관리자 계정용 읽기 전용 좋아요 수(.like-btn--readonly)는 <span>이라 여기 안 걸린다.
+  listEl.querySelectorAll('button.like-btn').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       toggleLike(btn.dataset.reviewId);
@@ -176,7 +184,12 @@ async function toggleLike(reviewId) {
       location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
       return;
     }
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (!res.ok) {
+      // 서버가 상황별 메시지(예: 관리자 계정 차단)를 JSON body의 message로 내려주므로
+      // 그대로 살려서 보여준다 - 파싱 자체가 실패하면(예상 밖 응답) 기존 문구로 대체.
+      const body = await res.json().catch(() => null);
+      throw new Error((body && body.message) || '좋아요 처리 중 오류가 발생했습니다.');
+    }
     const data = await res.json();
 
     const review = state.all.find((r) => String(r.reviewId) === String(reviewId));
@@ -187,7 +200,7 @@ async function toggleLike(reviewId) {
     renderList();
   } catch (e) {
     console.error('좋아요 처리 중 오류가 발생했습니다.', e);
-    alert(trUi('revErrLike'));
+    alert(e.message ? i18nSrv(e.message) : trUi('revErrLike'));
   }
 }
 
@@ -276,10 +289,14 @@ function renderItem(r) {
             <span class="chevron-icon">&#9660;</span>
           </span>
         </button>
-        <button type="button" class="like-btn${liked ? ' is-liked' : ''}"
+        ${cannotLike
+          ? `<span class="like-btn like-btn--readonly" aria-label="좋아요 ${likeCount}개">
+              <span class="like-btn__icon"></span><span class="like-btn__count">${likeCount}</span>
+            </span>`
+          : `<button type="button" class="like-btn${liked ? ' is-liked' : ''}"
                 data-review-id="${escapeAttr(id)}" aria-pressed="${liked}">
           <span class="like-btn__icon"></span><span class="like-btn__count">${likeCount}</span>
-        </button>
+        </button>`}
       </div>
       <div class="review-detail">
         <dl class="detail-fields">

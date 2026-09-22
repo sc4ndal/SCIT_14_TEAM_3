@@ -134,6 +134,16 @@ body {
 	opacity: .72;
 }
 
+/* 날짜 줄을 flex로 묶어서 뱃지가 같은 줄 오른쪽 끝에 자리하게 한다 - 뱃지만 항상 다음 줄로
+   내리면(예전 block 방식) 그 줄이 뱃지 하나만 떠 있는 빈 줄이 되어 카드가 휑해 보였다.
+   공간이 부족할 때만 자연스럽게 다음 줄로 넘어가고, 그때도 오른쪽 끝에 붙는다. */
+.event-card__date {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px;
+}
+
 .event-card__past-badge {
 	/* 날짜 바로 옆에 두면 날짜 길이(하루짜리 vs 기간)나 글꼴(한/일/영)에 따라 위치가 카드마다 달라졌다 -
 	   카드 오른쪽 위에 고정해서 모든 카드에서 같은 자리에 오게 한다. 카드 안쪽 여백(22px)에 맞춰
@@ -150,6 +160,7 @@ body {
 	font-size: 11px;
 	font-weight: 700;
 	letter-spacing: 0;
+	white-space: nowrap;
 }
 
 .event-card__body {

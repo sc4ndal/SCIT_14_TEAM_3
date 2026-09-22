@@ -507,7 +507,7 @@ CREATE TABLE TEMPLE_INQUIRY (
 -- =====================================================================
 -- 초기 테스트 계정 (이 스크립트를 재실행해서 DB를 초기화할 때마다 같이 생성됨)
 -- 비밀번호는 전부 BCryptPasswordEncoder로 해시된 값 - 아래는 원문 비밀번호 기록용 주석.
---   사이트 관리자: admin / admin1234!
+    --   사이트 관리자: admin / admin1234!
 --   일반 회원:     testuser1 / Test1234!, testuser2 / Test1234!
 -- =====================================================================
 INSERT INTO USER (login_id, password, nickname, name, phone, email, role, login_type) VALUES

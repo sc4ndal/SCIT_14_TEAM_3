@@ -65,7 +65,11 @@ document.addEventListener('click', function (e) {
 				return null;
 			}
 			if (!res.ok) {
-				throw new Error('요청 처리 중 오류가 발생했습니다.');
+				// 서버가 상황별 메시지(예: 관리자 계정 차단)를 JSON body의 message로 내려주므로
+				// 그대로 살려서 보여준다 - 파싱 자체가 실패하면(예상 밖 응답) 기존 문구로 대체.
+				return res.json().catch(function () { return {}; }).then(function (body) {
+					throw new Error((body && body.message) || '요청 처리 중 오류가 발생했습니다.');
+				});
 			}
 			return res.json();
 		})

@@ -24,13 +24,13 @@ kakao.maps.load(function () {
 // ===== 즐겨찾기 버튼 =====
 // ===== 즐겨찾기 버튼 =====
 // 사찰 관리자(TEMPLE 계정)는 즐겨찾기 기능이 없으므로 버튼 자체를 숨김
-if (IS_TEMPLE_ACCOUNT) {
+if (HIDE_TEMPLE_FAVORITE) {
     var favoriteBtnEl = document.getElementById('favorite-btn');
     if (favoriteBtnEl) favoriteBtnEl.style.display = 'none';
 }
 
 // 즐겨찾기 토글은 FavoriteTempleController(/api/favoritetemples/{id}/toggle)로 일원화됨
-if (!IS_TEMPLE_ACCOUNT) {
+if (!HIDE_TEMPLE_FAVORITE) {
 document.getElementById('favorite-btn').addEventListener('click', function () {
     var btn = this;
     fetch('/api/favoritetemples/' + TEMPLE_ID + '/toggle', { method: 'POST' })

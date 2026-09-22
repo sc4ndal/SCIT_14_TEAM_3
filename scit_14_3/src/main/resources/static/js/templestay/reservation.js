@@ -144,30 +144,37 @@ function goToStep(step) {
 
   state.step = step;
 
-  const swapSections = () => {
-    sections.forEach(sec => {
-      sec.hidden = Number(sec.dataset.step) !== step;
-    });
-    document.querySelectorAll('#progress-steps li').forEach((li, i) => {
-      li.classList.toggle('active', i === step - 1);
-    });
-    window.scrollTo(0, 0);
-
-    if (target) {
-      target.classList.add('step-fade');
-      // hidden 해제 직후에 바로 opacity:1로 가면 트랜지션이 안 먹으니, 한 프레임 쉬었다가 클래스 제거
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => target.classList.remove('step-fade'));
+  // Promise를 반환해서, 호출부가 "실제로 hidden이 풀린 뒤"를 기다렸다가 다음 동작(지도 로드 등)을
+  // 하게 함. 예전엔 setTimeout(150ms)으로 hidden이 풀리기 전에 renderStep3()의 fetch가 먼저 끝나서
+  // #result-map이 아직 안 보이는 상태로 지도가 만들어지는 문제가 있었음.
+  return new Promise((resolve) => {
+    const swapSections = () => {
+      sections.forEach(sec => {
+        sec.hidden = Number(sec.dataset.step) !== step;
       });
-    }
-  };
+      document.querySelectorAll('#progress-steps li').forEach((li, i) => {
+        li.classList.toggle('active', i === step - 1);
+      });
+      window.scrollTo(0, 0);
 
-  if (current && current !== target) {
-    current.classList.add('step-fade');
-    setTimeout(swapSections, 150); // 이전 화면 페이드아웃 끝난 뒤 전환
-  } else {
-    swapSections();
-  }
+      if (target) {
+        target.classList.add('step-fade');
+        // hidden 해제 직후에 바로 opacity:1로 가면 트랜지션이 안 먹으니, 한 프레임 쉬었다가 클래스 제거
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => target.classList.remove('step-fade'));
+        });
+      }
+
+      resolve();
+    };
+
+    if (current && current !== target) {
+      current.classList.add('step-fade');
+      setTimeout(swapSections, 150); // 이전 화면 페이드아웃 끝난 뒤 전환
+    } else {
+      swapSections();
+    }
+  });
 }
 
 // ------------------------- STEP 1: 목록 렌더링 -------------------------
@@ -734,7 +741,7 @@ async function submitReservation() {
     const freshReservation = await fetch(`/templestayreservations/${reservation.reservationId}`).then(r => r.json());
 
     state.reservationResult = { reservation: freshReservation, payment, program: p };
-    goToStep(3);      // 지도 컨테이너가 hidden 상태에서 생성되면 크기가 0으로 잡혀 마커 위치가 어긋나므로 먼저 보이게 함
+    await goToStep(3);      // 지도 컨테이너가 hidden 상태에서 생성되면 크기가 0으로 잡혀 마커 위치가 어긋나므로 먼저 보이게 함
     await renderStep3();
   } catch (err) {
     alert(trUi('failGeneric'));
@@ -763,10 +770,12 @@ function setSubmitLoading(loading) {
 
 // ------------------------- STEP 3: 신청 완료 -------------------------
 async function renderStep3() {
-  const { reservation, payment } = state.reservationResult;
-  // 프로그램 정보는 항상 state.programs(init에서 이미 불러온 전체 목록)에서 찾음 - 카카오페이
-  // 결제창을 왕복하고 왔을 때도 loadPrograms()가 먼저 끝난 뒤라 안전하게 찾을 수 있음.
-  const program = state.programs.find(p => p.programId === reservation.programId) || state.reservationResult.program || {};
+  console.log('renderStep3 호출됨, state.reservationResult =', state.reservationResult);
+    const { reservation, payment } = state.reservationResult;
+    // 프로그램 정보는 항상 state.programs(init에서 이미 불러온 전체 목록)에서 찾음 - 카카오페이
+    // 결제창을 왕복하고 왔을 때도 loadPrograms()가 먼저 끝난 뒤라 안전하게 찾을 수 있음.
+    const program = state.programs.find(p => p.programId === reservation.programId) || state.reservationResult.program || {};
+    console.log('renderStep3에서 찾은 program =', program);
 
   // 인원정보는 항상 서버에서 다시 조회함 - 카카오페이 결제창 왕복 후에는 state.participants가
   // 비어있어서(페이지를 완전히 떠났다 옴) in-memory 값을 믿을 수 없음.
@@ -868,14 +877,18 @@ async function loadPrograms() {
 
     const templeMap = new Map(temples.map(t => [t.templeId, t]));
 
-    state.programs = programs.map(p => {
-      const temple = templeMap.get(p.templeId);
-      return {
-        ...p,
-        templeName: temple ? temple.name : '',
-        region: temple ? temple.region : '',
-      };
-    });
+        state.programs = programs.map(p => {
+          const temple = templeMap.get(p.templeId);
+          return {
+            ...p,
+            templeName: temple ? temple.name : '',
+            region: temple ? temple.region : '',
+            // 사찰의 위경도 - 프로그램 DTO엔 없고 temple 쪽에만 있어서 여기서 같이 합쳐줘야
+            // loadResultMap/loadTempleDetailMap이 지도를 그릴 수 있음.
+            latitude: temple ? temple.latitude : null,
+            longitude: temple ? temple.longitude : null,
+          };
+        });
   } catch (err) {
     console.error('프로그램 목록을 불러오는 데 실패했습니다.', err);
     alert(i18nMsg('errLoadPrograms'));
@@ -963,7 +976,7 @@ async function resumeAfterKakaoPay() {
       fetch(`/payments/reservation/${reservationId}`).then(r => r.json()),
     ]);
     state.reservationResult = { reservation, payment, program: {} }; // renderStep3가 state.programs에서 다시 찾음
-    goToStep(3);
+    await goToStep(3);
     await renderStep3();
   } catch (err) {
     console.error(err);
