@@ -16,6 +16,7 @@
           --paper: #fdfaf6;
           --secondary: #efe9e1;
           --muted-bg: #ede7de;
+          --muted-solid: #928c82;
           --text: #27211b;
           --destructive: #c0392b;
 
@@ -149,6 +150,13 @@
           padding: 8px 16px;
           border-radius: 999px;
           cursor: pointer;
+          outline: none;
+          -webkit-appearance: none;
+          appearance: none;
+        }
+        .status-filter button:focus-visible {
+          outline: 2px solid var(--blue);
+          outline-offset: 2px;
         }
         .status-filter button:hover { border-color: rgba(39, 33, 27, 0.25); }
 
@@ -180,8 +188,8 @@
           color: #fff;
         }
         .status-filter button[data-status="이용완료"].active {
-          background: var(--text-tertiary);
-          border-color: var(--text-tertiary);
+          background: var(--muted-solid);
+          border-color: var(--muted-solid);
           color: var(--paper);
         }
 
@@ -417,6 +425,6 @@
 </main>
 
 <div th:replace="~{fragments/layout :: footer}"></div>
-<script src="/js/mypage/myReservation.js"></script>
+<script th:src="@{/js/mypage/myReservation.js}"></script>
 </body>
 </html>
