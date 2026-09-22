@@ -61,7 +61,7 @@ function runSearch() {
 }
 
 async function fetchAllReviews() {
-  showLoading('후기를 불러오는 중...');
+  showLoading(trUi('revLoading'));
   try {
     const res = await fetch('/reviews/all', { headers: { Accept: 'application/json' } });
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -69,7 +69,7 @@ async function fetchAllReviews() {
     return Array.isArray(data) ? data : [];
   } catch (e) {
     console.error('[reviews] 전체 후기 목록을 불러오지 못했습니다.', e);
-    alert('후기 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    alert(trUi('revErrLoad'));
     return [];
   } finally {
     hideLoading();
@@ -107,9 +107,9 @@ function applyFilters() {
 
 function renderList() {
   if (state.filtered.length === 0) {
-    listEl.innerHTML = `<div class="review-empty">${
-      state.query ? '검색 결과가 없습니다.' : '등록된 후기가 없습니다.'
-    }</div>`;
+    // 고정 문구라 사전(programI18n.js)으로 그린다. data-pi18n은 언어가 바뀔 때 다시 채우는 용도.
+    const emptyKey = state.query ? 'revNoResult' : 'revNoReviews';
+    listEl.innerHTML = `<div class="review-empty no-translate" data-pi18n="${emptyKey}">${trUi(emptyKey)}</div>`;
     // 아코디언 펼치기/정렬/검색마다 목록을 통째로 다시 그려서, 번역해둔 언어라면 그 순간
     // 원문(한국어)이 화면에 잠깐 보였다가 번역으로 바뀌는 게 눈에 띄었다 - MutationObserver의
     // 디바운스를 기다리지 않고 그린 직후 바로 재번역을 건다(common.js).
@@ -123,11 +123,17 @@ function renderList() {
   listEl.innerHTML = pageRows.map(renderItem).join('');
   window.i18nRetranslateNow && window.i18nRetranslateNow();
 
+  // 아코디언 펼치기/접기 - renderList()로 목록 전체를 다시 그리면 번역이 그때마다 새로 돌아서
+  // 외국어에서 깜빡였다. 접힘/펼침 내용은 이미 다 그려져 있으니 .open 클래스만 바꾼다(CSS가 전환).
   listEl.querySelectorAll('.review-summary').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const id = btn.closest('.review-item').dataset.id;
-      state.openId = String(state.openId) === String(id) ? null : id;
-      renderList();
+      const item = btn.closest('.review-item');
+      const id = item.dataset.id;
+      const willOpen = String(state.openId) !== String(id);
+      // 한 번에 하나만 펼친다 - 이미 열려 있던 다른 항목은 닫는다
+      listEl.querySelectorAll('.review-item.open').forEach((el) => el.classList.remove('open'));
+      state.openId = willOpen ? id : null;
+      item.classList.toggle('open', willOpen);
     });
   });
 
@@ -159,14 +165,14 @@ function renderList() {
 
 async function toggleLike(reviewId) {
   if (!currentLoginId) {
-    alert('로그인이 필요합니다.');
+    alert(trUi('loginRequired'));
     location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
     return;
   }
   try {
     const res = await fetch(`/reviews/${reviewId}/like`, { method: 'POST' });
     if (res.status === 401) {
-      alert('로그인이 필요합니다.');
+      alert(trUi('loginRequired'));
       location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
       return;
     }
@@ -181,28 +187,28 @@ async function toggleLike(reviewId) {
     renderList();
   } catch (e) {
     console.error('좋아요 처리 중 오류가 발생했습니다.', e);
-    alert('좋아요 처리 중 오류가 발생했습니다.');
+    alert(trUi('revErrLike'));
   }
 }
 
 async function deleteReview(reviewId) {
-  if (!confirm('이 리뷰를 삭제하시겠습니까?')) return;
-  showLoading('삭제하는 중...');
+  if (!confirm(trUi('revConfirmDelete'))) return;
+  showLoading(trUi('revDeleting'));
   try {
     const res = await fetch(`/reviews/${reviewId}`, { method: 'DELETE' });
     if (!res.ok) {
       const err = await res.json().catch(() => null);
-      alert(err && err.message ? err.message : '리뷰 삭제 중 오류가 발생했습니다.');
+      alert(err && err.message ? i18nSrv(err.message) : trUi('revErrDelete'));
       return;
     }
-    alert('리뷰가 삭제되었습니다.');
+    alert(trUi('revDeleted'));
     // 서버를 다시 부르지 않고 로컬 목록에서 제거 후 재렌더
     state.all = state.all.filter((r) => String(r.reviewId) !== String(reviewId));
     if (String(state.openId) === String(reviewId)) state.openId = null;
     applyFilters();
   } catch (e) {
     console.error('리뷰 삭제 중 오류가 발생했습니다.', e);
-    alert('리뷰 삭제 중 오류가 발생했습니다.');
+    alert(trUi('revErrDelete'));
   } finally {
     hideLoading();
   }
@@ -213,19 +219,21 @@ function renderItem(r) {
   const isOpen = String(state.openId) === String(id);
   // 접힘 = 요약(제목 또는 내용 미리보기 + 메타줄), 펼침 = 상세박스가 같은 정보를 이미 다 보여주므로
   // 헤더는 제목만 남기고 미리보기/메타줄은 감춰서 중복을 없앤다(제목이 없는 리뷰는 절 이름으로 대체).
-  const heading = isOpen
-    ? (r.title || r.templeName || '(제목 없음)')
-    : (r.title || r.content || '(내용 없음)');
+  // 접힘/펼침 두 가지 제목을 둘 다 그려두고 CSS(.open)로 보이는 쪽만 고른다(위 아코디언 주석 참고)
+  const headingOpen = r.title || r.templeName || trUi('revNoTitle');
+  const headingClosed = r.title || r.content || trUi('revNoContent');
   const templeName = r.templeName ? escapeHtml(r.templeName) : '';
   const programName = r.programName ? escapeHtml(r.programName) : '';
   const authorName = r.authorName ? escapeHtml(r.authorName) : '';
+  // 사찰명 사전(templeI18n.js)에 있으면 번역기가 덮어쓰지 못하게 .no-translate를 붙인다
+  function templeDictClass(name) { return trTempleName(name) !== name ? ' no-translate' : ''; }
   // 닉네임은 번역 금지(.no-translate), 서버가 탈퇴 회원에게 붙이는 고정 문구는 사전 번역 대상
   const authorClass = r.authorName === '탈퇴한 회원' ? '' : 'no-translate';
   // 절/프로그램명/별점 - 작성자/일시 두 줄로 나눠 보여준다.
   const metaLine1 = [
-    r.templeName ? `<span class="temple">${escapeHtml(r.templeName)}</span>` : '',
+    r.templeName ? `<span class="temple${templeDictClass(r.templeName)}" data-pi18n-temple="${escapeAttr(r.templeName)}">${escapeHtml(trTempleName(r.templeName))}</span>` : '',
     r.programName ? `<span class="prog">${escapeHtml(r.programName)}</span>` : '',
-    `<span class="stars">${stars(r.rating)}</span>`,
+    `<span class="stars no-translate">${stars(r.rating)}</span>`,
   ].filter(Boolean).join('');
   const metaLine2 = [
     r.authorName ? `<span class="${authorClass}">${escapeHtml(r.authorName)}</span>` : '',
@@ -238,8 +246,8 @@ function renderItem(r) {
   const isMine = currentLoginId && r.loginId && r.loginId === currentLoginId && r.reservationId != null;
   const actions = isMine
     ? `<div class="review-actions">
-         <a class="edit-link" href="/mypage/reviews/write?reservationId=${encodeURIComponent(r.reservationId)}&reviewId=${encodeURIComponent(r.reviewId)}">수정하기</a>
-         <button type="button" class="delete-btn" data-review-id="${escapeAttr(r.reviewId)}">삭제하기</button>
+         <a class="edit-link no-translate" data-pi18n="revEdit" href="/mypage/reviews/write?reservationId=${encodeURIComponent(r.reservationId)}&reviewId=${encodeURIComponent(r.reviewId)}">${trUi('revEdit')}</a>
+         <button type="button" class="delete-btn no-translate" data-pi18n="revDelete" data-review-id="${escapeAttr(r.reviewId)}">${trUi('revDelete')}</button>
        </div>`
     : '';
 
@@ -258,11 +266,13 @@ function renderItem(r) {
       <div class="review-row">
         <button type="button" class="review-summary">
           <span class="col-main">
-            <span class="review-title">${escapeHtml(heading)}</span>
-            ${isOpen ? '' : `<span class="review-meta">${meta}</span>`}
+            <span class="review-title title-closed">${escapeHtml(headingClosed)}</span>
+            <span class="review-title title-open">${escapeHtml(headingOpen)}</span>
+            <span class="review-meta">${meta}</span>
           </span>
           <span class="chevron">
-            <span class="chevron-label">${isOpen ? '접기' : '자세히'}</span>
+            <span class="chevron-label label-closed no-translate" data-pi18n="revMore">${trUi('revMore')}</span>
+            <span class="chevron-label label-open no-translate" data-pi18n="revCollapse">${trUi('revCollapse')}</span>
             <span class="chevron-icon">&#9660;</span>
           </span>
         </button>
@@ -273,28 +283,28 @@ function renderItem(r) {
       </div>
       <div class="review-detail">
         <dl class="detail-fields">
-          <dt>사찰명</dt><dd>${
+          <dt class="no-translate" data-pi18n="revTempleName">${trUi('revTempleName')}</dt><dd>${
             templeName
               ? (r.templeId != null
-                  ? `<a class="field-link" href="/temple-detail/${encodeURIComponent(r.templeId)}">${templeName}</a>`
-                  : templeName)
+                  ? `<a class="field-link${templeDictClass(r.templeName)}" data-pi18n-temple="${escapeAttr(r.templeName)}" href="/temple-detail/${encodeURIComponent(r.templeId)}">${escapeHtml(trTempleName(r.templeName))}</a>`
+                  : `<span class="${templeDictClass(r.templeName).trim()}" data-pi18n-temple="${escapeAttr(r.templeName)}">${escapeHtml(trTempleName(r.templeName))}</span>`)
               : '-'
           }</dd>
-          <dt>프로그램명</dt><dd>${
+          <dt class="no-translate" data-pi18n="programName">${trUi('programName')}</dt><dd>${
             programName
               ? (r.programId != null
                   ? `<a class="field-link" href="/reservation/programs/${encodeURIComponent(r.programId)}">${programName}</a>`
                   : programName)
               : '-'
           }</dd>
-          <dt>별점</dt><dd><span class="stars">${stars(r.rating)}</span></dd>
-          <dt>작성자</dt><dd>${
+          <dt class="no-translate" data-pi18n="revRating">${trUi('revRating')}</dt><dd><span class="stars no-translate">${stars(r.rating)}</span></dd>
+          <dt class="no-translate" data-pi18n="revAuthor">${trUi('revAuthor')}</dt><dd>${
             authorName
               ? `<button type="button" class="author-filter ${authorClass}" data-author="${escapeAttr(r.authorName)}">${authorName}</button>`
               : '-'
           }</dd>
-          <dt>작성일</dt><dd>${formatDate(r.createdAt)}</dd>
-          <dt>내용</dt><dd class="content-cell">${escapeHtml(r.content || '')}</dd>
+          <dt class="no-translate" data-pi18n="revDate">${trUi('revDate')}</dt><dd>${formatDate(r.createdAt)}</dd>
+          <dt class="no-translate" data-pi18n="revContent">${trUi('revContent')}</dt><dd class="content-cell">${escapeHtml(r.content || '')}</dd>
         </dl>
         ${images}
         ${actions}

@@ -264,7 +264,7 @@ kakao.maps.load(function () {
                     })
                                   .catch(function (error) {
                                       console.error(error);
-                                      alert('로그인 후 즐겨찾기가 가능합니다.');
+                                      alert(i18nMsg('favLoginRequired'));
                                       location.href = '/login';
                                   });
                           });
@@ -363,7 +363,7 @@ kakao.maps.load(function () {
         });
 
         if (matched.length === 0) {
-            alert('검색 결과가 없습니다.');
+            alert(i18nMsg('noSearchResult'));
             return;
         }
 
@@ -388,7 +388,7 @@ kakao.maps.load(function () {
     });
 
         if (!found) {
-            alert('검색 결과가 없습니다.');
+            alert(i18nMsg('noSearchResult'));
             return;
         }
 
@@ -428,7 +428,7 @@ kakao.maps.load(function () {
                }
     favoriteFilterBtn.addEventListener('click', function () {
         if (!isLoggedIn) {
-            alert('로그인 후 회원의 즐겨찾기 사찰을 볼 수 있습니다.\n로그인 페이지로 이동합니다.');
+            alert(i18nMsg('favLoginToView'));
             location.href = '/login';
             return; // 필터는 켜지지 않음
         }
@@ -540,7 +540,7 @@ kakao.maps.load(function () {
         }
 
         if (!navigator.geolocation) {
-            alert('이 브라우저에서는 위치 확인 기능을 지원하지 않습니다.');
+            alert(i18nMsg('noGeolocation'));
             return;
         }
 
@@ -585,7 +585,7 @@ kakao.maps.load(function () {
                 nearMeActive = true;
                 document.getElementById('near-me-btn').classList.add('active');
 
-                if (nearby.length === 0) {alert('반경 ' + NEAR_ME_RADIUS_KM + 'km 안에 등록된 사찰이 없습니다.');}
+                if (nearby.length === 0) {alert(i18nMsg('noTempleNearby', { km: NEAR_ME_RADIUS_KM }));}
                 // 검색 제한 목록에 넣어두면, 기존 applyFilters()가 마커 표시/숨김을 알아서 처리해줌.
                 searchMatchedIds = nearby.map(function (temple) { return temple.templeId;});
                 applyFilters();
@@ -596,7 +596,7 @@ kakao.maps.load(function () {
             },
             function () {
                 hideLoading();
-                alert('현재 위치를 가져올 수 없습니다. 브라우저의 위치 권한을 허용했는지 확인해 주세요.');
+                alert(i18nMsg('errGeolocation'));
             }
         )
     });

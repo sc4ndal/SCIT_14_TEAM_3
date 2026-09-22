@@ -30,20 +30,14 @@ public class AppUserDetails implements UserDetails {
                                     // 곳은 SessionLoginService.loginAs가 이 값을 직접 확인해서 막는다 -
                                     // "탈퇴 계정 로그인 차단"을 한 곳(이 필드)만 보면 되게 하기 위함.
 
+    /** 사찰 계정 로그인 전용 — 탈퇴 유예/확정 개념이 없어 항상 (false, true)로 고정. */
     public AppUserDetails(String loginId, String password,
                            Collection<? extends GrantedAuthority> authorities,
                            Long templeId, String nickname, String kakaoAccessToken,
                            boolean mustChangePassword) {
         this(loginId, password, authorities, templeId, nickname, kakaoAccessToken, mustChangePassword, false, true);
     }
-
-    public AppUserDetails(String loginId, String password,
-                           Collection<? extends GrantedAuthority> authorities,
-                           Long templeId, String nickname, String kakaoAccessToken,
-                           boolean mustChangePassword, boolean withdrawalPending) {
-        this(loginId, password, authorities, templeId, nickname, kakaoAccessToken, mustChangePassword, withdrawalPending, true);
-    }
-
+	/** 회원 계정 */
     public AppUserDetails(String loginId, String password,
                            Collection<? extends GrantedAuthority> authorities,
                            Long templeId, String nickname, String kakaoAccessToken,

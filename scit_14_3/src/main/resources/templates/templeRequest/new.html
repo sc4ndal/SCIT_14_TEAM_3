@@ -303,7 +303,7 @@
 	document.querySelector('form[action="/temple-requests"]').addEventListener('submit', (e) => {
 		if (verifiedEmail !== contactEmailInput.value.trim()) {
 			e.preventDefault();
-			alert('이메일 인증을 완료해주세요.');
+			alert(i18nMsg('verifyEmailFirst'));
 			return;
 		}
 

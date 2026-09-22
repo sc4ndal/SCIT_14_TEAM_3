@@ -1,7 +1,6 @@
 package net.datasa.scit_14_3.controller.buddhism;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.security.AppUserDetails;
 import net.datasa.scit_14_3.service.buddhism.TempleFoodService;
 import org.springframework.http.HttpStatus;
@@ -26,7 +25,6 @@ import java.util.Map;
  */
 @Controller
 @RequiredArgsConstructor
-@Slf4j
 public class TempleFoodController {
 
 	private final TempleFoodService templeFoodService;

@@ -57,7 +57,7 @@
 	document.querySelector('form').addEventListener('submit', function (e) {
 		if (!document.getElementById('agreeWithdrawal').checked) {
 			e.preventDefault();
-			alert('탈퇴 안내에 동의해주세요.');
+			alert(i18nMsg('withdrawAgree'));
 		}
 	});
 </script>

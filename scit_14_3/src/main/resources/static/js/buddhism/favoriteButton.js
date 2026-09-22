@@ -43,7 +43,7 @@ document.addEventListener('click', function (e) {
 
 	var isLoggedIn = !!document.getElementById('auth-info');
 	if (!isLoggedIn) {
-		alert('로그인이 필요합니다.');
+		alert(i18nMsg('loginRequired'));
 		location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
 		return;
 	}
@@ -52,7 +52,7 @@ document.addEventListener('click', function (e) {
 	if (!url) return;
 
 	var isCurrentlyFavorited = btn.dataset.favorited === 'true';
-	if (isCurrentlyFavorited && !confirm('즐겨찾기를 해제하시겠습니까?')) {
+	if (isCurrentlyFavorited && !confirm(i18nMsg('confirmUnfavorite'))) {
 		return;
 	}
 
@@ -60,7 +60,7 @@ document.addEventListener('click', function (e) {
 	fetch(url, { method: 'POST' })
 		.then(function (res) {
 			if (res.status === 401) {
-				alert('로그인이 필요합니다.');
+				alert(i18nMsg('loginRequired'));
 				location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
 				return null;
 			}
@@ -81,9 +81,26 @@ document.addEventListener('click', function (e) {
 			}
 		})
 		.catch(function (err) {
-			alert(err.message || '요청 처리 중 오류가 발생했습니다.');
+			alert(i18nSrv(err.message) || i18nMsg('errRequest'));
 		})
 		.finally(function () {
 			btn.disabled = false;
 		});
 });
+
+/* 언어를 바꿀 때 라벨을 현재 언어로 다시 맞춘다.
+   클릭할 때 applyFavoriteState가 라벨을 새 텍스트로 갈아끼우면 그 텍스트는 common.js의 번역 목록(최초
+   스냅샷)에 없어서, 이후 언어를 바꿔도 갱신되지 않고 예전 언어(예: 일본어)가 그대로 남았다. 버튼의
+   data-favorited 상태를 기준으로 언제든 다시 그리게 해서 그 문제를 없앤다. common.js가 번역을 다 적용한
+   뒤(i18nAfterApplyHooks)에 실행되고, 한국어로 되돌릴 때도 실행돼서 원문 복원도 여기서 처리한다. */
+function refreshFavoriteLabels() {
+	document.querySelectorAll('.favorite-toggle').forEach(function (btn) {
+		if (btn.dataset.favorited === undefined) return; // 좋아요 버튼 등 즐겨찾기 상태가 없는 버튼은 제외
+		var label = btn.querySelector('.favorite-toggle__label');
+		if (!label) return;
+		label.classList.add('no-translate');
+		label.textContent = favoriteLabelText(btn.dataset.favorited === 'true' ? '즐겨찾기됨' : '즐겨찾기');
+	});
+}
+window.i18nAfterApplyHooks = window.i18nAfterApplyHooks || [];
+window.i18nAfterApplyHooks.push(refreshFavoriteLabels);

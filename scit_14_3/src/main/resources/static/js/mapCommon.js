@@ -295,7 +295,7 @@ function createTempleMarker(map, temple) {
                    })
                    .catch(function (error) {
                        console.error(error);
-                       alert('로그인 후 즐겨찾기가 가능합니다.')
+                       alert(i18nMsg('favLoginRequired'))
                        location.href = '/login';
                    });
            });
@@ -351,7 +351,6 @@ function createTempleMarker(map, temple) {
             // 정보창이 패널 밑에 깔리지 않게 지도를 살짝 아래로 밀어줌
             var TOP_SAFE_AREA = 130; // 컨트롤 패널이 차지하는 대략적인 높이 + 여유
             var point = map.getProjection().pointFromCoords(position);
-                    console.log('marker point.y =', point.y);
 
             infowindow.open(map, marker);
 

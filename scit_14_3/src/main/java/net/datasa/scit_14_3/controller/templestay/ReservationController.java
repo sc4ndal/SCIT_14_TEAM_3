@@ -1,7 +1,6 @@
 package net.datasa.scit_14_3.controller.templestay;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.payment.PaymentDTO;
 import net.datasa.scit_14_3.domain.dto.templestay.ReservationParticipantDTO;
 import net.datasa.scit_14_3.domain.dto.templestay.TempleStayReservationDTO;
@@ -19,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 @Controller
 @RequiredArgsConstructor
 public class ReservationController {

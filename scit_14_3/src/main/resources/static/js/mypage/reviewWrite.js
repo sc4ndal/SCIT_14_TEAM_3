@@ -4,7 +4,7 @@ const isLoggedIn = !!authInfo;
 const currentLoginId = authInfo ? authInfo.dataset.loginId : null;
 
 if (!isLoggedIn) {
-  alert('로그인이 필요합니다.');
+  alert(i18nMsg('loginRequired'));
   location.replace('/login');
 }
 
@@ -15,7 +15,7 @@ const editingReviewId = params.get('reviewId'); // 있으면 수정 모드 (myRe
 const isEditMode = !!editingReviewId;
 
 if (!reservationId) {
-  alert('잘못된 접근입니다.');
+  alert(i18nMsg('invalidAccess'));
   location.replace('/mypage/myReservations');
 }
 
@@ -70,11 +70,11 @@ document.getElementById('review-images').addEventListener('change', (e) => {
 
   for (const file of newFiles) {
     if (totalImageCount() >= MAX_IMAGES) {
-      alert(`사진은 최대 ${MAX_IMAGES}장까지 첨부할 수 있습니다.`);
+      alert(i18nMsg('maxImages', { n: MAX_IMAGES }));
       break;
     }
     if (file.size > MAX_IMAGE_SIZE) {
-      alert(`"${file.name}" 파일이 10MB를 넘어 첨부할 수 없습니다. (무료 Cloudinary 플랜 제한)`);
+      alert(i18nMsg('fileTooLarge', { name: file.name }));
       continue;
     }
     selectedFiles.push(file);
@@ -110,12 +110,12 @@ async function init() {
     // 본인 예약이 아니거나 이용완료 상태가 아니면 작성/수정 불가 - 서버(ReviewController)도 동일하게
     // 검증하지만 여기서 먼저 걸러서 불필요한 폼 입력을 막는다.
     if (reservation.loginId !== currentLoginId) {
-      alert('본인의 예약에만 리뷰를 작성할 수 있습니다.');
+      alert(i18nMsg('onlyOwnReservationReview'));
       location.replace('/mypage/myReservations');
       return;
     }
     if (reservation.status !== '이용완료') {
-      alert('이용이 완료된 예약만 리뷰를 작성할 수 있습니다.');
+      alert(i18nMsg('onlyCompletedReview'));
       location.replace('/mypage/myReservations');
       return;
     }
@@ -126,12 +126,12 @@ async function init() {
     const existingReview = existingRes.ok ? await existingRes.json() : null;
 
     if (!isEditMode && existingReview) {
-      alert('이미 이 예약에 대한 리뷰를 작성했습니다.');
+      alert(i18nMsg('alreadyReviewed'));
       location.replace('/mypage/myReservations');
       return;
     }
     if (isEditMode && !existingReview) {
-      alert('수정할 리뷰를 찾을 수 없습니다.');
+      alert(i18nMsg('reviewNotFound'));
       location.replace('/mypage/myReservations');
       return;
     }
@@ -168,7 +168,7 @@ async function init() {
     }
   } catch (err) {
     console.error('리뷰 작성 페이지 초기화 중 오류가 발생했습니다.', err);
-    alert('예약 정보를 불러오는 중 오류가 발생했습니다.');
+    alert(i18nMsg('errLoadReservationInfo'));
     location.replace('/mypage/myReservations');
   } finally {
     hideLoading();
@@ -178,17 +178,17 @@ async function init() {
 // ------------------------- 리뷰 등록/수정 -------------------------
 document.getElementById('review-submit-btn').addEventListener('click', async () => {
   if (selectedRating < 1) {
-    alert('평점을 선택해주세요.');
+    alert(i18nMsg('pickRating'));
     return;
   }
   const title = document.getElementById('review-title').value.trim();
   if (!title) {
-    alert('제목을 입력해주세요.');
+    alert(i18nMsg('enterTitle'));
     return;
   }
   const content = document.getElementById('review-content').value.trim();
   if (!content) {
-    alert('리뷰 내용을 입력해주세요.');
+    alert(i18nMsg('enterContent'));
     return;
   }
 
@@ -223,17 +223,17 @@ document.getElementById('review-submit-btn').addEventListener('click', async () 
     if (!res.ok) {
       // 이용완료 아닌 예약, 이미 작성한 리뷰 등 서버가 이유를 알려준 경우 그 메시지 그대로 보여줌
       const err = await res.json().catch(() => null);
-      alert(err && err.message ? err.message : '리뷰 저장 중 오류가 발생했습니다.');
+      alert(err && err.message ? i18nSrv(err.message) : i18nMsg('errSaveReview'));
       submitBtn.disabled = false;
       return;
     }
 
-    alert(isEditMode ? '리뷰가 수정되었습니다.' : '리뷰가 등록되었습니다.');
+    alert(i18nMsg(isEditMode ? 'reviewUpdated' : 'reviewCreated'));
     // 수정은 나의 리뷰에서 들어오는 경우가 많아 나의 리뷰로, 새로 작성은 예약목록에서 들어오므로 그대로 예약목록으로 보낸다.
     location.replace(isEditMode ? '/mypage/myReviews' : '/mypage/myReservations');
   } catch (err) {
     console.error(err);
-    alert('리뷰 저장 중 오류가 발생했습니다.');
+    alert(i18nMsg('errSaveReview'));
     submitBtn.disabled = false;
   } finally {
     hideLoading();
@@ -243,7 +243,7 @@ document.getElementById('review-submit-btn').addEventListener('click', async () 
 // ------------------------- 리뷰 삭제 (수정 모드 전용) -------------------------
 document.getElementById('review-delete-btn').addEventListener('click', async () => {
   if (!isEditMode) return;
-  if (!confirm('이 리뷰를 삭제하시겠습니까?')) return;
+  if (!confirm(i18nMsg('confirmDeleteReview'))) return;
 
   const deleteBtn = document.getElementById('review-delete-btn');
   deleteBtn.disabled = true;
@@ -251,15 +251,15 @@ document.getElementById('review-delete-btn').addEventListener('click', async () 
     const res = await fetch(`/reviews/${editingReviewId}`, { method: 'DELETE' });
     if (!res.ok) {
       const err = await res.json().catch(() => null);
-      alert(err && err.message ? err.message : '리뷰 삭제 중 오류가 발생했습니다.');
+      alert(err && err.message ? i18nSrv(err.message) : i18nMsg('errDeleteReview'));
       deleteBtn.disabled = false;
       return;
     }
-    alert('리뷰가 삭제되었습니다.');
+    alert(i18nMsg('reviewDeleted'));
     location.replace('/mypage/myReviews');
   } catch (err) {
     console.error('리뷰 삭제 중 오류가 발생했습니다.', err);
-    alert('리뷰 삭제 중 오류가 발생했습니다.');
+    alert(i18nMsg('errDeleteReview'));
     deleteBtn.disabled = false;
   }
 });

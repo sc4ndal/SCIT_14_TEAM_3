@@ -13,7 +13,7 @@ document.querySelectorAll('.confirm-reservation-btn').forEach(function (btn) {
     var reservationId = btn.dataset.reservationId;
 
     btn.addEventListener('click', function () {
-        var ok = confirm('입금을 확인하셨나요? 예약을 확정 처리합니다.');
+        var ok = confirm(i18nMsg('confirmDeposit'));
         if (!ok) return;
 
         showLoading('예약을 확정 처리하는 중...');
@@ -27,9 +27,9 @@ document.querySelectorAll('.confirm-reservation-btn').forEach(function (btn) {
             }
             statusCell.innerHTML = reservationStatusBadgeHtml('예약확정');
             row.dataset.status = '예약확정';
-            alert('예약이 확정 처리되었습니다.');
+            alert(i18nMsg('reservationConfirmed'));
         }).catch(function (err) {
-            alert(err.message);
+            alert(i18nSrv(err.message));
         }).finally(function () {
             hideLoading();
         });
@@ -43,7 +43,7 @@ document.querySelectorAll('.cancel-reservation-btn').forEach(function (btn) {
     var statusCell = row.querySelector('.status-cell');
 
     btn.addEventListener('click', function () {
-        var ok = confirm('이 예약을 취소하시겠습니까?');
+        var ok = confirm(i18nMsg('confirmCancelThisReservation'));
         if (!ok) return;
 
         var reservationId = btn.dataset.reservationId;
@@ -60,9 +60,9 @@ document.querySelectorAll('.cancel-reservation-btn').forEach(function (btn) {
             statusCell.innerHTML = reservationStatusBadgeHtml('취소'); // 입금확인 버튼(있었으면)도 같이 없어짐
             row.dataset.status = '취소';
             btn.remove(); // disabled로 "취소됨" 남겨두는 대신, 새로고침했을 때와 똑같이 버튼 자체를 없앰
-            alert('예약이 취소되었습니다.');
+            alert(i18nMsg('reservationCanceled'));
         }).catch(function (err) {
-            alert(err.message);
+            alert(i18nSrv(err.message));
         }).finally(function () {
             hideLoading();
         });

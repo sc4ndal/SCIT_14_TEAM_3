@@ -36,11 +36,7 @@ public class LocalSignupRequestDto {
     private String nickname;
 
 
-    // 이름: 한글 2~5자
-//    @Pattern(
-//            regexp = "^[가-힣]{2,5}$",
-//            message = "이름은 한글 2~5자로 입력해주세요."
-//    )
+    // 이름: 영문 2~50자 (여권 표기 형식)
     @Pattern(
             regexp = "^[A-Za-z\\s]{2,50}$",
             message = "이름은 영문으로 2~50자까지 입력해주세요."

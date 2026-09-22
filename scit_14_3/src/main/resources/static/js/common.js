@@ -142,10 +142,21 @@ function isI18nExcluded(el){
     return !!el.closest('.brand, .language-area, .userEntity-nickname, .no-translate, [aria-hidden="true"], script, style, noscript');
 }
 
+/** 번역기에 넘길 가치가 있는 텍스트인지 - 원문 언어(한국어) 글자가 하나라도 들어 있어야 번역 대상으로 본다.
+    한글이 없는 텍스트(★☆ 별점, 숫자/날짜, 이미 번역해서 그린 일본어·영어 문구)를 번역기에 "한국어"라고
+    속이고 넘기면 결과가 엉뚱하게 나오기 때문에 아예 번역 대상에서 뺀다. 예:
+      - 별점 "★★★★★"가 일본어에서 6개로 늘어남
+      - 사전으로 쓴 "お気に入り済み"가 관찰자에게 "새로 생긴 한국어"로 오해받아 번역기를 거치며
+        전혀 다른 문장(엉뚱한 단어)으로 바뀜 */
+function hasSourceLangText(text){
+    return /[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(text);
+}
+
 function collectI18nTextNodes(){
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
         acceptNode(node){
             if(!node.textContent.trim()) return NodeFilter.FILTER_REJECT;
+            if(!hasSourceLangText(node.textContent)) return NodeFilter.FILTER_REJECT;
             if(!node.parentElement || isI18nExcluded(node.parentElement)) return NodeFilter.FILTER_REJECT;
             return NodeFilter.FILTER_ACCEPT;
         }
@@ -160,7 +171,7 @@ function collectI18nTextNodes(){
     속성이라 TreeWalker(SHOW_TEXT)로는 안 잡혀서 별도로 모음. */
 function collectI18nPlaceholderElements(){
     return Array.from(document.body.querySelectorAll('[placeholder]')).filter(el => {
-        return el.placeholder && el.placeholder.trim() && !isI18nExcluded(el);
+        return el.placeholder && el.placeholder.trim() && hasSourceLangText(el.placeholder) && !isI18nExcluded(el);
     });
 }
 
@@ -433,10 +444,6 @@ window.addEventListener('load', function applySavedLanguage(){
         defaultOnLanguageChange(saved, targetBtn);
     }
 });
-
-/* ===== 인증 드롭다운(auth-nav-fragment) 관련 코드는 여기 그대로 유지 =====
-   (기존에 이미 작성해두신 openDropdown/closeDropdown 등은 이 파일에
-   그대로 남겨두시면 됩니다 — 이번 수정과 무관합니다) */
 
 /* ===== 전체화면 로딩 오버레이 =====
    서버(특히 원격 DB)에서 값 가져오는 동안 화면 전체를 반투명 회색으로 덮고

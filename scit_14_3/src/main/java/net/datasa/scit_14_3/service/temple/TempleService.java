@@ -3,11 +3,8 @@ package net.datasa.scit_14_3.service.temple;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.temple.TempleDTO;
-import net.datasa.scit_14_3.domain.dto.templestay.TempleStayProgramDTO;
 import net.datasa.scit_14_3.domain.entity.temple.TempleEntity;
-import net.datasa.scit_14_3.domain.entity.templestay.TempleStayProgramEntity;
 import net.datasa.scit_14_3.repository.temple.TempleRegistrationRequestRepository;
 import net.datasa.scit_14_3.repository.temple.TempleRepository;
 import net.datasa.scit_14_3.service.integration.CloudinaryService;
@@ -20,7 +17,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
-@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor

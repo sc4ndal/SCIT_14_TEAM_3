@@ -4,7 +4,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.mypage.MypageEditViewDto;
 import net.datasa.scit_14_3.domain.dto.user.UserResponseDto;
 import net.datasa.scit_14_3.domain.entity.user.UserEntity;
@@ -21,7 +20,6 @@ import net.datasa.scit_14_3.service.templestay.TempleStayReservationService;
 import net.datasa.scit_14_3.service.templestay.TempleStayReviewService;
 import net.datasa.scit_14_3.service.user.EmailVerificationService;
 import net.datasa.scit_14_3.service.user.UserService;
-import net.datasa.scit_14_3.util.PasswordPolicy;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -39,7 +37,6 @@ import java.util.concurrent.ExecutorService;
  * 마이페이지 - 사찰 계정(사찰정보수정)은 비밀번호 변경 + 대표이미지/영어지원여부/환불규정/유의사항을
  * 다룸. 일반회원(USER) 정보수정은 아직 없음 - 요청 들어오면 그때 추가.
  */
-@Slf4j
 @Controller
 @RequiredArgsConstructor
 public class MypageController {
