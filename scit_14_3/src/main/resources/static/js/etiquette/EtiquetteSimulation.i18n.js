@@ -11,7 +11,6 @@ window.SIM_TRANSLATIONS = {
     ko: {
         'ui.loadingText': '불러오는 중...',
         'ui.titleH1': '사찰 예절 시뮬레이션',
-        'ui.titleSub1': '「미(스님)연(애)시(뮬레이션)」',
         'ui.titleSub2': '선택을 통해 첫 사찰 방문을 경험해보세요.',
         'ui.btnStart': '시작하기',
         'ui.btnCollection': '엔딩 도감',
@@ -27,7 +26,6 @@ window.SIM_TRANSLATIONS = {
     en: {
         'ui.loadingText': 'Loading...',
         'ui.titleH1': 'Temple Etiquette Simulation',
-        'ui.titleSub1': '「A "Not Dating" Sim(ulation)」',
         'ui.titleSub2': 'Make your choices and experience your first temple visit.',
         'ui.btnStart': 'Start',
         'ui.btnCollection': 'Ending Gallery',
@@ -173,7 +171,6 @@ window.SIM_TRANSLATIONS = {
     ja: {
         'ui.loadingText': '読み込み中...',
         'ui.titleH1': '寺院マナーシミュレーション',
-        'ui.titleSub1': '「(色恋なしの)寺院シミュレーション」',
         'ui.titleSub2': '選択を通して、初めての寺院訪問を体験してみましょう。',
         'ui.btnStart': 'はじめる',
         'ui.btnCollection': 'エンディング図鑑',

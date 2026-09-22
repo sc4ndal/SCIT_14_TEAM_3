@@ -4,7 +4,7 @@
 const SCENES = {
 
     prologue: {
-        type: 'story', bg: '집', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B0%A9.png',
+        type: 'story', bg: '집', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B0%A9.png', bgm: 'room',
         lines: [
             '오랜만에 마음이 복잡했다.',
             '누가 그러던데, 이럴 땐 절에 가서 마음을 좀 가라앉히고 오는 것도 나쁘지 않다고.',
@@ -14,7 +14,7 @@ const SCENES = {
     },
 
     scene01: {
-        type: 'choice', bg: '집 · 옷장 앞', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B0%A9.png', judged: true,
+        type: 'choice', bg: '집 · 옷장 앞', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B0%A9.png', bgm: 'room', judged: true,
         resultId: { no: '01', title: '사찰 방문 준비' },
         lines: ['그러고 보니 절에 갈 때는 뭘 입어야 하지? 그냥 평소처럼 입고 가도 되나......?'],
         choices: [
@@ -26,7 +26,7 @@ const SCENES = {
     },
 
     scene02: {
-        type: 'story', bg: '사찰 입구 → 경내', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844159/%EB%B6%88%EC%84%A0%EC%82%AC_%EC%95%9E.png',
+        type: 'story', bg: '사찰 입구 → 경내', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844159/%EB%B6%88%EC%84%A0%EC%82%AC_%EC%95%9E.png', bgm: 'room',
         lines: [
             '얼마 후, 사찰에 도착했다. 생각했던 것보다 조용했다.',
             '바깥에서 들리던 소리도 어느새 멀어지고, 가끔 바람에 나뭇잎이 흔들리는 소리만 들려왔다.',
@@ -36,7 +36,7 @@ const SCENES = {
     },
 
     scene03: {
-        type: 'choice', bg: '법당 정면 (문 3개)', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B2%95%EB%8B%B9%EC%A0%95%EB%A9%B4.png',judged: true,
+        type: 'choice', bg: '법당 정면 (문 3개)', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B2%95%EB%8B%B9%EC%A0%95%EB%A9%B4.png', bgm: 'temple', judged: true,
         resultId: { no: '02', title: '법당 출입' },
         lines: [
             '경내를 둘러보다 법당 앞에 도착했다. 막상 들어가려니 문이 하나가 아니었다.',
@@ -51,7 +51,7 @@ const SCENES = {
     },
 
     scene04: {
-        type: 'choice', bg: '법당 내부 · 불상', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B2%95%EB%8B%B9_%EB%82%B4%EB%B6%80.png',judged: true,
+        type: 'choice', bg: '법당 내부 · 불상', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B2%95%EB%8B%B9_%EB%82%B4%EB%B6%80.png', bgm: 'temple', judged: true,
         resultId: { no: '03', title: '법당에서의 인사' },
         lines: [
             '법당 안으로 들어서자 분위기가 한층 더 조용해졌다. 정면에는 불상이 모셔져 있었고,',
@@ -66,7 +66,7 @@ const SCENES = {
     },
 
     scene05: {
-        type: 'choice', bg: '법당 내부 · 초와 향', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844159/%EC%B4%88_%ED%96%A5%EB%A1%9C.png',judged: true,
+        type: 'choice', bg: '법당 내부 · 초와 향', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844159/%EC%B4%88_%ED%96%A5%EB%A1%9C.png', bgm: 'temple', judged: true,
         resultId: { no: '04', title: '초와 향' },
         lines: [
             '인사를 마치고 주변을 둘러보던 중, 한쪽에 놓인 초와 향이 눈에 들어왔다.',
@@ -81,7 +81,7 @@ const SCENES = {
     },
 
     scene06: {
-        type: 'choice', bg: '법당 내부 · 불상 앞', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B2%95%EB%8B%B9_%EB%82%B4%EB%B6%80.png',judged: true,
+        type: 'choice', bg: '법당 내부 · 불상 앞', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B2%95%EB%8B%B9_%EB%82%B4%EB%B6%80.png', bgm: 'temple', judged: true,
         resultId: { no: '05', title: '참배하기' },
         lines: [
             '초와 향이 놓인 곳을 지나 불상 앞쪽으로 향했다. 주변에서는 사람들이 조용히 절을 올리고 있었다.',
@@ -96,7 +96,7 @@ const SCENES = {
     },
 
     scene07: {
-        type: 'choice', bg: '법당 내부 · 다른 참배객', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B2%95%EB%8B%B9_%EB%82%B4%EB%B6%80.png',judged: true,
+        type: 'choice', bg: '법당 내부 · 다른 참배객', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EB%B2%95%EB%8B%B9_%EB%82%B4%EB%B6%80.png', bgm: 'temple', judged: true,
         resultId: { no: '06', title: '다른 참배객 배려하기' },
         lines: [
             '참배를 마치고 자리에서 일어났다. 이제 밖으로 나가려던 순간,',
@@ -109,7 +109,7 @@ const SCENES = {
     },
 
     scene08: {
-        type: 'choice', bg: '사찰 경내 · 스님과 마주침', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788856122/%EC%8A%A4%EB%8B%98%EB%93%B1%EC%9E%A5.png',judged: true,
+        type: 'choice', bg: '사찰 경내 · 스님과 마주침', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788856122/%EC%8A%A4%EB%8B%98%EB%93%B1%EC%9E%A5.png', bgm: 'temple', judged: true,
         resultId: { no: '07', title: '스님께 인사하기' },
         lines: [
             '법당을 나와 경내를 천천히 걸었다. 처음 들어올 때보다는 조금 긴장이 풀린 것 같았다.',
@@ -124,7 +124,7 @@ const SCENES = {
     },
 
     scene09: {
-        type: 'choice', bg: '사찰 공양간', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EA%B3%B5%EC%96%91%EA%B0%84.png',judged: true,
+        type: 'choice', bg: '사찰 공양간', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844158/%EA%B3%B5%EC%96%91%EA%B0%84.png', bgm: 'temple', judged: true,
         resultId: { no: '08', title: '공양하기' },
         lines: [
             '경내를 둘러보다 보니 어느새 시간이 꽤 흘렀다. 마침 공양 시간이 되어 공양간으로 향했다.',
@@ -138,7 +138,7 @@ const SCENES = {
     },
 
     scene10: {
-        type: 'story', bg: '사찰 경내 · 노을', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844159/%EA%B2%BD%EB%82%B4_%EB%82%AE.png',
+        type: 'story', bg: '사찰 경내 · 노을', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844159/%EA%B2%BD%EB%82%B4_%EB%82%AE.png', bgm: 'temple',
         lines: [
             '공양을 마치고 밖으로 나오니 어느새 시간이 꽤 지나 있었다.',
             '처음 들어왔을 때보다 경내가 조금 익숙하게 느껴졌다.',
@@ -149,7 +149,7 @@ const SCENES = {
     },
 
     hidden1: {
-        type: 'choice', bg: '사찰 경내 · 마루 밑 고양이', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788856120/%EB%A7%88%EB%A3%A8%EB%B0%91%EA%B3%A0%EC%96%91%EC%9D%B4.png',
+        type: 'choice', bg: '사찰 경내 · 마루 밑 고양이', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788856120/%EB%A7%88%EB%A3%A8%EB%B0%91%EA%B3%A0%EC%96%91%EC%9D%B4.png', bgm: 'hidden',
         lines: [
             '공양을 마치고 밖으로 나왔다. 슬슬 돌아갈까 생각하며 입구 쪽으로 걷던 중—',
             '고양이: 야옹.',
@@ -163,7 +163,7 @@ const SCENES = {
     },
 
     hidden2: {
-        type: 'choice', bg: '사찰 경내 · 앞장서는 고양이', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788856122/%EC%84%B9%EC%8B%9C%ED%95%9C%EC%82%BC%EC%83%89%EC%9D%B4%EB%92%B7%ED%83%9C.png',
+        type: 'choice', bg: '사찰 경내 · 앞장서는 고양이', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788856122/%EC%84%B9%EC%8B%9C%ED%95%9C%EC%82%BC%EC%83%89%EC%9D%B4%EB%92%B7%ED%83%9C.png', bgm: 'hidden',
         lines: [
             '고양이가 슬금슬금 다가오더니, 몇 걸음 앞장서 걷기 시작했다.',
             '몇 걸음 걷다 멈춰서 뒤돌아보길 반복한다. 나: ......따라오라는 건가?'
@@ -176,7 +176,7 @@ const SCENES = {
     },
 
     hidden3: {
-        type: 'story', bg: '인적 드문 나무 아래', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844159/%ED%9E%88%EB%93%A0%EA%B3%A0%EC%96%91%EC%9D%B4.png',
+        type: 'story', bg: '인적 드문 나무 아래', bgImage: 'https://res.cloudinary.com/hquhccft/image/upload/v1788844159/%ED%9E%88%EB%93%A0%EA%B3%A0%EC%96%91%EC%9D%B4.png', bgm: 'hidden',
         lines: [
             '고양이를 따라 조용한 나무 아래로 이동했다. 고양이가 그 자리에 눕고, 나도 옆에 조용히 앉았다.',
             '처음 사찰에 오기로 했을 때는 머릿속이 온통 복잡한 생각뿐이었다.',
@@ -253,11 +253,13 @@ const state = {
     secretFlag: false,
     forceHiddenNext: false,
     isPlayingAfter: false,
+    cameFromHidden: false,  // 9월22일 추가
     // --- 이전 대화 보기용, 게임 진행 상태에는 영향 없음 ---
-    log: [],
+    log: [],           // [{ text, bgImage, bgLabel }, ...]
     lastLoggedKey: null,
     viewIndex: null,
-    liveText: ''
+    liveText: '',
+    liveBg: null        // { bgImage, bgLabel }
 };
 
 const el = (id) => document.getElementById(id);
@@ -281,6 +283,7 @@ function showScreen(id) {
     el(id).classList.add('active');
 }
 
+// image
 (function preloadSceneImages() {
     const urls = [...new Set(Object.values(SCENES).map(scene => scene.bgImage).filter(Boolean))];
     const fill = el('loading-bar-fill');
@@ -307,6 +310,105 @@ function showScreen(id) {
     }
 })();
 
+// bgm
+const BGM_KEY = 'etiquetteSim_bgmMuted';
+const BGM_URLS = {
+    room: BGM_ROOM_URL,
+    temple: BGM_TEMPLE_URL,
+    hidden: BGM_HIDDEN_URL
+};
+const BGM_TRACKS = {};
+const BGM_VOLUMES = { room: 0.35, temple: 0.6, hidden: 0.35 };
+
+function getBgmTrack(key) {
+    if (!BGM_TRACKS[key]) {
+        const a = new Audio(BGM_URLS[key]);
+        a.loop = true;
+        a.volume = 0.35;
+        a.muted = bgmMuted;
+        BGM_TRACKS[key] = a;
+    }
+    return BGM_TRACKS[key];
+}
+
+let currentBgmKey = null;
+let bgmMuted = false;
+
+function isBgmMuted() {
+    try {
+        return localStorage.getItem(BGM_KEY) === '1';
+    } catch (e) {
+        return false;
+    }
+}
+
+function setBgmMuted(muted) {
+    bgmMuted = muted;
+    Object.values(BGM_TRACKS).forEach(a => {
+        a.muted = muted;
+    });
+    el('btn-bgm-toggle').classList.toggle('muted', muted);
+    try {
+        localStorage.setItem(BGM_KEY, muted ? '1' : '0');
+    } catch (e) {
+    }
+}
+setBgmMuted(isBgmMuted());
+
+// 브금 페이드
+const BGM_FADE_MS = 1200;
+
+function clearFade(audio) {
+    if(audio._fadeTimer) {
+        clearInterval(audio._fadeTimer);
+        audio._fadeTimer = null;
+    }
+}
+
+function fadeAudio(audio, from, to, duration, onDone) {
+    clearFade(audio);
+    const steps = 20;
+    const stepTime = duration / steps;
+    let count = 0;
+    audio.volume = from;
+    audio._fadeTimer = setInterval(() => {
+        count++;
+        const progress = count / steps;
+        audio.volume = from + (to - from) * progress;
+        if(count >= steps) {
+            clearFade(audio);
+            audio.volume = to;
+            if (onDone) onDone();
+        }
+    }, stepTime);
+}
+
+function playBgmFor(key) {
+    if (key === currentBgmKey) return;
+    const prevKey = currentBgmKey;
+    currentBgmKey = key || null;
+
+    // 이전 트랙: 서서히 줄이다가 끝나면 정지
+    if (prevKey && BGM_TRACKS[prevKey]) {
+        const prevAudio = BGM_TRACKS[prevKey];
+        fadeAudio(prevAudio, prevAudio.volume, 0, BGM_FADE_MS, () => {
+            prevAudio.pause();
+            prevAudio.currentTime = 0;
+        });
+    }
+
+    // 새 트랙: 0에서 시작해서 지정 볼륨까지 서서히 키움
+    if (currentBgmKey) {
+        const audio = getBgmTrack(currentBgmKey);
+        const targetVolume = BGM_VOLUMES[currentBgmKey] ?? 0.35;
+        if(audio.paused) {
+            audio.volume = 0;
+            audio.play().catch(() => {});
+        }
+        fadeAudio(audio, audio.volume, targetVolume, BGM_FADE_MS);
+    }
+}
+
 function startGame() {
     state.currentSceneId = 'prologue';
     state.lineIndex = 0;
@@ -318,6 +420,8 @@ function startGame() {
     state.lastLoggedKey = null;
     state.viewIndex = null;
     state.liveText = '';
+    state.liveBg = null;
+    state.cameFromHidden = false;
     el('dialogue-dock').classList.remove('dialogue-hidden');
     el('btn-toggle-dialogue').classList.remove('active');
     showScreen('screen-scene');
@@ -326,6 +430,12 @@ function startGame() {
 
 function renderScene() {
     const scene = SCENES[state.currentSceneId];
+    let bgmKey = scene.bgm || null;
+    if(state.currentSceneId === 'scene10' && state.cameFromHidden){
+        bgmKey = 'hidden';
+    }
+    playBgmFor(bgmKey);
+
     el('bg-label').textContent = 'BG: ' + scene.bg;
     const bgLayer = el('bg-layer');
     if (scene.bgImage) {
@@ -339,12 +449,14 @@ function renderScene() {
     const lineText = t(state.currentSceneId + '.line' + state.lineIndex, scene.lines[state.lineIndex]);
     el('story-text').textContent = lineText;
     state.liveText = lineText;
+    state.liveBg = { bgImage: scene.bgImage || null, bgLabel: scene.bg };
+
     const logKey = state.currentSceneId + '#' + state.lineIndex;
     if (state.lastLoggedKey !== logKey) {
-        state.log.push(lineText);
+        state.log.push({ text: lineText, bgImage: scene.bgImage || null, bgLabel: scene.bg });
         state.lastLoggedKey = logKey;
     } else if (state.log.length) {
-        state.log[state.log.length - 1] = lineText; // 언어 전환 시 최신 번역으로 동기화
+        state.log[state.log.length - 1].text = lineText; // 언어 전환 시 텍스트만 최신화
     }
 
     const isLastLine = state.lineIndex === scene.lines.length - 1;
@@ -389,10 +501,12 @@ function selectChoice(scene, choice) {
 
 function playLines(lines, index, onDone) {
     state.isPlayingAfter = true;
+    const scene = SCENES[state.currentSceneId];
     const lineText = lines[index];
     el('story-text').textContent = lineText;
     state.liveText = lineText;
-    state.log.push(lineText);
+    state.liveBg = { bgImage: scene.bgImage || null, bgLabel: scene.bg };
+    state.log.push({ text: lineText, bgImage: scene.bgImage || null, bgLabel: scene.bg });
     updateHistoryButtonState();
     el('choice-layer').innerHTML = '';
     el('advance-hint').style.display = 'block';
@@ -416,6 +530,7 @@ function advanceTo(nextId) {
     if (nextId === 'HIDDEN_CHECK') {
         const trigger = state.forceHiddenNext || Math.random() < 0.35;
         state.forceHiddenNext = false;
+        if (trigger) state.cameFromHidden = true;
         nextId = trigger ? 'hidden1' : 'scene10';
     }
     if (nextId === 'ENDING') {
@@ -441,14 +556,26 @@ function advanceLine() {
     }
 }
 
-/* ---------- 이전 대화 보기 (게임 상태는 건드리지 않는 읽기 전용 되감기) ---------- */
+/* ---------- 이전 대화 보기 (게임 상태는 건드리지 않는 읽기 전용 되감기, 배경 포함) ---------- */
 function updateHistoryButtonState() {
     const canGoBack = state.viewIndex !== null ? state.viewIndex > 0 : state.log.length >= 2;
     el('btn-history-back').disabled = !canGoBack;
 }
 
 function showHistoryLine() {
-    el('story-text').textContent = state.log[state.viewIndex];
+    const entry = state.log[state.viewIndex];
+    el('story-text').textContent = entry.text;
+
+    const bgLayer = el('bg-layer');
+    if (entry.bgImage) {
+        bgLayer.style.backgroundImage = "url('" + entry.bgImage + "')";
+        bgLayer.classList.add('has-image');
+    } else {
+        bgLayer.style.backgroundImage = '';
+        bgLayer.classList.remove('has-image');
+    }
+    el('bg-label').textContent = 'BG: ' + entry.bgLabel;
+
     el('choice-layer').innerHTML = '';
     el('advance-hint').style.display = 'none';
     el('btn-history-back').classList.add('active');
@@ -460,6 +587,17 @@ function exitHistoryMode() {
     el('btn-history-back').classList.remove('active');
     if (state.isPlayingAfter) {
         el('story-text').textContent = state.liveText;
+
+        const bgLayer = el('bg-layer');
+        if (state.liveBg && state.liveBg.bgImage) {
+            bgLayer.style.backgroundImage = "url('" + state.liveBg.bgImage + "')";
+            bgLayer.classList.add('has-image');
+        } else {
+            bgLayer.style.backgroundImage = '';
+            bgLayer.classList.remove('has-image');
+        }
+        if (state.liveBg) el('bg-label').textContent = 'BG: ' + state.liveBg.bgLabel;
+
         el('choice-layer').innerHTML = '';
         el('advance-hint').style.display = 'block';
     } else {
@@ -486,6 +624,18 @@ el('btn-history-back').addEventListener('click', () => {
 el('btn-toggle-dialogue').addEventListener('click', () => {
     const hidden = el('dialogue-dock').classList.toggle('dialogue-hidden');
     el('btn-toggle-dialogue').classList.toggle('active', hidden);
+});
+
+/*----------시뮬레이션 처음으로 돌아가기----------------*/
+function stopBgm() {
+    playBgmFor(null);
+}
+
+el('btn-restart-title').addEventListener('click', () => {
+    const ok = confirm('진행 중인 내용이 사라집니다. 처음 화면으롤 돌아갈까요?');
+    if(!ok) return;
+    stopBgm();
+    showScreen('screen-title');
 });
 
 /* ---------- 엔딩 계산 + 화면 ---------- */
@@ -634,4 +784,4 @@ el('btn-open-collection').onclick = () => { renderCollection(); showScreen('scre
 el('btn-close-collection').onclick = () => showScreen('screen-title');
 el('btn-goto-result').onclick = showResult;
 el('btn-result-replay').onclick = startGame;
-el('btn-result-title').onclick = () => showScreen('screen-title');
+el('btn-result-title').onclick = () => { stopBgm(); showScreen('screen-title'); };
