@@ -445,7 +445,7 @@
      동일한 패턴. -->
 <div id="auth-info" style="display:none;"
      sec:authorize="isAuthenticated()"
-     th:attr="data-login-id=${#authentication.principal.username}, data-temple-account=${#authentication.principal.templeAccount}">
+     th:attr="data-login-id=${#authentication.principal.username}, data-temple-account=${#authentication.principal.templeAccount}, data-is-admin=${#authentication.principal.admin}">
 </div>
 
 <div id="map-wrapper">
@@ -509,10 +509,10 @@
 </div>
 
 <!-- 공통 마커 함수(map-common.js) 먼저, 이 페이지 전용 로직(temple-list.js) 나중에 -->
-<script src="/js/temple/templeI18n.js"></script>
-<script src="/js/temple/findTemple.i18n.js"></script>
-<script src="/js/mapCommon.js"></script>
-<script src="/js/temple/templeList.js"></script>
+<script th:src="@{/js/temple/templeI18n.js}"></script>
+<script th:src="@{/js/temple/findTemple.i18n.js}"></script>
+<script th:src="@{/js/mapCommon.js}"></script>
+<script th:src="@{/js/temple/templeList.js}"></script>
 
 </body>
 </html>

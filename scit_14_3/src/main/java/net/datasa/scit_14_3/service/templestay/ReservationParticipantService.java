@@ -4,9 +4,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.templestay.ReservationParticipantDTO;
-import net.datasa.scit_14_3.domain.dto.templestay.TempleStayReservationDTO;
 import net.datasa.scit_14_3.domain.entity.templestay.ReservationParticipantEntity;
-import net.datasa.scit_14_3.domain.entity.templestay.TempleStayReservationEntity;
 import net.datasa.scit_14_3.repository.templestay.ReservationParticipantRepository;
 import org.springframework.stereotype.Service;
 

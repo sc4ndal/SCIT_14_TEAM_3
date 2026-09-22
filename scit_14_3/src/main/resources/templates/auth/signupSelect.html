@@ -7,7 +7,7 @@
     <link rel="stylesheet" th:href="@{/css/common.css}">
     <link rel="stylesheet" th:href="@{/css/auth/signupSelect.css}">
     <!-- signupSelect.js는 내용이 전부 주석 처리돼있어서(아래 참고) 불러와도 아무 동작 안 함 -->
-    <script src="/js/auth/signupSelect.js" defer></script>
+    <script th:src="@{/js/auth/signupSelect.js}" defer></script>
 </head>
 <body>
 <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>

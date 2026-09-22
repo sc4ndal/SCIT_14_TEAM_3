@@ -51,6 +51,9 @@ public class DailyQuoteController {
 		if (principal == null) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요합니다."));
 		}
+		if (principal.isAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "관리자 계정은 즐겨찾기를 할 수 없습니다."));
+		}
 		try {
 			boolean favorited = dailyQuoteService.toggleFavorite(principal.getUsername(), quoteId);
 			return ResponseEntity.ok(Map.of("favorited", favorited));

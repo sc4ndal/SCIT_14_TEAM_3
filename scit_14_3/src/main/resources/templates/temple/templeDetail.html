@@ -46,7 +46,7 @@
 
 <div id="auth-info" style="display:none;"
      sec:authorize="isAuthenticated()"
-	 th:attr="data-login-id=${#authentication.principal.username}, data-temple-account=${#authentication.principal.templeAccount}">
+	 th:attr="data-login-id=${#authentication.principal.username}, data-temple-account=${#authentication.principal.templeAccount}, data-is-admin=${#authentication.principal.admin}">
 </div>
 
 <div class="card" style="max-width:800px;">
@@ -109,7 +109,7 @@
 	const TEMPLE_NAME = /*[[${temple.name}]]*/ '';
 	const TEMPLE_ADDRESS = /*[[${temple.address}]]*/ '';
 </script>
-<script src="/js/mapCommon.js"></script>
-<script src="/js/temple/templeDetail.js"></script>
+<script th:src="@{/js/mapCommon.js}"></script>
+<script th:src="@{/js/temple/templeDetail.js}"></script>
 </body>
 </html>
