@@ -1,8 +1,6 @@
 package net.datasa.scit_14_3.controller.templestay;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import net.datasa.scit_14_3.domain.dto.templestay.ReservationParticipantDTO;
 import net.datasa.scit_14_3.domain.dto.templestay.TempleStayReservationDTO;
 import net.datasa.scit_14_3.security.AppUserDetails;
 import net.datasa.scit_14_3.service.templestay.ReservationParticipantService;
@@ -10,13 +8,10 @@ import net.datasa.scit_14_3.service.templestay.TempleStayReservationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
-@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/reservationparticipants")

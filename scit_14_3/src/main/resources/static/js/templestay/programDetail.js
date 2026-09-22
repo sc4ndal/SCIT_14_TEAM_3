@@ -116,7 +116,24 @@ async function init() {
   }
 }
 
+let currentProgram = null;
+
+// 지역/유형/사찰명/인원/가격처럼 정해진 값은 사전(programI18n.js)으로 그리고, 언어가 바뀌면 다시 그린다.
+function renderDictFields(p) {
+  document.getElementById('detail-sub').textContent =
+    `${trTempleName(p.templeName)} · ${p.region ? trRegion(p.region) : ''} · ${trType(p.programType)}`;
+  document.getElementById('detail-capacity-text').textContent =
+    `${p.reservedCount || 0} / ${trPeople(p.maxParticipant)}`;
+  document.getElementById('detail-price').textContent = trWon(p.price);
+}
+
+window.onProgramI18nRefresh = function () {
+  if (currentProgram) renderDictFields(currentProgram);
+};
+
 function render(p) {
+  currentProgram = p;
+  renderDictFields(p);
   const hero = document.querySelector('.detail-hero');
   const heroImg = document.getElementById('detail-image');
   if (p.imageUrl) {
@@ -127,12 +144,10 @@ function render(p) {
   }
 
   document.getElementById('detail-title').textContent = p.title;
-  document.getElementById('detail-sub').textContent = `${p.templeName} · ${p.region || ''} · ${p.programType}`;
 
   const remaining = p.maxParticipant - (p.reservedCount || 0);
   const full = remaining <= 0;
   document.getElementById('detail-capacity-dot').className = 'capacity-dot ' + (full ? 'full' : 'open');
-  document.getElementById('detail-capacity-text').textContent = `${p.reservedCount || 0} / ${p.maxParticipant}명`;
 
   document.getElementById('detail-description').innerHTML =
     formatDescription(p.description).map(line => `<p>${escapeHtml(line)}</p>`).join('');
@@ -142,14 +157,14 @@ function render(p) {
       .join('');
   document.getElementById('detail-required-items').innerHTML =
     splitRespectingParens(p.requiredItems).map(item => `<li>${escapeHtml(item)}</li>`).join('');
-  document.getElementById('detail-price').textContent = `${p.price.toLocaleString()}원`;
   document.getElementById('detail-precautions').textContent = p.templePrecautions || '';
   document.getElementById('detail-refund-policy').textContent = p.templeRefundPolicy || '';
 
   const reserveBtn = document.getElementById('detail-reserve-btn');
   if (full) {
     reserveBtn.disabled = true;
-    reserveBtn.textContent = '정원이 마감되었습니다';
+    reserveBtn.setAttribute('data-pi18n', 'fullBtn');
+    reserveBtn.textContent = trUi('fullBtn');
   } else {
     reserveBtn.addEventListener('click', () => {
       location.href = `/reservation?startBooking=${PROGRAM_ID}`;

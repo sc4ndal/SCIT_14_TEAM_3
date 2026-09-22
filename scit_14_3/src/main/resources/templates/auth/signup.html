@@ -100,7 +100,7 @@
 				<div class="email-row">
 					<input type="text" id="emailLocal" class="email-local" data-i18n-placeholder="emailLocalPlaceholder" placeholder="이메일 아이디" oninput="updateFullEmail(); resetEmailFlow();">
 					<span class="at-sign">@</span>
-					<select id="emailDomainSelect" onchange="handleDomainChange()">
+					<select id="emailDomainSelect" data-i18n-aria="emailDomainSelectAria" aria-label="이메일 도메인 선택" onchange="handleDomainChange()">
 						<option value="naver.com">naver.com</option>
 						<option value="gmail.com">gmail.com</option>
 						<option value="daum.net">daum.net</option>
@@ -111,7 +111,7 @@
 						<option value="icloud.com">icloud.com</option>
 						<option value="custom" data-i18n="domainCustomOption">직접입력</option>
 					</select>
-					<input type="text" id="emailDomainCustom" class="domain-custom" style="display:none" data-i18n-placeholder="domainCustomPlaceholder" placeholder="도메인 입력" oninput="updateFullEmail(); resetEmailFlow();">
+					<input type="text" id="emailDomainCustom" class="domain-custom" style="display:none" data-i18n-placeholder="domainCustomPlaceholder" data-i18n-aria="domainCustomAria" aria-label="도메인 직접 입력" placeholder="도메인 입력" oninput="updateFullEmail(); resetEmailFlow();">
 					<button type="button" class="btn-check" data-i18n="btnEmailCheck" onclick="checkEmailDuplicate()">중복조회</button>
 				</div>
 				<span class="check-result" id="emailResult"></span>
@@ -120,7 +120,7 @@
 
 				<div class="verify-box" id="verifySection">
 					<div class="field-inline">
-						<input type="text" id="verifyCode" maxlength="6" data-i18n-placeholder="verifyPlaceholder" placeholder="이메일로 받은 인증번호 6자리">
+						<input type="text" id="verifyCode" maxlength="6" data-i18n-placeholder="verifyPlaceholder" data-i18n-aria="verifyCodeAria" aria-label="인증번호 입력" placeholder="이메일로 받은 인증번호 6자리">
 						<button type="button" class="btn-check" data-i18n="verifyBtnConfirm" onclick="confirmCode()">확인</button>
 					</div>
 					<div class="verify-meta">

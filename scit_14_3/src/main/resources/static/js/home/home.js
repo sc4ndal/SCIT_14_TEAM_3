@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const signupParams = new URLSearchParams(window.location.search);
 
     if (signupParams.get("signup") === "success") {
-        alert("회원가입 완료!");
+        alert(i18nMsg('signupDone'));
 
         signupParams.delete("signup");
 
@@ -454,7 +454,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 실제 등록된 사찰 행사(TEMPLE_EVENT) + 템플스테이 프로그램(모집기간)으로 채워짐 - loadCalendarEvents() 참고.
     // 부처님오신날/출가절/성도절/열반절 등 4대 명절(음력 기반이라 매년 양력 날짜가 바뀜)도 이제
-    // TEMPLE_EVENT 시드 데이터로 관리한다(docs/sql/temple-event-seed.sql, 매년 값 갱신 필요) -
+    // TEMPLE_EVENT 시드 데이터로 관리한다(docs/sql/04-temple-event-seed.sql, 매년 값 갱신 필요) -
     // 예전엔 여기 하드코딩된 BUDDHIST_HOLIDAYS로 부처님오신날만 표시했는데, DB로 옮기면서
     // 링크(link_url)까지 같이 관리할 수 있게 됐다.
     const eventData = {};

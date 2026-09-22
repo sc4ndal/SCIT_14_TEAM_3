@@ -72,7 +72,7 @@ async function findMyIdByEmail(){
 
         if(checkData.available){
             setResult(resultEl, '', null);
-            alert('가입이력이 없는 이메일입니다.');
+            alert(i18nMsg('noSignupHistory'));
             return;
         }
 
@@ -88,7 +88,7 @@ async function findMyIdByEmail(){
             setResult(resultEl, '가입하신 아이디를 이메일로 보내드렸습니다. 메일함을 확인해주세요.', 'ok');
         } else {
             setResult(resultEl, '', null);
-            alert('가입이력이 없는 이메일입니다.');
+            alert(i18nMsg('noSignupHistory'));
         }
     } catch(err){
         console.error('아이디 찾기 요청 실패:', err);
@@ -131,7 +131,7 @@ async function findMyPwByEmail(){
             setResult(resultEl, '비밀번호 재설정 링크를 이메일로 보내드렸습니다. 메일함을 확인해주세요. (5분간 유효)', 'ok');
         } else {
             setResult(resultEl, '', null);
-            alert('등록되지 않은 이메일입니다.');
+            alert(i18nMsg('unregisteredEmail'));
         }
     } catch(err){
         console.error('비밀번호 찾기 요청 실패:', err);

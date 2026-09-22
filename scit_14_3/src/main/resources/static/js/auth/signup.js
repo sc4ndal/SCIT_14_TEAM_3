@@ -20,10 +20,10 @@ const TRANSLATIONS = {
         nameLabel: "이름", nameHintKR: "한글로만 입력 가능합니다 (공백 없이)", nameHintForeign: "영문(로마자)으로만 입력 가능합니다",
         namePlaceholderKR: "예: 싯다르타", namePlaceholderForeign: "e.g. Siddhartha",
         birthLabel: "생년월일", birthDateFutureMsg: "미래 날짜는 생년월일로 입력할 수 없습니다",
-        emailLabel: "이메일", emailLocalPlaceholder: "이메일 아이디", domainCustomPlaceholder: "도메인 입력", domainCustomOption: "직접입력",
+        emailLabel: "이메일", emailLocalPlaceholder: "이메일 아이디", domainCustomPlaceholder: "도메인 입력", domainCustomOption: "직접입력", domainCustomAria: "도메인 직접 입력", emailDomainSelectAria: "이메일 도메인 선택",
         btnEmailCheck: "중복조회", btnSendMail: "메일발송", btnSent: "발송됨", btnResend: "재발송", btnVerified: "인증완료",
         emailEmptyMsg: "이메일을 입력해주세요", emailTakenMsg: "이미 등록된 이메일입니다", emailAvailableMsg: "사용 가능한 이메일입니다",
-        verifyPlaceholder: "이메일로 받은 인증번호 6자리", verifyCodeSentMsg: "입력하신 이메일로 인증번호를 발송했습니다", verifyBtnConfirm: "확인",
+        verifyPlaceholder: "이메일로 받은 인증번호 6자리", verifyCodeSentMsg: "입력하신 이메일로 인증번호를 발송했습니다", verifyBtnConfirm: "확인", verifyCodeAria: "인증번호 입력",
         verifyExpiredMsg: "인증 시간이 만료되었습니다. 다시 시도해주세요", verifySuccessMsg: "인증이 완료되었습니다", verifyFailMsg: "인증번호가 일치하지 않습니다",
         phoneLabel: "연락처", phoneOptional: "(선택)", phonePlaceholder: "전화번호",
         termsRequired: "[필수]", termsText: "서비스 이용약관 및 개인정보 처리방침에 동의합니다",
@@ -57,10 +57,10 @@ const TRANSLATIONS = {
         nameLabel: "お名前", nameHintKR: "ハングルのみ入力可能です(スペースなし)", nameHintForeign: "ローマ字のみ入力可能です",
         namePlaceholderKR: "例: 싯다르타", namePlaceholderForeign: "例: Siddhartha",
         birthLabel: "生年月日", birthDateFutureMsg: "未来の日付は生年月日として入力できません",
-        emailLabel: "メールアドレス", emailLocalPlaceholder: "メールID", domainCustomPlaceholder: "ドメインを入力", domainCustomOption: "直接入力",
+        emailLabel: "メールアドレス", emailLocalPlaceholder: "メールID", domainCustomPlaceholder: "ドメインを入力", domainCustomOption: "直接入力", domainCustomAria: "ドメインを直接入力", emailDomainSelectAria: "メールドメイン選択",
         btnEmailCheck: "重複照会", btnSendMail: "送信", btnSent: "送信済み", btnResend: "再送信", btnVerified: "認証完了",
         emailEmptyMsg: "メールアドレスを入力してください", emailTakenMsg: "既に登録されているメールアドレスです", emailAvailableMsg: "使用可能なメールアドレスです",
-        verifyPlaceholder: "メールで届いた6桁の認証番号", verifyCodeSentMsg: "入力されたメールに認証番号を送信しました", verifyBtnConfirm: "確認",
+        verifyPlaceholder: "メールで届いた6桁の認証番号", verifyCodeSentMsg: "入力されたメールに認証番号を送信しました", verifyBtnConfirm: "確認", verifyCodeAria: "認証番号入力",
         verifyExpiredMsg: "認証時間が終了しました。もう一度お試しください", verifySuccessMsg: "認証が完了しました", verifyFailMsg: "認証番号が一致しません",
         phoneLabel: "連絡先", phoneOptional: "(任意)", phonePlaceholder: "電話番号",
         termsRequired: "[必須]", termsText: "利用規約およびプライバシーポリシーに同意します",
@@ -94,10 +94,10 @@ const TRANSLATIONS = {
         nameLabel: "Name", nameHintKR: "Korean characters only (no spaces)", nameHintForeign: "Roman letters only",
         namePlaceholderKR: "e.g. 싯다르타", namePlaceholderForeign: "e.g. Siddhartha",
         birthLabel: "Date of birth", birthDateFutureMsg: "Date of birth cannot be a future date",
-        emailLabel: "Email", emailLocalPlaceholder: "Email ID", domainCustomPlaceholder: "Enter domain", domainCustomOption: "Enter manually",
+        emailLabel: "Email", emailLocalPlaceholder: "Email ID", domainCustomPlaceholder: "Enter domain", domainCustomOption: "Enter manually", domainCustomAria: "Enter domain manually", emailDomainSelectAria: "Email domain",
         btnEmailCheck: "Check", btnSendMail: "Send code", btnSent: "Sent", btnResend: "Resend", btnVerified: "Verified",
         emailEmptyMsg: "Please enter your email", emailTakenMsg: "This email is already registered", emailAvailableMsg: "This email is available",
-        verifyPlaceholder: "6-digit code from email", verifyCodeSentMsg: "A verification code was sent to your email", verifyBtnConfirm: "Verify",
+        verifyPlaceholder: "6-digit code from email", verifyCodeSentMsg: "A verification code was sent to your email", verifyBtnConfirm: "Verify", verifyCodeAria: "Verification code",
         verifyExpiredMsg: "Verification time expired. Please try again", verifySuccessMsg: "Verification complete", verifyFailMsg: "Code does not match",
         phoneLabel: "Phone", phoneOptional: "(optional)", phonePlaceholder: "Phone number",
         termsRequired: "[Required]", termsText: "I agree to the Terms of Service and Privacy Policy",
@@ -144,6 +144,10 @@ function onLanguageChange(lang){
     document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
         const key = el.getAttribute('data-i18n-placeholder');
         if(t[key] !== undefined) el.placeholder = t[key];
+    });
+    document.querySelectorAll('[data-i18n-aria]').forEach(function(el){
+        const key = el.getAttribute('data-i18n-aria');
+        if(t[key] !== undefined) el.setAttribute('aria-label', t[key]);
     });
 
     updateNameHint();

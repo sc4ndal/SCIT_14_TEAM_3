@@ -58,7 +58,7 @@
 					<div class="row-actions">
 						<a th:href="@{/admin/manage/user/{id}/edit(id=${u.loginId})}">수정</a>
 						<form th:action="@{/admin/manage/user/{id}/delete(id=${u.loginId})}" method="post" style="margin:0;"
-						      onsubmit="return confirm('정말 삭제하시겠습니까?');">
+						      onsubmit="return confirm(i18nMsg('confirmDelete'));">
 							<button type="submit" class="danger">삭제</button>
 						</form>
 					</div>
@@ -102,7 +102,7 @@
 					<div class="row-actions">
 						<a th:href="@{/admin/manage/temple/{id}/edit(id=${t.templeId})}">수정</a>
 						<form th:action="@{/admin/manage/temple/{id}/delete(id=${t.templeId})}" method="post" style="margin:0;"
-						      onsubmit="return confirm('등록을 취소(삭제)하시겠습니까?');">
+						      onsubmit="return confirm(i18nMsg('confirmCancelRegistration'));">
 							<button type="submit" class="danger">등록취소</button>
 						</form>
 					</div>

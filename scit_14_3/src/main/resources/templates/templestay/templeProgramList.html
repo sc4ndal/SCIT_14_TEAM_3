@@ -68,7 +68,7 @@
 						</a>
 						<a th:href="@{/temple/programs/{id}/edit(id=${p.programId})}">수정</a>
 						<form th:action="@{/temple/programs/{id}/delete(id=${p.programId})}" method="post" style="margin:0;"
-						      onsubmit="return confirm('이 프로그램을 삭제하시겠습니까?');">
+						      onsubmit="return confirm(i18nMsg('confirmDeleteProgram'));">
 							<button type="submit" class="danger">삭제</button>
 						</form>
 					</div>

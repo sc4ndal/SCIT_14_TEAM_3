@@ -22,14 +22,12 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Controller
@@ -210,9 +208,15 @@ public class UserController {
 	                          RedirectAttributes redirectAttributes,
 	                          HttpSession session,
 	                          HttpServletRequest httpRequest,
-	                          HttpServletResponse httpResponse,
-							  Model model) {
-		
+	                          HttpServletResponse httpResponse) {
+
+		// @Valid 검증 실패(아이디/비밀번호/닉네임/이름 형식 등) - kakaoAdditionalSignup과 동일하게
+		// 첫 번째 필드 오류 메시지를 그대로 보여주고 폼으로 돌려보낸다.
+		if (bindingResult.hasErrors()) {
+			redirectAttributes.addFlashAttribute("signupError", bindingResult.getFieldError().getDefaultMessage());
+			return "redirect:/signup?mode=local";
+		}
+
 		// email_verified hidden 필드는 화면 표시용일 뿐 안 믿음 - 세션에 실제로 인증된 이메일인지 직접 확인.
 		// 이메일은 필수 입력으로 취급함.
 		String email = request.getEmail();
@@ -307,8 +311,7 @@ public class UserController {
 										 HttpSession session,
 										 RedirectAttributes redirectAttributes,
 										 HttpServletRequest httpRequest,
-										 HttpServletResponse httpResponse,
-										Model model) throws BindException {
+										 HttpServletResponse httpResponse) throws BindException {
 		Object pendingKakaoId = session.getAttribute(PENDING_KAKAO_ID);
 		if (pendingKakaoId == null) {
 			redirectAttributes.addFlashAttribute("signupError", "카카오 인증 세션이 없습니다. 처음부터 다시 시도해주세요.");

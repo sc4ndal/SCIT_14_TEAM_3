@@ -44,7 +44,7 @@ document.getElementById('favorite-btn').addEventListener('click', function () {
             btn.classList.toggle('active', data.favorite);
         })
         .catch(function () {
-            alert('로그인 후 즐겨찾기가 가능합니다.');
+            alert(i18nMsg('favLoginRequired'));
             location.href = '/login';
         });
 });

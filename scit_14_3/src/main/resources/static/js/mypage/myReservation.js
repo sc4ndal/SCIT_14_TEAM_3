@@ -3,7 +3,7 @@
    const isLoggedIn = !!authInfo;
 
    if (!isLoggedIn) {
-     alert('로그인이 필요합니다.');
+     alert(i18nMsg('loginRequired'));
      location.href = '/login';
    }
 
@@ -85,7 +85,7 @@
        renderList();
      } catch (err) {
        console.error('예약 목록을 불러오지 못했습니다.', err);
-       alert('예약 목록을 불러오는 중 오류가 발생했습니다.');
+       alert(i18nMsg('errLoadReservations'));
      } finally {
        hideLoading();
      }
@@ -227,7 +227,7 @@
     const reviewId = document.getElementById('review-delete-btn').dataset.reviewId;
     if (!reviewId) return;
 
-    const ok = confirm('작성한 리뷰를 삭제하시겠습니까?');
+    const ok = confirm(i18nMsg('confirmDeleteMyReview'));
     if (!ok) return;
 
     showLoading('삭제하는 중...');
@@ -235,14 +235,14 @@
       const res = await fetch(`/reviews/${reviewId}`, { method: 'DELETE' });
       if (!res.ok) {
         const err = await res.json().catch(() => null);
-        alert(err && err.message ? err.message : '리뷰 삭제 중 오류가 발생했습니다.');
+        alert(err && err.message ? i18nSrv(err.message) : i18nMsg('errDeleteReview'));
         return;
       }
-      alert('리뷰가 삭제되었습니다.');
+      alert(i18nMsg('reviewDeleted'));
       showDetail(selectedReservationId);
     } catch (err) {
       console.error('리뷰 삭제 중 오류가 발생했습니다.', err);
-      alert('리뷰 삭제 중 오류가 발생했습니다.');
+      alert(i18nMsg('errDeleteReview'));
     } finally {
       hideLoading();
     }
@@ -262,7 +262,7 @@
   });
 
    document.getElementById('cancel-btn').addEventListener('click', async () => {
-     const ok = confirm('정말 이 예약을 취소하시겠습니까?');
+     const ok = confirm(i18nMsg('confirmCancelReservation'));
      if (!ok) return;
 
      try {
@@ -273,18 +273,18 @@
         if(!res.ok) {
         // 체크인 24시간 전 취소 마감처럼 서버가 이유를 알려준 경우 그 메시지 그대로 보여줌
         const err = await res.json().catch(() => null);
-        alert(err && err.message ? err.message : '예약 취소 중 오류가 발생했습니다.');
+        alert(err && err.message ? i18nSrv(err.message) : i18nMsg('errCancelReservation'));
         return;
         }
         const updated = await res.json();
         const r = RESERVATIONS.find(x => x.reservationId === updated.reservationId);
         if (r) r.status = updated.status;
 
-        alert('예약이 취소되었습니다.');
+        alert(i18nMsg('reservationCanceled'));
         showDetail(selectedReservationId);
         renderList();
         } catch (err) {
-        alert('예약 취소 중 오류가 발생했습니다.');
+        alert(i18nMsg('errCancelReservation'));
         console.error(err);
      }
   });

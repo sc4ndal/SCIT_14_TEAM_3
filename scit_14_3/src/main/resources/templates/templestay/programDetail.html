@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -127,7 +127,6 @@
           margin: 22px 0 0 auto;
           background: var(--pine); color: var(--bg-raised); font-weight: 700; font-size: 15px;
           border: none; padding: 13px 26px; border-radius: 100px; cursor: pointer; box-shadow: var(--shadow);
-          margin-top: 22px;
         }
         #detail-reserve-btn:hover { transform: translateY(-1px); }
         #detail-reserve-btn:disabled { background: var(--line); color: var(--ink-faint); cursor: not-allowed; box-shadow: none; }
@@ -142,11 +141,11 @@
 
 <header>
     <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
-    <h1>프로그램 상세보기</h1>
+    <h1 data-pi18n="detailPageTitle">프로그램 상세보기</h1>
 </header>
 
 <main>
-    <a class="back-link" th:href="@{/reservation}">&larr; 목록으로</a>
+    <a class="back-link" th:href="@{/reservation}" data-pi18n="backToList">&larr; 목록으로</a>
 
     <div class="detail-card">
         <div class="detail-hero"><img id="detail-image" alt=""></div>
@@ -154,55 +153,57 @@
         <div class="detail-header-row">
             <div>
                 <h2 class="detail-title" id="detail-title"></h2>
-                <p class="detail-sub" id="detail-sub"></p>
+                <p class="detail-sub no-translate" id="detail-sub"></p>
             </div>
             <p class="detail-capacity">
                 <span class="capacity-dot" id="detail-capacity-dot"></span>
-                <span id="detail-capacity-text"></span>
+                <span id="detail-capacity-text" class="no-translate"></span>
             </p>
         </div>
 
         <div class="detail-grid">
             <div class="d-block full">
-                <h3>프로그램 소개</h3>
+                <h3 data-pi18n="detailIntro">프로그램 소개</h3>
                 <p id="detail-description"></p>
             </div>
             <div class="d-block full">
-                <h3>위치</h3>
+                <h3 data-pi18n="detailLocation">위치</h3>
                 <div id="detail-map"></div>
             </div>
             <div class="d-block">
-                <h3>일정표</h3>
+                <h3 data-pi18n="detailSchedule">일정표</h3>
                 <div id="detail-schedule"></div>
             </div>
             <div class="d-block">
-                <h3>준비물</h3>
+                <h3 data-pi18n="detailItems">준비물</h3>
                 <ul id="detail-required-items"></ul>
             </div>
             <div class="d-block">
-                <h3>요금 안내</h3>
+                <h3 data-pi18n="detailPrice">요금 안내</h3>
                 <table class="price-table">
-                    <tr><th>구분</th><th>가격</th></tr>
-                    <tr><td>1인</td><td id="detail-price"></td></tr>
+                    <tr><th data-pi18n="detailPriceType">구분</th><th data-pi18n="detailPricePrice">가격</th></tr>
+                    <tr><td data-pi18n="detailPerPerson">1인</td><td id="detail-price" class="no-translate"></td></tr>
                 </table>
             </div>
             <div class="d-block">
-                <h3>유의사항</h3>
+                <h3 data-pi18n="detailNotes">유의사항</h3>
                 <p id="detail-precautions"></p>
             </div>
             <div class="d-block full">
-                <h3>환불 규정</h3>
+                <h3 data-pi18n="detailRefund">환불 규정</h3>
                 <p id="detail-refund-policy"></p>
             </div>
         </div>
 
-        <button type="button" id="detail-reserve-btn">예약 신청</button>
+        <button type="button" id="detail-reserve-btn" data-pi18n="reserveBtn">예약 신청</button>
     </div>
 </main>
 
 <script th:inline="javascript">
     const PROGRAM_ID = /*[[${programId}]]*/ 0;
 </script>
+<script th:src="@{/js/temple/templeI18n.js}"></script>
+<script th:src="@{/js/templestay/programI18n.js}"></script>
 <script th:src="@{/js/mapCommon.js}"></script>
 <script th:src="@{/js/templestay/templestayView.js}"></script>
 <script th:src="@{/js/templestay/programDetail.js}"></script>

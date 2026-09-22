@@ -5,7 +5,8 @@
 
 -->
 
-<div class="site-header" id="siteHeader" th:fragment="commonIncludes">
+<div class="site-header" id="siteHeader" th:fragment="commonIncludes"
+     xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
     <div class="header-inner">
 
         <div class="header-left">
@@ -200,6 +201,8 @@
     </div>
 
     <script th:src="@{/js/common.js}"></script>
+    <!-- alert/confirm 문구와 서버 오류 메시지 사전(i18nMsg / i18nSrv) - common.js의 getCookie를 쓰므로 그 다음에 로드 -->
+    <script th:src="@{/js/i18nMessages.js}"></script>
 </div>
 
 <!--
