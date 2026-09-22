@@ -347,11 +347,6 @@ function createTempleMarker(map, temple) {
                 currentOpenMarker.setZIndex(1);
             }
 
-            // 마커가 화면 위쪽(검색창/필터 패널에 가려지는 영역)에 있으면
-            // 정보창이 패널 밑에 깔리지 않게 지도를 살짝 아래로 밀어줌
-            var TOP_SAFE_AREA = 130; // 컨트롤 패널이 차지하는 대략적인 높이 + 여유
-            var point = map.getProjection().pointFromCoords(position);
-
             infowindow.open(map, marker);
 
         currentOpenInfoWindow = infowindow; // 지금 연 걸 "현재 열린 것"으로 기억

@@ -173,7 +173,6 @@ function goToStep(step) {
 // ------------------------- STEP 1: 목록 렌더링 -------------------------
 function renderFilterOptions() {
   const regionSelect = document.getElementById('filter-region');
-  const templeSelect = document.getElementById('filter-temple');
   const headcountSelect = document.getElementById('filter-headcount');
 
   // 화면에 보이는 글자만 사전(programI18n.js)으로 바꾸고 value는 한국어 원문 유지(필터 비교용).
@@ -570,8 +569,7 @@ function togglePaymentFields() {
 // (시작일/종료일은 이제 달력 클릭으로 정해짐 - selectStartDate() 참고. 이 두 input은 hidden이라 change 리스너 불필요)
 
 document.getElementById('res-participant-count').addEventListener('change', (e) => {
-  const count = Math.max(1, Number(e.target.value) || 1);
-  state.participantCount = count;
+  state.participantCount = Math.max(1, Number(e.target.value) || 1);
   renderParticipantRows();
   updatePaymentTotal();
 });
@@ -687,8 +685,6 @@ async function submitReservation() {
       alert(err && err.message ? i18nSrv(err.message) : trUi('failParticipants'));
       return;
     }
-    const participants = await partRes.json();
-
     if (state.paymentMethod === '카카오페이') {
       // 페이지를 완전히 떠났다 돌아오므로(카카오 결제창 리다이렉트) state가 사라짐 - 돌아왔을 때는
       // resumeAfterKakaoPay()가 서버에서 예약을 다시 조회하고, 프로그램 정보는 state.programs(항상

@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko"
-      xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+      xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
@@ -457,6 +456,8 @@
                class="chat-panel__input"
                placeholder="궁금한 점을 입력해보세요"
                data-i18n-placeholder="chatPlaceholder"
+               data-i18n-aria="chatInputAria"
+               aria-label="궁금한 점 입력"
                autocomplete="off">
         <button type="submit" class="chat-panel__send" aria-label="보내기" data-i18n-aria="chatSend">↑</button>
     </form>

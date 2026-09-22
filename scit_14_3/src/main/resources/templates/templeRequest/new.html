@@ -49,7 +49,7 @@
 			<div class="field">
 				<label for="address">주소<span class="req">*</span></label>
 				<input type="text" id="address" name="address" maxlength="255" readonly placeholder="지도에서 검색/선택하면 자동으로 채워집니다" required>
-				<input type="text" id="addressDetail" maxlength="100" placeholder="상세주소 (동/호수 등, 선택)" style="margin-top:8px;">
+				<input type="text" id="addressDetail" maxlength="100" aria-label="상세주소" placeholder="상세주소 (동/호수 등, 선택)" style="margin-top:8px;">
 			</div>
 
 			<div class="field field-inline">
@@ -109,7 +109,7 @@
 				<div class="email-row">
 					<input type="text" id="emailLocal" class="email-local" placeholder="이메일 아이디">
 					<span class="at-sign">@</span>
-					<select id="emailDomainSelect">
+					<select id="emailDomainSelect" aria-label="이메일 도메인 선택">
 						<option value="naver.com">naver.com</option>
 						<option value="gmail.com">gmail.com</option>
 						<option value="daum.net">daum.net</option>
@@ -120,7 +120,7 @@
 						<option value="icloud.com">icloud.com</option>
 						<option value="custom">직접입력</option>
 					</select>
-					<input type="text" id="emailDomainCustom" class="domain-custom" style="display:none" placeholder="도메인 입력">
+					<input type="text" id="emailDomainCustom" class="domain-custom" style="display:none" aria-label="도메인 직접 입력" placeholder="도메인 입력">
 					<button type="button" class="btn-check" id="sendVerificationBtn">인증번호 발송</button>
 				</div>
 				<input type="hidden" id="contactEmail" name="contactEmail" required>
@@ -128,7 +128,7 @@
 
 				<div class="verify-box" id="verifySection" style="display:none;">
 					<div class="field-inline">
-						<input type="text" id="verifyCode" maxlength="6" placeholder="이메일로 받은 인증번호 6자리">
+						<input type="text" id="verifyCode" maxlength="6" aria-label="인증번호 입력" placeholder="이메일로 받은 인증번호 6자리">
 						<button type="button" class="btn-check" id="confirmCodeBtn">확인</button>
 					</div>
 					<div class="verify-meta">
@@ -157,7 +157,7 @@
 
 		<div style="padding:20px 24px;">
 			<div style="display:flex;gap:8px;margin-bottom:12px;">
-				<input type="text" id="mapSearchKeyword" placeholder="사찰 이름이나 주소로 검색"
+				<input type="text" id="mapSearchKeyword" aria-label="사찰 검색" placeholder="사찰 이름이나 주소로 검색"
 				       style="flex:1;padding:11px 14px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:14px;">
 				<button type="button" class="btn-check" id="mapSearchBtn" style="padding:0 20px;">검색</button>
 			</div>

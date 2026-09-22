@@ -142,7 +142,7 @@ kakao.maps.load(function () {
             templeList = temples;
 
             temples.forEach(function (temple) {
-                var marker = createTempleMarker(map, {
+                markerByTempleId[temple.templeId] = createTempleMarker(map, {
                     templeId: temple.templeId,
                     lat: temple.latitude,
                     lng: temple.longitude,
@@ -152,8 +152,6 @@ kakao.maps.load(function () {
                     iconUrl: temple.imageUrl || '/images/temple-marker.svg',
                     favorited: temple.favorited
                 });
-
-                markerByTempleId[temple.templeId] = marker;
             });
         })
         .catch(function (error) {

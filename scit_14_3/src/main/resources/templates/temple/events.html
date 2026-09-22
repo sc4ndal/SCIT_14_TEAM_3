@@ -30,7 +30,8 @@
 
 		<div class="events-search" th:unless="${#lists.isEmpty(events)}">
 			<input type="search" id="events-search-input" class="events-search__input"
-				   data-pi18n-placeholder="evSearchPh" placeholder="행사 이름이나 사찰 이름으로 검색 (예: 박람회, 조계사...)" autocomplete="off">
+				   data-pi18n-placeholder="evSearchPh" data-pi18n-aria="evSearchAria" aria-label="검색"
+				   placeholder="행사 이름이나 사찰 이름으로 검색 (예: 박람회, 조계사...)" autocomplete="off">
 		</div>
 
 		<p class="events-empty" th:if="${#lists.isEmpty(events)}" data-pi18n="evNone">

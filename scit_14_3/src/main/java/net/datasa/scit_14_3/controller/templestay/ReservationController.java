@@ -94,9 +94,9 @@ public class ReservationController {
 	}
 
 	/** 본인 예약만 조회 가능 - reservationId는 URL/쿼리스트링에 그대로 노출되는 값이라(카카오페이
-	    리다이렉트 등) 아무 숫자나 넣어서 남의 예약 정보(날짜/인원 등)를 볼 수 있으면 안 된다. */
-	/** 예약이 존재하지 않는 경우, isOwner() 안에서 NullPointerException이 나면서 500 에러(서버 내부 오류)로 떨어질 수 있다.
-	 * 서버 내부 오류 방지 위해 사용자에게는 "예약을 찾을 수 없습니다" 같은 깔끔한 404 응답을 준다. */
+	    리다이렉트 등) 아무 숫자나 넣어서 남의 예약 정보(날짜/인원 등)를 볼 수 있으면 안 된다.
+	    예약이 존재하지 않는 경우, isOwner() 안에서 NullPointerException이 나면서 500 에러(서버 내부
+	    오류)로 떨어질 수 있어 사용자에게는 "예약을 찾을 수 없습니다" 같은 깔끔한 404 응답을 준다. */
 	@GetMapping("/templestayreservations/{reservationId}")
 	@ResponseBody
 	public ResponseEntity<?> getTempleStayReservationById(@PathVariable Long reservationId,

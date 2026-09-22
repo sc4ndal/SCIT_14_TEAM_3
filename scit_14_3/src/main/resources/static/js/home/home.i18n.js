@@ -174,7 +174,7 @@ const HOME_TRANSLATIONS = {
 };
 
 const HOME_ARIA_TRANSLATIONS = {
-    ko: { prevMonth: "이전 달", nextMonth: "다음 달", backToTop: "페이지 위로 이동", chatOpen: "챗봇 열기", chatSend: "보내기" },
-    ja: { prevMonth: "前の月", nextMonth: "次の月", backToTop: "ページ上部へ移動", chatOpen: "チャットボットを開く", chatSend: "送信" },
-    en: { prevMonth: "Previous month", nextMonth: "Next month", backToTop: "Back to top", chatOpen: "Open chatbot", chatSend: "Send" }
+    ko: { prevMonth: "이전 달", nextMonth: "다음 달", backToTop: "페이지 위로 이동", chatOpen: "챗봇 열기", chatSend: "보내기", chatInputAria: "궁금한 점 입력" },
+    ja: { prevMonth: "前の月", nextMonth: "次の月", backToTop: "ページ上部へ移動", chatOpen: "チャットボットを開く", chatSend: "送信", chatInputAria: "質問を入力" },
+    en: { prevMonth: "Previous month", nextMonth: "Next month", backToTop: "Back to top", chatOpen: "Open chatbot", chatSend: "Send", chatInputAria: "Enter your question" }
 };

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="thymeleaf.org"
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
@@ -283,7 +283,7 @@
         .program-card {
           border: 1px solid var(--line);
           border-radius: 14px;
-          padding: 0px;
+          padding: 0;
           cursor: pointer;
           background: var(--bg-raised);
           transition: border-color 0.15s ease, transform 0.15s ease;
@@ -369,7 +369,7 @@
          --badge-tint: var(--blue-tint);
          }
         .program-type-badge[data-type="당일형"] {
-        --badge-color: var(--gold-deep, var(--gold));
+        --badge-color: var(--gold);
         --badge-tint: var(--gold-tint);
         }
         .lang-badge {
@@ -742,7 +742,6 @@
           font-family: "IBM Plex Mono", monospace;
           font-weight: 700;
           color: var(--pine-deep);
-          font-size: 16px;
           padding-bottom: 14px;
           margin-bottom: 14px !important;
           border-bottom: 1px solid var(--line-soft);
@@ -943,6 +942,7 @@
                         <span class="price-note">(성인 가격 기준)</span>
                     </div>
                     <button type="button" class="program-detail-btn">상세보기</button>
+                </div>
                 </div>
             </article>
 

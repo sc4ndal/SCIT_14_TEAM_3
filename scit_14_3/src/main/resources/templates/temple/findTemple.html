@@ -451,11 +451,11 @@
 <div id="map-wrapper">
     <div id="controls">
     <div id="temple-search-box">
-<select id="search-type">
+<select id="search-type" data-i18n-aria="searchTypeAria" aria-label="검색 종류">
     <option value="name" data-i18n="searchTypeName">사찰 검색</option>
     <option value="address" data-i18n="searchTypeAddress">주소 검색</option>
 </select>
-        <input type="text" id="search-keyword" data-i18n-placeholder="searchPlaceholder" placeholder="검색어를 입력하세요" autocomplete="off">
+        <input type="text" id="search-keyword" data-i18n-placeholder="searchPlaceholder" data-i18n-aria="searchInputAria" aria-label="검색어 입력" placeholder="검색어를 입력하세요" autocomplete="off">
         <div id="search-history-dropdown" class="search-history-dropdown"></div>
         <button type="button" id="search-btn" aria-label="검색" data-i18n-aria="searchBtn">            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="10.5" cy="10.5" r="7"/>

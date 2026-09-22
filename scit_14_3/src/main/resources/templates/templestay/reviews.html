@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -324,7 +324,7 @@
             <option value="rating-desc" data-pi18n="sortRatingDesc">별점 높은순</option>
             <option value="rating-asc" data-pi18n="sortRatingAsc">별점 낮은순</option>
         </select>
-        <input type="text" id="review-search" class="search-input" data-pi18n-placeholder="revSearchPh" placeholder="사찰명 · 프로그램명 · 작성자 · 내용 검색">
+        <input type="text" id="review-search" class="search-input" data-pi18n-placeholder="revSearchPh" data-pi18n-aria="revSearchAria" aria-label="검색" placeholder="사찰명 · 프로그램명 · 작성자 · 내용 검색">
         <button type="button" id="review-search-btn" class="search-btn" data-pi18n="revSearchBtn">검색</button>
     </div>
 

@@ -52,7 +52,7 @@ const PROGRAM_I18N = {
             // ---- 전체 후기(reviews) ----
             revPageTitle: '템플스테이 후기', revBack: '← 템플스테이 예약', revLoadingMsg: '후기를 불러오는 중입니다…',
             revSortAria: '정렬', sortLatest: '최신순', sortOldest: '오래된순', sortRatingDesc: '별점 높은순', sortRatingAsc: '별점 낮은순',
-            revSearchPh: '사찰명 · 프로그램명 · 작성자 · 내용 검색', revSearchBtn: '검색',
+            revSearchPh: '사찰명 · 프로그램명 · 작성자 · 내용 검색', revSearchBtn: '검색', revSearchAria: '검색',
             revMore: '자세히', revCollapse: '접기',
             revTempleName: '사찰명', revRating: '별점', revAuthor: '작성자', revDate: '작성일', revContent: '내용',
             revEdit: '수정하기', revDelete: '삭제하기', revNoTitle: '(제목 없음)', revNoContent: '(내용 없음)',
@@ -64,7 +64,7 @@ const PROGRAM_I18N = {
 
             // ---- 불교 행사(events) ----
             evTitle: '불교 행사', evLead: '박람회·법회·전통문화 행사 등 전국 사찰에서 열리는 불교 행사를 모았습니다.',
-            evSearchPh: '행사 이름이나 사찰 이름으로 검색 (예: 박람회, 조계사...)',
+            evSearchPh: '행사 이름이나 사찰 이름으로 검색 (예: 박람회, 조계사...)', evSearchAria: '검색',
             evNone: '아직 등록된 행사가 없습니다.', evNoResult: '검색 결과가 없습니다.',
             evPast: '종료', evLink: '자세히 보기 →', evMyFavorites: '관심 행사 모아보기 →',
 
@@ -112,7 +112,7 @@ const PROGRAM_I18N = {
 
             revPageTitle: 'テンプルステイのレビュー', revBack: '← テンプルステイ予約', revLoadingMsg: 'レビューを読み込んでいます…',
             revSortAria: '並べ替え', sortLatest: '新しい順', sortOldest: '古い順', sortRatingDesc: '評価が高い順', sortRatingAsc: '評価が低い順',
-            revSearchPh: '寺院名・プログラム名・投稿者・内容で検索', revSearchBtn: '検索',
+            revSearchPh: '寺院名・プログラム名・投稿者・内容で検索', revSearchBtn: '検索', revSearchAria: '検索',
             revMore: '詳細', revCollapse: '閉じる',
             revTempleName: '寺院名', revRating: '評価', revAuthor: '投稿者', revDate: '投稿日', revContent: '内容',
             revEdit: '修正する', revDelete: '削除する', revNoTitle: '(タイトルなし)', revNoContent: '(内容なし)',
@@ -123,7 +123,7 @@ const PROGRAM_I18N = {
             revErrLoad: 'レビュー一覧を読み込めませんでした。しばらくしてからもう一度お試しください。',
 
             evTitle: '仏教行事', evLead: '博覧会・法会・伝統文化行事など、全国の寺院で開かれる仏教行事をまとめました。',
-            evSearchPh: '行事名や寺院名で検索(例: 博覧会、曹渓寺...)',
+            evSearchPh: '行事名や寺院名で検索(例: 博覧会、曹渓寺...)', evSearchAria: '検索',
             evNone: 'まだ登録された行事がありません。', evNoResult: '検索結果がありません。',
             evPast: '終了', evLink: '詳しく見る →', evMyFavorites: 'お気に入りの行事を見る →',
 
@@ -168,7 +168,7 @@ const PROGRAM_I18N = {
 
             revPageTitle: 'Templestay Reviews', revBack: '← Templestay Reservation', revLoadingMsg: 'Loading reviews…',
             revSortAria: 'Sort', sortLatest: 'Newest', sortOldest: 'Oldest', sortRatingDesc: 'Highest rated', sortRatingAsc: 'Lowest rated',
-            revSearchPh: 'Search by temple, program, author, or content', revSearchBtn: 'Search',
+            revSearchPh: 'Search by temple, program, author, or content', revSearchBtn: 'Search', revSearchAria: 'Search',
             revMore: 'Details', revCollapse: 'Collapse',
             revTempleName: 'Temple', revRating: 'Rating', revAuthor: 'Author', revDate: 'Date', revContent: 'Content',
             revEdit: 'Edit', revDelete: 'Delete', revNoTitle: '(No title)', revNoContent: '(No content)',
@@ -179,7 +179,7 @@ const PROGRAM_I18N = {
             revErrLoad: 'Could not load the reviews. Please try again in a moment.',
 
             evTitle: 'Buddhist Events', evLead: 'Expos, dharma assemblies, traditional culture events, and more Buddhist events held at temples across the country.',
-            evSearchPh: 'Search by event or temple name (e.g. expo, Jogyesa...)',
+            evSearchPh: 'Search by event or temple name (e.g. expo, Jogyesa...)', evSearchAria: 'Search',
             evNone: 'No events have been registered yet.', evNoResult: 'No results were found for your search.',
             evPast: 'Ended', evLink: 'Learn more →', evMyFavorites: 'View my favorite events →',
 
