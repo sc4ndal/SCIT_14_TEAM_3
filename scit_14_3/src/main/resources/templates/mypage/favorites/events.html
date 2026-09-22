@@ -8,6 +8,9 @@
     <link rel="stylesheet" th:href="@{/css/common.css}" type="text/css">
     <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}" type="text/css">
     <link rel="stylesheet" th:href="@{/css/mypage/favorites.css}" type="text/css">
+    <!-- 카드 안쪽 요소(제목/사찰명/소개/날짜/종료뱃지) 스타일은 공개 /events 페이지와 공유 -
+         favorites.css가 따로 복제해서 맞추던 걸 없애고 이 파일 자체를 재사용한다. -->
+    <link rel="stylesheet" th:href="@{/css/temple/events.css}" type="text/css">
     <title>관심 행사 · 佛선자</title>
 </head>
 
@@ -42,26 +45,26 @@
                         <span th:text="${#temporals.format(event.startDate, 'yyyy.MM.dd')}">2026.01.01</span>
                         <span th:if="${event.endDate != event.startDate}"
                               th:text="'~ ' + ${#temporals.format(event.endDate, 'yyyy.MM.dd')}">~ 2026.01.07</span>
-                        <span class="event-favorite-card__past-badge" th:if="${event.past}">종료</span>
+                        <span class="event-card__past-badge" th:if="${event.past}">종료</span>
                     </p>
 
-                    <h2 class="food-favorite-card__title" th:text="${event.title}">행사명</h2>
+                    <h2 class="event-card__title" th:text="${event.title}">행사명</h2>
 
-                    <p class="food-favorite-card__desc">
+                    <p class="event-card__temple">
                         <span aria-hidden="true">⌖</span>
                         <span th:text="${event.templeName}">사찰명</span>
                     </p>
 
-                    <p class="food-favorite-card__desc event-favorite-card__description" th:if="${event.description != null}"
+                    <p class="event-card__desc" th:if="${event.description != null}"
                        th:text="${event.description}">행사 소개</p>
 
-                    <a class="food-favorite-card__link" th:if="${event.linkUrl != null}" th:href="${event.linkUrl}"
+                    <a class="event-card__link" th:if="${event.linkUrl != null}" th:href="${event.linkUrl}"
                        target="_blank" rel="noopener noreferrer">
                         자세히 보기 →
                     </a>
                 </div>
 
-                <div class="food-favorite-card__footer">
+                <div class="event-card__footer">
                     <button type="button" class="favorite-toggle is-favorited"
                             th:attr="data-favorite-url=@{'/events/' + ${event.eventId} + '/favorite'}"
                             data-favorited="true" aria-pressed="true">
