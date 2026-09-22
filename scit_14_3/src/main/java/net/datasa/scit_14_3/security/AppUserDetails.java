@@ -75,6 +75,10 @@ public class AppUserDetails implements UserDetails {
         return templeId != null;
     }
 
+    public boolean isAdmin() {
+        return authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    }
+
     public boolean isMustChangePassword() {
         return mustChangePassword;
     }

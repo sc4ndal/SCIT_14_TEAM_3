@@ -170,7 +170,12 @@ async function toggleLike(reviewId) {
       location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
       return;
     }
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (!res.ok) {
+      // 서버가 상황별 메시지(예: 관리자 계정 차단)를 JSON body의 message로 내려주므로
+      // 그대로 살려서 보여준다 - 파싱 자체가 실패하면(예상 밖 응답) 기존 문구로 대체.
+      const body = await res.json().catch(() => null);
+      throw new Error((body && body.message) || '좋아요 처리 중 오류가 발생했습니다.');
+    }
     const data = await res.json();
 
     const review = state.all.find((r) => String(r.reviewId) === String(reviewId));
@@ -181,7 +186,7 @@ async function toggleLike(reviewId) {
     renderList();
   } catch (e) {
     console.error('좋아요 처리 중 오류가 발생했습니다.', e);
-    alert('좋아요 처리 중 오류가 발생했습니다.');
+    alert(e.message || '좋아요 처리 중 오류가 발생했습니다.');
   }
 }
 
