@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
     <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=4d97c12d7e3e28e5dd08a2f00a58025d&libraries=services"></script>
-    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
     <style>
         :root {
           --bg: #efe9dd;
@@ -203,9 +203,9 @@
 <script th:inline="javascript">
     const PROGRAM_ID = /*[[${programId}]]*/ 0;
 </script>
-<script src="/js/mapCommon.js"></script>
-<script src="/js/templestay/templestayView.js"></script>
-<script src="/js/templestay/programDetail.js"></script>
+<script th:src="@{/js/mapCommon.js}"></script>
+<script th:src="@{/js/templestay/templestayView.js}"></script>
+<script th:src="@{/js/templestay/programDetail.js}"></script>
 
 </body>
 </html>

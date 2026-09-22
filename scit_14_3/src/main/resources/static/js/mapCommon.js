@@ -382,36 +382,32 @@ function createTempleMarker(map, temple) {
  * @param {Object} mapState - { map: kakao.maps.Map|null, marker: kakao.maps.Marker|null } - 페이지에서 만들어서 넘김
  */
 function loadTempleDetailMap(containerId, program, mapState) {
-    if (typeof kakao === 'undefined' || !program.latitude || !program.longitude) return;
-
+   console.log('[' + containerId + '] loadTempleDetailMap 호출됨, program =', program);
+      if (typeof kakao === 'undefined' || !program.latitude || !program.longitude) {
+          console.log('[' + containerId + '] 가드문에서 리턴됨 - kakao:', typeof kakao, 'lat:', program.latitude, 'lng:', program.longitude);
+          return;
+         }
     kakao.maps.load(function () {
         var position = new kakao.maps.LatLng(program.latitude, program.longitude);
-
         if (!mapState.map) {
-            mapState.map = new kakao.maps.Map(document.getElementById(containerId), {
-                center: position,
-                level: 4
+            mapState.map = new kakao.maps.Map(document.getElementById(containerId), { center: position, level: 4 });
+        }
+        // #result-map처럼 방금 display:none -> visible로 바뀐 컨테이너는
+        // relayout() 시점에 아직 브라우저가 크기를 확정 못한 상태일 수 있어서
+        // 마커가 중심에서 어긋나 보일 수 있음. 한 프레임 뒤로 미뤄서 실제 크기를 잡은 뒤 계산하게 함.
+        requestAnimationFrame(function () {
+         var containerEl = document.getElementById(containerId);
+                    console.log('[' + containerId + '] relayout 직전 크기:', containerEl.offsetWidth, 'x', containerEl.offsetHeight);
+                    mapState.map.relayout();
+            mapState.map.relayout();
+            mapState.map.setCenter(position);
+            if (mapState.marker) { mapState.marker.setMap(null); }
+            mapState.marker = createTempleMarker(mapState.map, {
+                templeId: program.templeId, lat: program.latitude, lng: program.longitude,
+                name: program.templeName, address: program.templeAddress, autoPan: true
             });
-        }
-
-        // 지도를 만들 때 컨테이너가 hidden이 막 풀린 직후일 수 있어서(크기가 0으로
-        // 측정돼 마커 위치가 어긋남) relayout으로 컨테이너 크기를 다시 재게 함.
-        mapState.map.relayout();
-        mapState.map.setCenter(position);
-
-        if (mapState.marker) {
-            mapState.marker.setMap(null);
-        }
-
-        mapState.marker = createTempleMarker(mapState.map, {
-            templeId: program.templeId,
-            lat: program.latitude,
-            lng: program.longitude,
-            name: program.templeName,
-            address: program.templeAddress,
-            autoPan: true // 이 지도들은 위에 덮이는 패널이 없으니 카카오가 알아서 위치 보정하게 함
+            kakao.maps.event.trigger(mapState.marker, 'click');
         });
-        kakao.maps.event.trigger(mapState.marker, 'click');
     });
 }
 
