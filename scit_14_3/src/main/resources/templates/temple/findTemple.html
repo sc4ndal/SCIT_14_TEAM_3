@@ -445,7 +445,7 @@
      동일한 패턴. -->
 <div id="auth-info" style="display:none;"
      sec:authorize="isAuthenticated()"
-     th:attr="data-login-id=${#authentication.principal.username}, data-temple-account=${#authentication.principal.templeAccount}">
+     th:attr="data-login-id=${#authentication.principal.username}, data-temple-account=${#authentication.principal.templeAccount}, data-is-admin=${#authentication.principal.admin}">
 </div>
 
 <div id="map-wrapper">

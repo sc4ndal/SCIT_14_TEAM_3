@@ -163,14 +163,37 @@
 	overflow: hidden;
 }
 
+/* 아래 제목/사찰명/소개/날짜 스타일은 공개 페이지(/events, temple/events.css의 .event-card__*)와
+   생김새를 맞추기 위한 것 - 원래 이 페이지는 음식/사찰 즐겨찾기와 같은 범용 .food-favorite-card__*
+   클래스만 써서 공개 행사 페이지와 글자 크기·색·구분선 등이 미묘하게 달랐다. */
 .event-favorite-card .food-favorite-card__title {
+	margin: 8px 0 0;
+	font-size: 17px;
+	font-weight: 500;
+	letter-spacing: -.02em;
 	display: -webkit-box;
 	-webkit-line-clamp: 2;
 	-webkit-box-orient: vertical;
 	overflow: hidden;
 }
 
+/* 사찰명 줄(⌖ 아이콘 + 사찰명) - 소개(.event-favorite-card__description)와 같은 범용 클래스를
+   쓰지만 그쪽 클래스가 없는 이 줄만 골라서 events.css의 .event-card__temple과 맞춘다. */
+.event-favorite-card .food-favorite-card__desc:not(.event-favorite-card__description) {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 8px 0 0;
+	font-size: 12.5px;
+	color: var(--text-secondary);
+}
+
 .event-favorite-card .event-favorite-card__description {
+	margin: 12px 0 0;
+	padding-top: 12px;
+	border-top: 1px dashed var(--line);
+	font-size: 13px;
+	line-height: 1.7;
 	display: -webkit-box;
 	-webkit-line-clamp: 3;
 	-webkit-box-orient: vertical;
@@ -178,21 +201,46 @@
 	flex: 1;
 }
 
+.event-favorite-card .food-favorite-card__link {
+	margin-top: 12px;
+	font-size: 12.5px;
+}
+
+.event-favorite-card .food-favorite-card__link:hover {
+	text-decoration: underline;
+}
+
 /* 이미 끝난 행사는 색을 죽여서 한눈에 지난 일정임을 알 수 있게 함 */
 .event-favorite-card--past {
+	background: var(--muted-bg);
 	filter: grayscale(70%);
-	opacity: .78;
+	opacity: .72;
+}
+
+/* 날짜 줄(시작일 + ~종료일 + 뱃지)을 flex로 묶어서, 뱃지가 날짜와 같은 줄에서 오른쪽 끝에
+   자리하게 한다 - 뱃지만 항상 다음 줄로 내리면(예전 block 방식) 그 줄이 뱃지 하나만 떠 있는
+   빈 줄이 되어 카드가 휑해 보였다. 공간이 부족할 때만(예: 아주 좁은 화면) 자연스럽게 다음
+   줄로 넘어가고, 그때도 margin-left:auto 덕분에 그 줄의 오른쪽 끝에 붙는다. */
+.event-favorite-card .event-card__date {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px;
+	font-size: 12px;
+	letter-spacing: .03em;
+	color: var(--brown);
+	font-weight: 600;
 }
 
 .event-favorite-card__past-badge {
-	margin-left: 8px;
 	padding: 2px 8px;
 	border-radius: 999px;
 	background: var(--text-tertiary);
 	color: #fff;
 	font-size: 11px;
 	font-weight: 700;
-	vertical-align: middle;
+	white-space: nowrap;
+	margin-left: auto;
 }
 
 .food-favorite-card {

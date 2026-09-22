@@ -507,7 +507,7 @@ CREATE TABLE TEMPLE_INQUIRY (
 -- =====================================================================
 -- 초기 테스트 계정 (이 스크립트를 재실행해서 DB를 초기화할 때마다 같이 생성됨)
 -- 비밀번호는 전부 BCryptPasswordEncoder로 해시된 값 - 아래는 원문 비밀번호 기록용 주석.
---   사이트 관리자: admin / admin1234!
+    --   사이트 관리자: admin / admin1234!
 --   일반 회원:     testuser1 / Test1234!, testuser2 / Test1234!
 --   사찰 계정:     @templetest1 / Test1234!, @templetest2 / Test1234!
 -- 템플스테이 프로그램 더미값도 테스트사찰/테스트사찰2 앞으로 하나씩 같이 생성됨.

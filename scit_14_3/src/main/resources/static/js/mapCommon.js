@@ -66,6 +66,18 @@ var IS_TEMPLE_ACCOUNT = (function () {
     return !!(authInfo && authInfo.dataset.templeAccount === 'true');
 })();
 
+// 사이트 관리자(ADMIN) 계정도 즐겨찾기 기능을 못 쓰게 막았다(FavoriteTempleController의
+// @PreAuthorize("hasRole('USER')")) - #auth-info의 data-is-admin은 각 페이지의 th:attr에서
+// AppUserDetails.isAdmin()을 그대로 넘겨받음.
+var IS_ADMIN = (function () {
+    var authInfo = document.getElementById('auth-info');
+    return !!(authInfo && authInfo.dataset.isAdmin === 'true');
+})();
+
+// 즐겨찾기 UI를 숨겨야 하는 계정(TEMPLE 계정 + ADMIN 계정)을 한 값으로 묶는다 - 아래 코드의
+// IS_TEMPLE_ACCOUNT 체크는 전부 이 값을 대신 쓴다.
+var HIDE_TEMPLE_FAVORITE = IS_TEMPLE_ACCOUNT || IS_ADMIN;
+
 // templeList.js(사찰 찾아보기)에서만 window.favoriteTempleIds를 초기화해뒀음 - 이 파일은
 // 사찰 상세/예약/프로그램뷰 페이지에서도 같이 쓰이는데 그 페이지들은 이 배열을 안 만들어서
 // 없으면 여기서 만들어둠(즐겨찾기 필터가 없는 페이지에서도 에러 안 나게).
@@ -153,7 +165,7 @@ function createTempleMarker(map, temple) {
 
     // 5. 클릭했을 때 뜨는 상세 정보창 (이름 + 주소, X 버튼으로 닫기 가능)
     // 5-1 : 정보창 안의 ★ 버튼을 조건부로만 넣기(사찰 관리자 계정)
-          var favoriteStarHtml = IS_TEMPLE_ACCOUNT ? '' :
+          var favoriteStarHtml = HIDE_TEMPLE_FAVORITE ? '' :
                     '  <span class = "favorite-wrapper" style="position:relative;display:inline-flex;">' +
                     '  <button type="button" class="favorite-star-btn" style="border:none;background:none;font-size:19px;line-height:1;cursor:pointer;color:' + (temple.favorited ? '#f4c25c' : '#ccc') + ';padding:0;">★</button>' +
                     '  </span>';
@@ -183,7 +195,7 @@ function createTempleMarker(map, temple) {
        var favoriteBtn = null;
        var favoriteWrapper = null;
        var favoriteTooltip = null;
-       if (!IS_TEMPLE_ACCOUNT) {
+       if (!HIDE_TEMPLE_FAVORITE) {
            favoriteBtn = infoContent.querySelector('.favorite-star-btn');
            favoriteWrapper = infoContent.querySelector('.favorite-wrapper');
            if (temple.favorited) favoriteBtn.classList.add('active');
@@ -205,7 +217,7 @@ function createTempleMarker(map, temple) {
            });
 
        // 사찰 관리자(TEMPLE 계정)는 즐겨찾기 기능이 없으므로 6~8번(말풍선/조회/토글) 전부 건너뜀
-       if (!IS_TEMPLE_ACCOUNT) {
+       if (!HIDE_TEMPLE_FAVORITE) {
            // 6. 즐겨찾기 버튼에 마우스 올렸을 때 뜨는 말풍선 (이름표랑 같은 스타일)
            favoriteTooltip = document.createElement('div');
            favoriteTooltip.style.cssText =
