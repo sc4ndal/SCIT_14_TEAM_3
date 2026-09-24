@@ -39,5 +39,3 @@ public class TempleApiController {
 		return tsps.getInfo(programId);
 	}
 }
-
-
