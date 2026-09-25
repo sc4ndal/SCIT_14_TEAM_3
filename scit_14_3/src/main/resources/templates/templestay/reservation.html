@@ -852,6 +852,123 @@
         .result-participant-table tbody tr:last-child td {
           border-bottom: none;
         }
+        .consent-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin: 18px 0 4px;
+          font-size: 13.5px;
+          color: var(--ink-soft);
+        }
+
+        .consent-row input[type="checkbox"] {
+          width: 16px;
+          height: 16px;
+          accent-color: var(--pine);
+          cursor: pointer;
+        }
+
+        .consent-row label {
+          cursor: pointer;
+        }
+
+        .consent-row a {
+          color: var(--pine-deep);
+          font-weight: 600;
+          text-decoration: underline;
+        }
+
+        .terms-modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.45);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+        }
+
+        .terms-modal {
+          width: min(480px, 90vw);
+          max-height: 80vh;
+          display: flex;
+          flex-direction: column;
+          background: var(--bg-raised);
+          border-radius: 14px;
+          box-shadow: var(--shadow);
+          overflow: hidden;
+        }
+
+        .terms-modal-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 18px 22px;
+          border-bottom: 1px solid var(--line-soft);
+        }
+
+        .terms-modal-header h3 {
+          font-size: 16px;
+          font-weight: 700;
+          color: var(--ink);
+          margin: 0;
+        }
+
+        .terms-modal-header button {
+          background: none;
+          border: none;
+          font-size: 20px;
+          line-height: 1;
+          color: var(--ink-faint);
+          cursor: pointer;
+        }
+
+        .terms-modal-body {
+          padding: 20px 22px;
+          overflow-y: auto;
+          font-size: 13.5px;
+          color: var(--ink-soft);
+        }
+
+        .terms-modal-body section + section {
+          margin-top: 18px;
+        }
+
+        .terms-modal-body h4 {
+          font-size: 13.5px;
+          font-weight: 700;
+          color: var(--pine-deep);
+          margin: 0 0 6px;
+        }
+
+        .terms-modal-body ul {
+          margin: 8px 0 0;
+          padding-left: 18px;
+        }
+
+        .terms-modal-body li {
+          margin-bottom: 4px;
+        }
+
+        .terms-modal-footer {
+          padding: 14px 22px 20px;
+          display: flex;
+          justify-content: flex-end;
+        }
+
+        .terms-modal-footer button {
+          background: var(--pine);
+          color: var(--bg-raised);
+          font-weight: 700;
+          font-size: 14px;
+          border: none;
+          padding: 10px 22px;
+          border-radius: 100px;
+          cursor: pointer;
+        }
+        .terms-modal-overlay[hidden] {
+          display: none;
+        }
     </style>
 </head>
 <body>
@@ -1069,7 +1186,44 @@
 
                 <p id="payment-total-amount"><!-- 단가 x 인원 = 총 결제 금액 --></p>
             </fieldset>
+            <div class="consent-row">
+                <input type="checkbox" id="agree-terms-check">
+                <label for="agree-terms-check">
+                    <a href="#" id="agree-terms-link">개인정보 수집·이용 및 취소/환불 규정</a>에 동의합니다.
+                </label>
+            </div>
 
+            <div id="terms-modal-overlay" class="terms-modal-overlay" hidden>
+                <div class="terms-modal" role="dialog" aria-modal="true" aria-labelledby="terms-modal-title">
+                    <div class="terms-modal-header">
+                        <h3 id="terms-modal-title">개인정보 수집·이용 및 취소/환불 규정</h3>
+                        <button type="button" id="terms-modal-close" aria-label="닫기">&times;</button>
+                    </div>
+                    <div class="terms-modal-body">
+                        <section>
+                            <h4>1. 개인정보 수집·이용 안내</h4>
+                            <p>템플스테이 예약 및 서비스 제공을 위해 아래와 같이 개인정보를 수집·이용합니다.</p>
+                            <ul>
+                                <li>수집 항목 : 이름, 성별, 이메일, 연락처</li>
+                                <li>수집 목적 : 예약 확인, 참가자 안내, 결제 확인</li>
+                                <li>보유 기간 : 예약 완료일로부터 1년</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h4>2. 취소/환불 규정</h4>
+                            <p>프로그램별 세부 환불 규정은 상세 페이지에 안내되며, 공통 기준은 다음과 같습니다.</p>
+                            <ul>
+                                <li>체크인 7일 전까지 : 전액 환불</li>
+                                <li>체크인 3일 전까지 : 50% 환불</li>
+                                <li>체크인 3일 이내 : 환불 불가</li>
+                            </ul>
+                        </section>
+                    </div>
+                    <div class="terms-modal-footer">
+                        <button type="button" id="terms-modal-confirm">확인했습니다</button>
+                    </div>
+                </div>
+            </div>
             <div>
                 <button type="button" id="step2-back-btn" data-pi18n="backBtn">이전</button>
                 <button type="submit" id="step2-submit-btn" data-pi18n="submitBtn">예약 및 결제 신청</button>

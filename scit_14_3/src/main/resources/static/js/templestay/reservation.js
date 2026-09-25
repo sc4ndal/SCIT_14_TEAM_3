@@ -378,6 +378,10 @@ function renderStep2() {
   renderParticipantRows();
   updatePaymentTotal();
   togglePaymentFields();
+
+  // 프로그램을 새로 고를 때마다 동의 체크는 항상 초기화
+    document.getElementById('agree-terms-check').checked = false;
+    document.getElementById('step2-submit-btn').disabled = true;
 }
 
 // 대표자(참가자[0])는 고정 위치의 정적 필드라 다시 그리지 않고 값만 채워 넣음
@@ -584,6 +588,35 @@ document.getElementById('res-participant-count').addEventListener('change', (e) 
 document.getElementById('res-note').addEventListener('input', (e) => {
   state.note = e.target.value;
 });
+// 새로 추가 (페이지 로드 시 한 번만 등록)
+const agreeCheck = document.getElementById('agree-terms-check');
+const termsLink = document.getElementById('agree-terms-link');
+const termsOverlay = document.getElementById('terms-modal-overlay');
+const termsClose = document.getElementById('terms-modal-close');
+const termsConfirm = document.getElementById('terms-modal-confirm');
+
+agreeCheck.addEventListener('change', () => {
+  document.getElementById('step2-submit-btn').disabled = !agreeCheck.checked;
+});
+
+termsLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  termsOverlay.hidden = false;
+});
+
+termsClose.addEventListener('click', () => {
+  termsOverlay.hidden = true;
+});
+
+termsOverlay.addEventListener('click', (e) => {
+  if (e.target === termsOverlay) termsOverlay.hidden = true;
+});
+
+termsConfirm.addEventListener('click', () => {
+  agreeCheck.checked = true;
+  document.getElementById('step2-submit-btn').disabled = false;
+  termsOverlay.hidden = true;
+});
 
 document.getElementById('payment-method').addEventListener('change', (e) => {
   state.paymentMethod = e.target.value;
@@ -619,6 +652,10 @@ async function submitReservation() {
   if (!state.startDate || !state.endDate) {
     alert(trUi('alertPickStart'));
     return;
+  }
+  if (!document.getElementById('agree-terms-check').checked) {
+     alert(trUi('alertAgreeTerms')); // trUi 사전에 이 키가 없으면 '개인정보 수집·이용 및 취소/환불 규정에 동의해 주세요.' 같은 문자열을 직접 써도 됩니다
+     return;
   }
   if (state.participants.some(pt => !pt.name || !pt.gender || !pt.email)) {
     alert(trUi('alertFillAll'));
@@ -770,13 +807,10 @@ function setSubmitLoading(loading) {
 
 // ------------------------- STEP 3: 신청 완료 -------------------------
 async function renderStep3() {
-  console.log('renderStep3 호출됨, state.reservationResult =', state.reservationResult);
-    const { reservation, payment } = state.reservationResult;
-    // 프로그램 정보는 항상 state.programs(init에서 이미 불러온 전체 목록)에서 찾음 - 카카오페이
-    // 결제창을 왕복하고 왔을 때도 loadPrograms()가 먼저 끝난 뒤라 안전하게 찾을 수 있음.
-    const program = state.programs.find(p => p.programId === reservation.programId) || state.reservationResult.program || {};
-    console.log('renderStep3에서 찾은 program =', program);
-
+  const { reservation, payment } = state.reservationResult;
+  // 프로그램 정보는 항상 state.programs(init에서 이미 불러온 전체 목록)에서 찾음 - 카카오페이
+  // 결제창을 왕복하고 왔을 때도 loadPrograms()가 먼저 끝난 뒤라 안전하게 찾을 수 있음.
+  const program = state.programs.find(p => p.programId === reservation.programId) || state.reservationResult.program || {};
   // 인원정보는 항상 서버에서 다시 조회함 - 카카오페이 결제창 왕복 후에는 state.participants가
   // 비어있어서(페이지를 완전히 떠났다 옴) in-memory 값을 믿을 수 없음.
   let participants = [];
