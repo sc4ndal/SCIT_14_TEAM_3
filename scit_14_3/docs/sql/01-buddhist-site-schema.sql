@@ -4,35 +4,22 @@
 -- 대상 DBMS: MySQL 8.0
 -- 총 18개 테이블
 --
--- 이번 정리에서 반영된 결정사항
---   1) TEMPLE_STAY_PROGRAM.program_type은 당일형/체험형/휴식형 3종 유지(변경 없음)
---   2) 진행 일수는 program_type에 종속된 고정 규칙:
---        당일형        -> 반드시 당일(1일) 프로그램
---        체험형/휴식형 -> 반드시 1박2일 프로그램
---      (규칙만 정해졌을 뿐, 이를 저장하는 별도 컬럼은 만들지 않음 - 아래 설명 참고)
---   3) TEMPLE_STAY_RESERVATION의 start_date/end_date는 항상 "둘 다 명시적으로" 저장.
---      end_date를 "start_date + 1일"으로 매번 계산하지 않는다 - 월말(예: 8/31 -> 9/1)
---      경계를 다루는 애플리케이션 로직 실수를 원천 차단하기 위함.
---      (참고: 원래 설계서에도 이미 start_date/end_date가 별도 컬럼으로 있었음 - 그대로 유지)
---   4) TEMPLE_STAY_PROGRAM에 대표 이미지 컬럼(image_url) 추가.
---   5) TEMPLE.api_place_id 제거, 대신 latitude/longitude(위도/경도)로 위치를 받음
---      (지도 API 장소 ID보다 좌표가 더 정확하다는 판단). TEMPLE_STAY_PROGRAM이 트리거로
---      상속받던 컬럼도 api_place_id -> latitude/longitude로 같이 바뀜(support_english와 동일한 방식).
---   6) TEMPLE에 대표 이미지 컬럼(image_url) 추가.
---   7) TEMPLE에 주소 컬럼(address) 추가.
---   8) TEMPLE_REGISTRATION_REQUEST(사찰 등록 요청) 테이블 추가 - 사찰 관계자가 회원가입
---      없이 홈 화면 "문의하기"로 제출하는 요청을 담는 별도 테이블. TEMPLE과 완전히 분리되어
---      있고(승인해도 이 행이 TEMPLE로 "승격"되지 않음), 관리자가 승인하면 별도로 새 TEMPLE
---      행을 생성한다. contact_email은 이 테이블에만 있고 TEMPLE에는 저장되지 않는다.
---   9) 환불 규정은 프로그램마다 다르지 않고 사찰마다 공통이라 TEMPLE_STAY_PROGRAM에서 빼고
---      TEMPLE.refund_policy로 옮김 - 사찰이 프로그램을 여러 개 등록해도 매번 다시 입력할
---      필요가 없도록. 유의사항은 이미 TEMPLE.special_notice(사찰별 개별 유의사항)가 같은
---      역할이라 별도 컬럼을 새로 안 만들고 그대로 재사용함(TEMPLE_STAY_PROGRAM에 있던
---      유의사항 컬럼만 제거). 대신 TEMPLE_STAY_PROGRAM에 프로그램 모집(운영) 기간(open_start_date/
---      open_end_date)을 추가함 - 기존에 빠져있던 값.
---  10) 이 스크립트가 DROP TABLE부터 시작하는 순수 초기화 스크립트라 재실행하면 데이터가
---      전부 사라짐 - 그래서 맨 끝에 초기 테스트 계정(사이트 관리자/일반회원/사찰) INSERT를
---      추가해서 재실행할 때마다 로그인 가능한 계정이 최소한으로 같이 생기도록 함.
+-- ⚠ DROP TABLE부터 시작하는 순수 초기화 스크립트라 재실행하면 데이터가 전부 사라짐(로컬/개발 DB 전용).
+--   그래서 맨 끝에 초기 테스트 계정(사이트 관리자/일반회원/사찰) INSERT가 들어 있어서,
+--   재실행해도 로그인 가능한 계정이 최소한으로 같이 생김.
+--
+-- 설계 규칙
+--   1) TEMPLE_STAY_PROGRAM.program_type은 당일형/체험형/휴식형 3종. 진행 일수는 program_type에
+--      종속된 고정 규칙(당일형 -> 당일, 체험형/휴식형 -> 1박2일)이고 이를 저장하는 별도 컬럼은 없음.
+--   2) TEMPLE_STAY_RESERVATION의 start_date/end_date는 항상 둘 다 명시적으로 저장한다.
+--      "start_date + 1일"로 매번 계산하지 않음 - 월말(예: 8/31 -> 9/1) 경계 로직 실수를 막기 위함.
+--   3) 위치는 지도 API 장소 ID가 아니라 latitude/longitude(좌표)로 저장한다. TEMPLE_STAY_PROGRAM은
+--      트리거로 소속 TEMPLE의 support_english/latitude/longitude를 상속받는다.
+--   4) TEMPLE_REGISTRATION_REQUEST(사찰 등록 요청)는 TEMPLE과 완전히 분리되어 있다. 승인해도 이 행이
+--      TEMPLE로 승격되지 않고, 관리자가 별도로 새 TEMPLE 행을 만든다. contact_email은 이 테이블에만 있다.
+--   5) 환불 규정은 사찰마다 공통이라 TEMPLE.refund_policy에, 유의사항은 TEMPLE.special_notice에 둔다
+--      (프로그램마다 다시 입력하지 않도록). TEMPLE_STAY_PROGRAM에는 모집(운영) 기간
+--      (open_start_date/open_end_date)이 있다.
 -- =====================================================================
 use scit_14_3;
 set autocommit = 1;
@@ -44,6 +31,8 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ---------------------------------------------------------------------
 DROP TRIGGER IF EXISTS trg_program_inherit_before_insert;
 DROP TRIGGER IF EXISTS trg_program_inherit_before_update;
+DROP TABLE IF EXISTS TEMPLE_INQUIRY;
+DROP TABLE IF EXISTS INQUIRY;
 DROP TABLE IF EXISTS TEMPLE_REGISTRATION_REQUEST;
 DROP TABLE IF EXISTS FAVORITE_FOOD;
 DROP TABLE IF EXISTS TEMPLE_FOOD_RECOMMENDATION;
@@ -107,7 +96,7 @@ CREATE TABLE TEMPLE (
     longitude         DECIMAL(10,7) NOT NULL COMMENT '경도',
     address           VARCHAR(255) NOT NULL COMMENT '주소',
     region            VARCHAR(20)  NOT NULL COMMENT '지역(시/도) 필터',
-    -- 장소 유형은 중복 가능(바다+도심 등)해서 ENUM 한 컬럼 대신 유형별 boolean으로 둠 (2026-08-31 변경)
+    -- 장소 유형은 중복 가능(바다+도심 등)해서 ENUM 한 컬럼 대신 유형별 boolean으로 둠
     support_sea       BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '바다 인근 여부',
     support_mountain  BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '산 인근 여부',
     support_river     BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '강 인근 여부',
@@ -346,7 +335,7 @@ CREATE TABLE TEMPLE_EVENT (
     description   TEXT         NULL COMMENT '행사 소개',
     start_date    DATE         NOT NULL COMMENT '행사 시작일',
     end_date      DATE         NOT NULL COMMENT '행사 종료일',
-    -- 2026-09-10 추가: 행사 공식 페이지/기사 등 자세히 보기 링크 (없으면 NULL)
+    -- 행사 공식 페이지/기사 등 자세히 보기 링크 (없으면 NULL)
     link_url      VARCHAR(255) NULL COMMENT '행사 상세/공식 페이지 링크',
     created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
     PRIMARY KEY (event_id),
@@ -406,8 +395,7 @@ CREATE TABLE TEMPLE_FOOD_RECOMMENDATION (
     food_name          VARCHAR(50) NOT NULL COMMENT '음식명',
     description        TEXT        NULL COMMENT '설명',
     recipe             TEXT        NULL COMMENT '레시피',
-    -- 2026-09-10 추가: 레시피 참고 링크(만개의레시피 등) 전용 컬럼. 예전엔 recipe 텍스트
-    -- 마지막 줄에 "참고 레시피: <url>"로 함께 넣고 파싱해서 썼는데, 정식 컬럼으로 분리함.
+    -- 레시피 참고 링크(만개의레시피 등) 전용 컬럼
     recipe_url         VARCHAR(255) NULL COMMENT '레시피 참고 링크',
     image_url          VARCHAR(255) NULL COMMENT '사진',
     PRIMARY KEY (recommendation_id)
@@ -444,7 +432,7 @@ CREATE TABLE TEMPLE_REGISTRATION_REQUEST (
     longitude           DECIMAL(10,7) NOT NULL COMMENT '경도',
     address             VARCHAR(255) NOT NULL COMMENT '주소',
     region              VARCHAR(20)  NOT NULL COMMENT '지역(시/도) 필터',
-    -- TEMPLE과 동일한 이유(중복 선택)로 boolean 4개 (2026-08-31 변경)
+    -- TEMPLE과 동일한 이유(중복 선택)로 boolean 4개
     support_sea         BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '바다 인근 여부',
     support_mountain    BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '산 인근 여부',
     support_river       BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '강 인근 여부',
@@ -514,7 +502,7 @@ INSERT INTO USER (login_id, password, nickname, name, phone, email, role, login_
     ('admin', '$2a$10$TbOlPSKCFHWSjqp963flveOwYKYD6EueH1VxSE2Bm/wdB1NqN5fum', '사이트관리자', 'Admin', NULL, NULL, 'ADMIN', 'LOCAL'),
     ('testuser1', '$2a$10$RlY25ofavPN8ENU81L7oCuOL8F8C7j5bmadGfY54aCAQO6pzZ3SEu', '일반회원테스트', '테스트', NULL, 'testuser1@example.com', 'USER', 'LOCAL'),
     ('testuser2', '$2a$10$RlY25ofavPN8ENU81L7oCuOL8F8C7j5bmadGfY54aCAQO6pzZ3SEu', '일반회원테스트2', '테스트둘', NULL, 'testuser2@example.com', 'USER', 'LOCAL');
--- 전국 사찰 171곳 일괄 등록 (2026-09-07, 장소 유형 2차 검증 반영). templestay.com(한국불교문화사업단) 공식
+-- 전국 사찰 171곳 일괄 등록. templestay.com(한국불교문화사업단) 공식
 -- 사찰 목록의 주소 기준으로 좌표를 지도에서 찾았고, support_english는 templestay.com 영문 사이트에 실제로
 -- 올라와있는 사찰만 TRUE로 표시함(추측 아님).
 --

@@ -19,6 +19,8 @@
 [`04-temple-event-seed.sql`](../sql/04-temple-event-seed.sql)(사찰 행사),
 [`05-temple-food-seed.sql`](../sql/05-temple-food-seed.sql)(사찰음식),
 [`02-buddhist-site-content-data.sql`](../sql/02-buddhist-site-content-data.sql)(오늘의 한마디)를 참고하세요.
+프로그램 목록은 03번 파일이 단일 원본입니다(2026-09 기준 400건). 이미 데이터가 들어있는 DB를 이 상태로 맞추려면
+01번부터 02~07번까지 순서대로 다시 실행하세요(01은 전체 삭제 후 재생성이라 로컬/개발 DB 전용).
 
 ### 주요 설계 결정
 

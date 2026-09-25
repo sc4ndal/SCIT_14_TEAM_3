@@ -147,10 +147,18 @@ public class PaymentService {
 			String cancelUrl = callbackBase + "/payments/kakao/cancel?reservationId=" + reservationId;
 			String failUrl = callbackBase + "/payments/kakao/fail?reservationId=" + reservationId;
 
-			Map<String, Object> ready = kakaoPayService.ready(
-					String.valueOf(reservationId), loginId, itemName, 1, amount,
-					approvalUrl, cancelUrl, failUrl
-			);
+			Map<String, Object> ready;
+			try {
+				ready = kakaoPayService.ready(
+						String.valueOf(reservationId), loginId, itemName, 1, amount,
+						approvalUrl, cancelUrl, failUrl
+				);
+			} catch (RuntimeException e) {
+				// ready 자체가 실패하면(사이트 도메인 미등록 등) 결제창까지 가지도 못한 것이므로,
+				// approveKakaoPayment 실패 때와 동일하게 이미 만들어둔 예약을 취소해서 자리를 비운다.
+				reservationService.cancelUnpaid(reservationId);
+				throw e;
+			}
 			String tid = (String) ready.get("tid");
 			String redirectUrl = (String) ready.get("next_redirect_pc_url");
 

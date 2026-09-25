@@ -2,11 +2,13 @@
 -- 템플스테이 더미 데이터 통합 시드 (예약 30건 + 리뷰 10건)
 --
 -- 실행 순서:
---   1) buddhist-site-schema.sql        (USER: admin / testuser1 / testuser2 포함)
---   2) buddhist-site-program-data.sql  (TEMPLE_STAY_PROGRAM)
---   3) 이 파일  (temple-stay-seed-data.sql)
+--   1) 01-buddhist-site-schema.sql        (USER: admin / testuser1 / testuser2 포함)
+--   2) 03-buddhist-site-program-data.sql  (TEMPLE_STAY_PROGRAM - 프로그램이 최소 133건 있어야 함)
+--   3) 이 파일  (07-temple-stay-seed-data.sql)
 --
 -- 이 파일 하나만 실행하면 예약/리뷰 더미가 모두 채워진다.
+-- 예약이 붙는 프로그램은 program_id 숫자가 아니라 "program_id 순서로 N번째 프로그램"으로 고른다(SELECT 안의 nth 컬럼).
+-- 그래서 삭제로 program_id에 빈 번호가 있어도 항상 존재하는 프로그램에 붙는다.
 -- 아래 [1]~[3] 블록은 반드시 이 순서대로 실행되어야 한다([3]이 [1]/[2] 결과에 의존).
 --
 -- 깨끗이 다시 만들려면 실행 전에 아래 두 줄로 비우고 시작할 것
@@ -21,27 +23,31 @@
 --     2026-09 ~ 11월 향후 일정
 -- =====================================================================
 INSERT INTO TEMPLE_STAY_RESERVATION
-    (login_id, program_id, start_date, end_date, participant_count, note, status, canceled_at) VALUES
-    ('testuser1',   2, '2026-09-20', '2026-09-21', 2, '조용한 방으로 부탁드려요',           '예약확정', NULL),
-    ('testuser2',   7, '2026-09-22', '2026-09-23', 1, NULL,                                 '예약확정', NULL),
-    ('admin',      14, '2026-09-25', '2026-09-26', 3, NULL,                                 '예약확정', NULL),
-    ('testuser1',  21, '2026-09-28', '2026-09-29', 1, '알레르기 있음(견과류)',              '예약확정', NULL),
-    ('testuser2',  28, '2026-10-02', '2026-10-03', 2, NULL,                                 '예약확정', NULL),
-    ('admin',      35, '2026-10-05', '2026-10-06', 1, NULL,                                 '취소',    '2026-09-15 10:00:00'),
-    ('testuser1',  42, '2026-10-08', '2026-10-09', 4, '가족 단위 참가',                     '예약확정', NULL),
-    ('testuser2',  49, '2026-10-11', '2026-10-12', 2, NULL,                                 '예약확정', NULL),
-    ('admin',      56, '2026-10-15', '2026-10-16', 1, NULL,                                 '예약확정', NULL),
-    ('testuser1',  63, '2026-10-18', '2026-10-19', 2, NULL,                                 '취소',    '2026-09-20 09:30:00'),
-    ('testuser2',  70, '2026-10-22', '2026-10-23', 1, NULL,                                 '예약확정', NULL),
-    ('admin',      77, '2026-10-25', '2026-10-26', 3, NULL,                                 '예약확정', NULL),
-    ('testuser1',  84, '2026-10-29', '2026-10-30', 2, NULL,                                 '예약확정', NULL),
-    ('testuser2',  91, '2026-11-02', '2026-11-03', 1, NULL,                                 '예약확정', NULL),
-    ('admin',      98, '2026-11-05', '2026-11-06', 2, NULL,                                 '예약확정', NULL),
-    ('testuser1', 105, '2026-11-09', '2026-11-10', 4, NULL,                                 '예약확정', NULL),
-    ('testuser2', 112, '2026-11-12', '2026-11-13', 1, NULL,                                 '취소',    '2026-09-25 14:20:00'),
-    ('admin',     119, '2026-11-16', '2026-11-17', 2, NULL,                                 '예약확정', NULL),
-    ('testuser1', 126, '2026-11-19', '2026-11-20', 1, NULL,                                 '예약확정', NULL),
-    ('testuser2', 133, '2026-11-23', '2026-11-24', 3, NULL,                                 '예약확정', NULL);
+    (login_id, program_id, start_date, end_date, participant_count, note, status, canceled_at)
+SELECT v.login_id, p.program_id, v.start_date, v.end_date, v.participant_count, v.note, v.status, v.canceled_at
+FROM (
+    SELECT 'testuser1' AS login_id, 2 AS nth, '2026-09-20' AS start_date, '2026-09-21' AS end_date, 2 AS participant_count, '조용한 방으로 부탁드려요' AS note, '예약확정' AS status, NULL AS canceled_at
+    UNION ALL SELECT 'testuser2', 7, '2026-09-22', '2026-09-23', 1, NULL, '예약확정', NULL
+    UNION ALL SELECT 'admin', 14, '2026-09-25', '2026-09-26', 3, NULL, '예약확정', NULL
+    UNION ALL SELECT 'testuser1', 21, '2026-09-28', '2026-09-29', 1, '알레르기 있음(견과류)', '예약확정', NULL
+    UNION ALL SELECT 'testuser2', 28, '2026-10-02', '2026-10-03', 2, NULL, '예약확정', NULL
+    UNION ALL SELECT 'admin', 35, '2026-10-05', '2026-10-06', 1, NULL, '취소', '2026-09-15 10:00:00'
+    UNION ALL SELECT 'testuser1', 42, '2026-10-08', '2026-10-09', 4, '가족 단위 참가', '예약확정', NULL
+    UNION ALL SELECT 'testuser2', 49, '2026-10-11', '2026-10-12', 2, NULL, '예약확정', NULL
+    UNION ALL SELECT 'admin', 56, '2026-10-15', '2026-10-16', 1, NULL, '예약확정', NULL
+    UNION ALL SELECT 'testuser1', 63, '2026-10-18', '2026-10-19', 2, NULL, '취소', '2026-09-20 09:30:00'
+    UNION ALL SELECT 'testuser2', 70, '2026-10-22', '2026-10-23', 1, NULL, '예약확정', NULL
+    UNION ALL SELECT 'admin', 77, '2026-10-25', '2026-10-26', 3, NULL, '예약확정', NULL
+    UNION ALL SELECT 'testuser1', 84, '2026-10-29', '2026-10-30', 2, NULL, '예약확정', NULL
+    UNION ALL SELECT 'testuser2', 91, '2026-11-02', '2026-11-03', 1, NULL, '예약확정', NULL
+    UNION ALL SELECT 'admin', 98, '2026-11-05', '2026-11-06', 2, NULL, '예약확정', NULL
+    UNION ALL SELECT 'testuser1', 105, '2026-11-09', '2026-11-10', 4, NULL, '예약확정', NULL
+    UNION ALL SELECT 'testuser2', 112, '2026-11-12', '2026-11-13', 1, NULL, '취소', '2026-09-25 14:20:00'
+    UNION ALL SELECT 'admin', 119, '2026-11-16', '2026-11-17', 2, NULL, '예약확정', NULL
+    UNION ALL SELECT 'testuser1', 126, '2026-11-19', '2026-11-20', 1, NULL, '예약확정', NULL
+    UNION ALL SELECT 'testuser2', 133, '2026-11-23', '2026-11-24', 3, NULL, '예약확정', NULL
+) v
+JOIN (SELECT program_id, ROW_NUMBER() OVER (ORDER BY program_id) AS rn FROM TEMPLE_STAY_PROGRAM) p ON p.rn = v.nth;
 
 
 -- =====================================================================
@@ -49,17 +55,21 @@ INSERT INTO TEMPLE_STAY_RESERVATION
 --     ([1] 20건 중 10건을 과거 날짜로 복제. 후기 작성 테스트 등 재사용 목적)
 -- =====================================================================
 INSERT INTO TEMPLE_STAY_RESERVATION
-    (login_id, program_id, start_date, end_date, participant_count, note, status, canceled_at) VALUES
-    ('testuser1',   2, '2026-06-10', '2026-06-11', 2, NULL, '이용완료', NULL),
-    ('testuser2',   7, '2026-06-15', '2026-06-16', 1, NULL, '이용완료', NULL),
-    ('admin',      14, '2026-07-01', '2026-07-02', 3, NULL, '이용완료', NULL),
-    ('testuser1',  21, '2026-07-10', '2026-07-11', 1, NULL, '이용완료', NULL),
-    ('testuser2',  28, '2026-07-18', '2026-07-19', 2, NULL, '이용완료', NULL),
-    ('testuser1',  42, '2026-08-01', '2026-08-02', 4, NULL, '이용완료', NULL),
-    ('testuser2',  49, '2026-08-08', '2026-08-09', 2, NULL, '이용완료', NULL),
-    ('admin',      56, '2026-08-15', '2026-08-16', 1, NULL, '이용완료', NULL),
-    ('testuser2',  70, '2026-08-22', '2026-08-23', 1, NULL, '이용완료', NULL),
-    ('admin',      77, '2026-08-29', '2026-08-30', 3, NULL, '이용완료', NULL);
+    (login_id, program_id, start_date, end_date, participant_count, note, status, canceled_at)
+SELECT v.login_id, p.program_id, v.start_date, v.end_date, v.participant_count, v.note, v.status, v.canceled_at
+FROM (
+    SELECT 'testuser1' AS login_id, 2 AS nth, '2026-06-10' AS start_date, '2026-06-11' AS end_date, 2 AS participant_count, NULL AS note, '이용완료' AS status, NULL AS canceled_at
+    UNION ALL SELECT 'testuser2', 7, '2026-06-15', '2026-06-16', 1, NULL, '이용완료', NULL
+    UNION ALL SELECT 'admin', 14, '2026-07-01', '2026-07-02', 3, NULL, '이용완료', NULL
+    UNION ALL SELECT 'testuser1', 21, '2026-07-10', '2026-07-11', 1, NULL, '이용완료', NULL
+    UNION ALL SELECT 'testuser2', 28, '2026-07-18', '2026-07-19', 2, NULL, '이용완료', NULL
+    UNION ALL SELECT 'testuser1', 42, '2026-08-01', '2026-08-02', 4, NULL, '이용완료', NULL
+    UNION ALL SELECT 'testuser2', 49, '2026-08-08', '2026-08-09', 2, NULL, '이용완료', NULL
+    UNION ALL SELECT 'admin', 56, '2026-08-15', '2026-08-16', 1, NULL, '이용완료', NULL
+    UNION ALL SELECT 'testuser2', 70, '2026-08-22', '2026-08-23', 1, NULL, '이용완료', NULL
+    UNION ALL SELECT 'admin', 77, '2026-08-29', '2026-08-30', 3, NULL, '이용완료', NULL
+) v
+JOIN (SELECT program_id, ROW_NUMBER() OVER (ORDER BY program_id) AS rn FROM TEMPLE_STAY_PROGRAM) p ON p.rn = v.nth;
 
 
 -- =====================================================================
