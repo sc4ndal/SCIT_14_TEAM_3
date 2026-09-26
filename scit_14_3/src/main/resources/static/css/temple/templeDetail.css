@@ -1,0 +1,31 @@
+.back-link-top { display:inline-block; margin:20px 0 0 32px; }
+/* 사진 + 지도를 위아래로 붙여서 하나의 덩어리처럼 보이게 함 - 사진은 위쪽 모서리만,
+   지도는 아래쪽 모서리만 둥글리고 사이 여백/테두리를 없앰 */
+.photo-map-group { border-radius:10px; overflow:hidden; border:1px solid var(--ink-faint,#ccc); }
+#temple-map { width:100%; height:280px; display:block; }
+
+/* 사찰 대표 사진 - 사진이 없어도 자리는 그대로 확보해서 레이아웃이 안 흔들리게 함 */
+.temple-photo { width:100%; height:280px; background:var(--secondary); }
+.temple-photo img { width:100%; height:100%; object-fit:cover; display:block; }
+.temple-photo-placeholder {
+	width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+	color:var(--text-tertiary); font-size:14px;
+}
+
+.info-block { margin-top:20px; }
+.info-block h3 { font-size:14px; margin-bottom:6px; }
+.program-card-list { display:grid; gap:12px; margin-top:10px; }
+.program-card {
+	display:block; border:1px solid var(--line,#ddd); border-radius:10px;
+	padding:14px 16px; text-decoration:none; color:inherit;
+}
+.program-card:hover { border-color:var(--wood-dark,#5c4a33); }
+.program-card strong { display:block; margin-bottom:4px; }
+.program-card span { font-size:13px; color:var(--ink-soft,#777); }
+
+#favorite-btn {
+	border:none; background:none; cursor:pointer;
+	font-size:0.7em; line-height:1; vertical-align:middle;
+	color:#ccc; padding:0 0 0 8px;
+}
+#favorite-btn.active { color:#f4c25c; }

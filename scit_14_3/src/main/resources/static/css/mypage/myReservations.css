@@ -1,0 +1,335 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #f8f4ef;
+  --paper: #fdfaf6;
+  --secondary: #efe9e1;
+  --muted-bg: #ede7de;
+  --muted-solid: #928c82;
+  --text: #27211b;
+  --destructive: #c0392b;
+
+  --brown: #9b6845;
+  --green: #5c7a62;
+  --blue: #6b7a9e;
+  --gold: #8a6e3c;
+
+  --text-primary: rgba(39, 33, 27, .90);
+  --text-secondary: rgba(39, 33, 27, .60);
+  --text-tertiary: rgba(39, 33, 27, .45);
+  --text-muted: rgba(39, 33, 27, .30);
+
+  --line: rgba(39, 33, 27, 0.09);
+
+  --serif: "Noto Serif KR", Batang, serif;
+  --sans: "Noto Sans KR", sans-serif;
+}
+
+* { box-sizing: border-box; }
+a {
+    color: inherit;
+    text-decoration: none;
+}
+.page-title {
+  margin: 0 0 20px;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 21px;
+  color: var(--text-primary);
+}
+
+#list-view h2 {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 15px;
+  margin: 4px 0 16px;
+  color: var(--text-secondary);
+}
+
+.reservation-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px 22px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.reservation-card:hover {
+  border-color: rgba(39, 33, 27, 0.18);
+  box-shadow: 0 4px 14px rgba(39, 33, 27, 0.05);
+}
+.reservation-card .info { flex: 1; min-width: 0; }
+.reservation-card .info h3 {
+  margin: 0 0 5px;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 15.5px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.reservation-card .info p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-tertiary);
+}
+.reservation-card .meta { text-align: right; flex-shrink: 0; }
+.reservation-card .meta .date {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin-bottom: 7px;
+}
+.reservation-card .meta .applied-at {
+  margin: 0 0 7px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+.status-예약대기 { background: rgba(201, 138, 46, .14); color: #c98a2e; }
+.status-예약확정 { background: rgba(92, 122, 98, .13); color: var(--green); }
+.status-취소     { background: rgba(192, 57, 43, .10); color: var(--destructive); }
+.status-이용완료 { background: var(--muted-bg); color: var(--text-tertiary); }
+
+.review-status-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+.review-status-badge.review-done { background: rgba(92, 122, 98, .13); color: var(--green); }
+.review-status-badge.review-pending { background: rgba(107, 122, 158, .13); color: var(--blue); }
+
+.empty-msg {
+  text-align: center;
+  color: var(--text-tertiary);
+  padding: 40px 0;
+  font-size: 13.5px;
+}
+
+/* 상태 필터 토글 */
+.status-filter {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 18px;
+  flex-wrap: wrap;
+}
+.status-filter button {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--text-secondary);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.status-filter button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+.status-filter button:hover { border-color: rgba(39, 33, 27, 0.25); }
+
+.status-filter button.active {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: var(--paper);
+  font-weight: 600;
+}
+
+/* 상태별 버튼 색 */
+.status-filter button[data-status="예약대기"] { color: #c98a2e; }
+.status-filter button[data-status="예약확정"] { color: var(--green); }
+.status-filter button[data-status="취소"] { color: var(--destructive); }
+.status-filter button[data-status="이용완료"] { color: var(--text-tertiary); }
+.status-filter button[data-status="예약대기"].active {
+  background: #c98a2e;
+  border-color: #c98a2e;
+  color: #fff;
+}
+.status-filter button[data-status="예약확정"].active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.status-filter button[data-status="취소"].active {
+  background: var(--destructive);
+  border-color: var(--destructive);
+  color: #fff;
+}
+.status-filter button[data-status="이용완료"].active {
+  background: var(--muted-solid);
+  border-color: var(--muted-solid);
+  color: var(--paper);
+}
+
+#detail-view { display: none; }
+
+/* 목록으로 / 프로그램 정보 - 눈에 잘 띄게 큼직한 버튼으로 */
+.detail-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.back-btn {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--sans);
+  cursor: pointer;
+  padding: 11px 20px;
+  border-radius: 999px;
+}
+.back-btn:hover { border-color: rgba(39, 33, 27, 0.25); background: var(--secondary); }
+.program-link-btn {
+  display: inline-block;
+  background: var(--blue);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--sans);
+  padding: 11px 20px;
+  border-radius: 999px;
+}
+.program-link-btn:hover { opacity: .88; }
+
+.detail-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.detail-hero { background: var(--secondary); padding: 26px 24px; }
+.detail-hero .status-badge { margin-bottom: 12px; }
+.detail-hero h2 {
+  margin: 0 0 6px;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 19px;
+  color: var(--text-primary);
+}
+.detail-hero p { margin: 0; font-size: 12.5px; color: var(--text-secondary); }
+.detail-section { padding: 20px 24px; border-top: 1px solid var(--line); }
+.detail-section h4 {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: var(--text-tertiary);
+}
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 0;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--line);
+}
+.detail-row:last-child { border-bottom: none; }
+.detail-row span:first-child { color: var(--text-secondary); }
+.detail-row span:last-child { color: var(--text-primary); font-weight: 500; }
+
+/* 설명처럼 값이 길어질 수 있는 행은 라벨:값 한 줄 배치(space-between)로는 이상하게 잘려서
+   보이므로, 라벨을 위에 두고 값은 아래에 줄바꿈되게 세로로 쌓음 */
+.detail-row.detail-row-wrap {
+  display: block;
+}
+.detail-row.detail-row-wrap span:first-child {
+  display: block;
+  margin-bottom: 6px;
+}
+.detail-row.detail-row-wrap span:last-child {
+  display: block;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.cancel-area { padding: 20px 24px 28px; }
+.review-btn-row {
+  display: none;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.review-btn,
+.review-delete-btn {
+  flex: 1;
+  padding: 13px;
+  border-radius: 6px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+.review-btn {
+  background: var(--paper);
+  border: 1px solid var(--blue);
+  color: var(--blue);
+}
+.review-btn:hover { background: rgba(107, 122, 158, .08); }
+.review-delete-btn {
+  display: none;
+  background: var(--paper);
+  border: 1px solid var(--destructive);
+  color: var(--destructive);
+}
+.review-delete-btn:hover { background: rgba(192, 57, 43, .06); }
+.cancel-btn {
+  width: 100%;
+  padding: 13px;
+  background: var(--paper);
+  border: 1px solid var(--destructive);
+  color: var(--destructive);
+  border-radius: 6px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cancel-btn:hover { background: rgba(192, 57, 43, .06); }
+.cancel-btn:disabled {
+  border-color: var(--line);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  background: var(--muted-bg);
+}
+.cancel-note {
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 8px;
+}
+.temple-inquiry-link {
+  display: block;
+  text-align: center;
+  margin-top: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: underline;
+}
+.temple-inquiry-link:hover { color: var(--brown); }

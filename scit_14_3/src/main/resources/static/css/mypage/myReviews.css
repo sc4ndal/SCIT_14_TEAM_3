@@ -1,0 +1,119 @@
+.page-title {
+  margin: 0 0 20px;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 21px;
+  color: var(--text-primary);
+}
+#review-list-section h2 {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 15px;
+  margin: 4px 0 16px;
+  color: var(--text-secondary);
+}
+
+.review-item-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 20px 22px;
+  margin-bottom: 12px;
+}
+.review-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.review-item-header h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 15.5px;
+  color: var(--text-primary);
+}
+.review-item-rating {
+  flex-shrink: 0;
+  color: var(--gold);
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+.review-item-meta {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--text-tertiary);
+}
+.review-item-meta--date { margin-bottom: 12px; }
+.review-item-meta .meta-link {
+  color: var(--blue);
+  text-decoration: none;
+  font-weight: 600;
+}
+.review-item-meta .meta-link:hover { text-decoration: underline; }
+.review-item-content {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-line;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.review-item-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.review-item-images img {
+  width: 84px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+}
+
+.review-item-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.review-item-edit-btn,
+.review-item-delete-btn {
+  padding: 7px 16px;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.review-item-edit-btn {
+  background: var(--paper);
+  border: 1px solid var(--blue);
+  color: var(--blue);
+}
+.review-item-edit-btn:hover { background: rgba(107, 122, 158, .08); }
+.review-item-delete-btn {
+  background: var(--paper);
+  border: 1px solid var(--destructive);
+  color: var(--destructive);
+}
+.review-item-delete-btn:hover { background: rgba(192, 57, 43, .06); }
+
+.empty-msg {
+  text-align: center;
+  color: var(--text-tertiary);
+  padding: 40px 0;
+  font-size: 13.5px;
+}
+
+.reviews-more {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 14px;
+}
+.reviews-more a {
+  color: var(--brown);
+  text-decoration: none;
+}

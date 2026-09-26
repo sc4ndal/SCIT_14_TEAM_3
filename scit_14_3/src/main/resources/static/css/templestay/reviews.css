@@ -1,0 +1,293 @@
+:root {
+  --bg: #efe9dd;
+  --bg-raised: #f7f3ea;
+  --ink: #2a2620;
+  --ink-soft: #5b5346;
+  --ink-faint: #6f6555; /* 원래 #8b8272는 --bg-raised 대비 3.43:1로 WCAG AA(4.5:1) 미달 - 4.68:1로 보정 */
+  --line: #d9d0bd;
+  --line-soft: #e4dccb;
+  --pine: #3d5646;
+  --pine-deep: #2b3e33;
+  --pine-tint: #e2e8e0;
+  --gold: #a9822f;
+  --gold-tint: #f1e6c8;
+  --shadow: 0 1px 2px rgba(42,38,32,0.06), 0 8px 24px -12px rgba(42,38,32,0.18);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #211d18; --bg-raised: #2a251e; --ink: #eee7d8; --ink-soft: #bcb199; --ink-faint: #a0977f;
+    --line: #3d372c; --line-soft: #332e25; --pine: #8fae9b; --pine-deep: #b7cbbe; --pine-tint: #29352e;
+    --gold: #d8b866; --gold-tint: #362d1c; --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  }
+  :root:not([data-theme="light"]) .review-toolbar select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a0977f' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #211d18; --bg-raised: #2a251e; --ink: #eee7d8; --ink-soft: #bcb199; --ink-faint: #a0977f;
+  --line: #3d372c; --line-soft: #332e25; --pine: #8fae9b; --pine-deep: #b7cbbe; --pine-tint: #29352e;
+  --gold: #d8b866; --gold-tint: #362d1c; --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+}
+:root[data-theme="dark"] .review-toolbar select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a0977f' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+* { box-sizing: border-box; }
+a { color: inherit; text-decoration: none; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: "Noto Sans KR", "Malgun Gothic", sans-serif; line-height: 1.65; font-size: 15.5px;
+}
+h1, h2, h3 {
+  font-family: "Noto Serif KR", "Batang", serif; color: var(--ink); text-wrap: balance; font-weight: 700; margin: 0;
+}
+button { font-family: inherit; }
+
+header {
+  padding: 48px 24px 0; text-align: center; border-bottom: 1px solid var(--line);
+  background: radial-gradient(60% 60% at 50% 0%, var(--pine-tint), transparent 70%);
+}
+header h1 { font-size: clamp(26px, 4vw, 34px); }
+header h1::before {
+  content: "TEMPLESTAY REVIEWS"; display: block; font-family: "IBM Plex Mono", monospace;
+  font-size: 12px; letter-spacing: 0.16em; color: var(--pine); font-weight: 600; margin-bottom: 16px;
+}
+
+main { max-width: 880px; margin: 0 auto; padding: 40px 24px 96px; }
+
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: 1px solid var(--line); color: var(--ink-soft);
+  font-weight: 600; font-size: 14px; padding: 11px 22px; border-radius: 100px; margin-bottom: 20px;
+}
+.back-link:hover { border-color: var(--pine); color: var(--pine-deep); }
+
+/* 검색 / 정렬 툴바 - 목록 아래, 페이징 바로 위에 둔다.
+   정렬: 작성순(최신순 / 오래된순) · 별점순(높은순 / 낮은순) */
+.review-toolbar {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+  margin-top: 18px;
+}
+.review-toolbar select,
+.review-toolbar input {
+  font-family: inherit; font-size: 14px; color: var(--ink);
+  background: var(--bg-raised); border: 1px solid var(--line); border-radius: 100px;
+  padding: 11px 18px;
+}
+.review-toolbar .search-input { flex: 1; min-width: 180px; }
+.review-toolbar select {
+  /* 네이티브 드롭다운 화살표는 padding으로 위치가 안 움직여서, appearance:none으로 끄고
+     커스텀 화살표(SVG)를 넣어 위치를 직접 잡는다. 이 select는 높이가 약 41px(반지름 ~20px)
+     인 알약 모양이라, 오른쪽 끝에서 20px 지점이 곡선이 시작되는 위치다. */
+  cursor: pointer;
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  /* select는 line-height가 딱 내용 높이만큼이라 위아래 패딩(11px/11px)이 같아도, 폰트의
+     줄상자 자체가 밑줄 여백(하강폭)을 위쪽보다 더 많이 차지해서 글자가 살짝 위로 붙어
+     보인다 - 위쪽 패딩을 살짝 줄이고 아래쪽을 그만큼 늘려서 시각적으로 가운데로 맞춘다. */
+  padding: 9px 34px 13px 18px;
+  /* background-image로 불러온 SVG는 currentColor가 select의 color(var(--ink))를 따라가지
+     않고 검정으로 고정돼 다크모드에서 잘 안 보였다 - 라이트/다크 각각 --ink-faint 값을 그대로
+     색상 코드로 박아 넣고, 다크모드 블록에서 이 규칙을 덮어쓴다. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236f6555' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 20px center;
+  background-size: 10px 6px;
+}
+.review-toolbar .search-btn {
+  background: var(--pine); color: var(--bg-raised); font-weight: 700; font-size: 14px;
+  border: none; border-radius: 100px; padding: 11px 24px; cursor: pointer;
+}
+.review-toolbar .search-btn:hover { transform: translateY(-1px); }
+
+/* 리뷰 목록 (아코디언) - 카드 사이는 구분선 대신 여백으로 나누고, 카드 배경을 페이지
+   배경(--bg)보다 밝은 --bg-raised로 줘서 경계가 은은하게 드러나게 한다. */
+#review-list { display: flex; flex-direction: column; gap: 12px; }
+.review-item {
+  border: 1px solid var(--line); border-radius: 16px; background: var(--bg-raised);
+  box-shadow: var(--shadow); overflow: hidden; transition: border-color 0.15s ease;
+}
+.review-item:hover { border-color: var(--pine); }
+
+.review-row { display: flex; align-items: stretch; }
+
+.review-summary {
+  flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 14px;
+  background: none; border: none; text-align: left; cursor: pointer;
+  padding: 18px 22px; color: inherit;
+}
+/* 자세히 hover 배경은 review-summary 버튼 영역에만 걸려있어서 좋아요 버튼 위에서는
+   카드가 안 밝아졌다 - 카드(review-item) 전체에 마우스가 있으면 두 영역 다 같이 밝히고,
+   좋아요 버튼 고유의 hover(금색 강조)는 .like-btn:hover에 그대로 둔다. */
+.review-item:hover .review-summary,
+.review-item:hover .like-btn { background: var(--bg); }
+
+.like-btn {
+  /* 좋아요 개수 자릿수(1 vs 19 vs 123)에 따라 버튼 폭이 변하면, flex:1인 review-summary의
+     오른쪽 경계(=화살표 가로 위치)도 그만큼 밀려서 행마다 화살표가 좌우로 흔들려 보였다.
+     폭을 고정하고 안에서 가운데 정렬해서 숫자 자릿수가 바뀌어도 버튼 전체 폭은 그대로 유지한다. */
+  flex-shrink: 0; width: 80px; display: flex; align-items: center; justify-content: flex-start; gap: 6px;
+  background: none; border: none; color: var(--ink-faint);
+  font-size: 13px; padding: 0 22px 0 8px; cursor: pointer;
+}
+.like-btn:hover { color: var(--gold); }
+.like-btn .like-btn__icon::before { content: "\2661"; font-size: 16px; }
+.like-btn.is-liked { color: var(--gold); }
+.like-btn.is-liked .like-btn__icon::before { content: "\2665"; }
+/* 관리자 계정은 좋아요를 누를 순 없어도 개수는 보여준다(reviews.js) - 버튼이 아니라
+   span이라 클릭은 애초에 안 되지만, hover 시 금색으로 바뀌는 건 눌러도 되는 것처럼
+   보여서 취소한다. */
+.like-btn--readonly { cursor: default; }
+.like-btn--readonly:hover { color: var(--ink-faint); }
+.review-summary .col-main { flex: 1; min-width: 0; }
+.review-summary .review-title {
+  display: block; /* span은 인라인이라 overflow/text-overflow가 적용 안 돼 말줄임이 무시됨 */
+  /* 정보 위계: 절/프로그램명(1차, 가장 밝음) > 리뷰 내용(2차, 이 줄) > 작성자/일시(3차, 가장 어두움) */
+  font-weight: 700; font-size: 15.5px; color: var(--ink-soft);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  /* 접힌 상태에선 제목이 col-main 전체 폭(아래 별점 줄의 별점까지 포함한 폭)까지 꽉 차게
+     말줄임돼서, 영어 번역처럼 원문보다 길어지는 경우 제목이 바로 아래 별점 위치까지
+     바짝 붙어 보였다 - 별점만큼 오른쪽을 비워둬서 별점 앞에서 먼저 끊기게 한다.
+     별(★★★★★)은 글자 수(5개)는 항상 같아도 채워진 별(★)이 빈 별(☆)보다 폭이 넓어서
+     5점(전부 ★)일 때가 가장 넓다(실측 약 81px) - 그 최대폭 기준으로 여유를 둔다. */
+  padding-right: 96px;
+}
+.review-summary .review-meta {
+  margin-top: 5px; font-size: 12.5px; color: var(--ink-faint);
+}
+.review-summary .review-meta .meta-line {
+  display: flex; flex-wrap: wrap; gap: 4px 10px;
+}
+.review-summary .review-meta .meta-line + .meta-line { margin-top: 3px; }
+.review-summary .review-meta .temple { color: var(--pine); font-weight: 600; flex-shrink: 0; }
+/* 프로그램명이 길면(예: 대흥사 리뷰) 절/별점까지 줄바꿈되어 카드 높이가 들쭉날쭉해졌다 -
+   절/별점은 고정폭 유지하고 프로그램명만 남는 폭에서 줄어들다 말줄임(...)되게 한다. */
+.review-summary .review-meta .prog {
+  flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--ink); font-weight: 600; /* 1차 정보라 절 이름과 같은 밝기로 */
+}
+.review-summary .stars { color: var(--gold); letter-spacing: 1px; font-size: 12.5px; white-space: nowrap; flex-shrink: 0; }
+/* 상세박스의 별점(dd 안 .stars)은 .review-summary 밖이라 위 규칙이 안 먹어서 dd의 밝은 색을
+   그대로 물려받아 노란색이 아니었다 - 여기서 별도로 금색을 지정한다. */
+.review-detail .detail-fields dd .stars { color: var(--gold); letter-spacing: 1px; }
+.review-summary .chevron {
+  flex-shrink: 0; display: flex; align-items: center; gap: 4px;
+  color: var(--ink-faint); font-size: 12px;
+  align-self: center; /* .review-summary는 col-main을 위쪽 정렬(align-items:flex-start)하는데
+    이 화살표까지 같이 위로 붙어버려서, 오른쪽의 좋아요 아이콘(가운데 정렬)과 높이가
+    안 맞았다 - 얘만 따로 가운데로 맞춘다. */
+}
+.review-summary .chevron-icon { display: inline-block; transition: transform 0.15s ease; }
+/* hover(.review-item:hover)는 review-summary/like-btn 둘 다 같이 밝히는데, 펼친(open) 상태의
+   강조 배경은 review-summary에만 걸려 있어서 좋아요 버튼 앞에서 배경이 끊겨 보였다 -
+   마찬가지로 like-btn까지 같이 밝힌다. */
+.review-item.open .review-summary,
+.review-item.open .like-btn { background: var(--bg); }
+/* 아코디언을 펼치면 제목을 말줄임 없이 전부 보여준다 - 접혀 있을 때만 한 줄로 자른다 */
+.review-item.open .review-title {
+  overflow: visible; text-overflow: clip; white-space: normal; word-break: break-word;
+  padding-right: 0; /* 펼치면 별점 줄 자체가 없어지니 접힌 상태의 오른쪽 여백 예약은 필요 없다 */
+}
+.review-item.open .chevron-icon { transform: rotate(180deg); }
+/* 아코디언을 펼칠 때 목록을 다시 그리면(innerHTML) 그때마다 번역이 새로 돌아서 외국어에서
+   깜빡였다 - 접힘/펼침 두 상태의 제목과 라벨을 처음부터 다 그려두고 클래스(.open)로 보이고
+   숨기기만 해서, 펼치고 접어도 화면의 글자는 다시 만들어지지 않는다(번역도 다시 안 돎). */
+.review-summary .title-open, .review-summary .label-open { display: none; }
+.review-item.open .review-summary .title-open { display: block; }
+.review-item.open .review-summary .label-open { display: inline; }
+.review-item.open .review-summary .title-closed,
+.review-item.open .review-summary .label-closed,
+.review-item.open .review-summary .review-meta { display: none; }
+
+.review-detail { display: none; padding: 4px 22px 24px; }
+.review-item.open .review-detail { display: block; }
+.review-detail .detail-fields {
+  display: grid; grid-template-columns: auto 1fr; gap: 6px 16px;
+  font-size: 13px; color: var(--ink-soft);
+  border: 1px solid var(--line-soft); border-radius: 12px; padding: 14px 16px; background: var(--bg-raised);
+  margin-bottom: 16px;
+}
+/* 라벨은 어둡게(3차) / 값은 밝게(1차)로 대비를 줘서 key-value 구조가 한눈에 읽히게 한다 */
+.review-detail .detail-fields dt { color: var(--ink-faint); font-weight: 600; }
+.review-detail .detail-fields dd {
+  margin: 0; color: var(--ink); word-break: break-word; overflow-wrap: anywhere;
+}
+.review-detail .detail-fields dd.content-cell {
+  font-size: 14px; white-space: pre-wrap; grid-column: 2;
+}
+/* 사찰명 -> 사찰 소개, 프로그램명 -> 프로그램 상세, 작성자 -> 해당 작성자 리뷰만 검색 */
+.review-detail .detail-fields .field-link,
+.review-detail .detail-fields .author-filter {
+  color: var(--pine); font: inherit; font-weight: 600;
+  background: none; border: none; padding: 0; cursor: pointer;
+}
+.review-detail .detail-fields .field-link:hover,
+.review-detail .detail-fields .author-filter:hover {
+  color: var(--pine-deep); text-decoration: underline;
+}
+.review-detail .review-images {
+  display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px;
+}
+.review-detail .review-images img {
+  width: 120px; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line);
+  cursor: zoom-in;
+}
+
+/* 본인이 쓴 리뷰에만 노출되는 수정/삭제 버튼 */
+.review-detail .review-actions {
+  margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;
+}
+.review-detail .edit-link,
+.review-detail .delete-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: 1px solid var(--line); color: var(--ink-soft);
+  font-family: inherit; font-weight: 600; font-size: 13px;
+  padding: 8px 16px; border-radius: 100px; cursor: pointer;
+}
+.review-detail .edit-link:hover { border-color: var(--pine); color: var(--pine-deep); }
+.review-detail .delete-btn:hover { border-color: #c25b45; color: #c25b45; }
+
+/* 사진 크게 보기(라이트박스) - 여러 장이면 ‹ › 로 이동 */
+.image-lightbox {
+  position: fixed; inset: 0; z-index: 1000;
+  display: none; align-items: center; justify-content: center; gap: 8px;
+  padding: clamp(16px, 4vw, 48px); background: rgba(12, 10, 8, 0.86);
+}
+.image-lightbox.open { display: flex; }
+.image-lightbox .lb-img {
+  max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain;
+  border-radius: 8px; box-shadow: 0 12px 48px rgba(0,0,0,0.55);
+}
+.image-lightbox .lb-close {
+  position: absolute; top: 14px; right: 20px;
+  background: none; border: none; color: #fff; font-size: 30px; line-height: 1;
+  cursor: pointer; opacity: 0.8;
+}
+.image-lightbox .lb-close:hover { opacity: 1; }
+.image-lightbox .lb-nav {
+  flex-shrink: 0; width: 44px; height: 44px; border-radius: 100px;
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25);
+  color: #fff; font-size: 22px; line-height: 1; cursor: pointer;
+}
+.image-lightbox .lb-nav:hover:not(:disabled) { background: rgba(255,255,255,0.22); }
+.image-lightbox .lb-nav:disabled { opacity: 0.3; cursor: default; }
+.image-lightbox .lb-counter {
+  position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+  color: #fff; font-size: 13px; letter-spacing: 0.04em; opacity: 0.85;
+}
+
+.review-empty { padding: 56px 24px; text-align: center; color: var(--ink-faint); font-size: 14px; }
+
+/* 페이징 - 10개 단위 */
+#review-pagination {
+  display: flex; justify-content: center; flex-wrap: wrap; gap: 6px;
+  margin-top: 24px;
+}
+#review-pagination button {
+  min-width: 36px; padding: 8px 12px; font-size: 13px;
+  background: var(--bg-raised); color: var(--ink-soft);
+  border: 1px solid var(--line); border-radius: 8px; cursor: pointer;
+}
+#review-pagination button:hover:not(:disabled) { border-color: var(--pine); color: var(--pine-deep); }
+#review-pagination button.active {
+  background: var(--pine); color: var(--bg-raised); border-color: var(--pine); font-weight: 700;
+}
+#review-pagination button:disabled { opacity: 0.4; cursor: default; }

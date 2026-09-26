@@ -1,0 +1,9 @@
+.account-tabs{display:flex;margin:0 32px;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.account-tab{flex:1;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;
+    color:var(--ink-soft);cursor:pointer;padding:12px 0;}
+.account-tab + .account-tab{border-left:1px solid var(--border);}
+.account-tab.active{color:#fff;background:var(--wood-dark);}
+.tab-desc{text-align:center;font-size:13px;color:var(--ink-soft);margin:14px 32px 0;}
+.small-nav-links{display:flex;justify-content:space-between;padding:0 32px 28px;font-size:12px;}
+.small-nav-links a{color:var(--ink-soft);text-decoration:none;}
+.small-nav-links a:hover{color:var(--wood-dark);}
