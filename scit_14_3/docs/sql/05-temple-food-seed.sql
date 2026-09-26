@@ -1,23 +1,14 @@
 -- ============================================================
--- TEMPLE_FOOD_RECOMMENDATION(사찰음식 추천) 데이터 - 2026-09-10 전면 재작성
+-- TEMPLE_FOOD_RECOMMENDATION(사찰음식 추천) 데이터 (20건)
 --
 -- "사찰 음식"(/info/food) 화면이 읽어가는 데이터입니다.
---
--- 이번에 바뀐 점
---   1) recipe_url 컬럼을 정식으로 추가했다(buddhist-site-schema.sql도 같이 수정) -
---      예전엔 recipe 텍스트 마지막 줄에 "참고 레시피: <url>" 형식으로 끼워 넣고
---      TempleFoodService가 정규식으로 분리했는데, 이제 그 파싱 로직 없이 recipe_url
---      컬럼을 그대로 DTO에 매핑한다.
---   2) 20개 음식 전부 만개의레시피(10000recipe.com)에서 실제 존재하는 레시피를
---      하나씩 검색해서 매칭했다 - 전부 확인된 실제 URL이다(추측/생성 아님).
+-- 20개 음식 전부 만개의레시피(10000recipe.com)에서 실제 존재하는 레시피를 하나씩 검색해서
+-- 매칭했고, 그 링크를 recipe_url 컬럼에 저장합니다(추측/생성한 URL 아님).
 --
 -- ⚠ 재실행 안내: 기존 TEMPLE_FOOD_RECOMMENDATION 데이터를 전부 지우고 다시 넣습니다.
--- FAVORITE_FOOD가 TEMPLE_FOOD_RECOMMENDATION을 참조하므로, 누군가 이미 즐겨찾기했다면
--- 재실행 전 꼭 확인하세요(ON DELETE CASCADE로 같이 삭제됨). 재작성 시점(2026-09-10)에는
--- 즐겨찾기 데이터가 없어 안전하게 재실행했습니다.
+-- FAVORITE_FOOD가 TEMPLE_FOOD_RECOMMENDATION을 참조하므로(ON DELETE CASCADE),
+-- 회원이 저장해 둔 사찰음식 즐겨찾기도 같이 삭제됩니다.
 -- ============================================================
-
--- USE scit_14_3;   -- 사용 중인 스키마에 맞게 여세요
 
 DELETE FROM FAVORITE_FOOD;
 DELETE FROM TEMPLE_FOOD_RECOMMENDATION;

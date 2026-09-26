@@ -47,7 +47,7 @@ const PROGRAM_I18N = {
             detailPrice: '요금 안내', detailPriceType: '구분', detailPricePrice: '가격', detailPerPerson: '1인',
             detailNotes: '유의사항', detailRefund: '환불 규정',
             reserveBtn: '예약 신청', fullBtn: '정원이 마감되었습니다',
-            priceNote: '(성인 가격 기준)', dateLabel: '날짜',
+            dateLabel: '날짜',
 
             // ---- 전체 후기(reviews) ----
             revPageTitle: '템플스테이 후기', revBack: '← 템플스테이 예약', revLoadingMsg: '후기를 불러오는 중입니다…',
@@ -97,7 +97,21 @@ const PROGRAM_I18N = {
             failGeneric: '예약 신청 중 오류가 발생했습니다.',
             payCanceled: '결제를 취소했습니다. 예약도 함께 취소되었습니다.',
             payFailed: '결제에 실패했습니다. 예약도 함께 취소되었습니다.',
-            payDoneNoResult: '결제는 완료됐지만 결과를 불러오지 못했습니다. 마이페이지에서 예약 내역을 확인해 주세요.'
+            payDoneNoResult: '결제는 완료됐지만 결과를 불러오지 못했습니다. 마이페이지에서 예약 내역을 확인해 주세요.',
+            // 예약 2단계 약관 동의(체크박스 + 모달). 동의 문구는 링크 앞뒤 글자를 따로 둬서 언어별 어순을 맞춘다
+            consentPrefix: '', consentLink: '개인정보 수집·이용 및 취소/환불 규정', consentSuffix: '에 동의합니다.',
+            termsTitle: '개인정보 수집·이용 및 취소/환불 규정', termsClose: '닫기', termsConfirm: '확인했습니다',
+            termsS1Title: '1. 개인정보 수집·이용 안내',
+            termsS1Intro: '템플스테이 예약 및 서비스 제공을 위해 아래와 같이 개인정보를 수집·이용합니다.',
+            termsS1Item1: '수집 항목 : 이름, 성별, 이메일, 연락처',
+            termsS1Item2: '수집 목적 : 예약 확인, 참가자 안내, 결제 확인',
+            termsS1Item3: '보유 기간 : 예약 완료일로부터 1년',
+            termsS2Title: '2. 취소/환불 규정',
+            termsS2Intro: '프로그램별 세부 환불 규정은 상세 페이지에 안내되며, 공통 기준은 다음과 같습니다.',
+            termsS2Item1: '체크인 7일 전까지 : 전액 환불',
+            termsS2Item2: '체크인 3일 전까지 : 50% 환불',
+            termsS2Item3: '체크인 3일 이내 : 환불 불가',
+            alertAgreeTerms: '개인정보 수집·이용 및 취소/환불 규정에 동의해 주세요.'
         },
         ja: {
             filterRegion: '地域', filterTemple: '寺院', filterType: 'プログラム種別', filterLanguage: '言語', filterHeadcount: '人数',
@@ -108,7 +122,7 @@ const PROGRAM_I18N = {
             detailPrice: '料金案内', detailPriceType: '区分', detailPricePrice: '料金', detailPerPerson: '1名',
             detailNotes: '注意事項', detailRefund: '返金規定',
             reserveBtn: '予約申込', fullBtn: '定員に達しました',
-            priceNote: '(大人料金基準)', dateLabel: '日付',
+            dateLabel: '日付',
 
             revPageTitle: 'テンプルステイのレビュー', revBack: '← テンプルステイ予約', revLoadingMsg: 'レビューを読み込んでいます…',
             revSortAria: '並べ替え', sortLatest: '新しい順', sortOldest: '古い順', sortRatingDesc: '評価が高い順', sortRatingAsc: '評価が低い順',
@@ -153,7 +167,20 @@ const PROGRAM_I18N = {
             failGeneric: '予約の申込中にエラーが発生しました。',
             payCanceled: '決済をキャンセルしました。予約もキャンセルされました。',
             payFailed: '決済に失敗しました。予約もキャンセルされました。',
-            payDoneNoResult: '決済は完了しましたが、結果を読み込めませんでした。マイページで予約履歴をご確認ください。'
+            payDoneNoResult: '決済は完了しましたが、結果を読み込めませんでした。マイページで予約履歴をご確認ください。',
+            consentPrefix: '', consentLink: '個人情報の収集・利用およびキャンセル/返金規定', consentSuffix: 'に同意します。',
+            termsTitle: '個人情報の収集・利用およびキャンセル/返金規定', termsClose: '閉じる', termsConfirm: '確認しました',
+            termsS1Title: '1. 個人情報の収集・利用のご案内',
+            termsS1Intro: 'テンプルステイのご予約およびサービス提供のため、以下のとおり個人情報を収集・利用します。',
+            termsS1Item1: '収集項目：氏名、性別、メールアドレス、連絡先',
+            termsS1Item2: '収集目的：予約の確認、参加者へのご案内、決済の確認',
+            termsS1Item3: '保有期間：予約完了日から1年',
+            termsS2Title: '2. キャンセル/返金規定',
+            termsS2Intro: 'プログラムごとの詳細な返金規定は詳細ページに記載されており、共通の基準は次のとおりです。',
+            termsS2Item1: 'チェックイン7日前まで：全額返金',
+            termsS2Item2: 'チェックイン3日前まで：50%返金',
+            termsS2Item3: 'チェックイン3日以内：返金不可',
+            alertAgreeTerms: '個人情報の収集・利用およびキャンセル/返金規定に同意してください。'
         },
         en: {
             filterRegion: 'Region', filterTemple: 'Temple', filterType: 'Program Type', filterLanguage: 'Language', filterHeadcount: 'Participants',
@@ -164,7 +191,7 @@ const PROGRAM_I18N = {
             detailPrice: 'Pricing', detailPriceType: 'Type', detailPricePrice: 'Price', detailPerPerson: 'Per person',
             detailNotes: 'Notes', detailRefund: 'Refund Policy',
             reserveBtn: 'Reserve', fullBtn: 'Fully booked',
-            priceNote: '(per adult)', dateLabel: 'Date',
+            dateLabel: 'Date',
 
             revPageTitle: 'Templestay Reviews', revBack: '← Templestay Reservation', revLoadingMsg: 'Loading reviews…',
             revSortAria: 'Sort', sortLatest: 'Newest', sortOldest: 'Oldest', sortRatingDesc: 'Highest rated', sortRatingAsc: 'Lowest rated',
@@ -209,7 +236,20 @@ const PROGRAM_I18N = {
             failGeneric: 'An error occurred while submitting the reservation.',
             payCanceled: 'The payment was canceled. The reservation has also been canceled.',
             payFailed: 'The payment failed. The reservation has also been canceled.',
-            payDoneNoResult: 'The payment was completed but the result could not be loaded. Please check your reservations on My Page.'
+            payDoneNoResult: 'The payment was completed but the result could not be loaded. Please check your reservations on My Page.',
+            consentPrefix: 'I agree to the ', consentLink: 'Personal Information Collection/Use and Cancellation/Refund Policy', consentSuffix: '.',
+            termsTitle: 'Personal Information Collection/Use and Cancellation/Refund Policy', termsClose: 'Close', termsConfirm: 'I have read this',
+            termsS1Title: '1. Personal Information Collection and Use',
+            termsS1Intro: 'We collect and use personal information as follows to process your Temple Stay reservation and provide our service.',
+            termsS1Item1: 'Items collected: name, gender, email, phone number',
+            termsS1Item2: 'Purpose: reservation confirmation, participant guidance, payment confirmation',
+            termsS1Item3: 'Retention period: 1 year from the reservation completion date',
+            termsS2Title: '2. Cancellation/Refund Policy',
+            termsS2Intro: 'Detailed refund rules for each program are shown on its detail page. The common standard is as follows.',
+            termsS2Item1: 'Up to 7 days before check-in: full refund',
+            termsS2Item2: 'Up to 3 days before check-in: 50% refund',
+            termsS2Item3: 'Within 3 days of check-in: no refund',
+            alertAgreeTerms: 'Please agree to the Personal Information Collection/Use and Cancellation/Refund Policy.'
         }
     }
 };

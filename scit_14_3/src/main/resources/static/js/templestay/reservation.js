@@ -244,9 +244,7 @@ function renderProgramList() {
       <p class="program-temple-region no-translate">${trTempleRegion(p.templeName, p.region)}</p>
       <div class="program-card-footer">
         <div class="program-price">
-          <span class="price-adult no-translate">${trWon(p.price)}</span>
-          <span class="price-note no-translate" data-pi18n="priceNote">${trUi('priceNote')}</span>
-        </div>
+          <span class="price-adult no-translate">${trWon(p.price)}</span>        </div>
         <a class="program-detail-btn" href="/reservation/programs/${p.programId}">상세보기</a>
       </div>
     </div>

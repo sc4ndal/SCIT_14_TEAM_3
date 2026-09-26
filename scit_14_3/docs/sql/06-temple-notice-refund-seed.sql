@@ -1,10 +1,9 @@
 -- =====================================================================
 -- 사찰별 유의사항(TEMPLE.special_notice) / 환불 규정(TEMPLE.refund_policy) 채우기
--- buddhist-site-schema.sql로 TEMPLE 시드까지 실행한 뒤 이 파일을 실행하세요.
+-- 01-buddhist-site-schema.sql로 TEMPLE 시드까지 실행한 뒤 이 파일을 실행하세요.
 --
 -- 값 출처:
---  - buddhist-site-program-data.sql에 실제로 스크래핑된 프로그램 소개글 안에
---    환불/유의사항 관련 문장이 들어있는 사찰(1곳)은 그 문장을 그대로 사용.
+--  - 프로그램 소개글 안에 환불/유의사항 관련 문장이 들어있는 사찰은 그 문장을 그대로 사용.
 --  - 그 외(프로그램 소개글에 해당 문장이 없거나 프로그램 자체가 없는 사찰)는 공통 기본값을 사용 -
 --    환불 규정은 TempleStayReservationService.canceledMyReservation()이 실제로 강제하는
 --    "체크인 24시간 전까지만 취소 가능" 규칙 그대로, 유의사항은 여러 사찰 소개글에 공통으로
