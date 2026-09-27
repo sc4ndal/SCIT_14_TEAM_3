@@ -44,6 +44,12 @@ public class PaymentService {
 	 * @return
 	 */
 	public PaymentDTO reserved(PaymentDTO dto) {
+			// JS 쪽 검증(reservation.js)을 우회해서 요청이 와도 빈 입금자명으로 저장되지 않게 서버에서도 막는다.
+			// depositor_name 컬럼 자체는 NULL 허용이라(DB CHECK도 빈 문자열은 막지 못함) 여기서 확실히 걸러야 한다.
+			if (dto.getPaymentMethod() == PaymentEntity.PaymentMethod.계좌이체
+					&& (dto.getDepositorName() == null || dto.getDepositorName().isBlank())) {
+				throw new IllegalStateException("입금자명을 입력해 주세요.");
+			}
 
 			PaymentEntity entity = PaymentEntity.builder()
 					.reservationId(dto.getReservationId())
