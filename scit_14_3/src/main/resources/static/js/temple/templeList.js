@@ -191,6 +191,9 @@ kakao.maps.load(function () {
 
     function showResultList(temples) {
         lastShownTemples = temples;
+         // 이 함수가 호출될 때마다 목록 DOM을 통째로 새로 그리므로(li.innerHTML = ''),
+         // 즐겨찾기 별표 동기화용 레지스트리도 매번 새로 채워야 예전 목록의 죽은 버튼을 안 가리킴.
+         window.__templeListStarRegistry = [];
         // 즐겨찾기한 사찰을 목록 맨 위로 오게 정렬
         // (temples 원본 배열은 그대로 두고, 복사본(slice())을 정렬해서 사용 - 원본을 건드리면 다른 곳에서 꼬일 수 있음)
         var sortedTemples = temples.slice().sort(function (a, b){
@@ -201,6 +204,17 @@ kakao.maps.load(function () {
         });
         var list = document.getElementById('result-list');
         list.innerHTML = ''; // 이전 검색 결과 지우기
+
+         // 조건에 맞는 사찰이 하나도 없으면 빈 목록 대신 안내 문구를 보여줌
+        if (sortedTemples.length === 0) {
+            var emptyLi = document.createElement('li');
+            emptyLi.style.cssText = 'padding:16px 8px;text-align:center;color:#999;font-size:13px;';
+            emptyLi.textContent = '해당되는 사찰 목록 결과가 없습니다.';
+            list.appendChild(emptyLi);
+            document.getElementById('result-panel').classList.remove('collapsed');
+            updateResultPanelToggle();
+            return;
+        }
 
         var listLang = (typeof i18nCurrentLang !== 'undefined') ? i18nCurrentLang : 'ko';
         sortedTemples.forEach(function (temple){
@@ -219,14 +233,17 @@ kakao.maps.load(function () {
                             '<div class="result-address' + (isTempleTextFromDict(temple.name, 'address', listLang) ? ' no-translate' : '') + '">' + displayAddress + '</div>' +
                             '<div class="result-types" style="margin-top:4px;">' + buildTypeTagsHtml(temple, listLang) + '</div>';
 
-                        if (!HIDE_TEMPLE_FAVORITE) {
-                        var favoriteBtn = li.querySelector('.result-favorite-btn');
+                                                if (!HIDE_TEMPLE_FAVORITE) {
+                                                var favoriteBtn = li.querySelector('.result-favorite-btn');
 
-                        // 이미 즐겨찾기 되어있는 사찰이면 처음부터 별표를 채워서 보여줌
-                        if (favoriteTempleIds.indexOf(temple.templeId) !== -1) {
-                            favoriteBtn.classList.add('active');
-                            favoriteBtn.style.color = '#f4c25c';
-                        }
+                                                // 이미 즐겨찾기 되어있는 사찰이면 처음부터 별표를 채워서 보여줌
+                                                if (favoriteTempleIds.indexOf(temple.templeId) !== -1) {
+                                                    favoriteBtn.classList.add('active');
+                                                    favoriteBtn.style.color = '#f4c25c';
+                                                }
+
+                                                // 지도 마커 정보창 쪽에서 토글했을 때 이 버튼도 같이 갱신되도록 등록
+                                                window.__templeListStarRegistry.push({ templeId: temple.templeId, btn: favoriteBtn });
 
                         // 별표 클릭 - 토글 요청 보내기
                         favoriteBtn.addEventListener('click', function (e) {
@@ -258,15 +275,19 @@ kakao.maps.load(function () {
                                 favoriteTempleIds.splice(idx, 1);
                             }
                         }
+                        // 이 목록에서 토글한 결과를 지도 마커 정보창의 같은 사찰 별표에도 반영
+                        if (typeof window.syncFavoriteUI === 'function') {
+                            window.syncFavoriteUI(temple.templeId, data.favorite);
+                        }
                         applyFilters();
                     })
-                                  .catch(function (error) {
-                                      console.error(error);
-                                      alert(i18nMsg('favLoginRequired'));
-                                      location.href = '/login';
-                                  });
+                          .catch(function (error) {
+                              console.error(error);
+                              alert(i18nMsg('favLoginRequired'));
+                              location.href = '/login';
                           });
-                          }
+                  });
+                  }
 
 
         // 목록 항목에 마우스 올리면 지도 위 해당 마커도 밝은 색으로 눈에 띄게
@@ -491,7 +512,10 @@ kakao.maps.load(function () {
             var marker = markerByTempleId[temple.templeId]; // ← markerByTempleId에서 찾아옴
                 if (marker) {
                     marker.setMap(match ? map : null);
+                    if (!match) {
+                    marker.nameTooltip.setMap(null); // 마커가 숨겨지면 호버 중이던 이름표도 같이 숨김
                 }
+            }
             if (match) {
                 matchedTemples.push(temple); // 통과한 사찰은 목록에도 추가
             }
@@ -533,6 +557,7 @@ kakao.maps.load(function () {
             nearMeActive = false;
             document.getElementById('near-me-btn').classList.remove('active');
             searchMatchedIds = null;
+            document.getElementById('result-list').innerHTML = ''; // 꺼질 때 이전 검색 결과 목록도 같이 비움
             applyFilters();
             return;
         }
@@ -604,6 +629,10 @@ kakao.maps.load(function () {
     // 전부 사전 번역 값으로 다시 그림. 이미 만들어진 마커/목록만 갱신하고 새로 fetch하진 않음.
     window.refreshTempleMapLanguage = function (lang) {
         if (typeof refreshTempleMarkerLanguage === 'function') refreshTempleMarkerLanguage(lang);
-        if (lastShownTemples) showResultList(lastShownTemples);
+        // 목록 패널이 이미 열려있을 때만 다시 그림 - 닫혀있는데 언어만 바꿨다고
+                // showResultList()가 패널을 강제로 열어버리는 걸 막기 위함.
+                if (lastShownTemples && !resultPanel.classList.contains('collapsed')) {
+                    showResultList(lastShownTemples);
+                }
     };
 });

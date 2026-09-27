@@ -83,6 +83,27 @@ var HIDE_TEMPLE_FAVORITE = IS_TEMPLE_ACCOUNT || IS_ADMIN;
 // 없으면 여기서 만들어둠(즐겨찾기 필터가 없는 페이지에서도 에러 안 나게).
 window.favoriteTempleIds = window.favoriteTempleIds || [];
 
+// 즐겨찾기 토글이 지도 마커 정보창에서 일어나든, 검색 결과 목록에서 일어나든
+// 같은 사찰의 나머지 UI(마커 정보창 별표, 목록 별표)도 같이 갱신되게 하는 공용 함수.
+// templeList.js도 이 함수를 호출해서 목록 쪽 별표까지 같이 동기화한다.
+function syncFavoriteUI(templeId, isFavorite) {
+    window.__templeMarkerRegistry.forEach(function (entry) {
+        if (entry.temple.templeId === templeId && entry.favoriteBtnEl) {
+            entry.favoriteBtnEl.classList.toggle('active', isFavorite);
+            entry.favoriteBtnEl.style.color = isFavorite ? '#f4c25c' : '#ccc';
+        }
+    });
+    if (Array.isArray(window.__templeListStarRegistry)) {
+        window.__templeListStarRegistry.forEach(function (entry) {
+            if (entry.templeId === templeId) {
+                entry.btn.classList.toggle('active', isFavorite);
+                entry.btn.style.color = isFavorite ? '#f4c25c' : '#ccc';
+            }
+        });
+    }
+}
+window.syncFavoriteUI = syncFavoriteUI;
+
 // ===== 마커 핀 디자인 설정 =====
 // 핀 색(자주+갈색 톤)이랑 문양 색(금색). 여기 두 값만 바꾸면 모든 마커 색이 한번에 바뀜.
 var PIN_COLOR = '#6c3836';
@@ -265,12 +286,16 @@ function createTempleMarker(map, temple) {
                            window.favoriteTempleIds.splice(idx, 1)
                        }
                    }
-                   if (typeof window.refreshFavoriteFilter === 'function') {
-                       window.refreshFavoriteFilter();
-                   }
+                    // 이 마커에서 토글한 결과를 검색 결과 목록의 같은 사찰 별표에도 반영
+                     syncFavoriteUI(temple.templeId, data.favorite);
+                     if (typeof window.refreshFavoriteFilter === 'function') {
+                     window.refreshFavoriteFilter();
+                     }
                })
                .catch(function (error) {
                    console.error(error);
+                   alert('로그인 후 즐겨찾기가 가능합니다.')
+                   location.href = '/login';
                });
            }
 
@@ -301,8 +326,10 @@ function createTempleMarker(map, temple) {
                                window.favoriteTempleIds.splice(idx, 1);
                            }
                        }
+                      // 이 마커의 별표를 눌러서 바뀐 상태를 검색 결과 목록의 같은 사찰 별표에도 반영
+                       syncFavoriteUI(temple.templeId, data.favorite);
                        if (typeof window.refreshFavoriteFilter === 'function') {
-                           window.refreshFavoriteFilter();
+                       window.refreshFavoriteFilter();
                        }
                    })
                    .catch(function (error) {
@@ -366,13 +393,14 @@ function createTempleMarker(map, temple) {
         marker.setZIndex(999); // 다른 마커들 위로 올려서 안 가려지게 함
         currentOpenMarker = marker;
     });
-
+    // 마커 registry에 등록하는 부분
     window.__templeMarkerRegistry.push({
         temple: temple,
         tooltipEl: nameTooltipContent,
         infoNameEl: infoContent.querySelector('.temple-info-name'),
         infoAddressEl: infoContent.querySelector('.temple-info-address'),
-        favoriteTooltipEl: favoriteTooltip
+        favoriteTooltipEl: favoriteTooltip,
+        favoriteBtnEl: favoriteBtn
     });
 
     return marker;

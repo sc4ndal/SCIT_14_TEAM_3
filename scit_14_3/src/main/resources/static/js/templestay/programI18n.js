@@ -111,7 +111,8 @@ const PROGRAM_I18N = {
             termsS2Item1: '체크인 7일 전까지 : 전액 환불',
             termsS2Item2: '체크인 3일 전까지 : 50% 환불',
             termsS2Item3: '체크인 3일 이내 : 환불 불가',
-            alertAgreeTerms: '개인정보 수집·이용 및 취소/환불 규정에 동의해 주세요.'
+            alertAgreeTerms: '개인정보 수집·이용 및 취소/환불 규정에 동의해 주세요.',
+            alertDepositorName: '입금자명을 입력해 주세요.'
         },
         ja: {
             filterRegion: '地域', filterTemple: '寺院', filterType: 'プログラム種別', filterLanguage: '言語', filterHeadcount: '人数',
@@ -180,7 +181,8 @@ const PROGRAM_I18N = {
             termsS2Item1: 'チェックイン7日前まで：全額返金',
             termsS2Item2: 'チェックイン3日前まで：50%返金',
             termsS2Item3: 'チェックイン3日以内：返金不可',
-            alertAgreeTerms: '個人情報の収集・利用およびキャンセル/返金規定に同意してください。'
+            alertAgreeTerms: '個人情報の収集・利用およびキャンセル/返金規定に同意してください。',
+            alertDepositorName: '入金者名を入力してください。'
         },
         en: {
             filterRegion: 'Region', filterTemple: 'Temple', filterType: 'Program Type', filterLanguage: 'Language', filterHeadcount: 'Participants',
@@ -249,7 +251,8 @@ const PROGRAM_I18N = {
             termsS2Item1: 'Up to 7 days before check-in: full refund',
             termsS2Item2: 'Up to 3 days before check-in: 50% refund',
             termsS2Item3: 'Within 3 days of check-in: no refund',
-            alertAgreeTerms: 'Please agree to the Personal Information Collection/Use and Cancellation/Refund Policy.'
+            alertAgreeTerms: 'Please agree to the Personal Information Collection/Use and Cancellation/Refund Policy.',
+            alertDepositorName: 'Please enter the depositor name.'
         }
     }
 };

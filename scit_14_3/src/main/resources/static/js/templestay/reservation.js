@@ -350,6 +350,7 @@ function renderStep2() {
   if (!p) return;
 
   const summary = document.getElementById('selected-program-summary');
+  summary.dataset.type = p.programType;
   summary.querySelector('.program-title').textContent = p.title;
   const summaryRegionEl = summary.querySelector('.program-temple-region');
   summaryRegionEl.classList.add('no-translate');
@@ -661,6 +662,10 @@ async function submitReservation() {
   }
   if (!state.participants[0] || !state.participants[0].phone) {
     alert(trUi('alertRepPhone'));
+    return;
+  }
+  if (state.paymentMethod === '계좌이체' && !state.depositorName.trim()) {
+    alert(trUi('alertDepositorName')); // 사전에 없으면 '입금자명을 입력해 주세요.' 같은 문자열 직접 써도 됩니다
     return;
   }
 
