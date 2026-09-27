@@ -78,8 +78,13 @@ public class ReservationController {
 	 */
 	@PostMapping("/payments")
 	@ResponseBody
-	public PaymentDTO payment(@RequestBody PaymentDTO paymentDTO) {
-		return ps.reserved(paymentDTO);
+	public ResponseEntity<?> payment(@RequestBody PaymentDTO paymentDTO) {
+		try {
+			return ResponseEntity.ok(ps.reserved(paymentDTO));
+		} catch (IllegalStateException e) {
+			// 계좌이체인데 입금자명이 비어있는 경우 등 - 프론트에서 메시지 그대로 alert로 띄움(reservation.js 참고)
+			return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+		}
 	}
 	
 	/** 본인 예약 목록만 반환 - 이 경로 자체는 PUBLIC_URLS에 열려있어(컨트롤러 내부 개별 인증) 클라이언트가

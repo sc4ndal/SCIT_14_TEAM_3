@@ -208,6 +208,7 @@ const I18N_SERVER_MSG = {
     '존재하지 않는 데이터입니다.': { ja: '存在しないデータです。', en: 'This data does not exist.' },
     '정원이 모두 찼습니다.': { ja: '定員に達しました。', en: 'The program is fully booked.' },
     '입금확인 대상(예약대기)이 아닙니다.': { ja: '入金確認の対象(予約待ち)ではありません。', en: 'This reservation is not awaiting payment confirmation.' },
+    '입금자명을 입력해 주세요.': { ja: '入金者名を入力してください。', en: 'Please enter the depositor name.' },
     '이용이 완료된 예약만 리뷰를 작성할 수 있습니다.': { ja: '利用が完了した予約のみレビューを投稿できます。', en: 'Only completed reservations can be reviewed.' },
     '이용 시작일이 지난 예약은 취소할 수 없습니다.': { ja: '利用開始日を過ぎた予約はキャンセルできません。', en: 'Reservations past their start date cannot be canceled.' },
     '이미 취소된 예약입니다.': { ja: 'すでにキャンセルされた予約です。', en: 'This reservation has already been canceled.' },
