@@ -357,6 +357,8 @@
     font-size: 12px;
     color: var(--text-secondary);
     margin-top: 2px;
+    word-break: keep-all;
+    overflow-wrap: break-word;
 }
 
 #map-controls-bottom {
