@@ -19,8 +19,6 @@
     background: var(--brown);
     color: #fff;
 
-    font-size: 22px;
-    line-height: 1;
 
     display: flex;
     align-items: center;
@@ -46,7 +44,24 @@
 }
 
 .chat-toggle.open .chat-toggle__icon-close {
-    display: inline;
+    display: block;
+}
+
+.chat-toggle svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+}
+
+.chat-toggle__icon-open svg {
+    fill: #fff;
+}
+
+.chat-toggle__icon-close svg {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2;
+    stroke-linecap: round;
 }
 
 /* back-to-top 버튼과 겹치지 않도록 위로 살짝 올려둠 */
@@ -212,3 +227,5 @@
         width: auto;
     }
 }
+
+
