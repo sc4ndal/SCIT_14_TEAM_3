@@ -29,16 +29,34 @@
 
         <section class="favorites-hero">
             <h1>관심 행사</h1>
+            <p class="favorites-hero__more" th:unless="${#lists.isEmpty(events)}">
+                <a th:href="@{/events}">다른 행사 보러가기 →</a>
+            </p>
         </section>
+
+        <div class="events-divider"></div>
 
         <p class="favorites-empty" th:if="${#lists.isEmpty(events)}">
             아직 즐겨찾기한 행사가 없습니다. <a th:href="@{/events}">불교 행사 보러 가기 →</a>
         </p>
 
-        <div class="food-favorite-grid event-favorite-grid" th:unless="${#lists.isEmpty(events)}">
+        <div class="favorites-search" th:unless="${#lists.isEmpty(events)}">
+            <input type="search" id="favorite-events-search-input" class="favorites-search__input"
+                   aria-label="검색" placeholder="행사 이름이나 사찰 이름으로 검색 (예: 박람회, 조계사...)" autocomplete="off">
+        </div>
+
+        <p class="favorites-search-empty" id="favorite-events-search-empty" hidden>
+            검색 결과가 없습니다.
+        </p>
+
+        <div class="food-favorite-grid event-favorite-grid" data-favorites-infinite-grid="event-infinite-sentinel"
+             data-favorites-search-input="favorite-events-search-input"
+             data-favorites-search-empty="favorite-events-search-empty"
+             th:unless="${#lists.isEmpty(events)}">
             <article class="food-favorite-card event-favorite-card"
                      th:classappend="${event.past} ? 'event-favorite-card--past' : ''"
-                     th:each="event : ${events}" data-remove-on-unfavorite>
+                     th:each="event : ${events}" data-remove-on-unfavorite
+                     th:attr="data-search-name=${event.title + ' ' + event.templeName}">
 
                 <div class="food-favorite-card__body">
                     <p class="event-card__date" style="margin:0 0 8px;">
@@ -76,6 +94,8 @@
             </article>
         </div>
 
+        <div id="event-infinite-sentinel" class="favorites-infinite-sentinel" th:unless="${#lists.isEmpty(events)}"></div>
+
         <p class="favorites-more" th:unless="${#lists.isEmpty(events)}">
             <a th:href="@{/events}">다른 행사 보러가기 →</a>
         </p>
@@ -86,6 +106,7 @@
 <div th:replace="~{fragments/layout :: footer}"></div>
 
 <script defer th:src="@{/js/buddhism/favoriteButton.js}"></script>
+<script defer th:src="@{/js/mypage/favoritesInfiniteScroll.js}"></script>
 
 </body>
 </html>

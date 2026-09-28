@@ -22,6 +22,15 @@
 	font-size: 14.5px;
 }
 
+/* 제목/링크 영역과 검색+목록 영역을 시각적으로 구분 - /events 공개 페이지의
+   .events-divider와 동일한 모양. */
+.favorites-divider {
+	width: 100%;
+	height: 1px;
+	margin: 70px 0 54px;
+	background: var(--line);
+}
+
 .favorites-empty {
 	margin-top: 64px;
 	padding: 48px 24px;
@@ -39,12 +48,87 @@
 .favorites-more {
 	margin-top: 28px;
 	text-align: center;
-	font-size: 14px;
 }
 
+/* 무한 스크롤 때문에 하단의 "다른 OO 보러가기"(.favorites-more)까지 스크롤이
+   얼마나 필요할지 예측이 안 돼서 제목 바로 아래(.favorites-hero__more)에도 같은
+   링크를 하나 더 두는데, 위치만 다를 뿐 같은 링크라 모양도 동일하게 맞춘다. */
+.favorites-hero__more a,
 .favorites-more a {
 	color: var(--brown);
 	text-decoration: none;
+	font-weight: 600;
+	font-size: 14.5px;
+}
+
+/* ---------- 검색 (favoritesInfiniteScroll.js 공용, 선택 적용) ---------- */
+
+.favorites-search {
+	max-width: 480px;
+	margin: 40px auto 0;
+}
+
+.favorites-search__input {
+	width: 100%;
+	padding: 12px 20px;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	background: #fff;
+	color: var(--text);
+	font-size: 15px;
+	font-family: inherit;
+}
+
+.favorites-search__input:focus {
+	outline: none;
+	border-color: var(--brown);
+}
+
+.favorites-search__input::placeholder {
+	color: var(--text-tertiary);
+}
+
+.favorites-search-empty {
+	padding: 48px 24px;
+	text-align: center;
+	color: var(--text-tertiary);
+}
+
+/* ---------- 무한 스크롤 (favoritesInfiniteScroll.js 공용) ---------- */
+
+/* 감시용 엘리먼트 - 화면엔 보이지 않지만 IntersectionObserver가 감지할 수 있게
+   높이를 살짝 준다. */
+.favorites-infinite-sentinel {
+	height: 1px;
+}
+
+/* 다음 묶음을 불러오는 동안 잠깐 보여주는 스피너 - favoritesInfiniteScroll.js가
+   sentinel 바로 다음에 만들어 넣는다. */
+.favorites-loading-spinner {
+	display: none;
+	width: 26px;
+	height: 26px;
+	margin: 24px auto 0;
+	border: 3px solid var(--line);
+	border-top-color: var(--brown);
+	border-radius: 50%;
+	animation: favorites-spin .7s linear infinite;
+}
+
+.favorites-loading-spinner.is-active {
+	display: block;
+}
+
+@keyframes favorites-spin {
+	to { transform: rotate(360deg); }
+}
+
+/* 새로 드러나는 카드는 뚝 나타나지 않고 살짝 떠오르며 페이드인 되게 한다(저장한
+   한마디/관심 사찰음식/관심 행사/관심 사찰 공용 - 카드 타입마다 베이스 클래스가
+   달라서 opacity/transform은 이 modifier가 주고, transition은 각 카드 클래스에 둔다). */
+.favorites-card--enter {
+	opacity: 0;
+	transform: translateY(10px);
 }
 
 /* ---------- 저장한 한마디 ---------- */
@@ -60,11 +144,14 @@
 	padding: 28px 30px;
 	border: 1px solid var(--line);
 	border-radius: 16px;
-	background: rgba(253, 250, 246, .72);
+	background: #fff;
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
 	gap: 20px;
+	opacity: 1;
+	transform: none;
+	transition: opacity .35s ease, transform .35s ease;
 }
 
 .quote-favorite-card__content {
@@ -196,8 +283,11 @@
 	flex-direction: column;
 	border: 1px solid var(--line);
 	border-radius: 16px;
-	background: rgba(253, 250, 246, .72);
+	background: #fff;
 	overflow: hidden;
+	opacity: 1;
+	transform: none;
+	transition: opacity .35s ease, transform .35s ease;
 }
 
 .food-favorite-card[hidden] {
@@ -259,7 +349,7 @@
 }
 
 .review-fav-card {
-	background: var(--paper);
+	background: #fff;
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	padding: 20px 22px;

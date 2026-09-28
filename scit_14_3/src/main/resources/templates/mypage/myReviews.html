@@ -8,6 +8,7 @@
     <link rel="stylesheet" th:href="@{/css/common.css}" type="text/css">
     <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}" type="text/css">
     <title>내가 쓴 리뷰 · 佛선자</title>
+    <link rel="stylesheet" th:href="@{/css/mypage/favorites.css}">
     <link rel="stylesheet" th:href="@{/css/mypage/myReviews.css}">
 </head>
 
@@ -25,10 +26,23 @@
 <main class="mypage-main">
     <div class="mypage-inner">
         <h1 class="page-title">내가 쓴 리뷰</h1>
+        <p class="reviews-hero__more"><a th:href="@{/reservation/reviews}">다른 템플스테이 후기 보러가기 →</a></p>
+
+        <div class="favorites-divider"></div>
 
         <section id="review-list-section">
             <h2>리뷰 내역 (<span id="review-count-label">0</span>건)</h2>
-            <div id="review-list"></div>
+            <div id="review-list" data-favorites-grid="review-list-pagination"
+                 data-favorites-search-input="my-reviews-search-input"
+                 data-favorites-search-empty="my-reviews-search-empty"></div>
+            <div class="favorites-search">
+                <input type="search" id="my-reviews-search-input" class="favorites-search__input"
+                       aria-label="검색" placeholder="제목, 사찰·프로그램명, 리뷰 내용으로 검색" autocomplete="off">
+            </div>
+            <p class="favorites-search-empty" id="my-reviews-search-empty" hidden>
+                검색 결과가 없습니다.
+            </p>
+            <div class="pagination" id="review-list-pagination"></div>
             <p class="reviews-more"><a th:href="@{/reservation/reviews}">템플스테이 후기 보러가기 →</a></p>
         </section>
     </div>
@@ -37,5 +51,6 @@
 <div th:replace="~{fragments/layout :: footer}"></div>
 
 <script th:src="@{/js/mypage/myReviews.js}"></script>
+<script defer th:src="@{/js/mypage/favoritesPagination.js}"></script>
 </body>
 </html>
