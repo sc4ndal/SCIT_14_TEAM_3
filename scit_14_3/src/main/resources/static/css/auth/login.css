@@ -1,0 +1,34 @@
+/* ===== 로그인 페이지 전용 ===== */
+
+/* 하단 링크 영역
+   위쪽 간격은 .page-form의 하단 패딩(32px)이 이미 만들어주므로 margin-top 없음 */
+.login-links{
+    padding:0 32px 32px;
+    text-align:center;
+    font-size:13px;
+}
+
+.login-links__find{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+}
+
+.login-links__find a{color:var(--text-secondary);}
+.login-links__find a:hover{color:var(--text);}
+
+.login-links__dot{color:var(--text-muted);}
+
+.login-links__signup{
+    margin:12px 0 0;
+    color:var(--text-tertiary);
+}
+
+.login-links__signup a{
+    margin-left:4px;
+    color:var(--brown);
+    font-weight:500;
+}
+
+.login-links__signup a:hover{text-decoration:underline;}

@@ -7,6 +7,7 @@
     <title>로그인 · 사찰 커뮤니티</title>
     <link rel="stylesheet" th:href="@{/css/common.css}">
     <link rel="stylesheet" th:href="@{/css/card.css}">
+    <link rel="stylesheet" th:href="@{/css/auth/login.css}">
     <script th:src="@{/js/auth/login.js}" defer></script>
 </head>
 <body>
@@ -69,16 +70,17 @@
         </div>
     </form>
 
-    <p class="footer-note" style="text-align:center;font-size:13px;color:var(--ink-soft);padding:0 32px 0;">
-        <a th:href="@{/findAccount(tab='id')}" style="color:var(--wood-dark);font-weight:700;text-decoration:none;" data-i18n="findIdLink">아이디 찾기</a>
-        |
-        <a th:href="@{/findAccount(tab='pw')}" style="color:var(--wood-dark);font-weight:700;text-decoration:none;" data-i18n="findPwLink">비밀번호 찾기</a>
-    </p>
-
-    <p class="footer-note" style="text-align:center;font-size:13px;color:var(--ink-soft);padding:0 32px 28px;">
-        계정이 없으신가요?
-        <a th:href="@{/signupSelect}" style="color:var(--wood-dark);font-weight:700;text-decoration:none;">회원가입</a>
-    </p>
+    <div class="login-links">
+        <div class="login-links__find">
+            <a th:href="@{/findAccount(tab='id')}" data-i18n="findIdLink">아이디 찾기</a>
+            <span class="login-links__dot">·</span>
+            <a th:href="@{/findAccount(tab='pw')}" data-i18n="findPwLink">비밀번호 찾기</a>
+        </div>
+        <p class="login-links__signup">
+            계정이 없으신가요?
+            <a th:href="@{/signupSelect}">회원가입</a>
+        </p>
+    </div>
 
 </div>
 
