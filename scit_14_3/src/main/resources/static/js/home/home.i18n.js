@@ -57,6 +57,7 @@ const HOME_TRANSLATIONS = {
         chatGreeting: "안녕하세요! 불교에 대해 궁금한 점이나, 이 사이트를 어떻게 이용하면 되는지 무엇이든 물어보세요.",
         chatPlaceholder: "궁금한 점을 입력해보세요",
         chatPending: "생각하는 중...",
+        chatTranslating: "번역하는 중...",
         chatError: "지금은 답변을 가져오지 못했어요. 잠시 후 다시 시도해주세요.",
         chatTooltip: "AI 챗봇 · 무엇이든 물어보세요"
     },
@@ -114,6 +115,7 @@ const HOME_TRANSLATIONS = {
         chatGreeting: "こんにちは！仏教について気になることや、このサイトの使い方など、何でもお聞きください。",
         chatPlaceholder: "気になることを入力してください",
         chatPending: "考え中...",
+        chatTranslating: "翻訳中...",
         chatError: "現在、回答を取得できませんでした。しばらくしてからもう一度お試しください。",
         chatTooltip: "AIチャットボット・何でもお聞きください"
     },
@@ -171,6 +173,7 @@ const HOME_TRANSLATIONS = {
         chatGreeting: "Hello! Feel free to ask anything about Buddhism or how to use this site.",
         chatPlaceholder: "Type your question",
         chatPending: "Thinking...",
+        chatTranslating: "Translating...",
         chatError: "Sorry, I couldn't get an answer right now. Please try again in a moment.",
         chatTooltip: "AI Chatbot · Ask me anything"
     }

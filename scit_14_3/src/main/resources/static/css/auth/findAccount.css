@@ -1,9 +1,15 @@
-.account-tabs{display:flex;margin:0 32px;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
-.account-tab{flex:1;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;
-    color:var(--ink-soft);cursor:pointer;padding:12px 0;}
-.account-tab + .account-tab{border-left:1px solid var(--border);}
-.account-tab.active{color:#fff;background:var(--wood-dark);}
+/* 탭 디자인 : 다른 페이지(admin/manage.html 등)와 같은 밑줄 탭(common.css .admin-tabs/.admin-tab)
+   방식으로 통일 - 예전엔 검정 배경 필(pill) 탭이라 사이트 다른 곳이랑 안 맞고 색도 너무 진했음 */
+.account-tabs{display:flex;gap:4px;margin:0 32px;border-bottom:1px solid var(--border);}
+.account-tab{flex:1;background:none;border:none;font-family:inherit;font-size:14px;font-weight:600;
+    color:var(--ink-soft);cursor:pointer;padding:12px 0;
+    border-bottom:2px solid transparent;margin-bottom:-1px;}
+.account-tab.active{color:var(--wood);border-bottom-color:var(--wood);}
 .tab-desc{text-align:center;font-size:13px;color:var(--ink-soft);margin:14px 32px 0;}
-.small-nav-links{display:flex;justify-content:space-between;padding:0 32px 28px;font-size:12px;}
-.small-nav-links a{color:var(--ink-soft);text-decoration:none;}
-.small-nav-links a:hover{color:var(--wood-dark);}
+
+/* 확인 버튼 : card.css 기본값(--wood-dark, 진한 갈색)보다 밝은 사이트 공통 갈색으로
+   (템플스테이 문의하기/관리자 등록 폼과 같은 이유로 같은 색) */
+.form-actions .submit{background:var(--wood);font-weight:500;transition:filter .15s ease;}
+.form-actions .submit:hover{filter:brightness(.92);}
+.form-actions .btn-cancel{color:var(--ink-soft);border-color:var(--border);font-weight:500;}
+.form-actions .btn-cancel:hover{color:var(--ink);}

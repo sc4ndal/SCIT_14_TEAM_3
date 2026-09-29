@@ -110,6 +110,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         // chat.js(별도 스크립트)가 "생각하는 중..."/오류 문구를 지금 언어로 쓰려고 참조함
         window.homeCurrentLang = currentLang;
 
+        // 챗봇 패널이 열려있으면 답변들이 아래 캘린더/행사 번역이 끝날 때까지(몇 초 걸릴 수 있음)
+        // 예전 언어로 멈춰있는 것처럼 보이지 않도록, 언어를 누른 즉시 "번역하는 중..."부터 표시
+        if (typeof window.chatBeginLanguageChange === "function") window.chatBeginLanguageChange();
+
         document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
             const key = el.getAttribute("data-i18n-placeholder");
             if (t[key] !== undefined) el.placeholder = t[key];
@@ -132,6 +136,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         // 달력/일정 패널은 데이터(날짜 표기, "자세히 보기" 등)까지 새로 그려야 반영됨
         renderCalendar();
         renderEventPanel();
+
+        // chat.js(별도 스크립트) - 이미 받은 봇 답변들(한국어 원문 기억해둠)을 지금 언어로 다시 번역
+        if (typeof window.chatOnLanguageChange === "function") window.chatOnLanguageChange();
     };
 
 
