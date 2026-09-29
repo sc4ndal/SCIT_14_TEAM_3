@@ -11,6 +11,13 @@
    favoriteButton.js가 즐겨찾기 해제 시 카드를 DOM에서 바로 지우기 때문에
    (data-remove-on-unfavorite), 그 변화를 MutationObserver로 감지해서
    페이지를 다시 계산한다 - 마지막 장의 카드가 전부 사라지면 이전 페이지로 돌아간다.
+
+   검색(선택): data-favorites-search-input="<검색창 id>"를 그리드에 추가하면
+   favoritesInfiniteScroll.js와 같은 방식으로 검색이 붙는다 - 카드에는
+   data-search-name 속성으로 검색 대상 문자열을 달아둔다. 검색 중엔 페이지 번호를
+   무시하고 매칭되는 카드를 전부 보여주고(페이지 버튼도 숨김), 검색어를 지우면
+   원래 페이지로 복구된다. data-favorites-search-empty="<빈 결과 메시지 id>"는
+   선택 - 있으면 매칭 결과가 없을 때 보여준다.
    ============================================================ */
 
 (function () {
@@ -20,7 +27,36 @@
 		var pagerEl = document.getElementById(grid.dataset.favoritesGrid);
 		if (!pagerEl) return;
 
+		var searchInput = grid.dataset.favoritesSearchInput
+			? document.getElementById(grid.dataset.favoritesSearchInput) : null;
+		var searchEmpty = grid.dataset.favoritesSearchEmpty
+			? document.getElementById(grid.dataset.favoritesSearchEmpty) : null;
+
 		var currentPage = 1;
+		var searching = false;
+
+		function applyFilter() {
+			var keyword = searchInput.value.trim().toLowerCase();
+			searching = keyword !== '';
+
+			if (!searching) {
+				if (searchEmpty) searchEmpty.hidden = true;
+				renderPage(currentPage);
+				return;
+			}
+
+			var matchCount = 0;
+			Array.prototype.forEach.call(grid.children, function (card) {
+				var name = (card.dataset.searchName || '').toLowerCase();
+				var matches = name.includes(keyword);
+				card.hidden = !matches;
+				if (matches) matchCount++;
+			});
+			// 검색 결과는 페이지로 안 나누고 매칭되는 카드를 전부 보여주므로,
+			// 검색 중엔 페이지 번호 자체가 필요 없다.
+			pagerEl.innerHTML = '';
+			if (searchEmpty) searchEmpty.hidden = matchCount > 0;
+		}
 
 		function renderPage(page) {
 			var cards = Array.prototype.slice.call(grid.children);
@@ -61,8 +97,18 @@
 
 		renderPage(1);
 
+		if (searchInput) {
+			searchInput.addEventListener('input', applyFilter);
+			searchInput.addEventListener('keydown', function (e) {
+				if (e.key === 'Enter') {
+					e.preventDefault();
+					applyFilter();
+				}
+			});
+		}
+
 		new MutationObserver(function () {
-			renderPage(currentPage);
+			if (searching) applyFilter(); else renderPage(currentPage);
 		}).observe(grid, { childList: true });
 	});
 })();

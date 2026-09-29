@@ -11,43 +11,84 @@
 }
 
 .quote-hero__eyebrow {
-	font-size: 13px;
-	letter-spacing: .12em;
+	font-size: 15px;         /* 13px >> 15px */
+	letter-spacing: .08em;   /* .12em >> .08em : 한글 라벨이 띄엄띄엄 읽혀서 */
 	color: var(--accent);
-	font-weight: 700;
+	font-weight: 500;        /* 700 >> 500 : 가짜 볼드 */
 }
 
 .quote-hero__title {
 	margin: 16px 0 0;
 	font-size: 36px;
-	letter-spacing: -.02em;
+	letter-spacing: -.045em;   /* -.02em >> -.045em : 메인 히어로와 동일 */
+}
+
+/* 제목 아래 장식 추가 : 메인 히어로의 ── ✥ ── 장식과 같은 모양 (양옆 선은 배경 그라디언트로 그림) */
+.quote-hero__title::after {
+	content: "✥";
+	display: block;
+	margin-top: 28px;
+	font-size: 12px;
+	letter-spacing: 0;
+	color: rgba(155, 104, 69, .45);
+	background: linear-gradient(to right,
+	transparent calc(50% - 70px),
+	rgba(39, 33, 27, .12) calc(50% - 70px), rgba(39, 33, 27, .12) calc(50% - 20px),
+	transparent calc(50% - 20px), transparent calc(50% + 20px),
+	rgba(39, 33, 27, .12) calc(50% + 20px), rgba(39, 33, 27, .12) calc(50% + 70px),
+	transparent calc(50% + 70px)) center / 100% 1px no-repeat;
 }
 
 .quote-card {
+	position: relative;   /* 추가 : 배경 한자(::before) 기준점 */
+	overflow: hidden;     /* 추가 : 한자가 카드 밖으로 안 삐져나오게 */
 	max-width: 640px;
 	margin: 40px auto 0;
-	padding: 48px 40px;
+	padding: 56px 40px 48px;   /* 48px 40px >> 56px 40px 48px : 위쪽 숨 쉴 공간 */
 	border: 1px solid var(--line);
 	border-radius: 24px;
-	background: #fff;
+	background: #fffdf9;       /* #fff >> #fffdf9 : 순백이 배경(미색)이랑 따로 놀아서 따뜻하게 */
+	box-shadow: 0 16px 40px -24px rgba(60, 35, 20, .22);   /* 추가 : 카드가 바닥에서 살짝 떠 보이게 */
 	text-align: center;
+}
+
+/* 배경 한자 추가 : 메인 페이지 知·尋·備·行 워터마크와 같은 모티프 - 사이트 전체 통일감 */
+.quote-card::before {
+	content: "心";
+	position: absolute;
+	top: -18px;
+	left: 24px;
+	font-family: var(--serif);
+	font-size: 180px;
+	line-height: 1;
+	color: rgba(155, 104, 69, .07);
+	pointer-events: none;
+	user-select: none;
+}
+
+.quote-card > * {
+	position: relative;   /* 추가 : 본문이 배경 한자 위로 오게 */
 }
 
 .quote-card__content {
 	margin: 0;
-	font-size: 22px;
-	line-height: 1.7;
+	font-family: var(--serif);   /* 추가 : 인용문은 고딕보다 명조가 무게감 있음 */
+	font-size: 21px;             /* 22px >> 21px */
+	font-weight: 400;            /* 추가 */
+	line-height: 1.8;            /* 1.7 >> 1.8 : 명조는 행간을 조금 더 줘야 편함 */
+	letter-spacing: -.02em;      /* 추가 */
 	white-space: pre-line;
 }
 
 .quote-card__source {
-	margin: 24px 0 0;
+	margin: 20px 0 0;            /* 24px >> 20px : 본문과 너무 떨어져 보여서 */
 	color: var(--ink-soft);
 	font-size: 15px;
 }
 
 .quote-card__source::before {
 	content: "— ";
+	color: var(--accent);   /* 추가 : 대시만 포인트 색 */
 }
 
 .quote-card__empty {
@@ -62,15 +103,23 @@
 	margin-top: 32px;
 }
 
+/* 두 버튼 크기 통일 추가 : 다른 한마디 보기(12px 24px)와 즐겨찾기(buddhism.css 10px 20px)의
+   패딩이 달라서 높이가 안 맞았음 - 이 페이지 안에서만 같은 값으로 맞춤 (buddhism.css 공용 스타일은 그대로) */
+.quote-refresh-btn,
+.quote-actions .favorite-toggle {
+	padding: 11px 22px;
+	font-size: 14.5px;
+	line-height: 1.4;
+}
+
 .quote-refresh-btn {
-	padding: 12px 24px;
 	border: 1px solid var(--line);
 	border-radius: 999px;
 	background: #fff;
-	color: var(--ink);
-	font-size: 14.5px;
+	color: var(--ink-soft);   /* var(--ink) >> var(--ink-soft) : 즐겨찾기보다 한 톤 낮은 보조 버튼 */
 	font-family: inherit;
 	cursor: pointer;
+	transition: border-color .15s ease, color .15s ease;   /* 추가 */
 }
 
 .quote-refresh-btn:hover {
@@ -86,6 +135,10 @@
 	}
 
 	.quote-card__content {
-		font-size: 19px;
+		font-size: 18px;   /* 19px >> 18px : 데스크톱 21px에 맞춰 비율 유지 */
+	}
+
+	.quote-card::before {
+		font-size: 130px;   /* 추가 : 모바일에서 한자 크기 줄임 */
 	}
 }

@@ -21,7 +21,12 @@
 	<section class="food-hero">
 		<h1 class="food-hero__title">사찰 음식</h1>
 		<p class="food-hero__lead">고기와 오신채(마늘·파·부추·달래·양파) 없이도 정갈한 맛을 내는 사찰의 밥상입니다</p>
+		<p class="food-hero__more" th:unless="${#lists.isEmpty(foods)}">
+			<a th:href="@{/mypage/favorites/foods}" sec:authorize="isAuthenticated()">저장한 사찰음식 모아보기 →</a>
+		</p>
 	</section>
+
+	<div class="food-divider"></div>
 
 	<p class="food-empty" th:if="${#lists.isEmpty(foods)}">
 		아직 등록된 사찰음식이 없습니다.
@@ -72,7 +77,7 @@
 		</article>
 	</div>
 
-	<p class="terms-back">
+	<p class="food-more">
 		<a th:href="@{/mypage/favorites/foods}" sec:authorize="isAuthenticated()">저장한 사찰음식 모아보기 →</a>
 	</p>
 

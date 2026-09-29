@@ -22,6 +22,36 @@
 	font-size: 16px;
 }
 
+/* 하단의 "저장한 사찰음식 모아보기"(.food-more)까지 스크롤이 얼마나 필요할지
+   예측이 안 돼서 제목 바로 아래에도 같은 링크를 하나 더 둔다 - 위치만 다를 뿐
+   같은 링크라 모양도 동일하게 맞춘다. */
+.food-hero__more {
+	margin: 12px 0 0;
+}
+
+.food-more {
+	max-width: 1080px;
+	margin: 56px auto 0;
+	padding: 0 24px;
+	text-align: center;
+}
+
+.food-hero__more a,
+.food-more a {
+	color: var(--accent);
+	text-decoration: none;
+	font-weight: 600;
+	font-size: 14.5px;
+}
+
+/* 제목/링크 영역과 검색+목록 영역을 시각적으로 구분 */
+.food-divider {
+	width: 100%;
+	height: 1px;
+	margin: 70px 0 54px;
+	background: var(--line);
+}
+
 .food-search {
 	max-width: 480px;
 	margin: 0 auto 40px;

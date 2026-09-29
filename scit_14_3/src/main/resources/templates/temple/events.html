@@ -10,8 +10,8 @@
 <body>
 
 <div id="auth-info" style="display:none;"
-	 sec:authorize="isAuthenticated()"
-	 th:attr="data-login-id=${#authentication.principal.username}"></div>
+     sec:authorize="isAuthenticated()"
+     th:attr="data-login-id=${#authentication.principal.username}"></div>
 
 <header>
 	<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
@@ -24,14 +24,17 @@
 			<span class="eyebrow no-translate"><span></span>EVENTS<span></span></span>
 			<h1 data-pi18n="evTitle">불교 행사</h1>
 			<p data-pi18n="evLead">박람회·법회·전통문화 행사 등 전국 사찰에서 열리는 불교 행사를 모았습니다.</p>
+			<p class="events-hero__more" th:unless="${#lists.isEmpty(events)}">
+				<a th:href="@{/mypage/favorites/events}" sec:authorize="isAuthenticated()" data-pi18n="evMyFavorites">관심 행사 모아보기 →</a>
+			</p>
 		</section>
 
 		<div class="events-divider"></div>
 
 		<div class="events-search" th:unless="${#lists.isEmpty(events)}">
 			<input type="search" id="events-search-input" class="events-search__input"
-				   data-pi18n-placeholder="evSearchPh" data-pi18n-aria="evSearchAria" aria-label="검색"
-				   placeholder="행사 이름이나 사찰 이름으로 검색 (예: 박람회, 조계사...)" autocomplete="off">
+			       data-pi18n-placeholder="evSearchPh" data-pi18n-aria="evSearchAria" aria-label="검색"
+			       placeholder="행사 이름이나 사찰 이름으로 검색 (예: 박람회, 조계사...)" autocomplete="off">
 		</div>
 
 		<p class="events-empty" th:if="${#lists.isEmpty(events)}" data-pi18n="evNone">
@@ -44,15 +47,15 @@
 
 		<div class="events-grid" id="events-grid" th:unless="${#lists.isEmpty(events)}">
 			<article class="event-card" th:each="event : ${events}"
-					  th:classappend="${event.past} ? ' is-past' : ''"
-					  th:attr="data-event-name=${event.title + ' ' + event.templeName}">
+			         th:classappend="${event.past} ? ' is-past' : ''"
+			         th:attr="data-event-name=${event.title + ' ' + event.templeName}">
 
 				<div class="event-card__body">
 
 					<div class="event-card__date">
 						<span th:text="${#temporals.format(event.startDate, 'yyyy.MM.dd')}">2026.01.01</span>
 						<span th:if="${event.endDate != event.startDate}"
-							  th:text="'~ ' + ${#temporals.format(event.endDate, 'yyyy.MM.dd')}">~ 2026.01.07</span>
+						      th:text="'~ ' + ${#temporals.format(event.endDate, 'yyyy.MM.dd')}">~ 2026.01.07</span>
 						<span class="event-card__past-badge" th:if="${event.past}" data-pi18n="evPast">종료</span>
 					</div>
 
@@ -79,9 +82,9 @@
 				     padding만 남은 빈 줄이 생김) 컨테이너째로 안 그린다. -->
 				<div class="event-card__footer" sec:authorize="!hasRole('ADMIN')">
 					<button type="button" class="favorite-toggle"
-							th:classappend="${event.favorited} ? 'is-favorited' : ''"
-							th:attr="data-favorite-url=@{'/events/' + ${event.eventId} + '/favorite'}, aria-pressed=${event.favorited}"
-							th:data-favorited="${event.favorited}">
+					        th:classappend="${event.favorited} ? 'is-favorited' : ''"
+					        th:attr="data-favorite-url=@{'/events/' + ${event.eventId} + '/favorite'}, aria-pressed=${event.favorited}"
+					        th:data-favorited="${event.favorited}">
 						<span class="favorite-toggle__icon"></span>
 						<span class="favorite-toggle__label" th:text="${event.favorited} ? '즐겨찾기됨' : '즐겨찾기'">즐겨찾기</span>
 					</button>
@@ -89,6 +92,8 @@
 
 			</article>
 		</div>
+
+		<div id="events-infinite-sentinel" class="events-infinite-sentinel" th:unless="${#lists.isEmpty(events)}"></div>
 
 		<p class="events-more" th:unless="${#lists.isEmpty(events)}">
 			<a th:href="@{/mypage/favorites/events}" sec:authorize="isAuthenticated()" data-pi18n="evMyFavorites">관심 행사 모아보기 →</a>

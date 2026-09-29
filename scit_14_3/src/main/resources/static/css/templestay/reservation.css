@@ -60,8 +60,8 @@
 
 * { box-sizing: border-box; }
 a {
-color: inherit;
-text-decoration: none;
+  color: inherit;
+  text-decoration: none;
 }
 body {
   margin: 0;
@@ -85,16 +85,17 @@ h1, h2, h3 {
 button { font-family: inherit; }
 
 /* ---------- Header ---------- */
-header {
-  padding: 48px 24px 0;
+/* header >> body > header : 공통 헤더 fragment 안의 <header>에도 걸릴 수 있어서 페이지 헤더로 범위 좁힘 */
+body > header {
+  padding: 110px 24px 0;   /* 48px >> 110px : fixed 공통 헤더(74px)에 TEMPLESTAY RESERVATION이 가려져서 */
   text-align: center;
   border-bottom: 1px solid var(--line);
   background: radial-gradient(60% 60% at 50% 0%, var(--pine-tint), transparent 70%);
 }
-header h1 {
+body > header > h1 {       /* header h1 >> body > header > h1 */
   font-size: clamp(26px, 4vw, 34px);
 }
-header h1::before {
+body > header > h1::before {   /* header h1::before >> body > header > h1::before */
   content: "TEMPLESTAY RESERVATION";
   display: block;
   font-family: "IBM Plex Mono", monospace;
@@ -123,8 +124,8 @@ header h1::before {
   font-size: 13px;
   font-weight: 600;
   color: var(--ink-faint);
-  font-family: "IBM Plex Mono", monospace;
-  letter-spacing: 0.02em;
+  font-family: "Noto Sans KR", sans-serif;  /* 폰트교체 */
+  letter-spacing: -0.01em;   /* 0.02em >> -0.01em*/
 }
 #progress-steps li::before {
   content: "";
@@ -285,8 +286,8 @@ select:focus, input:focus, textarea:focus {
   height: 160px;
   background-color: var(--line-soft);
   background-image:
-    radial-gradient(circle at 21px 21px, transparent 9px, color-mix(in srgb, var(--gold) 20%, transparent) 10px, color-mix(in srgb, var(--gold) 20%, transparent) 10.6px, transparent 11.6px),
-    radial-gradient(circle at 21px 21px, transparent 3px, color-mix(in srgb, var(--pine) 30%, transparent) 3.6px, transparent 4.6px);
+          radial-gradient(circle at 21px 21px, transparent 9px, color-mix(in srgb, var(--gold) 20%, transparent) 10px, color-mix(in srgb, var(--gold) 20%, transparent) 10.6px, transparent 11.6px),
+          radial-gradient(circle at 21px 21px, transparent 3px, color-mix(in srgb, var(--pine) 30%, transparent) 3.6px, transparent 4.6px);
   background-size: 42px 42px;
   padding: 10px;
   display: flex;
@@ -341,7 +342,7 @@ select:focus, input:focus, textarea:focus {
 .program-type-badge {
   display: inline-flex;
   align-self: flex-start;
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "Noto Sans KR", sans-serif;  /* IBM Plex Mono >> Noto Sans KR : 한글 글리프 없어서 폴백됨 */
   font-size: 11.5px;
   font-weight: 600;
   color: var(--badge-color, var(--gold));
@@ -350,32 +351,32 @@ select:focus, input:focus, textarea:focus {
   padding: 3px 10px;
 }
 .program-type-badge[data-type="체험형"] {
- --badge-color: var(--pine-deep);
- --badge-tint: var(--pine-tint); }
+  --badge-color: var(--pine-deep);
+  --badge-tint: var(--pine-tint); }
 .program-type-badge[data-type="휴식형"] {
- --badge-color: var(--blue);
- --badge-tint: var(--blue-tint);
- }
+  --badge-color: var(--blue);
+  --badge-tint: var(--blue-tint);
+}
 .program-type-badge[data-type="당일형"] {
---badge-color: var(--gold);
---badge-tint: var(--gold-tint);
+  --badge-color: var(--gold);
+  --badge-tint: var(--gold-tint);
 }
 .lang-badge {
-display: inline-flex;
-align-items: center;
-font-family: "IBM Plex Mono", monospace;
-font-size: 11px;
-font-weight: 700;
-color: #1a1a1a;
-background: transparent;
-border: 1px solid #1a1a1a;
-border-radius: 999px;
-padding: 2px 9px;
+  display: inline-flex;
+  align-items: center;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1a1a1a;
+  background: transparent;
+  border: 1px solid #1a1a1a;
+  border-radius: 999px;
+  padding: 2px 9px;
 }
 .badge-group {
-display: flex;
-align-items: center;
-gap: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .program-title {
   font-family: "Noto Serif KR", serif;
@@ -599,7 +600,7 @@ textarea { min-height: 80px; resize: vertical; }
 }
 .cal-head button:hover { border-color: var(--pine); color: var(--pine-deep); }
 #cal-month-label {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "Noto Sans KR", sans-serif;  /* IBM Plex Mono >> Noto Sans KR : "2026년 10월" 한글 폴백 */
   font-weight: 600;
   font-size: 14px;
 }
@@ -775,7 +776,7 @@ legend {
 #result-status {
   display: inline-block;
   width: fit-content;
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "Noto Sans KR", sans-serif;  /* IBM Plex Mono >> Noto Sans KR : 예약 상태 한글 폴백 */
   font-size: 13px;
   font-weight: 600;
   color: var(--gold);
@@ -816,18 +817,18 @@ legend {
   border-spacing: 0;
   overflow: hidden;
   font-size: 13.5px;
-        }
+}
 .result-participant-table th {
   text-align: left;
   padding: 9px 10px;
   background: var(--pine-tint);
   color: var(--pine-deep);
-  font-family: "IBM Plex Mono", monospace;
-  letter-spacing: 0.04em;
+  font-family: "Noto Sans KR", sans-serif;  /* IBM Plex Mono >> Noto Sans KR : 이름/성별/이메일/연락처 한글 폴백 */
+  letter-spacing: 0;         /* 0.04em >> 0 : 한글엔 자간 넓히면 어색함 */
   text-transform: uppercase;
   font-size: 11px;
   font-weight: 600;
- }
+}
 .result-participant-table td {
   text-align: left;
   padding: 10px;

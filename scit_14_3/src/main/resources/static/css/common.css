@@ -27,6 +27,7 @@
     --text-muted: rgba(39, 33, 27, .30);
 
     --line: rgba(39, 33, 27, 0.09);
+    --border: rgba(39, 33, 27, .16);   /* 추가 : .admin-tabs / .submit.btn-danger:disabled에서 쓰는데 정의가 없었음 (signup.css를 안 불러오는 페이지에선 테두리가 사라짐) */
 
     /* 폰트: 가이드 지정값은 Outfit(본문)+Lora(제목)이지만 둘 다 한글 글리프가 없어서
        그대로 적용하면 한글 텍스트가 전부 시스템 폴백 폰트로 깨짐. 최종 폰트 결정 전까지 보류. */
@@ -54,7 +55,8 @@ a {
 
     z-index: 100;
 
-    background: rgba(248, 244, 239, 0.97);
+    background: rgba(248, 244, 239, 0.92);   /* .97 >> .92 */
+    backdrop-filter: blur(8px);              /* 추가 : 스크롤 시 헤더 뒤로 본문 글자가 흐릿하게 비쳐 보이던 것 흐리게 처리 */
 
     border-bottom: 1px solid transparent;
 
@@ -109,13 +111,13 @@ a {
 .main-nav a {
     font-family: "Noto Sans KR", sans-serif;
     font-size: 16px;
-    font-weight: 700;
-    color: rgba(39, 33, 27, .42);
+    font-weight: 500;               /* 700 >> 500 */
+    color: var(--text-secondary);   /* .42 >> .60 토큰 재사용*/
     transition: color 0.2s ease;
 }
 
 .main-nav a:hover {
-    color: rgba(39, 33, 27, 0.85);
+    color: var(--brown);
 }
 
 .main-nav span {
@@ -176,7 +178,8 @@ a {
 }
 
 .language-button.active {
-    color: rgba(39, 33, 27, .73);
+    color: var(--text);   /* rgba(.73) >> var(--text) : 현재 언어 구분이 약해서 */
+    font-weight: 500;     /* 추가 */
 }
 
 /* 번역 모델 다운로드/번역 중 - 눌렀는데 멈춘 것처럼 보이지 않도록 표시 */

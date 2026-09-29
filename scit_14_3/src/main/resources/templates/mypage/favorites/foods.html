@@ -26,14 +26,32 @@
 
         <section class="favorites-hero">
             <h1>관심 사찰음식</h1>
+            <p class="favorites-hero__more" th:unless="${#lists.isEmpty(foods)}">
+                <a th:href="@{/info/food}">다른 사찰음식 보러가기 →</a>
+            </p>
         </section>
+
+        <div class="favorites-divider"></div>
 
         <p class="favorites-empty" th:if="${#lists.isEmpty(foods)}">
             아직 저장한 사찰음식이 없습니다. <a th:href="@{/info/food}">사찰 음식 보러가기 →</a>
         </p>
 
-        <div class="food-favorite-grid" data-favorites-grid="food-pagination" th:unless="${#lists.isEmpty(foods)}">
-            <article class="food-favorite-card" th:each="food : ${foods}" data-remove-on-unfavorite>
+        <div class="favorites-search" th:unless="${#lists.isEmpty(foods)}">
+            <input type="search" id="favorite-foods-search-input" class="favorites-search__input"
+                   aria-label="검색" placeholder="음식 이름이나 소개로 검색" autocomplete="off">
+        </div>
+
+        <p class="favorites-search-empty" id="favorite-foods-search-empty" hidden>
+            검색 결과가 없습니다.
+        </p>
+
+        <div class="food-favorite-grid" data-favorites-infinite-grid="food-infinite-sentinel"
+             data-favorites-search-input="favorite-foods-search-input"
+             data-favorites-search-empty="favorite-foods-search-empty"
+             th:unless="${#lists.isEmpty(foods)}">
+            <article class="food-favorite-card" th:each="food : ${foods}" data-remove-on-unfavorite
+                     th:attr="data-search-name=${food.foodName() + ' ' + (food.description() ?: '')}">
 
                 <img class="food-favorite-card__image" th:if="${food.imageUrl() != null}"
                      th:src="${food.imageUrl()}" th:alt="${food.foodName()}">
@@ -64,7 +82,7 @@
             </article>
         </div>
 
-        <div class="pagination" id="food-pagination" th:unless="${#lists.isEmpty(foods)}"></div>
+        <div id="food-infinite-sentinel" class="favorites-infinite-sentinel" th:unless="${#lists.isEmpty(foods)}"></div>
 
         <p class="favorites-more" th:unless="${#lists.isEmpty(foods)}">
             <a th:href="@{/info/food}">다른 사찰음식 보러가기 →</a>
@@ -76,7 +94,7 @@
 <div th:replace="~{fragments/layout :: footer}"></div>
 
 <script defer th:src="@{/js/buddhism/favoriteButton.js}"></script>
-<script defer th:src="@{/js/mypage/favoritesPagination.js}"></script>
+<script defer th:src="@{/js/mypage/favoritesInfiniteScroll.js}"></script>
 
 </body>
 </html>

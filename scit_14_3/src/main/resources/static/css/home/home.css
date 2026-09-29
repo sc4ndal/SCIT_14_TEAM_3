@@ -298,12 +298,12 @@ img {
 
 .type-item-learn {
     top: 68px;
-    left: 22px;
+    left: 120px;     /* 22 > 120*/
 }
 
 .type-item-find {
     top: 402px;
-    left: 100px;
+    left: 190px;        /* 100 > 190*/
 }
 
 
