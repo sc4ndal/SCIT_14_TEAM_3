@@ -33,6 +33,30 @@ public class TempleFoodService {
 				.toList();
 	}
 
+	/** 관리자 사찰음식 등록(/admin/manage/food) - 수정/삭제는 웹에서 제공하지 않음(필요하면 DB에서 직접 처리).
+	    imageUrl은 컨트롤러가 Cloudinary에 올린 뒤 넘겨준 URL(이미지 없으면 null). */
+	@Transactional
+	public void create(String foodName, String description, String recipe, String recipeUrl, String imageUrl) {
+		if (foodName == null || foodName.isBlank()) {
+			throw new IllegalArgumentException("음식명을 입력해주세요.");
+		}
+		if (foodName.trim().length() > 50) {
+			throw new IllegalArgumentException("음식명은 50자 이내로 입력해주세요.");
+		}
+		templeFoodRepository.save(TempleFoodEntity.builder()
+				.foodName(foodName.trim())
+				.description(blankToNull(description))
+				.recipe(blankToNull(recipe))
+				.recipeUrl(blankToNull(recipeUrl))
+				.imageUrl(blankToNull(imageUrl))
+				.build());
+		log.debug("사찰음식 등록: foodName={}", foodName);
+	}
+
+	private String blankToNull(String value) {
+		return value == null || value.isBlank() ? null : value.trim();
+	}
+
 	/** 마이페이지 허브 카드의 "관심 사찰음식 N개" 배지용 */
 	public long countFavorites(String loginId) {
 		return favoriteFoodRepository.countByLoginId(loginId);

@@ -8,13 +8,16 @@
 document.getElementById('quote-refresh-btn')?.addEventListener('click', function () {
 	if (!Array.isArray(ALL_QUOTES) || ALL_QUOTES.length === 0) return;
 
-	var currentId = Number(document.getElementById('quote-favorite-btn').dataset.favoriteUrl.split('/')[3]);
+	// 즐겨찾기 버튼은 USER에게만 렌더링되므로, 현재 한마디 ID는 항상 있는 #quote-content에서 읽는다
+	var contentEl = document.getElementById('quote-content');
+	var currentId = Number(contentEl.dataset.quoteId);
 	var candidates = ALL_QUOTES.length > 1
 		? ALL_QUOTES.filter(function (q) { return q.quoteId !== currentId; })
 		: ALL_QUOTES;
 	var quote = candidates[Math.floor(Math.random() * candidates.length)];
 
-	document.getElementById('quote-content').textContent = quote.content;
+	contentEl.textContent = quote.content;
+	contentEl.dataset.quoteId = quote.quoteId;
 
 	var sourceEl = document.getElementById('quote-source');
 	if (quote.source) {
@@ -25,6 +28,7 @@ document.getElementById('quote-refresh-btn')?.addEventListener('click', function
 	}
 
 	var favoriteBtn = document.getElementById('quote-favorite-btn');
+	if (!favoriteBtn) return;
 	favoriteBtn.dataset.favoriteUrl = '/info/quote/' + quote.quoteId + '/favorite';
 	applyFavoriteState(favoriteBtn, quote.favorited);
 });

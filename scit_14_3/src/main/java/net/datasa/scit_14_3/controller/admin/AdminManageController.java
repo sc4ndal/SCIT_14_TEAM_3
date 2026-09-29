@@ -2,8 +2,12 @@ package net.datasa.scit_14_3.controller.admin;
 
 import lombok.RequiredArgsConstructor;
 import net.datasa.scit_14_3.domain.dto.temple.TempleDTO;
+import net.datasa.scit_14_3.domain.dto.temple.TempleEventDTO;
 import net.datasa.scit_14_3.domain.entity.user.UserEntity;
+import net.datasa.scit_14_3.service.buddhism.DailyQuoteService;
+import net.datasa.scit_14_3.service.buddhism.TempleFoodService;
 import net.datasa.scit_14_3.service.integration.CloudinaryService;
+import net.datasa.scit_14_3.service.temple.TempleEventService;
 import net.datasa.scit_14_3.service.temple.TempleService;
 import net.datasa.scit_14_3.service.user.UserService;
 import org.springframework.stereotype.Controller;
@@ -12,8 +16,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * 사이트 관리자 전용 - 회원관리(USER)/사찰관리(TEMPLE) 두 탭으로 나뉜 관리 화면.
+ * 사이트 관리자 전용 - 회원관리(USER)/사찰관리(TEMPLE)/행사관리(TEMPLE_EVENT)/사찰음식관리(TEMPLE_FOOD_RECOMMENDATION)/한마디관리(DAILY_QUOTE) 탭으로 나뉜 관리 화면.
  * 사찰관리에는 이미 등록 완료된(TEMPLE 테이블에 실제로 존재하는) 사찰만 나옴 - 대기중인
  * 요청은 AdminTempleRequestController가 다루는 "사찰 등록 요청 목록"에서 따로 봄.
  */
@@ -25,12 +32,21 @@ public class AdminManageController {
 	private final UserService userService;
 	private final TempleService templeService;
 	private final CloudinaryService cloudinaryService;
+	private final TempleEventService templeEventService;
+	private final TempleFoodService templeFoodService;
+	private final DailyQuoteService dailyQuoteService;
 
 	@GetMapping
 	public String manage(@RequestParam(defaultValue = "user") String tab, Model model) {
 		model.addAttribute("tab", tab);
 		if ("temple".equals(tab)) {
 			model.addAttribute("temples", templeService.getAllForAdmin());
+		} else if ("event".equals(tab)) {
+			model.addAttribute("events", templeEventService.getAllSortedByDate(null));
+		} else if ("food".equals(tab)) {
+			model.addAttribute("foods", templeFoodService.getAllFoods(null));
+		} else if ("quote".equals(tab)) {
+			model.addAttribute("quotes", dailyQuoteService.getAllQuotes(null));
 		} else {
 			model.addAttribute("users", userService.getAllRegularUsers());
 		}
@@ -106,5 +122,96 @@ public class AdminManageController {
 			redirectAttributes.addFlashAttribute("manageError", e.getMessage());
 		}
 		return "redirect:/admin/manage?tab=temple";
+	}
+
+	// ================= 행사관리 (등록만 - 수정/삭제는 웹에서 제공하지 않음) =================
+
+	@GetMapping("/event/new")
+	public String newEventForm(Model model) {
+		if (!model.containsAttribute("formData")) {
+			model.addAttribute("formData", new TempleEventDTO());
+		}
+		model.addAttribute("temples", templeService.getAllForAdmin());
+		return "admin/eventForm";
+	}
+
+	@PostMapping("/event")
+	public String createEvent(@ModelAttribute TempleEventDTO dto, RedirectAttributes redirectAttributes) {
+		try {
+			templeEventService.create(dto);
+			redirectAttributes.addFlashAttribute("manageSuccess", "행사가 등록되었습니다.");
+		} catch (IllegalArgumentException e) {
+			redirectAttributes.addFlashAttribute("manageError", e.getMessage());
+			redirectAttributes.addFlashAttribute("formData", dto); // 입력값 유지
+			return "redirect:/admin/manage/event/new";
+		}
+		return "redirect:/admin/manage?tab=event";
+	}
+
+	// ================= 사찰음식관리 (등록만 - 수정/삭제는 웹에서 제공하지 않음) =================
+
+	@GetMapping("/food/new")
+	public String newFoodForm(Model model) {
+		if (!model.containsAttribute("formData")) {
+			model.addAttribute("formData", new HashMap<String, String>());
+		}
+		return "admin/foodForm";
+	}
+
+	@PostMapping("/food")
+	public String createFood(@RequestParam String foodName,
+							 @RequestParam(required = false) String description,
+							 @RequestParam(required = false) String recipe,
+							 @RequestParam(required = false) String recipeUrl,
+							 @RequestParam(required = false) MultipartFile imageFile,
+							 RedirectAttributes redirectAttributes) {
+		try {
+			// 음식명이 비었으면 Cloudinary에 올리기 전에 막음 - 먼저 올려버리면 등록은 실패하고 이미지만 남는다
+			if (foodName.isBlank()) {
+				throw new IllegalArgumentException("음식명을 입력해주세요.");
+			}
+			String imageUrl = (imageFile != null && !imageFile.isEmpty()) ? cloudinaryService.upload(imageFile) : null;
+			templeFoodService.create(foodName, description, recipe, recipeUrl, imageUrl);
+			redirectAttributes.addFlashAttribute("manageSuccess", "사찰음식이 등록되었습니다.");
+		} catch (IllegalArgumentException | IllegalStateException e) {
+			redirectAttributes.addFlashAttribute("manageError", e.getMessage());
+			// 입력값 유지(이미지 파일은 브라우저 보안상 다시 채울 수 없어서 재선택 필요)
+			Map<String, String> formData = new HashMap<>();
+			formData.put("foodName", foodName);
+			formData.put("description", description);
+			formData.put("recipe", recipe);
+			formData.put("recipeUrl", recipeUrl);
+			redirectAttributes.addFlashAttribute("formData", formData);
+			return "redirect:/admin/manage/food/new";
+		}
+		return "redirect:/admin/manage?tab=food";
+	}
+
+	// ================= 한마디관리 (등록만 - 수정/삭제는 웹에서 제공하지 않음) =================
+
+	@GetMapping("/quote/new")
+	public String newQuoteForm(Model model) {
+		if (!model.containsAttribute("formData")) {
+			model.addAttribute("formData", new HashMap<String, String>());
+		}
+		return "admin/quoteForm";
+	}
+
+	@PostMapping("/quote")
+	public String createQuote(@RequestParam String content,
+							  @RequestParam(required = false) String source,
+							  RedirectAttributes redirectAttributes) {
+		try {
+			dailyQuoteService.create(content, source);
+			redirectAttributes.addFlashAttribute("manageSuccess", "한마디가 등록되었습니다.");
+		} catch (IllegalArgumentException e) {
+			redirectAttributes.addFlashAttribute("manageError", e.getMessage());
+			Map<String, String> formData = new HashMap<>();
+			formData.put("content", content);
+			formData.put("source", source);
+			redirectAttributes.addFlashAttribute("formData", formData); // 입력값 유지
+			return "redirect:/admin/manage/quote/new";
+		}
+		return "redirect:/admin/manage?tab=quote";
 	}
 }
