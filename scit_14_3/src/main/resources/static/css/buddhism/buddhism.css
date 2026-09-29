@@ -17,25 +17,6 @@
 
 * {
 	box-sizing: border-box;
-}/* ============================================================
-   알아보기 > 불교란? / 불교 용어 공통 스타일
-   세부 비주얼(일러스트 스타일·색·폰트)은 Figma 확정 후 조정 예정이며,
-   여기서는 와이어프레임의 레이아웃 틀을 잡는 데 집중한다.
-   ============================================================ */
-
-:root {
-	--paper: #faf7f2;
-	--paper-deep: #f2ece2;
-	--ink: #2b2723;
-	--ink-soft: #6b6259;
-	--line: #ded5c8;
-	--accent: #8c6239;   /* 황토 */
-	--accent-soft: #f0e4d4;
-	--pine: #4a6b52;     /* 단청 녹 */
-}
-
-* {
-	box-sizing: border-box;
 }
 
 body {
@@ -104,23 +85,6 @@ a {
 	color: var(--accent);
 }
 
-.site-footer {
-	margin-top: 96px;
-	padding: 40px 24px;
-	border-top: 1px solid var(--line);
-	text-align: center;
-	color: var(--ink-soft);
-	font-size: 14px;
-}
-
-.site-footer p {
-	margin: 4px 0;
-}
-
-.site-footer__sub {
-	font-size: 13px;
-	opacity: .8;
-}
 
 /* ---------- 도입부 ---------- */
 
