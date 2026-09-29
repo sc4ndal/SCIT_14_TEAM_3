@@ -4,9 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datasa.scit_14_3.domain.dto.temple.TempleEventDTO;
 import net.datasa.scit_14_3.domain.entity.temple.FavoriteEventEntity;
+import net.datasa.scit_14_3.domain.entity.temple.TempleEntity;
 import net.datasa.scit_14_3.domain.entity.temple.TempleEventEntity;
 import net.datasa.scit_14_3.repository.temple.FavoriteEventRepository;
 import net.datasa.scit_14_3.repository.temple.TempleEventRepository;
+import net.datasa.scit_14_3.repository.temple.TempleRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,7 @@ public class TempleEventService {
 
 	private final TempleEventRepository templeEventRepository;
 	private final FavoriteEventRepository favoriteEventRepository;
+	private final TempleRepository templeRepository;
 
 	public List<TempleEventDTO> getAll() {
 		return templeEventRepository.findAllWithTemple().stream()
@@ -64,6 +67,39 @@ public class TempleEventService {
 				.flatMap(List::stream)
 				.map(event -> toDto(event, favoritedIds))
 				.toList();
+	}
+
+	/** 관리자 행사 등록(/admin/manage/event) - 수정/삭제는 웹에서 제공하지 않음(필요하면 DB에서 직접 처리). */
+	@Transactional
+	public void create(TempleEventDTO dto) {
+		if (dto.getTitle() == null || dto.getTitle().isBlank()) {
+			throw new IllegalArgumentException("행사명을 입력해주세요.");
+		}
+		if (dto.getStartDate() == null || dto.getEndDate() == null) {
+			throw new IllegalArgumentException("시작일과 종료일을 입력해주세요.");
+		}
+		if (dto.getEndDate().isBefore(dto.getStartDate())) {
+			throw new IllegalArgumentException("종료일은 시작일보다 빠를 수 없습니다.");
+		}
+		if (dto.getTempleId() == null) {
+			throw new IllegalArgumentException("사찰을 선택해주세요.");
+		}
+		TempleEntity temple = templeRepository.findById(dto.getTempleId())
+				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사찰입니다."));
+
+		templeEventRepository.save(TempleEventEntity.builder()
+				.temple(temple)
+				.title(dto.getTitle().trim())
+				.description(blankToNull(dto.getDescription()))
+				.startDate(dto.getStartDate())
+				.endDate(dto.getEndDate())
+				.linkUrl(blankToNull(dto.getLinkUrl()))
+				.build());
+		log.debug("행사 등록: templeId={}, title={}", temple.getTempleId(), dto.getTitle());
+	}
+
+	private String blankToNull(String value) {
+		return value == null || value.isBlank() ? null : value.trim();
 	}
 
 	/** 마이페이지 허브 카드의 "관심 행사 N건" 배지용 */

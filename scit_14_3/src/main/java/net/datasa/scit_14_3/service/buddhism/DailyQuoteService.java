@@ -50,6 +50,24 @@ public class DailyQuoteService {
 				.toList();
 	}
 
+	/** 관리자 한마디 등록(/admin/manage/quote) - 수정/삭제는 웹에서 제공하지 않음(필요하면 DB에서 직접 처리).
+	    전체 건수가 바뀌므로 getQuoteOfTheDay가 고르는 "오늘의 한마디"도 등록 즉시 바뀔 수 있다. */
+	@Transactional
+	public void create(String content, String source) {
+		if (content == null || content.isBlank()) {
+			throw new IllegalArgumentException("한마디 내용을 입력해주세요.");
+		}
+		String trimmedSource = source == null || source.isBlank() ? null : source.trim();
+		if (trimmedSource != null && trimmedSource.length() > 100) {
+			throw new IllegalArgumentException("출처는 100자 이내로 입력해주세요.");
+		}
+		dailyQuoteRepository.save(DailyQuoteEntity.builder()
+				.content(content.trim())
+				.source(trimmedSource)
+				.build());
+		log.debug("한마디 등록: source={}", trimmedSource);
+	}
+
 	/** 마이페이지 허브 카드의 "저장한 한마디 N개" 배지용 */
 	public long countFavorites(String loginId) {
 		return favoriteQuoteRepository.countByLoginId(loginId);

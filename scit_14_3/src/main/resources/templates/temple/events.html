@@ -25,7 +25,11 @@
 			<h1 data-pi18n="evTitle">불교 행사</h1>
 			<p data-pi18n="evLead">박람회·법회·전통문화 행사 등 전국 사찰에서 열리는 불교 행사를 모았습니다.</p>
 			<p class="events-hero__more" th:unless="${#lists.isEmpty(events)}">
-				<a th:href="@{/mypage/favorites/events}" sec:authorize="isAuthenticated()" data-pi18n="evMyFavorites">관심 행사 모아보기 →</a>
+				<a th:href="@{/mypage/favorites/events}" sec:authorize="hasRole('USER')" data-pi18n="evMyFavorites">관심 행사 모아보기 →</a>
+			</p>
+			<!-- 관리자 전용 - 행사가 하나도 없을 때도 등록하러 갈 수 있도록 위 문단(th:unless)과 분리 -->
+			<p class="events-hero__more" sec:authorize="hasRole('ADMIN')">
+				<a th:href="@{/admin/manage(tab='event')}">행사 관리 →</a>
 			</p>
 		</section>
 
@@ -77,10 +81,10 @@
 
 				</div>
 
-				<!-- 관리자 계정은 즐겨찾기를 못 쓰게 서버(TempleEventViewController)에서 막아뒀다 -
+				<!-- 일반 회원(USER)만 즐겨찾기를 쓸 수 있게 서버(TempleEventViewController)에서 막아뒀다 -
 				     food.html과 같은 이유로(event-card__footer가 이 버튼 하나만 담는 전용 div,
 				     padding만 남은 빈 줄이 생김) 컨테이너째로 안 그린다. -->
-				<div class="event-card__footer" sec:authorize="!hasRole('ADMIN')">
+				<div class="event-card__footer" sec:authorize="hasRole('USER')">
 					<button type="button" class="favorite-toggle"
 							th:classappend="${event.favorited} ? 'is-favorited' : ''"
 							th:attr="data-favorite-url=@{'/events/' + ${event.eventId} + '/favorite'}, aria-pressed=${event.favorited}"
@@ -96,7 +100,7 @@
 		<div id="events-infinite-sentinel" class="events-infinite-sentinel" th:unless="${#lists.isEmpty(events)}"></div>
 
 		<p class="events-more" th:unless="${#lists.isEmpty(events)}">
-			<a th:href="@{/mypage/favorites/events}" sec:authorize="isAuthenticated()" data-pi18n="evMyFavorites">관심 행사 모아보기 →</a>
+			<a th:href="@{/mypage/favorites/events}" sec:authorize="hasRole('USER')" data-pi18n="evMyFavorites">관심 행사 모아보기 →</a>
 		</p>
 
 	</div>

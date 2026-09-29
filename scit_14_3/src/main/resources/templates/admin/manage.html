@@ -22,6 +22,9 @@
 	<nav class="admin-tabs">
 		<a class="admin-tab" th:classappend="${tab == 'user'} ? ' active'" th:href="@{/admin/manage(tab='user')}">회원관리</a>
 		<a class="admin-tab" th:classappend="${tab == 'temple'} ? ' active'" th:href="@{/admin/manage(tab='temple')}">사찰관리</a>
+		<a class="admin-tab" th:classappend="${tab == 'event'} ? ' active'" th:href="@{/admin/manage(tab='event')}">행사관리</a>
+		<a class="admin-tab" th:classappend="${tab == 'food'} ? ' active'" th:href="@{/admin/manage(tab='food')}">사찰음식관리</a>
+		<a class="admin-tab" th:classappend="${tab == 'quote'} ? ' active'" th:href="@{/admin/manage(tab='quote')}">한마디관리</a>
 	</nav>
 
 	<p class="admin-alert admin-alert--ok" th:if="${manageSuccess}" th:text="${manageSuccess}"></p>
@@ -107,6 +110,98 @@
 						</form>
 					</div>
 				</td>
+			</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<!-- ===================== 행사관리 (등록만 - 수정/삭제는 웹에서 제공하지 않음) ===================== -->
+	<div th:if="${tab == 'event'}" class="admin-table-wrap" style="margin-top:16px;padding-bottom:32px;">
+		<div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+			<a class="submit" th:href="@{/admin/manage/event/new}"
+			   style="display:inline-block;width:auto;padding:10px 20px;text-decoration:none;">행사 등록</a>
+		</div>
+		<p th:if="${#lists.isEmpty(events)}" style="text-align:center; color:var(--ink-soft); padding:24px 0;">
+			등록된 행사가 없습니다.
+		</p>
+		<table class="admin-table" th:if="${!#lists.isEmpty(events)}">
+			<thead>
+			<tr>
+				<th>행사명</th>
+				<th>사찰</th>
+				<th>기간</th>
+				<th>링크</th>
+			</tr>
+			</thead>
+			<tbody>
+			<tr th:each="e : ${events}" th:style="${e.past} ? 'color:var(--ink-soft);'">
+				<td class="wrap" th:text="${e.title}"></td>
+				<td th:text="${e.templeName}"></td>
+				<td th:text="${#temporals.format(e.startDate, 'yyyy-MM-dd') + ' ~ ' + #temporals.format(e.endDate, 'yyyy-MM-dd')}"></td>
+				<td>
+					<a th:if="${e.linkUrl != null}" th:href="${e.linkUrl}" target="_blank" rel="noopener">열기</a>
+				</td>
+			</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<!-- ===================== 사찰음식관리 (등록만 - 수정/삭제는 웹에서 제공하지 않음) ===================== -->
+	<div th:if="${tab == 'food'}" class="admin-table-wrap" style="margin-top:16px;padding-bottom:32px;">
+		<div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+			<a class="submit" th:href="@{/admin/manage/food/new}"
+			   style="display:inline-block;width:auto;padding:10px 20px;text-decoration:none;">사찰음식 등록</a>
+		</div>
+		<p th:if="${#lists.isEmpty(foods)}" style="text-align:center; color:var(--ink-soft); padding:24px 0;">
+			등록된 사찰음식이 없습니다.
+		</p>
+		<table class="admin-table" th:if="${!#lists.isEmpty(foods)}">
+			<thead>
+			<tr>
+				<th>사진</th>
+				<th>음식명</th>
+				<th>소개</th>
+				<th>레시피 링크</th>
+			</tr>
+			</thead>
+			<tbody>
+			<tr th:each="f : ${foods}">
+				<td>
+					<img th:if="${f.imageUrl() != null}" th:src="${f.imageUrl()}" th:alt="${f.foodName()}"
+					     style="width:56px;height:56px;object-fit:cover;border-radius:4px;display:block;">
+				</td>
+				<td th:text="${f.foodName()}"></td>
+				<td class="wrap" th:text="${f.description() != null and #strings.length(f.description()) > 60} ? ${#strings.substring(f.description(), 0, 60) + '…'} : ${f.description()}"></td>
+				<td>
+					<a th:if="${f.recipeUrl() != null}" th:href="${f.recipeUrl()}" target="_blank" rel="noopener">열기</a>
+				</td>
+			</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<!-- ===================== 한마디관리 (등록만 - 수정/삭제는 웹에서 제공하지 않음) ===================== -->
+	<div th:if="${tab == 'quote'}" class="admin-table-wrap" style="margin-top:16px;padding-bottom:32px;">
+		<div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+			<a class="submit" th:href="@{/admin/manage/quote/new}"
+			   style="display:inline-block;width:auto;padding:10px 20px;text-decoration:none;">한마디 등록</a>
+		</div>
+		<p th:if="${#lists.isEmpty(quotes)}" style="text-align:center; color:var(--ink-soft); padding:24px 0;">
+			등록된 한마디가 없습니다.
+		</p>
+		<table class="admin-table" th:if="${!#lists.isEmpty(quotes)}">
+			<thead>
+			<tr>
+				<th>번호</th>
+				<th>내용</th>
+				<th>출처</th>
+			</tr>
+			</thead>
+			<tbody>
+			<tr th:each="q : ${quotes}">
+				<td th:text="${q.quoteId()}"></td>
+				<td class="wrap" th:text="${q.content()}"></td>
+				<td th:text="${q.source()}"></td>
 			</tr>
 			</tbody>
 		</table>
