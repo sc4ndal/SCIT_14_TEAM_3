@@ -1,9 +1,18 @@
 .page-title {
-  margin: 0 0 20px;
+  margin: 0;
   font-family: var(--serif);
   font-weight: 500;
   font-size: 21px;
   color: var(--text-primary);
+  text-align: center;
+}
+
+/* 하단의 "템플스테이 후기 보러가기"(.reviews-more)까지 스크롤이 얼마나 필요할지
+   예측이 안 돼서 제목 바로 아래에도 같은 링크를 하나 더 둔다 - 다른 즐겨찾기
+   페이지(favorites.css의 .favorites-hero__more)와 같은 자리, 같은 모양(가운데 정렬 포함). */
+.reviews-hero__more {
+  margin-top: 12px;
+  text-align: center;
 }
 #review-list-section h2 {
   font-family: var(--serif);
@@ -14,12 +23,13 @@
 }
 
 .review-item-card {
-  background: var(--paper);
+  background: #fff;
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 20px 22px;
   margin-bottom: 12px;
 }
+.review-item-card[hidden] { display: none; }
 .review-item-header {
   display: flex;
   justify-content: space-between;
@@ -111,9 +121,14 @@
 .reviews-more {
   margin-top: 20px;
   text-align: center;
-  font-size: 14px;
 }
+
+/* 위치만 다를 뿐 같은 링크라 모양도 동일하게 맞춘다(favorites.css의
+   .favorites-hero__more a, .favorites-more a와 동일한 값). */
+.reviews-hero__more a,
 .reviews-more a {
   color: var(--brown);
   text-decoration: none;
+  font-weight: 600;
+  font-size: 14.5px;
 }

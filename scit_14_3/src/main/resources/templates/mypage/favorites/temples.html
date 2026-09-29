@@ -26,14 +26,32 @@
 
         <section class="favorites-hero">
             <h1>관심 사찰</h1>
+            <p class="favorites-hero__more" th:unless="${#lists.isEmpty(temples)}">
+                <a th:href="@{/findtemple}">다른 사찰 보러가기 →</a>
+            </p>
         </section>
+
+        <div class="favorites-divider"></div>
 
         <p class="favorites-empty" th:if="${#lists.isEmpty(temples)}">
             아직 즐겨찾기한 사찰이 없습니다. <a th:href="@{/findtemple}">사찰 찾아보러 가기 →</a>
         </p>
 
-        <div class="food-favorite-grid temple-favorite-grid" data-favorites-grid="temple-pagination" th:unless="${#lists.isEmpty(temples)}">
-            <article class="food-favorite-card" th:each="temple : ${temples}" data-remove-on-unfavorite>
+        <div class="favorites-search" th:unless="${#lists.isEmpty(temples)}">
+            <input type="search" id="favorite-temples-search-input" class="favorites-search__input"
+                   aria-label="검색" placeholder="사찰 이름이나 주소로 검색" autocomplete="off">
+        </div>
+
+        <p class="favorites-search-empty" id="favorite-temples-search-empty" hidden>
+            검색 결과가 없습니다.
+        </p>
+
+        <div class="food-favorite-grid temple-favorite-grid" data-favorites-infinite-grid="temple-infinite-sentinel"
+             data-favorites-search-input="favorite-temples-search-input"
+             data-favorites-search-empty="favorite-temples-search-empty"
+             th:unless="${#lists.isEmpty(temples)}">
+            <article class="food-favorite-card" th:each="temple : ${temples}" data-remove-on-unfavorite
+                     th:attr="data-search-name=${temple.name + ' ' + temple.address}">
 
                 <img class="food-favorite-card__image" th:if="${temple.imageUrl}"
                      th:src="${temple.imageUrl}" th:alt="${temple.name}">
@@ -64,7 +82,7 @@
             </article>
         </div>
 
-        <div class="pagination" id="temple-pagination" th:unless="${#lists.isEmpty(temples)}"></div>
+        <div id="temple-infinite-sentinel" class="favorites-infinite-sentinel" th:unless="${#lists.isEmpty(temples)}"></div>
 
         <p class="favorites-more" th:unless="${#lists.isEmpty(temples)}">
             <a th:href="@{/findtemple}">다른 사찰 보러가기 →</a>
@@ -76,7 +94,7 @@
 <div th:replace="~{fragments/layout :: footer}"></div>
 
 <script defer th:src="@{/js/buddhism/favoriteButton.js}"></script>
-<script defer th:src="@{/js/mypage/favoritesPagination.js}"></script>
+<script defer th:src="@{/js/mypage/favoritesInfiniteScroll.js}"></script>
 
 </body>
 </html>

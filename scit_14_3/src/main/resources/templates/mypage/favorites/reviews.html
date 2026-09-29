@@ -22,7 +22,12 @@
 
         <section class="favorites-hero">
             <h1>좋아요한 리뷰</h1>
+            <p class="favorites-hero__more" th:unless="${#lists.isEmpty(reviews)}">
+                <a th:href="@{/reservation/reviews}">다른 템플스테이 후기 보러가기 →</a>
+            </p>
         </section>
+
+        <div class="favorites-divider"></div>
 
         <p class="favorites-empty" th:if="${#lists.isEmpty(reviews)}">
             아직 좋아요한 리뷰가 없습니다. <a th:href="@{/reservation/reviews}">템플스테이 후기 보러 가기 →</a>
@@ -30,8 +35,12 @@
 
         <!-- 나의 리뷰(myReviews.html)와 동일한 긴 박스 형태 - 리스트형으로 한 줄씩 세로로 쌓는다.
              data-favorites-grid는 favoritesPagination.js가 직계 자식 개수만 세므로 그리드가 아니어도 그대로 동작한다. -->
-        <div class="review-fav-list" data-favorites-grid="review-pagination" th:unless="${#lists.isEmpty(reviews)}">
-            <article class="review-fav-card" th:each="review : ${reviews}" data-remove-on-unfavorite>
+        <div class="review-fav-list" data-favorites-grid="review-pagination"
+             data-favorites-search-input="favorite-reviews-search-input"
+             data-favorites-search-empty="favorite-reviews-search-empty"
+             th:unless="${#lists.isEmpty(reviews)}">
+            <article class="review-fav-card" th:each="review : ${reviews}" data-remove-on-unfavorite
+                     th:attr="data-search-name=${(review.title ?: (review.programName ?: '')) + ' ' + (review.templeName ?: '') + ' ' + (review.programName ?: '') + ' ' + (review.authorName ?: '') + ' ' + (review.content ?: '')}">
 
                 <div class="review-fav-header">
                     <h3 th:text="${review.title ?: (review.programName ?: '(정보 없음)')}">제목</h3>
@@ -77,10 +86,19 @@
             </article>
         </div>
 
+        <div class="favorites-search" th:unless="${#lists.isEmpty(reviews)}">
+            <input type="search" id="favorite-reviews-search-input" class="favorites-search__input"
+                   aria-label="검색" placeholder="제목, 사찰·프로그램명, 작성자, 리뷰 내용으로 검색" autocomplete="off">
+        </div>
+
+        <p class="favorites-search-empty" id="favorite-reviews-search-empty" hidden>
+            검색 결과가 없습니다.
+        </p>
+
         <div class="pagination" id="review-pagination" th:unless="${#lists.isEmpty(reviews)}"></div>
 
         <p class="favorites-more" th:unless="${#lists.isEmpty(reviews)}">
-            <a th:href="@{/reservation/reviews}">템플스테이 후기 보러가기 →</a>
+            <a th:href="@{/reservation/reviews}">다른 템플스테이 후기 보러가기 →</a>
         </p>
 
     </div>
