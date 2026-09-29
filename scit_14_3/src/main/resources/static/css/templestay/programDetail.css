@@ -1,5 +1,5 @@
         :root {
-          --bg: #efe9dd;
+          --bg: #f8f4ef;  /* common.css 사이트 공용 배경색이랑 통일 - 예전엔 #efe9dd 로 따로 박아둬서 미묘하게 안 맞았음 */
           --bg-raised: #f7f3ea;
           --ink: #2a2620;
           --ink-soft: #5b5346;

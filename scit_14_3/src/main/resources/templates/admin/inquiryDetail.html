@@ -8,24 +8,26 @@
 	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 	<link rel="stylesheet" th:href="@{/css/common.css}">
 	<link rel="stylesheet" th:href="@{/css/inquiry/inquiryDetail.css}">
+	<script th:src="@{/js/inquiry/inquiryI18n.js}" defer></script>
 </head>
 <body style="margin:0;padding:122px 16px 80px;">
 
 <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
 
 <div class="inquiry-detail-wrap">
-	<a class="inquiry-back-btn" th:href="@{/admin/inquiries}">← 목록으로</a>
+	<a class="inquiry-back-btn no-translate" data-pi18n="backToList" th:href="@{/admin/inquiries}">← 목록으로</a>
 
-	<p class="admin-alert admin-alert--ok" th:if="${answerSuccess}">
+	<p class="admin-alert admin-alert--ok no-translate" data-pi18n="manageDetailAnswerSaved" th:if="${answerSuccess}">
 		답변이 등록되었습니다.
 	</p>
 
 	<div class="inquiry-card">
 		<div class="inquiry-hero">
-			<p class="inquiry-hero-label">문의 상세</p>
+			<p class="inquiry-hero-label no-translate" data-pi18n="adminDetailHeroLabel">문의 상세</p>
 			<div class="inquiry-hero-top">
 				<h1 class="inquiry-hero-title" th:text="${inquiry.title}"></h1>
-				<span class="inquiry-status" th:classappend="'status-' + ${inquiry.status}" th:text="${inquiry.status}"></span>
+				<span class="inquiry-status no-translate" th:classappend="'status-' + ${inquiry.status}"
+				      th:attr="data-pi18n-status=${inquiry.status}" data-pi18n="statusPlaceholder" th:text="${inquiry.status}"></span>
 			</div>
 			<div class="inquiry-hero-meta">
 				<span class="no-translate"><strong th:text="${inquiry.nickname}"></strong>&nbsp;(<span th:text="${inquiry.loginId}"></span>)</span>
@@ -34,26 +36,28 @@
 		</div>
 
 		<div class="inquiry-section">
-			<h4>문의 내용</h4>
+			<h4 class="no-translate" data-pi18n="inquiryContentLabel">문의 내용</h4>
 			<p th:text="${inquiry.content}"></p>
 		</div>
 
 		<div class="inquiry-section answer" th:if="${inquiry.status.name() == '답변완료'}">
-			<h4>답변</h4>
+			<h4 class="no-translate" data-pi18n="manageDetailAnswerHeader">답변</h4>
 			<p th:text="${inquiry.answer}"></p>
-			<p class="answer-date" th:text="'답변일 ' + ${#temporals.format(inquiry.answeredAt, 'yyyy.MM.dd HH:mm')}"></p>
+			<p class="answer-date"><span class="no-translate" data-pi18n="answeredAtPrefix">답변일 </span><span th:text="${#temporals.format(inquiry.answeredAt, 'yyyy.MM.dd HH:mm')}"></span></p>
 		</div>
 
 		<form class="inquiry-answer-form" th:if="${inquiry.status.name() != '답변완료'}"
 		      th:action="@{/admin/inquiries/{id}/answer(id=${inquiry.inquiryId})}" method="post">
-			<label for="answer-text">답변 작성</label>
-			<textarea id="answer-text" name="answer" placeholder="문의하신 내용에 대한 답변을 작성해주세요." required></textarea>
+			<label for="answer-text" class="no-translate" data-pi18n="answerFormLabel">답변 작성</label>
+			<textarea id="answer-text" name="answer" placeholder="문의하신 내용에 대한 답변을 작성해주세요." data-pi18n-placeholder="manageDetailAnswerPh" required></textarea>
 			<div class="form-actions">
-				<button type="submit">답변 등록</button>
+				<button type="submit" class="no-translate" data-pi18n="submitAnswerBtn">답변 등록</button>
 			</div>
 		</form>
 	</div>
 </div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
 
 </body>
 </html>

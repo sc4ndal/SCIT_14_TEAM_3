@@ -85,6 +85,35 @@ kakao.maps.load(function () {
         level: 13
     });
 
+    // 지도 확대/축소·이동 범위 제한 - 너무 멀리 축소하거나 한국 밖으로 드래그하면
+    // 카카오 지도가 타일을 못 채워서 화면이 잘려 보이는 구간이 나온다(레벨 13 = 초기 화면 정도가 한계).
+    var MAX_MAP_LEVEL = 13;
+    var KOREA_BOUNDS = new kakao.maps.LatLngBounds(
+        new kakao.maps.LatLng(32.5, 123.5), // 남서(제주 남쪽)
+        new kakao.maps.LatLng(39.0, 132.5)  // 북동(독도 동쪽)
+    );
+    kakao.maps.event.addListener(map, 'zoom_changed', function () {
+        if (map.getLevel() > MAX_MAP_LEVEL) {
+            map.setLevel(MAX_MAP_LEVEL);
+        }
+    });
+    // 한국 밖까지 벗어나면 경계 안으로 다시 당겨온다. dragend만 걸어두면 마우스 휠로
+    // 바깥쪽 가장자리에서 계속 축소할 때는 안 걸린다 - 휠 줌은 커서 위치 쪽으로 중심이
+    // 조금씩 밀리는데 그게 드래그가 아니라서 dragend가 안 뜨고, 그 상태에서 반복하면
+    // (MAX_MAP_LEVEL로 되돌아왔다가도) 한 틱씩 계속 바깥으로 새어나갈 수 있었음.
+    // idle은 드래그든 휠 줌이든 지도가 멈출 때마다 항상 한 번 뜨므로 여기로 통일해서
+    // 원인 상관없이 항상 잡히게 한다.
+    kakao.maps.event.addListener(map, 'idle', function () {
+        var center = map.getCenter();
+        if (!KOREA_BOUNDS.contain(center)) {
+            var sw = KOREA_BOUNDS.getSouthWest();
+            var ne = KOREA_BOUNDS.getNorthEast();
+            var lat = Math.min(Math.max(center.getLat(), sw.getLat()), ne.getLat());
+            var lng = Math.min(Math.max(center.getLng(), sw.getLng()), ne.getLng());
+            map.panTo(new kakao.maps.LatLng(lat, lng));
+        }
+    });
+
     // 지도 빈 공간 클릭하면 열려있던 정보창 닫기
     kakao.maps.event.addListener(map, 'click', function () {
         if (currentOpenInfoWindow) {

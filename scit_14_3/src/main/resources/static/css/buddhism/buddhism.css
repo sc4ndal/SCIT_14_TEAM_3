@@ -5,7 +5,7 @@
    ============================================================ */
 
 :root {
-	--paper: #faf7f2;
+	--paper: var(--bg);  /* common.css의 사이트 공용 배경색을 그대로 씀 - 예전엔 #faf7f2로 따로 박아둬서 헤더/다른 페이지 배경(--bg: #f8f4ef)이랑 미묘하게 안 맞았음 */
 	--paper-deep: #f2ece2;
 	--ink: #2b2723;
 	--ink-soft: #6b6259;
@@ -39,7 +39,7 @@ a {
 /* commonIncludes(.site-header, 74px 고정) 바로 아래 얹혀서 같이 스크롤을 따라다니는 서브 내비 */
 .subnav {
 	border-bottom: 1px solid var(--line);
-	background: rgba(250, 247, 242, .92);
+	background: color-mix(in srgb, var(--bg) 92%, transparent);
 	position: sticky;
 	top: 74px;
 	z-index: 90;
@@ -79,23 +79,9 @@ a {
 	color: var(--accent);
 }
 
-.site-footer {
-	margin-top: 96px;
-	padding: 40px 24px;
-	border-top: 1px solid var(--line);
-	text-align: center;
-	color: var(--ink-soft);
-	font-size: 14px;
-}
-
-.site-footer p {
-	margin: 4px 0;
-}
-
-.site-footer__sub {
-	font-size: 13px;
-	opacity: .8;
-}
+/* 배경/글자색/패딩 등은 common.css의 .site-footer로 옮김 - 여기선 이 페이지들(스크롤이 긴
+   정보 페이지)에만 필요한 위쪽 여백만 남겨둠. */
+.site-footer { margin-top: 96px; }
 
 /* ---------- 도입부 ---------- */
 

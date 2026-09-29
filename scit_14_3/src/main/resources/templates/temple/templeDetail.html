@@ -6,7 +6,7 @@
 	<title th:text="${temple.name} + ' · 사찰 커뮤니티'">사찰 상세보기 · 사찰 커뮤니티</title>
 	<!-- 카카오맵 SDK -->
 	<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=4d97c12d7e3e28e5dd08a2f00a58025d&libraries=services"></script>
-	<link rel="stylesheet" th:href="@{/css/signup.css}">
+	<link rel="stylesheet" th:href="@{/css/card.css}">
 	<link rel="stylesheet" th:href="@{/css/common.css}">
 	<link rel="stylesheet" th:href="@{/css/temple/templeDetail.css}">
 </head>
@@ -80,5 +80,7 @@
 <script th:src="@{/js/temple/templeI18n.js}"></script>
 <script th:src="@{/js/mapCommon.js}"></script>
 <script th:src="@{/js/temple/templeDetail.js}"></script>
+<div th:replace="~{fragments/layout :: footer}"></div>
+
 </body>
 </html>

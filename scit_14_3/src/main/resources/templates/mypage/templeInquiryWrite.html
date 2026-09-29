@@ -9,6 +9,7 @@
     <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}" type="text/css">
     <title>사찰 문의 작성 · 佛선자</title>
     <link rel="stylesheet" th:href="@{/css/mypage/templeInquiryWrite.css}">
+    <script th:src="@{/js/inquiry/inquiryI18n.js}" defer></script>
 </head>
 <body>
 
@@ -24,28 +25,29 @@
 <main class="mypage-main">
     <div class="mypage-inner">
         <div class="inquiry-hero">
-            <h1>사찰에 문의하기</h1>
-            <p>예약 취소 기한(24시간 전)이 지났거나 그 외 요청사항이 있으면 사찰에 직접 남겨주세요.<br>사찰이 확인 후 답변드립니다.</p>
+            <h1 class="no-translate" data-pi18n="templeWriteTitle">사찰에 문의하기</h1>
+            <p class="no-translate" data-pi18n="templeWriteDesc" data-pi18n-html>예약 취소 기한(24시간 전)이 지났거나 그 외 요청사항이 있으면 사찰에 직접 남겨주세요.<br>사찰이 확인 후 답변드립니다.</p>
         </div>
 
         <form class="inquiry-card" th:action="@{/mypage/temple-inquiries}" method="post">
             <div class="inquiry-section">
                 <p class="reservation-result fail" style="color:var(--destructive);" th:if="${submitError}" th:text="${submitError}"></p>
-                <p class="reservation-ref" th:text="'관련 예약번호: #' + ${reservationId}"></p>
+                <p class="reservation-ref"><span class="no-translate" data-pi18n="templeWriteRefPrefix">관련 예약번호: #</span><span th:text="${reservationId}"></span></p>
                 <input type="hidden" name="reservationId" th:value="${reservationId}">
-                <h4>제목</h4>
+                <h4 class="no-translate" data-pi18n="titleLabel">제목</h4>
                 <input class="inquiry-title-input" type="text" name="title" maxlength="100"
-                       placeholder="예: 예약 취소 요청" required>
+                       placeholder="예: 예약 취소 요청" data-pi18n-placeholder="templeWriteTitlePh" required>
             </div>
             <div class="inquiry-section">
-                <h4>내용</h4>
+                <h4 class="no-translate" data-pi18n="contentLabel">내용</h4>
                 <textarea class="inquiry-textarea" name="content"
                           placeholder="취소를 원하시는 이유 등을 자세히 작성해주시면 더 빠르게 처리해드릴 수 있습니다."
+                          data-pi18n-placeholder="templeWriteContentPh"
                           required></textarea>
             </div>
             <div class="inquiry-actions">
-                <button class="inquiry-back-btn" type="button" onclick="location.href='/mypage/myReservations'">취소</button>
-                <button class="inquiry-submit-btn" type="submit">문의 등록</button>
+                <button class="inquiry-submit-btn no-translate" data-pi18n="submitInquiryBtn" type="submit">문의 등록</button>
+                <button class="inquiry-back-btn no-translate" data-pi18n="cancelBtn" type="button" onclick="location.href='/mypage/myReservations'">취소</button>
             </div>
         </form>
     </div>

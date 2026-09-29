@@ -160,7 +160,7 @@
 
                 <img
                         alt="한국 사찰"
-                        src="https://images.unsplash.com/photo-1448523183439-d2ac62aca997?w=1400&h=1000&fit=crop&auto=format">
+                        th:src="@{/images/home/home1.png}">
 
                 <div class="photo-gradient gradient-from-left"></div>
 
@@ -188,8 +188,8 @@
             <div class="feature-photo feature-photo-left">
 
                 <img
-                        alt="숲속 사찰 길"
-                        src="https://images.unsplash.com/photo-1771321732667-881c52f78bbf?w=1400&h=1000&fit=crop&auto=format">
+                        alt="연못 속 불상"
+                        th:src="@{/images/home/home2.png}">
 
                 <div class="photo-gradient gradient-from-right"></div>
 
@@ -319,9 +319,7 @@
                         </button>
 
 
-                        <strong id="calendarMonthTitle">
-                            2026년 8월
-                        </strong>
+                        <strong id="calendarMonthTitle"></strong>
 
 
                         <button aria-label="다음 달"

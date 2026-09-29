@@ -9,6 +9,7 @@
     <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}" type="text/css">
     <link rel="stylesheet" th:href="@{/css/inquiry/inquiryDetail.css}" type="text/css">
     <title>문의 상세 · 佛선자</title>
+    <script th:src="@{/js/inquiry/inquiryI18n.js}" defer></script>
 </head>
 <body>
 
@@ -24,14 +25,15 @@
 <main class="mypage-main">
     <div class="mypage-inner">
         <div class="inquiry-detail-wrap">
-            <a class="inquiry-back-btn" th:href="@{/mypage/inquiries}">← 목록으로</a>
+            <a class="inquiry-back-btn no-translate" data-pi18n="backToList" th:href="@{/mypage/inquiries}">← 목록으로</a>
 
             <div class="inquiry-card">
                 <div class="inquiry-hero">
-                    <p class="inquiry-hero-label">문의</p>
+                    <p class="inquiry-hero-label no-translate" data-pi18n="myDetailHeroLabel">문의</p>
                     <div class="inquiry-hero-top">
                         <h1 class="inquiry-hero-title" th:text="${inquiry.title}"></h1>
-                        <span class="inquiry-status" th:classappend="'status-' + ${inquiry.status}" th:text="${inquiry.status}"></span>
+                        <span class="inquiry-status no-translate" th:classappend="'status-' + ${inquiry.status}"
+                              th:attr="data-pi18n-status=${inquiry.status}" data-pi18n="statusPlaceholder" th:text="${inquiry.status}"></span>
                     </div>
                     <div class="inquiry-hero-meta">
                         <span th:text="${#temporals.format(inquiry.createdAt, 'yyyy.MM.dd HH:mm')}"></span>
@@ -39,17 +41,17 @@
                 </div>
 
                 <div class="inquiry-section">
-                    <h4>문의 내용</h4>
+                    <h4 class="no-translate" data-pi18n="inquiryContentLabel">문의 내용</h4>
                     <p th:text="${inquiry.content}"></p>
                 </div>
 
                 <div class="inquiry-section answer" th:if="${inquiry.status.name() == '답변완료'}">
-                    <h4>관리자 답변</h4>
+                    <h4 class="no-translate" data-pi18n="myDetailAnswerHeader">관리자 답변</h4>
                     <p th:text="${inquiry.answer}"></p>
-                    <p class="answer-date" th:text="'답변일 ' + ${#temporals.format(inquiry.answeredAt, 'yyyy.MM.dd HH:mm')}"></p>
+                    <p class="answer-date"><span class="no-translate" data-pi18n="answeredAtPrefix">답변일 </span><span th:text="${#temporals.format(inquiry.answeredAt, 'yyyy.MM.dd HH:mm')}"></span></p>
                 </div>
                 <div class="inquiry-section no-answer" th:if="${inquiry.status.name() != '답변완료'}">
-                    <p>아직 답변이 등록되지 않았습니다.</p>
+                    <p class="no-translate" data-pi18n="noAnswerYet">아직 답변이 등록되지 않았습니다.</p>
                 </div>
             </div>
         </div>
