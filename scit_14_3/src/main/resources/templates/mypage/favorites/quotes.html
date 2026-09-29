@@ -26,14 +26,32 @@
 
         <section class="favorites-hero">
             <h1>저장한 불교 한마디</h1>
+            <p class="favorites-hero__more" th:unless="${#lists.isEmpty(quotes)}">
+                <a th:href="@{/info/quote}">다른 한마디 보러가기 →</a>
+            </p>
         </section>
+
+        <div class="favorites-divider"></div>
 
         <p class="favorites-empty" th:if="${#lists.isEmpty(quotes)}">
             아직 저장한 한마디가 없습니다. <a th:href="@{/info/quote}">오늘의 한마디 보러가기 →</a>
         </p>
 
-        <div class="quote-favorite-grid" data-favorites-grid="quote-pagination" th:unless="${#lists.isEmpty(quotes)}">
-            <article class="quote-favorite-card" th:each="quote : ${quotes}" data-remove-on-unfavorite>
+        <div class="favorites-search" th:unless="${#lists.isEmpty(quotes)}">
+            <input type="search" id="favorite-quotes-search-input" class="favorites-search__input"
+                   aria-label="검색" placeholder="한마디 내용이나 출처로 검색" autocomplete="off">
+        </div>
+
+        <p class="favorites-search-empty" id="favorite-quotes-search-empty" hidden>
+            검색 결과가 없습니다.
+        </p>
+
+        <div class="quote-favorite-grid" data-favorites-infinite-grid="quote-infinite-sentinel"
+             data-favorites-search-input="favorite-quotes-search-input"
+             data-favorites-search-empty="favorite-quotes-search-empty"
+             th:unless="${#lists.isEmpty(quotes)}">
+            <article class="quote-favorite-card" th:each="quote : ${quotes}" data-remove-on-unfavorite
+                     th:attr="data-search-name=${quote.content() + ' ' + (quote.source() ?: '')}">
 
                 <div class="quote-favorite-card__text">
                     <p class="quote-favorite-card__content" th:text="${quote.content()}">한마디 내용</p>
@@ -51,7 +69,7 @@
             </article>
         </div>
 
-        <div class="pagination" id="quote-pagination" th:unless="${#lists.isEmpty(quotes)}"></div>
+        <div id="quote-infinite-sentinel" class="favorites-infinite-sentinel" th:unless="${#lists.isEmpty(quotes)}"></div>
 
         <p class="favorites-more" th:unless="${#lists.isEmpty(quotes)}">
             <a th:href="@{/info/quote}">다른 한마디 보러가기 →</a>
@@ -63,7 +81,7 @@
 <div th:replace="~{fragments/layout :: footer}"></div>
 
 <script defer th:src="@{/js/buddhism/favoriteButton.js}"></script>
-<script defer th:src="@{/js/mypage/favoritesPagination.js}"></script>
+<script defer th:src="@{/js/mypage/favoritesInfiniteScroll.js}"></script>
 
 </body>
 </html>

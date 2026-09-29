@@ -70,6 +70,12 @@ body {
 	color: var(--text-secondary);   /* var(--text-tertiary) >> secondary : 배경과 대비가 약해서 */
 }
 
+/* 하단의 "관심 행사 모아보기"(.events-more)까지 무한 스크롤 때문에 스크롤이
+   얼마나 필요할지 예측이 안 돼서, 제목 바로 아래에도 같은 링크를 하나 더 둔다. */
+.events-hero__more {
+	margin-top: 12px;
+}
+
 .events-divider {
 	width: 100%;
 	height: 1px;
@@ -141,6 +147,41 @@ body {
 
 .event-card[hidden] {
 	display: none;
+}
+
+/* ---------- 무한 스크롤 (events.js) ---------- */
+
+/* 새로 드러나는 카드는 뚝 나타나지 않고 살짝 떠오르며 페이드인 되게 한다 */
+.event-card--enter {
+	opacity: 0;
+	transform: translateY(10px);
+}
+
+/* 감시용 엘리먼트 - 화면엔 보이지 않지만 IntersectionObserver가 감지할 수 있게
+   높이를 살짝 준다. */
+.events-infinite-sentinel {
+	height: 1px;
+}
+
+/* 다음 묶음을 불러오는 동안 잠깐 보여주는 스피너 - events.js가 sentinel 바로
+   다음에 만들어 넣는다. */
+.events-loading-spinner {
+	display: none;
+	width: 26px;
+	height: 26px;
+	margin: 24px auto 0;
+	border: 3px solid var(--line);
+	border-top-color: var(--brown);
+	border-radius: 50%;
+	animation: events-spin .7s linear infinite;
+}
+
+.events-loading-spinner.is-active {
+	display: block;
+}
+
+@keyframes events-spin {
+	to { transform: rotate(360deg); }
 }
 
 /* 지난 행사 - 회색으로 흐리게 표시하고, 즐겨찾기 버튼은 아래에서 disabled로 따로 스타일링 */
@@ -281,14 +322,20 @@ body {
 .events-more {
 	margin-top: 40px;
 	text-align: center;
-	font-size: 14px;
 }
 
+/* 관심 행사 페이지(favorites.css)의 "다른 OO 보러가기" 링크와 모양을 통일 -
+   상단(.events-hero__more)과 하단(.events-more) 두 자리 모두 같은 모양으로. */
+.events-hero__more a,
 .events-more a {
 	color: var(--ev-accent);
 	text-decoration: none;
+	font-weight: 600;
+	font-size: 14.5px;
+	font-family: var(--sans);
 }
 
+.events-hero__more a:hover,
 .events-more a:hover {
 	text-decoration: underline;
 }

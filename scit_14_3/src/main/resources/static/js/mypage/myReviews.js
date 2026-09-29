@@ -74,8 +74,11 @@ async function loadMyReviews() {
         dateText += ` · 수정일 ${formatDate(review.updatedAt)}`;
       }
 
+      // favoritesPagination.js의 검색(data-favorites-search-input)이 이 속성으로 필터링한다.
+      const searchName = escapeHtml(`${reviewTitle} ${templeName} ${programTitle} ${review.content}`);
+
       return `
-        <article class="review-item-card" data-review-id="${review.reviewId}">
+        <article class="review-item-card" data-review-id="${review.reviewId}" data-search-name="${searchName}">
           <div class="review-item-header">
             <h3>${escapeHtml(reviewTitle)}</h3>
             <span class="review-item-rating">${stars}</span>
