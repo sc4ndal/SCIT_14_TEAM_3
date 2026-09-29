@@ -125,12 +125,13 @@ a {
 .mypage-card {
     position: relative;
 
-    display: flex;
-    flex-direction: column;
+    /* 배지(.card-count)를 float으로 띄워 제목이 배지 폭만큼만 비켜 가게 하려고 flex 대신 block.
+       대신 '바로가기'(.card-arrow)는 absolute로 카드 바닥에 고정하고 그 자리만큼 padding-bottom을 확보. */
+    display: block;
 
     min-height: 190px;
 
-    padding: 28px 26px 24px;
+    padding: 28px 26px 62px;
 
     overflow: hidden;
 
@@ -197,19 +198,25 @@ a {
     position: relative;
     z-index: 1;
 
+    display: block;
+
     font-family: var(--serif);
     font-size: 19px;
     font-weight: 500;
     letter-spacing: -.03em;
 }
 
-/* 카드마다 몇 건 저장/등록했는지 한눈에 보여주는 배지 - 굳이 들어가보지 않아도 알 수 있게 */
+/* 카드마다 몇 건 저장/등록했는지 한눈에 보여주는 배지 - 굳이 들어가보지 않아도 알 수 있게.
+   absolute였을 땐 번역(영어 등)으로 제목이 길어지면 배지 밑으로 파고들어서 float으로 바꿈 -
+   제목 첫 줄만 배지 실제 폭만큼 비켜 가고 둘째 줄부터는 카드 폭을 다 쓴다.
+   음수 margin으로 예전 위치(top 22px / right 24px)를 그대로 맞춤. */
 .mypage-card .card-count {
-    position: absolute;
+    position: relative;
     z-index: 1;
 
-    top: 22px;
-    right: 24px;
+    float: right;
+
+    margin: -6px -2px 6px 12px;
 
     padding: 3px 10px;
     border-radius: 999px;
@@ -225,6 +232,8 @@ a {
     position: relative;
     z-index: 1;
 
+    display: block;
+
     margin-top: 10px;
 
     font-size: 12.5px;
@@ -234,11 +243,11 @@ a {
 }
 
 .mypage-card .card-arrow {
-    position: relative;
+    position: absolute;
     z-index: 1;
 
-    margin-top: auto;
-    padding-top: 18px;
+    left: 26px;
+    bottom: 24px;
 
     font-size: 13px;
 
@@ -255,6 +264,20 @@ a {
 .mypage-card:hover .card-arrow {
     opacity: 1;
     transform: translateX(0);
+}
+
+/* 관심 행사 카드는 행사 관련 화면(/events, 관심 행사)과 같은 녹색 포인트로 통일 */
+/* :nth-child(n)은 위 .mypage-card:nth-child(4n+1) 한자 색 규칙과 우선순위를 맞춰 덮어쓰려고 붙임 */
+.mypage-card--events:nth-child(n) .card-kanji {
+    color: rgba(92, 122, 98, .10);
+}
+
+.mypage-card--events .card-arrow {
+    color: var(--green);
+}
+
+.mypage-card--events:hover {
+    border-color: rgba(92, 122, 98, .35);
 }
 
 

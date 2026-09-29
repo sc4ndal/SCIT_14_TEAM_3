@@ -42,7 +42,7 @@
 
 /* mypage 밖으로 나가는 링크는 .favorites-more와 같은 색으로 통일 */
 .favorites-empty a {
-	color: var(--brown);
+	color: var(--ev-accent, var(--brown));
 }
 
 .favorites-more {
@@ -55,7 +55,8 @@
    링크를 하나 더 두는데, 위치만 다를 뿐 같은 링크라 모양도 동일하게 맞춘다. */
 .favorites-hero__more a,
 .favorites-more a {
-	color: var(--brown);
+	/* 관심 행사 페이지(.events-favorites-main)에선 공개 /events의 "관심 행사 모아보기 →"와 같은 녹색 */
+	color: var(--ev-accent, var(--brown));
 	text-decoration: none;
 	font-weight: 600;
 	font-size: 14.5px;
@@ -236,6 +237,14 @@
 	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
 }
 
+/* 관심 행사 페이지는 temple/events.css를 같이 불러오는데, 그쪽 색은 전부 --ev-accent를 쓰고
+   이 변수는 공개 페이지의 .events-main에서만 정의됨. 비어 있으면 '즐겨찾기됨' 버튼이
+   흰 글자/흰 테두리/투명 배경으로 안 보이므로 여기서도 정의 - 행사 관련 화면은 공개 /events와
+   같은 녹색으로 통일 (다른 관심 목록은 --ev-accent가 없어서 아래 링크들이 갈색 그대로). */
+.events-favorites-main {
+	--ev-accent: var(--green);
+}
+
 /* 카드 높이를 고정하고, 본문(body)이 남는 공간을 다 채우게 해서 즐겨찾기 버튼이 항상
    카드 우측 하단(.food-favorite-card__footer가 이미 justify-content:flex-end)에 붙게 함.
    제목/소개는 길이가 제각각이라 줄 수를 강제로 잘라서(line-clamp) 높이가 안 흔들리게 막는다. */
@@ -267,7 +276,14 @@
 	-webkit-line-clamp: 3;
 	-webkit-box-orient: vertical;
 	overflow: hidden;
-	flex: 1;
+	/* flex: 1로 늘리면 박스가 3줄보다 커져서, 3줄째에 '…'가 찍힌 뒤에도 4줄째부터가 그대로 보였음
+	   (한국어는 3줄 안이라 안 보였고 영어 번역처럼 길어지면 드러남). 박스는 3줄 높이 그대로 두고
+	   '자세히 보기'를 바닥에 붙이는 건 아래 .event-card__link의 margin-top: auto가 맡는다. */
+	margin-bottom: 12px;
+}
+
+.event-favorite-card .event-card__link {
+	margin-top: auto;
 }
 
 /* 이미 끝난 행사는 색을 죽여서 한눈에 지난 일정임을 알 수 있게 함 - 이 카드의 바탕 클래스가
@@ -334,6 +350,8 @@
 }
 
 .food-favorite-card__footer {
+	/* 같은 줄 카드는 grid가 높이를 맞춰주므로, 내용이 짧은 카드도 즐겨찾기 버튼이 항상 우측 하단에 붙게 */
+	margin-top: auto;
 	padding: 0 22px 22px;
 	display: flex;
 	justify-content: flex-end;
