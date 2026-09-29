@@ -139,26 +139,8 @@
 }
 
 .chat-toggle.open .chat-toggle__icon-close {
-    display: block;
+    display: inline;
 }
-
-.chat-toggle svg {
-    display: block;
-    width: 24px;
-    height: 24px;
-}
-
-.chat-toggle__icon-open svg {
-    fill: #fff;
-}
-
-.chat-toggle__icon-close svg {
-    fill: none;
-    stroke: #fff;
-    stroke-width: 2;
-    stroke-linecap: round;
-}
-
 /* back-to-top 버튼과 겹치지 않도록 위로 살짝 올려둠 */
 .back-to-top {
     right: 51px;
@@ -167,10 +149,8 @@
 
 .chat-panel {
     position: fixed;
-
     right: 48px;
     bottom: 110px;
-
     z-index: 89;
 
     width: 340px;
