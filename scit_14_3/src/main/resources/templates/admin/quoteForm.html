@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>한마디 등록 · 사찰 커뮤니티</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" th:href="@{/css/signup.css}">
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+<body>
+
+<!-- formData: 신규 등록용 빈 Map, 검증 실패로 돌아온 경우엔 직전 입력값
+     등록만 제공하고 수정/삭제는 웹에서 제공하지 않음 -->
+
+<div class="card">
+	<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+
+	<div class="header">
+		<h1>한마디 등록</h1>
+		<p>불교 한마디(명언·경전 문구)를 입력해주세요</p>
+		<p class="req-note"><span class="req">*</span> 표시는 필수 입력 항목입니다</p>
+	</div>
+
+	<p class="admin-alert admin-alert--err" th:if="${manageError}" th:text="${manageError}"></p>
+
+	<form class="page-form" th:action="@{/admin/manage/quote}" method="post">
+
+		<fieldset>
+			<legend>한마디 정보</legend>
+
+			<div class="field">
+				<label for="content">내용<span class="req">*</span></label>
+				<textarea id="content" name="content" rows="5" required th:text="${formData['content']}"></textarea>
+			</div>
+
+			<div class="field">
+				<label for="source">출처 <span class="optional-note">(선택)</span></label>
+				<input type="text" id="source" name="source" maxlength="100" placeholder="예: 법구경" th:value="${formData['source']}">
+			</div>
+		</fieldset>
+
+		<div class="form-actions">
+			<button class="submit" type="submit">등록</button>
+			<a th:href="@{/admin/manage(tab='quote')}" class="btn-cancel">취소</a>
+		</div>
+	</form>
+</div>
+
+</body>
+</html>
