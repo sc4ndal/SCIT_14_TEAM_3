@@ -346,6 +346,13 @@ kakao.maps.load(function () {
         });
         document.getElementById('filter-support-english').classList.remove('active');
         document.getElementById('filter-favorite').classList.remove('active');
+        // 켜져있던 "내 주변" 필터도 같이 꺼줌 (내 위치 마커/반경 원도 지도에서 제거)
+        if (nearMeActive) {
+            if (myLocationMarker) { myLocationMarker.setMap(null); myLocationMarker = null};
+            if (myLocationCircle) { myLocationCircle.setMap(null); myLocationCircle = null};
+            nearMeActive = false;
+            document.getElementById('near-me-btn').classList.remove('active');
+            }
         searchMatchedIds = null; // 검색 제한 해제
         document.getElementById('result-list').innerHTML = '';
         applyFilters(); // 위에서 다 껐으니 이제 anyFilterActive가 false가 되어 패널이 실제로 닫힘.

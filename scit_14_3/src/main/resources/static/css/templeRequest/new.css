@@ -1,0 +1,107 @@
+/* ============================================================
+   templeRequest.css — 사찰 등록 문의 (/temple-requests/new) 전용
+   signup.css는 로그인/회원가입/관리자 페이지도 같이 쓰므로 직접 고치지 않고,
+   이 페이지에서만 불러오는 이 파일에서 덮어쓴다 (다른 페이지엔 영향 없음).
+   위치: static/css/templeRequest/templeRequest.css (templates/templeRequest/new.html과 폴더명 맞춤)
+   new.html에서 signup.css, common.css 다음에 불러와야 덮어쓰기가 적용됨.
+   ============================================================ */
+
+/* 안내 문구 : signup.css의 .hint는 ".field .hint"로만 정의돼 있어서, .field 밖에 있는 안내 문구 2개
+   ("먼저 검색해서 선택하면…", "주소·위도·경도·지역은…")는 스타일이 안 먹고 큰 검정 글씨로 나왔음 */
+.hint {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    margin: 6px 0 0;
+}
+
+/* "주소·위도·경도·지역은 직접 입력할 수 없습니다" - 중요한 규칙이라 연한 안내 박스로 */
+.notice-box {
+    margin: -16px 0 24px;
+    padding: 0;
+    background: none;
+    border-radius: 0;
+}
+
+/* 지도 검색 영역 : 원래 인라인 padding(24px 32px 0)이 .page-form 패딩과 겹쳐서 입력칸보다 안쪽으로 들어가 있었음 */
+.map-search-area {
+    margin-bottom: 26px;
+}
+
+/* 지도 검색 버튼 : 검정 주 버튼 >> 갈색 테두리 보조 버튼 (진짜 주 버튼은 맨 아래 "문의하기") */
+#openMapPicker {
+    width: 100%;
+    padding: 12px 0;
+    background: var(--surface);
+    color: var(--wood);
+    border: 1px solid var(--wood);
+    font-weight: 500;
+    transition: background-color .15s ease, color .15s ease;
+}
+
+#openMapPicker:hover {
+    background: var(--wood);
+    color: #fff;
+}
+
+/* AI로 자동판별 : 패딩이 좌우만 있어서 얇게 보였음 */
+#autoDetectLocationType {
+    padding: 7px 14px;
+}
+
+/* 인증번호 발송 : 옆 입력칸과 높이 맞춤 */
+.email-row .btn-check {
+    align-self: stretch;
+}
+
+/* 문의하기 / 취소 : 검정 >> 사이트 공통 갈색, 굵기 700 >> 500 (로그인 페이지와 같은 문제) */
+.form-actions .submit {
+    background: var(--wood);
+    font-weight: 500;
+    transition: filter .15s ease;
+}
+
+.form-actions .submit:hover {
+    background: var(--wood);
+    filter: brightness(.92);
+}
+
+.form-actions .btn-cancel {
+    color: var(--ink-soft);
+    border-color: var(--border);
+    font-weight: 500;
+}
+
+.form-actions .btn-cancel:hover {
+    color: var(--ink);
+}
+
+/* 세로 간격 넓힘 : signup.css 기본값(로그인 폼 기준)이 항목 많은 이 페이지엔 빡빡해서 */
+.field {
+    margin-bottom: 22px;   /* 14px >> 22px : 항목 사이 */
+}
+
+.field label {
+    margin-bottom: 8px;    /* 5px >> 8px : 라벨과 입력칸 사이 */
+}
+
+fieldset {
+    margin-bottom: 36px;   /* 22px >> 36px : "사찰 정보" / "연락처" 묶음 사이 */
+}
+
+legend {
+    margin-bottom: 16px;   /* 10px >> 16px : 묶음 제목 아래 */
+}
+
+.notice-box {
+    margin-bottom: 24px;   /* 18px >> 24px : 다른 항목 간격과 맞춤 */
+}
+
+/* 마지막 묶음(연락처) ↔ 문의하기 버튼 간격 : 약 60px >> 36px (묶음 사이 간격과 통일) */
+fieldset:last-of-type .field:last-child {
+    margin-bottom: 0;
+}
+
+fieldset:last-of-type {
+    margin-bottom: 36px;
+}

@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>오늘의 불교 한마디 | 산문</title>
+	<title>오늘의 불교 한마디 · 佛선자</title> <!-- 산문 >> 佛선자 : 메인 탭 제목과 통일 -->
 	<link rel="stylesheet" th:href="@{/css/common.css}">
 	<link rel="stylesheet" th:href="@{/css/buddhism/buddhism.css}">
 	<link rel="stylesheet" th:href="@{/css/buddhism/quote.css}">
@@ -11,8 +11,8 @@
 <body>
 
 <div id="auth-info" style="display:none;"
-	 sec:authorize="isAuthenticated()"
-	 th:attr="data-login-id=${#authentication.principal.username}"></div>
+     sec:authorize="isAuthenticated()"
+     th:attr="data-login-id=${#authentication.principal.username}"></div>
 
 <div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
 
@@ -24,7 +24,7 @@
 	</section>
 
 	<section class="quote-card" th:if="${quote != null}">
-		<p class="quote-card__content" id="quote-content" th:data-quote-id="${quote.quoteId()}" th:text="${quote.content()}">한마디 내용</p>
+		<p class="quote-card__content" id="quote-content" th:text="${quote.content()}">한마디 내용</p>
 		<p class="quote-card__source" id="quote-source" th:text="${quote.source()}"
 		   th:hidden="${quote.source() == null}">출처</p>
 
@@ -33,11 +33,11 @@
 				다른 한마디 보기
 			</button>
 
-			<!-- 일반 회원(USER)만 즐겨찾기를 쓸 수 있게 서버(DailyQuoteController)에서 막아뒀다 - 이 버튼은
+			<!-- 관리자 계정은 즐겨찾기를 못 쓰게 서버(DailyQuoteController)에서 막아뒀다 - 이 버튼은
 			     "다른 한마디 보기" 버튼과 같은 justify-content:center 줄에 있어서, 숨겨도
 			     남은 버튼이 자연스럽게 가운데로 모이니 컨테이너까지 숨길 필요는 없다. -->
 			<button type="button" class="favorite-toggle" id="quote-favorite-btn"
-					sec:authorize="hasRole('USER')"
+					sec:authorize="!hasRole('ADMIN')"
 					th:classappend="${quote.favorited()} ? 'is-favorited' : ''"
 					th:attr="data-favorite-url=@{'/info/quote/' + ${quote.quoteId()} + '/favorite'}, aria-pressed=${quote.favorited()}"
 					th:data-favorited="${quote.favorited()}">
@@ -54,9 +54,7 @@
 	</section>
 
 	<p class="terms-back">
-		<a th:href="@{/mypage/favorites/quotes}" sec:authorize="hasRole('USER')">저장한 한마디 모아보기 →</a>
-		<!-- 관리자 전용 - 한마디가 하나도 없을 때도 등록하러 갈 수 있음(이 문단은 항상 렌더링됨) -->
-		<a th:href="@{/admin/manage(tab='quote')}" sec:authorize="hasRole('ADMIN')">한마디 관리 →</a>
+		<a th:href="@{/mypage/favorites/quotes}" sec:authorize="isAuthenticated()">저장한 한마디 모아보기 →</a>
 	</p>
 
 </main>

@@ -93,8 +93,8 @@ h1, h2, h3 {
   padding: 88px 24px 64px;
   text-align: center;
   border-bottom: 1px solid var(--line);
-  background:
-    radial-gradient(60% 50% at 50% 0%, var(--pine-tint), transparent 70%);
+  /* 초록 그라데이션 제거 : radial-gradient(60% 50% at 50% 0%, var(--pine-tint), transparent 70%)
+     - 제목 위에 은은하게 깔린 초록빛이 다른 페이지(미색 단색 배경)와 따로 놀았음 */
 }
 .hero-eyebrow {
   display: inline-flex;
@@ -428,12 +428,22 @@ summary:focus-visible {
   padding-top: 8px;
 }
 .cta-box {
-  background: var(--pine-deep);
-  color: var(--bg-raised);
+  background: var(--muted-bg);      /* var(--pine-deep) >> var(--muted-bg) : 진한 초록 박스가 사이트 톤과 안 맞아서 메인 푸터(문의하기)와 같은 배경으로 */
+  color: var(--ink);                /* var(--bg-raised) >> var(--ink) : 밝은 배경이라 글자는 진하게 */
+  border: 1px solid var(--line);    /* 추가 */
   border-radius: 16px;
   padding: 40px 32px;
 }
-:root:not([data-theme="light"]) .cta-box,
+/* 버그 수정 : 원래 ":root:not([data-theme="light"]) .cta-box"가 다크모드 media query 밖에 있어서
+   라이트 모드(data-theme 속성 없음)에서도 항상 걸렸음 - 진한 초록 박스가 회녹색(--pine-tint)으로
+   바뀌고 글자도 어두워져서 이상한 색으로 보이던 원인. 다크모드일 때만 걸리도록 media query 안으로 옮김 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .cta-box {
+    background: var(--pine-tint);
+    color: var(--ink);
+    border: 1px solid var(--line);
+  }
+}
 :root[data-theme="dark"] .cta-box {
   background: var(--pine-tint);
   color: var(--ink);
@@ -454,8 +464,8 @@ summary:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: var(--gold);
-  color: var(--pine-deep);
+  background: var(--brown);   /* var(--bg-raised) >> var(--brown) : 사이트 공통 버튼색(메인 문의하기·로그인 버튼과 동일) */
+  color: #fff;                /* var(--pine-deep) >> #fff */
   font-weight: 700;
   font-size: 15px;
   text-decoration: none;
@@ -464,8 +474,8 @@ summary:focus-visible {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   box-shadow: var(--shadow);
 }
-.btn:hover { transform: translateY(-1px); }
-.btn:focus-visible { outline: 2px solid var(--bg-raised); outline-offset: 3px; }
+.btn:hover { transform: translateY(-1px); filter: brightness(.92); }   /* 호버 : 색은 그대로, 명도만 (메인 문의하기 버튼과 동일) */
+.btn:focus-visible { outline: 2px solid var(--brown); outline-offset: 3px; }   /* var(--bg-raised) >> var(--brown) : 밝은 배경에서 안 보여서 */
 .btn svg { width: 15px; height: 15px; flex: none; }
 @media (prefers-reduced-motion: reduce) {
   .btn { transition: none; }
