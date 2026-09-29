@@ -63,7 +63,8 @@
     top: calc(100% + 6px);
     left: 0;
     right: 0;
-    background: var(--paper);
+    background: color-mix(in srgb, var(--paper) 85%, transparent);
+    backdrop-filter: blur(6px);
     border: 1px solid var(--line);
     border-radius: 10px;
     box-shadow: 0 6px 20px rgba(39, 33, 27, .12);

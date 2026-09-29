@@ -533,9 +533,14 @@ select:focus, input:focus, textarea:focus {
   padding: 16px 20px;
   margin-bottom: 24px;
   display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+#selected-program-summary .summary-top-row {
+  display: flex;
   flex-wrap: wrap;
-  gap: 4px 18px;
   align-items: baseline;
+  gap: 4px 18px;
 }
 #selected-program-summary[data-type="체험형"] { --card-color: var(--pine); --card-tint: var(--pine-tint); }
 #selected-program-summary[data-type="휴식형"] { --card-color: var(--blue); --card-tint: var(--blue-tint); }
