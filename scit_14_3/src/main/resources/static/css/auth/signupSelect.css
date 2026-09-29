@@ -1,4 +1,4 @@
-/* 색상은 common.css 공식 토큰에 맞춤(스타일가이드 v1 · 2026-08-26) - signup.css와 동일 방식 */
+/* 색상은 common.css 공식 토큰에 맞춤(스타일가이드 v1 · 2026-08-26) - card.css와 동일 방식 */
 :root{
     --cream:var(--bg);
     --surface:var(--paper);
@@ -17,14 +17,16 @@ body{
     font-family:var(--sans);
     background:var(--cream);
     color:var(--ink);
-    display:flex;
-    justify-content:center;
     /* 상단 74px은 common.css의 고정(position:fixed) 헤더 높이만큼 띄우는 여백 */
     padding:138px 16px 64px;
 }
+/* body를 flex(justify-content:center)로 가운데 정렬하던 방식은 형제가 .card 하나뿐일 때만
+   통했음 - footer가 형제로 추가되면서 나란히 배치돼 옆으로 떠버림. card.css와 동일한
+   이유로 동일하게 고침: body는 block, .card 자신을 margin:auto로 가운데 정렬. */
 .card{
     width:100%;
     max-width:420px;
+    margin:0 auto;
     background:var(--surface);
     border:1px solid var(--border);
     border-radius:4px;

@@ -337,22 +337,22 @@ a {
 .lang-opt:hover:not(.active){color:#4a2f22;}
 
 /* ===== 사찰 등록 요청 상태 배지 =====
-   .badge 기본 스타일(signup.css)은 teal 배경 하나뿐이라, 대기/승인 구분용 색만
-   여기서 덧붙임. admin 페이지도 signup.css를 같이 불러오니 .badge 자체는 재사용. */
+   .badge 기본 스타일(card.css)은 teal 배경 하나뿐이라, 대기/승인 구분용 색만
+   여기서 덧붙임. admin 페이지도 card.css를 같이 불러오니 .badge 자체는 재사용. */
 .badge-pending{background:#c98a2e;}
 .badge-approved{background:#2f6b5e;}
 
-/* .btn-check(signup.css)의 위험 동작용 변형 - 색만 빨강으로 */
+/* .btn-check(card.css)의 위험 동작용 변형 - 색만 빨강으로 */
 .btn-check.btn-danger{border-color:var(--destructive);color:var(--destructive);}
 .btn-check.btn-danger:hover:not(:disabled){background:var(--destructive);color:#fff;}
 
-/* .submit(signup.css)의 위험 동작용 변형 - 회원 탈퇴처럼 되돌리기 어려운 제출 버튼용 */
+/* .submit(card.css)의 위험 동작용 변형 - 회원 탈퇴처럼 되돌리기 어려운 제출 버튼용 */
 .submit.btn-danger{background:var(--destructive);}
 .submit.btn-danger:hover:not(:disabled){background:#a52f22;}
 .submit.btn-danger:disabled{background:var(--border);cursor:not-allowed;}
 
 /* ===== 관리자 페이지 공용 알림 배너 =====
-   기존 .check-result(signup.css)는 회원가입 폼의 작은 유효성 텍스트용이라 성공/완료
+   기존 .check-result(card.css)는 회원가입 폼의 작은 유효성 텍스트용이라 성공/완료
    안내로 쓰기엔 존재감이 없음(글자 색만 바뀌는 한 줄) - mypage/edit.css의
    .form-alert--ok와 같은 톤으로 박스형 배너를 만들어 admin 페이지 전반에서 재사용. */
 .admin-alert{
@@ -464,4 +464,21 @@ a {
 .loading-overlay-text{
     font-family:var(--sans);font-size:14px;font-weight:600;color:#fff;
 }
+
+/* ===== 푸터 (site-footer) =====
+   fragments/layout.html의 footer 조각(layout :: footer)을 여러 페이지가 공유하는데,
+   이 스타일이 원래 mypage.css/buddhism.css에만 있어서 그 둘을 안 불러오는 페이지
+   (admin/auth 등)에 붙이면 꾸미기 전 기본 모습으로 떴음. site-header와 같은 이유로
+   common.css로 옮겨서 어디서든 똑같이 보이게 함. */
+.site-footer {
+    margin-top: 0;
+    padding: 22px 24px;
+    text-align: center;
+    background: var(--bg);
+    border-top: 1px solid var(--line);
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+.site-footer p { margin: 4px 0; }
+.site-footer__sub { font-size: 13px; opacity: .82; }
 @keyframes loading-spin{to{transform:rotate(360deg);}}

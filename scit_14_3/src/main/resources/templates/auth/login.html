@@ -6,7 +6,7 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>로그인 · 사찰 커뮤니티</title>
     <link rel="stylesheet" th:href="@{/css/common.css}">
-    <link rel="stylesheet" th:href="@{/css/signup.css}">
+    <link rel="stylesheet" th:href="@{/css/card.css}">
     <script th:src="@{/js/auth/login.js}" defer></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
        th:if="${loginNotice}" th:text="${loginNotice}"></p>
 
     <div style="padding:24px 32px 0;">
-        <a th:href="@{/login/kakao(intent='login')}"
+        <a th:href="@{/login/kakao(intent='login', redirect=${param.redirect})}"
            style="display:flex;align-items:center;justify-content:center;gap:8px;
                   width:100%;padding:14px 0;box-sizing:border-box;
                   background:#FEE500;color:#191600;
@@ -81,6 +81,8 @@
     </p>
 
 </div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
 
 </body>
 </html>

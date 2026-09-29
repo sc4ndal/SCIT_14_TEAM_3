@@ -24,6 +24,9 @@ public class TempleStayReservationDTO {
 	// 서버가 쿠키(preferredLang)에서 채움 - 클라이언트가 보낸 값은 컨트롤러에서 덮어씀
 	@Builder.Default
 	private String lang = "ko";
+	// 신청 시점 화면에 보이던 번역된 프로그램명/사찰명 - 클라이언트(reservation.js)가 채워 보냄
+	private String programTitleSnapshot;
+	private String templeNameSnapshot;
 	@Builder.Default
 	private TempleStayReservationEntity.Status status = TempleStayReservationEntity.Status.예약확정;
 	private LocalDateTime canceledAt;

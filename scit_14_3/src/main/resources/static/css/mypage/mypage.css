@@ -258,24 +258,7 @@ a {
 }
 
 
-/* ======================================================
-   FOOTER (fragments/layout :: footer — .site-footer)
-====================================================== */
-
-.site-footer {
-    margin-top: 0;
-
-    padding: 46px 24px 64px;
-
-    text-align: center;
-
-    background: var(--muted-bg);
-    border-top: 1px solid var(--line);
-
-    color: var(--text-secondary);
-
-    font-size: 14px;
-}
+/* FOOTER(.site-footer)는 common.css로 옮김 - 마이페이지 전용 값이 아니라 전 페이지 공용이라서. */
 
 .site-footer p {
     margin: 4px 0;
