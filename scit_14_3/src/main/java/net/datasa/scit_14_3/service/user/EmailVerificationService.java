@@ -103,7 +103,9 @@ public class EmailVerificationService {
     }
 
     /** 예약 안내 메일은 예약 시점에 저장해둔 화면 언어(ko/ja/en, 그 외는 ko)로 보낸다.
-        프로그램명/사찰명/사찰주소는 사찰이 직접 입력한 값이라 번역하지 않고 그대로 넣는다. */
+        프로그램명/사찰명은 호출부(PaymentService)가 예약 신청 시점에 저장해둔 번역 스냅샷
+        (reservation.programTitleSnapshot/templeNameSnapshot)을 넘겨준다 - 여기선 그대로 씀.
+        사찰주소는 사찰이 직접 입력한 값이라 번역하지 않고 그대로 넣는다. */
     private static String pick(String lang, String ko, String ja, String en) {
         return "ja".equals(lang) ? ja : "en".equals(lang) ? en : ko;
     }

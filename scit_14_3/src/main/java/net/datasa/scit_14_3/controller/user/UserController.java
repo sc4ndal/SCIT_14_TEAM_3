@@ -241,8 +241,16 @@ public class UserController {
 	/** intent=signup(회원가입 버튼) / login(로그인 버튼) - 콜백에서 계정 존재 여부와
 	    같이 봐서 "가입 버튼인데 이미 회원" / "로그인 버튼인데 미가입" 케이스를 갈라내는 데 씀. */
 	@GetMapping("/login/kakao")
-	public String kakaoRedirect(@RequestParam(required = false, defaultValue = "login") String intent) {
-		return "redirect:" + kakaoOAuthService.buildAuthorizeUrl(intent);
+	public String kakaoRedirect(@RequestParam(required = false, defaultValue = "login") String intent,
+								 @RequestParam(required = false) String redirect) {
+		// state는 카카오가 콜백 때 그대로 돌려주는 유일한 왕복 수단이라, intent 하나만 싣던 걸
+		// "intent|redirect"로 같이 실어서 로그인 전 있던 페이지까지 왕복시킨다. redirect는 내부
+		// 경로("/"로 시작, "//" 아님)일 때만 싣는다(오픈 리다이렉트 방지, formLogin 쪽과 동일 기준).
+		String state = intent;
+		if (redirect != null && redirect.startsWith("/") && !redirect.startsWith("//")) {
+			state = intent + "|" + java.net.URLEncoder.encode(redirect, java.nio.charset.StandardCharsets.UTF_8);
+		}
+		return "redirect:" + kakaoOAuthService.buildAuthorizeUrl(state);
 	}
 
 	@GetMapping("/login/kakao/callback")
@@ -253,11 +261,17 @@ public class UserController {
 								 HttpServletRequest request,
 								 HttpServletResponse response) {
 
+		// kakaoRedirect에서 실어 보낸 "intent|redirect"를 다시 분리한다. 예전 링크(구버전 state=intent만)
+		// 와도 호환되게 '|'가 없으면 그냥 intent로만 취급.
+		int sep = state.indexOf('|');
+		String intent = sep >= 0 ? state.substring(0, sep) : state;
+		String redirectTarget = sep >= 0 ? java.net.URLDecoder.decode(state.substring(sep + 1), java.nio.charset.StandardCharsets.UTF_8) : null;
+
 		KakaoTokenResponse token = kakaoOAuthService.getAccessToken(code);
 		KakaoUserInfoResponse kakaoUser = kakaoOAuthService.getUserInfo(token.getAccessToken());
 
 		String loginId = "kakao_" + kakaoUser.getId();
-		boolean intentIsSignup = "signup".equals(state);
+		boolean intentIsSignup = "signup".equals(intent);
 
 		// 로그아웃할 때 이 토큰으로 카카오 REST API 로그아웃을 호출함(브라우저 화면 안 거치고
 		// 서버 대 서버로 바로 처리됨) - 그래야 다음 로그인 때 카카오가 다시 인증을 물어봄.
@@ -285,7 +299,10 @@ public class UserController {
 						redirectAttributes.addFlashAttribute("loginNotice", "탈퇴 처리된 계정입니다.");
 						return "redirect:/login";
 					}
-					return "redirect:/";
+					// 로그인 전 있던 페이지로 되돌아가기 - formLogin successHandler와 동일 기준
+					String target = (redirectTarget != null && redirectTarget.startsWith("/") && !redirectTarget.startsWith("//"))
+							? redirectTarget : "/";
+					return "redirect:" + target;
 				})
 				.orElseGet(() -> {
 					// 처음 로그인하는 카카오 계정(그리고 가입 의도) -> 세션에 카카오 회원번호/이메일/닉네임을

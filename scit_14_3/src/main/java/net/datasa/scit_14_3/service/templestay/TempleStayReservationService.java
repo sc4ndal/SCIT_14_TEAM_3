@@ -62,6 +62,8 @@ public class TempleStayReservationService {
 				.participantCount(entity.getParticipantCount())
 				.note(entity.getNote())
 				.lang(entity.getLang())
+				.programTitleSnapshot(entity.getProgramTitleSnapshot())
+				.templeNameSnapshot(entity.getTempleNameSnapshot())
 				.status(entity.getStatus())
 				.canceledAt(entity.getCanceledAt())
 				.createdAt(entity.getCreatedAt())
@@ -116,6 +118,10 @@ public class TempleStayReservationService {
 				.participantCount(dto.getParticipantCount())
 				.note(dto.getNote())
 				.lang(normalizeLang(dto.getLang()))
+				// 클라이언트(reservation.js)가 신청 시점 화면 언어로 번역된 값을 보내준다 - 혹시
+				// 안 왔으면(구버전 클라이언트 등) 한국어 원문으로라도 채워서 NOT NULL을 지킨다.
+				.programTitleSnapshot(blankToDefault(dto.getProgramTitleSnapshot(), program.getTitle()))
+				.templeNameSnapshot(blankToDefault(dto.getTempleNameSnapshot(), program.getTemple().getName()))
 				.status(TempleStayReservationEntity.Status.예약확정)
 				.build();
 
@@ -136,6 +142,10 @@ public class TempleStayReservationService {
 	/** 쿠키/요청에서 들어온 값이라 신뢰할 수 없음 - 지원 언어(ko/ja/en) 외에는 전부 ko로 */
 	private static String normalizeLang(String lang) {
 		return "ja".equals(lang) || "en".equals(lang) ? lang : "ko";
+	}
+
+	private static String blankToDefault(String value, String fallback) {
+		return (value == null || value.isBlank()) ? fallback : value;
 	}
 
 	/** 마이페이지 허브 카드의 "예약 N건" 배지용 */

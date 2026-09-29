@@ -42,6 +42,14 @@ public class TempleStayReservationEntity {
 	@Column(name = "lang", nullable = false, length = 2)
 	private String lang = "ko";
 
+	// 프로그램명/사찰명은 DB에 번역본이 없어서(프로그램명은 번역기 결과, 사찰명은 JS 사전 결과) 나중에
+	// 서버가 다시 만들어낼 수 없다. lang과 같은 이유로 신청 시점 화면에 보이던 번역 결과를 그대로 저장.
+	@Column(name = "program_title_snapshot", nullable = false, length = 150)
+	private String programTitleSnapshot;
+
+	@Column(name = "temple_name_snapshot", nullable = false, length = 150)
+	private String templeNameSnapshot;
+
 	// 예약대기: 계좌이체(무통장입금) 결제 시 임시로 걸리는 상태 - 사찰이 입금을 확인하고
 	// "입금확인" 처리해야 예약확정으로 넘어간다. 신청 후 3일 안에 확정 안 되면
 	// TempleStayReservationScheduler가 자동으로 취소 처리한다. 카카오페이는 실시간

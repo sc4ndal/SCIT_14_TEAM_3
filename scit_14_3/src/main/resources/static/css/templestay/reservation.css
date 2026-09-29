@@ -1,5 +1,5 @@
 :root {
-  --bg: #efe9dd;
+  --bg: #f8f4ef;  /* common.css 사이트 공용 배경색이랑 통일 - 예전엔 #efe9dd 로 따로 박아둬서 미묘하게 안 맞았음 */
   --bg-raised: #f7f3ea;
   --ink: #2a2620;
   --ink-soft: #5b5346;
@@ -169,7 +169,7 @@ body > header > h1::before {   /* header h1::before >> body > header > h1::befor
 }
 
 main {
-  max-width: 960px;
+  max-width: 1140px;
   margin: 0 auto;
   padding: 40px 24px 96px;
 }
@@ -235,7 +235,7 @@ select:focus, input:focus, textarea:focus {
 /* ---------- Program list ---------- */
 #program-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
   margin-top: 12px;
 }
@@ -430,6 +430,12 @@ select:focus, input:focus, textarea:focus {
   font-size: 12.5px;
   color: var(--ink-faint);
   margin-left: 6px;
+}
+.price-note {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  font-weight: 500;
+  margin-left: 4px;
 }
 .program-detail-btn {
   align-self: flex-start;

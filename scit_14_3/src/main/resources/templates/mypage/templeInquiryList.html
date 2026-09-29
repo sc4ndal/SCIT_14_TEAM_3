@@ -9,6 +9,7 @@
     <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}" type="text/css">
     <link rel="stylesheet" th:href="@{/css/inquiry/inquiryDetail.css}" type="text/css">
     <title>사찰 문의 · 佛선자</title>
+    <script th:src="@{/js/inquiry/inquiryI18n.js}" defer></script>
 </head>
 <body>
 
@@ -26,15 +27,15 @@
         <div class="inquiry-detail-wrap">
             <div class="inquiry-page-header">
                 <div>
-                    <h1 class="inquiry-page-title">사찰 문의</h1>
-                    <p class="inquiry-page-subtitle">예약 관련 문의(취소 요청 등)는 예약목록 &gt; 예약상세 &gt; "사찰에 문의하기"에서 남길 수 있습니다.</p>
+                    <h1 class="inquiry-page-title no-translate" data-pi18n="templeListTitle">사찰 문의</h1>
+                    <p class="inquiry-page-subtitle no-translate" data-pi18n="templeListSubtitle">예약 관련 문의(취소 요청 등)는 예약목록 &gt; 예약상세 &gt; "사찰에 문의하기"에서 남길 수 있습니다.</p>
                 </div>
             </div>
 
-            <p class="check-result" style="color:var(--green); margin-bottom:16px;" th:if="${submitSuccess}">문의가 접수되었습니다.</p>
+            <p class="check-result no-translate" data-pi18n="inquiryReceived" style="color:var(--green); margin-bottom:16px;" th:if="${submitSuccess}">문의가 접수되었습니다.</p>
 
             <p class="inquiry-empty" th:if="${#lists.isEmpty(inquiries)}">
-                사찰에 남긴 문의가 없습니다. <a th:href="@{/mypage/myReservations}">예약목록 보러가기 →</a>
+                <span class="no-translate" data-pi18n="templeListEmpty">사찰에 남긴 문의가 없습니다.</span> <a class="no-translate" data-pi18n="templeListEmptyLink" th:href="@{/mypage/myReservations}">예약목록 보러가기 →</a>
             </p>
 
             <div class="inquiry-list" th:if="${!#lists.isEmpty(inquiries)}">
@@ -44,7 +45,8 @@
                         <h3 th:text="${q.title}"></h3>
                         <p><strong th:text="${q.templeName}"></strong>&nbsp;·&nbsp;<span th:text="${#temporals.format(q.createdAt, 'yyyy.MM.dd HH:mm')}"></span></p>
                     </div>
-                    <span class="inquiry-status" th:classappend="'status-' + ${q.status}" th:text="${q.status}"></span>
+                    <span class="inquiry-status no-translate" th:classappend="'status-' + ${q.status}"
+                          th:attr="data-pi18n-status=${q.status}" data-pi18n="statusPlaceholder" th:text="${q.status}"></span>
                 </a>
             </div>
         </div>

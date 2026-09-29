@@ -47,7 +47,7 @@ const PROGRAM_I18N = {
             detailPrice: '요금 안내', detailPriceType: '구분', detailPricePrice: '가격', detailPerPerson: '1인',
             detailNotes: '유의사항', detailRefund: '환불 규정',
             reserveBtn: '예약 신청', fullBtn: '정원이 마감되었습니다',
-            dateLabel: '날짜',
+            dateLabel: '날짜', priceNote: '(1인 기준)',
 
             // ---- 전체 후기(reviews) ----
             revPageTitle: '템플스테이 후기', revBack: '← 템플스테이 예약', revLoadingMsg: '후기를 불러오는 중입니다…',
@@ -123,7 +123,7 @@ const PROGRAM_I18N = {
             detailPrice: '料金案内', detailPriceType: '区分', detailPricePrice: '料金', detailPerPerson: '1名',
             detailNotes: '注意事項', detailRefund: '返金規定',
             reserveBtn: '予約申込', fullBtn: '定員に達しました',
-            dateLabel: '日付',
+            dateLabel: '日付', priceNote: '(1名あたり)',
 
             revPageTitle: 'テンプルステイのレビュー', revBack: '← テンプルステイ予約', revLoadingMsg: 'レビューを読み込んでいます…',
             revSortAria: '並べ替え', sortLatest: '新しい順', sortOldest: '古い順', sortRatingDesc: '評価が高い順', sortRatingAsc: '評価が低い順',
@@ -193,7 +193,7 @@ const PROGRAM_I18N = {
             detailPrice: 'Pricing', detailPriceType: 'Type', detailPricePrice: 'Price', detailPerPerson: 'Per person',
             detailNotes: 'Notes', detailRefund: 'Refund Policy',
             reserveBtn: 'Reserve', fullBtn: 'Fully booked',
-            dateLabel: 'Date',
+            dateLabel: 'Date', priceNote: '(per person)',
 
             revPageTitle: 'Templestay Reviews', revBack: '← Templestay Reservation', revLoadingMsg: 'Loading reviews…',
             revSortAria: 'Sort', sortLatest: 'Newest', sortOldest: 'Oldest', sortRatingDesc: 'Highest rated', sortRatingAsc: 'Lowest rated',

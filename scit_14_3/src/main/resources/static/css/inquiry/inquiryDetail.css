@@ -1,12 +1,17 @@
 /* ============================================================
    문의 상세 화면 공용 스타일 - 마이페이지(mypage/inquiryDetail.html)와
-   관리자(admin/inquiryDetail.html)가 같이 쓴다. 관리자 페이지가 signup.css의
+   관리자(admin/inquiryDetail.html)가 같이 쓴다. 관리자 페이지가 card.css의
    body{display:flex;justify-content:center} 방식에 의존하면서 body 바로 아래
    형제 엘리먼트가 여러 개라 가운데 정렬이 깨지던 문제가 있었음 - 이 파일은
    .inquiry-detail-wrap 자체에 margin:0 auto를 직접 줘서 그 문제와 무관하게
    항상 가운데 정렬되도록 함. 색상 등 토큰은 common.css의 공식 값(--paper,
    --text-primary 등)을 그대로 씀 - 별도 사전 없이 두 페이지가 같은 값을 봄.
    ============================================================ */
+
+/* admin/inquiryList.html, admin/inquiryDetail.html, templestay/templeInquiryManage*.html은
+   mypage.css 등 페이지별 스타일시트 없이 body에 inline style(margin/padding)만 두고 배경색을
+   따로 안 정해서 투명(흰 배경)으로 떴었음 - 이 4개 페이지가 전부 이 CSS를 공유하니 여기 한 번만 둠. */
+body { background: var(--bg); }
 
 .inquiry-detail-wrap { max-width: 860px; margin: 0 auto; }
 
@@ -27,7 +32,7 @@
 	border-radius: 999px;
 	transition: border-color .15s, background .15s;
 }
-.inquiry-back-btn:hover { border-color: var(--brown); background: var(--secondary); }
+.inquiry-back-btn:hover { border-color: var(--green); background: var(--secondary); }
 
 .inquiry-card {
 	background: var(--paper);
@@ -40,13 +45,13 @@
 .inquiry-hero {
 	position: relative;
 	padding: 40px 40px 30px;
-	background: linear-gradient(160deg, var(--secondary) 0%, var(--paper) 75%);
+	background: var(--paper);
 }
 /* 왼쪽 세로 악센트 바 - 카드 전체에 포인트를 하나 줘서 밋밋함을 없앤다 */
 .inquiry-hero::before {
 	content: "";
 	position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-	background: var(--brown);
+	background: var(--green);
 }
 .inquiry-hero-label {
 	margin: 0 0 10px;
@@ -90,8 +95,8 @@
 	white-space: nowrap;
 }
 .inquiry-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; }
-.inquiry-status.status-대기 { background: rgba(155, 104, 69, .12); color: var(--brown); }
-.inquiry-status.status-대기::before { background: var(--brown); }
+.inquiry-status.status-대기 { background: rgba(138, 110, 60, .13); color: var(--gold); }
+.inquiry-status.status-대기::before { background: var(--gold); }
 .inquiry-status.status-답변완료 { background: rgba(92, 122, 98, .13); color: var(--green); }
 .inquiry-status.status-답변완료::before { background: var(--green); }
 
@@ -113,7 +118,7 @@
 	white-space: pre-wrap;
 	word-break: break-word;
 }
-.inquiry-section.answer { background: linear-gradient(180deg, rgba(92, 122, 98, .07), rgba(92, 122, 98, .02)); }
+.inquiry-section.answer { background: rgba(92, 122, 98, .05); }
 .inquiry-section.no-answer p { color: var(--text-tertiary); font-style: italic; }
 .inquiry-section .answer-date { margin: 12px 0 0; font-size: 12.5px; color: var(--text-tertiary); }
 
@@ -141,13 +146,13 @@
 	background: var(--bg);
 	resize: vertical;
 }
-.inquiry-answer-form textarea:focus { outline: none; border-color: var(--brown); }
+.inquiry-answer-form textarea:focus { outline: none; border-color: var(--green); }
 .inquiry-answer-form .form-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
 .inquiry-answer-form button {
 	padding: 12px 30px;
 	border: none;
 	border-radius: 999px;
-	background: var(--brown);
+	background: var(--green);
 	color: #fff;
 	font-family: var(--sans);
 	font-size: 14px;
@@ -155,7 +160,7 @@
 	cursor: pointer;
 	transition: transform .12s ease, box-shadow .12s ease;
 }
-.inquiry-answer-form button:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -10px rgba(155, 104, 69, .55); }
+.inquiry-answer-form button:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -10px rgba(92, 122, 98, .55); }
 
 /* ============================================================
    문의 목록 화면(mypage/inquiryList.html, admin/inquiryList.html) 공용.
@@ -188,7 +193,7 @@
 	align-items: center;
 	gap: 6px;
 	padding: 12px 24px;
-	background: var(--brown);
+	background: var(--green);
 	border: none;
 	border-radius: 999px;
 	color: #fff;
@@ -198,7 +203,7 @@
 	text-decoration: none;
 	transition: transform .12s ease, box-shadow .12s ease;
 }
-.inquiry-write-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -10px rgba(155, 104, 69, .55); }
+.inquiry-write-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -10px rgba(92, 122, 98, .55); }
 
 .inquiry-list { display: flex; flex-direction: column; gap: 12px; }
 
@@ -224,11 +229,11 @@
 	transition: background .15s ease;
 }
 .inquiry-row:hover {
-	border-color: rgba(155, 104, 69, .35);
+	border-color: rgba(92, 122, 98, .35);
 	box-shadow: 0 12px 30px -20px rgba(39, 33, 27, .35);
 	transform: translateY(-1px);
 }
-.inquiry-row:hover::before { background: var(--brown); }
+.inquiry-row:hover::before { background: var(--green); }
 
 .inquiry-row .info { flex: 1; min-width: 0; }
 .inquiry-row .info h3 {
@@ -257,5 +262,5 @@
 	border: 1px dashed var(--line);
 	border-radius: 16px;
 }
-.inquiry-empty a { color: var(--brown); font-weight: 700; text-decoration: none; }
+.inquiry-empty a { color: var(--green); font-weight: 700; text-decoration: none; }
 .inquiry-empty a:hover { text-decoration: underline; }

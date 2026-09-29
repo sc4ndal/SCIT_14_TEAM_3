@@ -244,7 +244,9 @@ function renderProgramList() {
       <p class="program-temple-region no-translate">${trTempleRegion(p.templeName, p.region)}</p>
       <div class="program-card-footer">
         <div class="program-price">
-          <span class="price-adult no-translate">${trWon(p.price)}</span>        </div>
+          <span class="price-adult no-translate">${trWon(p.price)}</span>
+          <span class="price-note no-translate" data-pi18n="priceNote">${trUi('priceNote')}</span>
+        </div>
         <a class="program-detail-btn" href="/reservation/programs/${p.programId}">상세보기</a>
       </div>
     </div>
@@ -669,7 +671,17 @@ async function submitReservation() {
     return;
   }
 
+  // 확인창은 브라우저 대화상자라 번역기가 못 건드림 - 라벨은 지금 언어의 사전 문구로 직접 만든다.
+  // 프로그램명(p.title)은 회원이 등록한 임의 텍스트라 우리 사전엔 없지만, 화면의 2단계 요약
+  // 카드(#selected-program-summary .program-title)는 크롬 번역기가 이미 번역해서 보여주고
+  // 있으므로 그 DOM에 지금 떠 있는 값을 그대로 가져다 쓴다(비어있으면 원본 p.title로 대체).
+  const summaryTitleEl = document.querySelector('#selected-program-summary .program-title');
+  const displayedProgramTitle = (summaryTitleEl && summaryTitleEl.textContent.trim()) || p.title;
+  const displayedTempleName = trTempleName(p.templeName);
+
   // TEMPLE_STAY_RESERVATION + RESERVATION_PARTICIPANT 생성 요청
+  // programTitleSnapshot/templeNameSnapshot: 예약대기/확정/취소 안내 메일이 나중에(입금확인 등
+  // 본인이 없는 시점에도) 지금 화면 언어로 보이게, 지금 보이는 번역된 이름을 그대로 같이 보낸다.
   const reservationPayload = {
     loginId: state.loginId,
     programId: p.programId,
@@ -677,16 +689,17 @@ async function submitReservation() {
     endDate: state.endDate,
     participantCount: state.participantCount,
     note: state.note,
+    programTitleSnapshot: displayedProgramTitle,
+    templeNameSnapshot: displayedTempleName,
   };
 
   const totalAmount = p.price * state.participantCount;
   const dateLabel = trDateRange(state.startDate, state.endDate);
 
-  // 확인창은 브라우저 대화상자라 번역기가 못 건드림 - 지금 언어의 사전 문구로 직접 만든다
   const confirmMessage =
   `${trUi('confirmTitle')}\n\n` +
-  `${trUi('cProgram')}: ${p.title}\n` +
-  `${trUi('cTemple')}: ${trTempleName(p.templeName)} (${trRegion(p.region)})\n` +
+  `${trUi('cProgram')}: ${displayedProgramTitle}\n` +
+  `${trUi('cTemple')}: ${displayedTempleName} (${trRegion(p.region)})\n` +
   `${trUi('cPeriod')}: ${dateLabel}\n` +
   `${trUi('cHeadcount')}: ${trPeople(state.participantCount)}\n` +
   `${trUi('cPayMethod')}: ${trPayMethod(state.paymentMethod)}` +

@@ -1,8 +1,8 @@
 /* 회원정보수정(/mypage/edit) 전용.
    폼 기본 스타일(.card / .header / .page-form / fieldset / legend / .field / .req / .hint /
    .field-inline / .btn-check / .check-result / .form-actions / .submit / .btn-cancel 등)은
-   signup.css 를 그대로 쓰고, 이 화면에만 필요한 것만 여기서 얹는다.
-   (변수 --border / --red / --ink-soft / --wood 등은 signup.css 의 :root 에서 옴) */
+   card.css 를 그대로 쓰고, 이 화면에만 필요한 것만 여기서 얹는다.
+   (변수 --border / --red / --ink-soft / --wood 등은 card.css 의 :root 에서 옴) */
 
 /* ── 헤더: 로그인 방식 뱃지 + 로그인 아이디 ───────────────────────── */
 .mp-login-type {
@@ -120,7 +120,7 @@
 }
 
 /* ── 이메일 변경 모달: 아이디 입력칸 크기 고정 ─────────────────────
-   signup.css의 .email-row input.email-local은 flex:1이라 옆에 있는 다른
+   card.css의 .email-row input.email-local은 flex:1이라 옆에 있는 다른
    요소가 나타나거나 사라지면 남는 공간 계산이 바뀌면서 아이디 칸 크기도
    같이 바뀐다 - 이 모달에서만 flex-grow/shrink를 꺼서 크기를 고정한다.
    signup.html은 그대로 둠. */
