@@ -22,7 +22,8 @@ const TRANSLATIONS = {
         favoriteFilterLabel: "즐겨찾기",
         resetMapBtn: "지도 전체보기",
         resultPanelTitle: "사찰 목록",
-        nearMeAria: "내 주변 사찰"
+        nearMeAria: "내 주변 사찰",
+        nearMeLabel : "현재 위치 찾기"
     },
     ja: {
         searchTypeName: "寺院検索",
@@ -41,7 +42,8 @@ const TRANSLATIONS = {
         favoriteFilterLabel: "お気に入り",
         resetMapBtn: "地図全体を見る",
         resultPanelTitle: "寺院一覧",
-        nearMeAria: "現在地周辺の寺院"
+        nearMeAria: "現在地周辺の寺院",
+        nearMeLabel: "現在地を探す"
     },
     en: {
         searchTypeName: "Search by name",
@@ -60,7 +62,8 @@ const TRANSLATIONS = {
         favoriteFilterLabel: "Favorites",
         resetMapBtn: "View Full Map",
         resultPanelTitle: "Temple List",
-        nearMeAria: "Temples near me"
+        nearMeAria: "Temples near me",
+        nearMeLabel: "Find My Location"
     }
 };
 
