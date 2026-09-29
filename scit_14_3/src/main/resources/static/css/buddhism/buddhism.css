@@ -28,6 +28,15 @@ body {
 	font-family: var(--sans);   /* "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic" >> var(--sans) : Pretendard를 안 불러와서 맑은고딕으로 폴백됨 (자간 벌어져 보이던 원인) */
 	line-height: 1.75;
 	word-break: keep-all;
+	/* keep-all은 한국어를 어절 단위로 끊으려는 것 - 띄어쓰기 없는 일본어 번역문은 문장 전체가 한 덩어리가 돼서
+	   카드 밖으로 밀려났음. 한 줄에 안 들어갈 때만 글자 단위로 끊게 해서 한국어 줄바꿈은 그대로 둔다. */
+	overflow-wrap: break-word;
+}
+
+/* common.js가 언어 전환 시 <html lang>을 바꿔줌 - 일본어는 띄어쓰기가 없어서 keep-all이면 줄을 못 바꾸므로
+   원래 방식(글자 단위 + 브라우저 일본어 금칙 처리)으로 되돌린다. 위 overflow-wrap은 그 외 언어용 안전장치. */
+html:lang(ja) body {
+	word-break: normal;
 }
 
 /* 제목 폰트 추가 : 기본값이 고딕 700이라 메인(명조 500)과 따로 놀았음 */
@@ -659,6 +668,9 @@ body {
 	font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 	line-height: 1.75;
 	word-break: keep-all;
+	/* keep-all은 한국어를 어절 단위로 끊으려는 것 - 띄어쓰기 없는 일본어 번역문은 문장 전체가 한 덩어리가 돼서
+	   카드 밖으로 밀려났음. 한 줄에 안 들어갈 때만 글자 단위로 끊게 해서 한국어 줄바꿈은 그대로 둔다. */
+	overflow-wrap: break-word;
 }
 
 a {

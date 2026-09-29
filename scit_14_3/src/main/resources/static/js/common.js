@@ -401,9 +401,17 @@ function setCookie(name, value, days){
     document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/; SameSite=Lax';
 }
 
+// <html lang>을 현재 언어로 맞춰둠 - CSS에서 :lang(ja)로 언어별 줄바꿈(예: 한국어용 word-break: keep-all을
+// 띄어쓰기 없는 일본어에선 끄기)을 걸 수 있게 하고, 브라우저의 일본어 금칙 처리도 적용되게 한다.
+function setDocumentLang(lang){
+    document.documentElement.lang = lang;
+}
+
 document.querySelectorAll('.language-button').forEach(function(btn){
     btn.addEventListener('click', function(){
         const lang = btn.getAttribute('data-lang');
+
+        setDocumentLang(lang);
 
         document.querySelectorAll('.language-button').forEach(function(b){
             b.classList.toggle('active', b === btn);
@@ -433,6 +441,8 @@ window.addEventListener('load', function applySavedLanguage(){
 
     const targetBtn = document.querySelector('.language-button[data-lang="' + saved + '"]');
     if(!targetBtn) return;
+
+    setDocumentLang(saved);
 
     document.querySelectorAll('.language-button').forEach(function(b){
         b.classList.toggle('active', b === targetBtn);
