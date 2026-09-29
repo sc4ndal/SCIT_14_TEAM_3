@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>행사 등록 · 사찰 커뮤니티</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" th:href="@{/css/signup.css}">
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+<body>
+
+<!-- formData: TempleEventDTO(신규 등록용 빈 객체, 검증 실패로 돌아온 경우엔 직전 입력값)
+     temples: 사찰 선택 목록 - 등록만 제공하고 수정/삭제는 웹에서 제공하지 않음 -->
+
+<div class="card">
+	<div th:replace="~{fragments/common-includes :: commonIncludes}"></div>
+
+	<div class="header">
+		<h1>행사 등록</h1>
+		<p>불교 행사 정보를 입력해주세요</p>
+		<p class="req-note"><span class="req">*</span> 표시는 필수 입력 항목입니다</p>
+	</div>
+
+	<p class="admin-alert admin-alert--err" th:if="${manageError}" th:text="${manageError}"></p>
+
+	<form class="page-form" id="eventForm" th:action="@{/admin/manage/event}" method="post">
+
+		<fieldset>
+			<legend>행사 정보</legend>
+
+			<div class="field">
+				<label for="templeId">사찰<span class="req">*</span></label>
+				<select id="templeId" name="templeId" required>
+					<option value="">사찰을 선택해주세요</option>
+					<option th:each="t : ${temples}" th:value="${t.templeId}" th:text="${t.name}"
+					        th:selected="${formData.templeId == t.templeId}"></option>
+				</select>
+			</div>
+
+			<div class="field">
+				<label for="title">행사명<span class="req">*</span></label>
+				<input type="text" id="title" name="title" maxlength="150" th:value="${formData.title}" required>
+			</div>
+
+			<div class="field field-inline">
+				<div style="flex:1;">
+					<label for="startDate">시작일<span class="req">*</span></label>
+					<input type="date" id="startDate" name="startDate"
+					       th:value="${formData.startDate != null} ? ${#temporals.format(formData.startDate, 'yyyy-MM-dd')}" required>
+				</div>
+				<div style="flex:1;">
+					<label for="endDate">종료일<span class="req">*</span></label>
+					<input type="date" id="endDate" name="endDate"
+					       th:value="${formData.endDate != null} ? ${#temporals.format(formData.endDate, 'yyyy-MM-dd')}" required>
+				</div>
+			</div>
+			<p class="hint" id="dateHint" style="display:none;color:var(--destructive);">종료일은 시작일보다 빠를 수 없습니다</p>
+
+			<div class="field">
+				<label for="description">설명 <span class="optional-note">(선택)</span></label>
+				<textarea id="description" name="description" rows="5" th:text="${formData.description}"></textarea>
+			</div>
+
+			<div class="field">
+				<label for="linkUrl">관련 링크 <span class="optional-note">(선택)</span></label>
+				<input type="url" id="linkUrl" name="linkUrl" maxlength="255" placeholder="https://" th:value="${formData.linkUrl}">
+			</div>
+		</fieldset>
+
+		<div class="form-actions">
+			<button class="submit" type="submit">등록</button>
+			<a th:href="@{/admin/manage(tab='event')}" class="btn-cancel">취소</a>
+		</div>
+	</form>
+</div>
+
+<script>
+	// 서버에서도 검증하지만, 날짜 순서는 제출 전에 바로 알려줌
+	const startDate = document.getElementById('startDate');
+	const endDate = document.getElementById('endDate');
+	startDate.addEventListener('change', () => { endDate.min = startDate.value; });
+
+	document.getElementById('eventForm').addEventListener('submit', (e) => {
+		const invalid = startDate.value && endDate.value && endDate.value < startDate.value;
+		document.getElementById('dateHint').style.display = invalid ? 'block' : 'none';
+		if (invalid) e.preventDefault();
+	});
+</script>
+
+</body>
+</html>
