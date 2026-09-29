@@ -21,7 +21,7 @@ body{
     background:var(--cream);
     color:var(--ink);
     /* 상단 74px은 common.css의 고정(position:fixed) 헤더 높이만큼 띄우는 여백 */
-    padding:122px 16px 80px;
+    padding:122px 16px 0px;
 }
 /* body를 flex(justify-content:center)로 가운데 정렬하던 방식은 body 바로 아래 형제가
    .card 하나뿐일 때만 통했음 - footer(layout::footer)가 형제로 추가되면서 flex가
@@ -31,7 +31,7 @@ body{
 .card{
     width:100%;
     max-width:520px;
-    margin:0 auto;
+    margin:0 auto 56px;
     background:var(--surface);
     border:1px solid var(--border);
     border-radius:4px;
@@ -208,8 +208,8 @@ input:focus,select:focus{outline:none;border-color:var(--wood);}
     flex:1;
     padding:13px 0;
     background:var(--surface);
-    color:var(--wood-dark);
-    border:1px solid var(--wood-dark);
+    color:var(--ink-soft);
+    border:1px solid rgba(39, 33, 27, .22);
     border-radius:5px;
     font-size:15px;
     font-weight:700;
@@ -218,12 +218,12 @@ input:focus,select:focus{outline:none;border-color:var(--wood);}
     text-decoration:none;
     text-align:center;
 }
-.btn-cancel:hover{background:#f1ece1;}
+.btn-cancel:hover{background:#f1ece1;color:var(--ink);border-color:rgba(39,33,27,.4);}
 .submit{
     display:inline-block;
     flex:2;
     padding:13px 0;
-    background:var(--wood-dark);
+    background:var(--wood);
     color:#fff;
     /* border:none이면 .btn-cancel(1px solid 테두리)보다 2px 낮아져서 나란히 놓였을 때 높이가 안 맞음 */
     border:1px solid transparent;
@@ -235,7 +235,7 @@ input:focus,select:focus{outline:none;border-color:var(--wood);}
     text-decoration:none;
     box-sizing:border-box;
 }
-.submit:hover{background:var(--wood);}
+.submit:hover{background:#85573a;}
 .swal-btn-fixed{
     min-width: 90px;
 }

@@ -2,8 +2,8 @@
    챗봇 위젯 (홈 화면 전용)
 ====================================================== */
 :root {
-    --chat-accent: #4a6350;
-    --chat-accent-tint: rgba(74, 99, 80, .10);
+    --chat-accent: var(--brown);     /* #4a6350; 수정*/
+    --chat-accent-tint: rgba(155, 104, 69, .10)  /*(74, 99, 80, .10); 수정*/
 }
 
 .chat-toggle {
@@ -15,11 +15,11 @@
 
     width: 56px;
     height: 56px;
-    border: none;
+    border: 1px solid rgba(155, 104, 69, .35);
     border-radius: 50%;
 
-    background: var(--chat-accent);
-    color: #fff;
+    background: #efe3cf;    /* 수정var(--chat-accent); */
+    color: var(--brown); /* #fff; 수정 */
 
 
     font-size: 22px;
@@ -28,7 +28,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 6px 18px rgba(39, 33, 27, .28);
+    box-shadow: 0 6px 18px rgba(39, 33, 27, .20);
 
 
     transition: transform .25s ease, box-shadow .25s ease;
@@ -78,7 +78,8 @@
 /* 호버 중엔 자동 애니메이션 멈추고 기존 hover 효과만 */
 .chat-toggle:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 22px rgba(39, 33, 27, .28);
+    box-shadow: 0 0 0 5px rgba(253, 250, 246, .9),
+                0 10px 22px rgba(39, 33, 27, .24);
 }
 /* 애니메이션 어지러움 느끼는 사용자를 위한 배려 */
 @media (prefers-reduced-motion: reduce) {
@@ -131,6 +132,12 @@
     display: none;
 }
 
+/* 이모지 톤 맞추기 */
+.chat-toggle__icon-open,
+.chat-message--bot::before {
+    filter: grayscale(1) sepia(.8) saturate(1.4) brightness(.85);
+}
+
 .chat-toggle.open .chat-toggle__icon-close {
     display: block;
 }
@@ -154,7 +161,8 @@
 
 /* back-to-top 버튼과 겹치지 않도록 위로 살짝 올려둠 */
 .back-to-top {
-    bottom: 110px;
+    right: 51px;
+    bottom: 120px;
 }
 
 .chat-panel {
@@ -235,7 +243,7 @@
 
 .chat-message--bot {
     align-self: flex-start;
-    background: #e2ebe1;
+    background: #f1e8df;    /* 수정 #e2ebe1; */
     color: var(--text-primary);
     border-bottom-left-radius: 4px;
     position: relative;
