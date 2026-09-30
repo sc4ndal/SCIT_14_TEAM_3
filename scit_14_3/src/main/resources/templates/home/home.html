@@ -432,7 +432,11 @@
         id="chatToggle"
         type="button">
     <span class="chat-toggle__icon-open">🪷</span>
-    <span class="chat-toggle__icon-close">✕</span>
+    <span class="chat-toggle__icon-close">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 6l12 12M18 6L6 18"/>
+    </svg>
+    </span>
     <span class="chat-toggle__tooltip" data-i18n="chatTooltip">AI 챗봇 · 무엇이든 물어보세요.</span>
 </button>
 
@@ -458,7 +462,7 @@
                data-i18n-aria="chatInputAria"
                aria-label="궁금한 점 입력"
                autocomplete="off">
-        <button type="submit" class="chat-panel__send" aria-label="보내기" data-i18n-aria="chatSend">↑</button>
+        <button type="submit" class="chat-panel__send" aria-label="보내기" data-i18n-aria="chatSend">→</button>
     </form>
 
 </section>

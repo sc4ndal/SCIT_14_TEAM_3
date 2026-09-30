@@ -341,6 +341,21 @@ function selectProgram(programId) {
   state.endDate = '';
   state.participantCount = 1;
   state.participants = [{ name: '', gender: '', email: '', phone: '' }];
+  // 요청사항도 같은 이유로 리셋 - 안 그러면 예약 A용으로 적은 요청사항이 취소 후 예약 B에도
+  // 그대로 남아있게 된다(renderStep2가 textarea 값을 state.note로 채우므로 DOM 자체는 항상
+  // state와 일치해서 안 맞아 보이진 않지만, 값 자체가 의도치 않게 이어받아짐).
+  state.note = '';
+  // 결제 수단도 새 예약 시도마다 기본값(계좌이체)으로 초기화 - 안 그러면 이전에 카카오페이로
+  // 바꿨다가 취소하고 다시 들어왔을 때 <select> DOM은 그대로 카카오페이인 채로 남아있고
+  // (여긴 한 번도 리셋 안 했었음), state.paymentMethod만 어디선가 계좌이체로 남아있으면
+  // 결제수단은 카카오페이로 보이는데 입금자명 칸(계좌이체 전용)은 그대로 뜨는 것처럼 화면이
+  // 서로 안 맞아 보이는 문제가 있었다.
+  state.paymentMethod = '계좌이체';
+  state.depositorName = '';
+  state.kakaoTid = '';
+  document.getElementById('payment-method').value = '계좌이체';
+  document.getElementById('payment-depositor-name').value = '';
+  document.getElementById('payment-kakao-tid').value = '';
 
   renderStep2();
   goToStep(2);

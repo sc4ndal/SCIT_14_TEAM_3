@@ -1,0 +1,28 @@
+/* ============================================================
+   adminManageForm.css — 관리자 콘텐츠 등록 폼(eventForm/foodForm/quoteForm) 공용
+   사찰 등록 문의(templeRequest/new.css)와 같은 여백 리듬으로 맞춤 - card.css 기본값
+   (로그인 폼 기준 14px)은 항목 여러 개인 등록 폼엔 빡빡해서 같은 방식으로 넓힘.
+   반드시 card.css, common.css 다음에 불러와야 덮어쓰기가 적용됨.
+   ============================================================ */
+
+.field { margin-bottom: 22px; }
+.field label { margin-bottom: 8px; }
+fieldset { margin-bottom: 36px; }
+legend { margin-bottom: 16px; }
+fieldset:last-of-type { margin-bottom: 36px; }
+fieldset:last-of-type .field:last-child { margin-bottom: 0; }
+
+/* 문의하기(templeRequest) 버튼과 같은 색 - card.css 기본값(--wood-dark, 더 진한 갈색)보다 밝음 */
+.form-actions .submit {
+    background: var(--wood);
+    font-weight: 500;
+    transition: filter .15s ease;
+}
+.form-actions .submit:hover { filter: brightness(.92); }
+
+.form-actions .btn-cancel {
+    color: var(--ink-soft);
+    border-color: var(--border);
+    font-weight: 500;
+}
+.form-actions .btn-cancel:hover { color: var(--ink); }

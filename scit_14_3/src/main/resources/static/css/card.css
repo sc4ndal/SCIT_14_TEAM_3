@@ -90,6 +90,7 @@ input[type=tel],
 input[type=date],
 input[type=email],
 input[type=number],
+input[type=url],
 input[type=file],
 select{
     width:100%;
@@ -103,6 +104,21 @@ select{
 }
 input:disabled,input:read-only{background:#f1ece1;color:var(--ink-soft);}
 input:focus,select:focus{outline:none;border-color:var(--wood);}
+
+/* resize:vertical(가로 리사이즈 금지) - 기본값 resize:both로 두면 폭을 옆으로 늘렸을 때
+   textarea가 카드보다 넓어지면서 form/카드 자체가 옆으로 밀려 나가는 문제가 있었음 */
+textarea{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:4px;
+    font-size:14px;
+    font-family:inherit;
+    background:#fff;
+    color:var(--ink);
+    resize:vertical;
+}
+textarea:focus{outline:none;border-color:var(--wood);}
 
 .field-inline{display:flex;gap:8px;align-items:stretch;}
 .field-inline input{flex:1;min-width:0;}
