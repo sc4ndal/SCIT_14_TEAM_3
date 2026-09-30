@@ -74,14 +74,21 @@ public class ChatService {
 			- 확실하지 않은 내용을 단정적으로 지어내지 말고, 모르면 모른다고 말한다.
 			""";
 
-	// "요리/음식/메뉴/아침/점심/저녁" 중 하나 + "추천"이 같이 오면(둘 다 있어야 함) 실제 DB에
-	// 등록된 사찰음식 하나를 골라서 그 소개/레시피를 근거로 추천하게 한다 - 안 그러면 Gemini가
-	// 사이트에 없는 요리를 지어내서 추천할 수 있다.
-	private static final List<String> FOOD_KEYWORDS = List.of("요리", "음식", "메뉴", "아침", "점심", "저녁");
-	private static final String RECOMMEND_KEYWORD = "추천";
+	// 음식 관련 단어 + "추천" 계열 단어가 같이 오면(둘 다 있어야 함) 실제 DB에 등록된 사찰음식
+	// 하나를 골라서 그 소개/레시피를 근거로 추천하게 한다 - 안 그러면 Gemini가 사이트에 없는
+	// 요리를 지어내서 추천할 수 있다. 사이트가 한/일/영 3개 언어를 지원하고 사용자가 어느 언어로
+	// 물어보든 답은 항상 한국어로 나가므로(SYSTEM_INSTRUCTION 참고), 키워드도 3개 언어 다 받아야
+	// 영어/일본어 질문에서도 똑같이 DB 근거 추천이 발동한다.
+	private static final List<String> FOOD_KEYWORDS = List.of(
+			"요리", "음식", "메뉴", "아침", "점심", "저녁",
+			"food", "dish", "meal", "menu", "breakfast", "lunch", "dinner",
+			"料理", "食べ物", "メニュー", "朝食", "昼食", "夕食", "晩ご飯");
+	private static final List<String> RECOMMEND_KEYWORDS = List.of("추천", "recommend", "suggest", "おすすめ", "勧め");
 
 	private static boolean isFoodRecommendRequest(String message) {
-		return FOOD_KEYWORDS.stream().anyMatch(message::contains) && message.contains(RECOMMEND_KEYWORD);
+		String lower = message.toLowerCase();
+		return FOOD_KEYWORDS.stream().anyMatch(k -> lower.contains(k.toLowerCase()))
+				&& RECOMMEND_KEYWORDS.stream().anyMatch(k -> lower.contains(k.toLowerCase()));
 	}
 
 	// 계절은 DB 조회나 외부 API 없이 서버 오늘 날짜만으로 바로 구할 수 있어서(위치/날씨 API 키
@@ -107,9 +114,13 @@ public class ChatService {
 		}
 		TempleFoodEntity picked = foods.get(ThreadLocalRandom.current().nextInt(foods.size()));
 		return """
-				아래는 이 사이트에 실제 등록된 사찰음식 중 방금 무작위로 고른 음식 1건이다. 사용자가
-				요리/음식/메뉴 추천을 물으면 이 음식 하나만 추천하고, 아래 소개와 레시피 내용만 근거로
-				자연스럽게 설명해라 - 여기 없는 다른 음식을 지어내거나 없는 재료/조리법을 추가하지 마라.
+				지금 사용자의 질문은 요리/음식 추천 요청으로 이미 확인됐다(질문이 한국어가 아니라
+				영어/일본어 등 다른 언어로 왔더라도 마찬가지다 - 이 규칙이 SYSTEM_INSTRUCTION의
+				"무관한 질문엔 답변할 수 없다고 안내한다" 규칙보다 우선한다. 이 음식 추천은 절대
+				무관한 질문이 아니니 그 안내 문구를 쓰지 마라). 아래는 이 사이트에 실제 등록된
+				사찰음식 중 방금 무작위로 고른 음식 1건이다. 이 음식 하나만 추천하고, 아래 소개와
+				레시피 내용만 근거로 자연스럽게 설명해라 - 여기 없는 다른 음식을 지어내거나 없는
+				재료/조리법을 추가하지 마라.
 				지금은 %s이니, 이 음식이 왜 요즘 계절에 어울리는지 레시피 내용에 맞게 한마디 자연스럽게
 				곁들여라(억지스러우면 계절 얘기는 생략해도 된다 - 없는 사실을 지어내지는 마라).
 				이 경우엔 "최대한 3~5문장" 제한 대신, 재료와 조리 순서를 문장으로 충분히 풀어서 설명해도

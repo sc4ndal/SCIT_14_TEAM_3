@@ -13,10 +13,10 @@
 
         const history = [];
         let sending = false;
-        // 봇 답변(한국어 원문)마다 {bubble, original}을 기억해둔다 - 답변이 뜬 뒤에 언어를 바꿔도
-        // 그 원문을 다시 번역해서 덮어쓸 수 있어야 하기 때문(번역된 텍스트로 덮인 뒤엔 원문을
-        // DOM에서 다시 알아낼 방법이 없어서 따로 들고 있어야 함).
-        const botReplies = [];
+        // 유저가 보낸 메시지 + 봇 답변(둘 다 한국어 원문) 말풍선마다 {bubble, original}을 기억해둔다 -
+        // 화면에 뜬 뒤에 언어를 바꿔도 그 원문을 다시 번역해서 덮어쓸 수 있어야 하기 때문(번역된
+        // 텍스트로 덮인 뒤엔 원문을 DOM에서 다시 알아낼 방법이 없어서 따로 들고 있어야 함).
+        const chatBubbles = [];
 
         function setOpen(open) {
             toggle.classList.toggle("open", open);
@@ -87,17 +87,17 @@
         // 그 사이 챗봇 패널을 보고 있으면 답변이 그냥 예전 언어로 멈춰있는 것처럼 보였다 - 언어를
         // 누른 즉시 전부 "번역하는 중..."부터 보여준다.
         function chatBeginLanguageChange() {
-            for (const entry of botReplies) {
+            for (const entry of chatBubbles) {
                 entry.bubble.textContent = chatText("chatTranslating");
                 entry.bubble.classList.add("chat-message--pending");
             }
         }
         window.chatBeginLanguageChange = chatBeginLanguageChange;
 
-        // home.js의 onLanguageChange 끝에서(캘린더/행사 번역까지 다 끝난 뒤) 호출 - 지금까지 받은
-        // 봇 답변을 전부 원문(한국어) 기준으로 다시 번역해서 실제 결과로 덮어쓴다.
+        // home.js의 onLanguageChange 끝에서(캘린더/행사 번역까지 다 끝난 뒤) 호출 - 지금까지 오간
+        // 메시지(유저가 보낸 것 + 봇 답변) 전부 원문(한국어) 기준으로 다시 번역해서 실제 결과로 덮어쓴다.
         async function retranslateBotReplies() {
-            for (const entry of botReplies) {
+            for (const entry of chatBubbles) {
                 entry.bubble.textContent = await translateForDisplay(entry.original, entry.bubble);
             }
         }
@@ -113,7 +113,14 @@
             input.value = "";
             input.disabled = true;
 
-            appendMessage(text, "user");
+            const userBubble = appendMessage(text, "user");
+            chatBubbles.push({ bubble: userBubble, original: text });
+            // 번역을 기다리면 그동안 봇 응답 요청(fetch)조차 시작을 못 해서 최대 30초(타임아웃)
+            // 그냥 멈춰있는 꼴이 된다 - 기다리지 않고 뒤에서 알아서 끝나면 말풍선을 덮어쓰게 둔다.
+            translateForDisplay(text, userBubble).then((translated) => {
+                userBubble.textContent = translated;
+            });
+
             const pending = appendMessage(chatText("chatPending"), "bot");
             pending.classList.add("chat-message--pending");
 
@@ -129,7 +136,7 @@
                 const data = await response.json();
 
                 pending.textContent = await translateForDisplay(data.reply, pending);
-                botReplies.push({ bubble: pending, original: data.reply });
+                chatBubbles.push({ bubble: pending, original: data.reply });
 
                 history.push({ role: "user", text });
                 history.push({ role: "model", text: data.reply });
