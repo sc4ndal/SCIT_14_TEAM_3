@@ -200,6 +200,9 @@ function createTempleMarker(map, temple) {
                     favoriteStarHtml +
                     '</div>' +
                     '<div class="temple-info-address' + (protectAddress ? ' no-translate' : '') + '" style="font-size:13px;white-space:nowrap;">' + displayAddress + '</div>' +
+                    (temple.rating != null
+                        ? '<div class="temple-info-rating no-translate" style="font-size:12px;color:#888;white-space:nowrap;margin-top:2px;">⭐ ' + temple.rating + ' (리뷰 ' + temple.reviewCount + '개)</div>'
+                        : '') +
                     '<div style="margin-top:6px;white-space:nowrap;">' +
                     '  <a href="/temple-detail/' + temple.templeId + '" style="font-size:12px;color:#2e86de;text-decoration:none;">상세보기</a>' +
                     '  <a href="#" class="zoom-detail-link" style="font-size:12px;color:#2e86de; text-decoration:none;margin-left:10px;">가까이 보기</a>' +
@@ -456,7 +459,9 @@ function loadTempleDetailMap(containerId, program, mapState) {
             if (mapState.marker) { mapState.marker.setMap(null); }
             mapState.marker = createTempleMarker(mapState.map, {
                 templeId: program.templeId, lat: program.latitude, lng: program.longitude,
-                name: program.templeName, address: program.templeAddress, autoPan: true
+                name: program.templeName, address: program.templeAddress,
+                rating: program.templeRating, reviewCount: program.templeReviewCount,
+                autoPan: true
             });
             kakao.maps.event.trigger(mapState.marker, 'click');
         });

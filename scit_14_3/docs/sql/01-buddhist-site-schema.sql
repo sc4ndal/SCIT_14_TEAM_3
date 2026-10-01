@@ -103,6 +103,12 @@ CREATE TABLE TEMPLE (
     support_urban     BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '도심 인근 여부',
     support_english   BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '영어 지원 여부',
     is_temple         BOOLEAN      NOT NULL DEFAULT TRUE COMMENT '실제 사찰 건물 여부',
+    -- 리뷰 평균 평점(캐시값). 리뷰 하나도 없으면 NULL(0점 아님) - 리뷰 작성/수정/삭제마다
+    -- TempleStayReviewService가 재계산해서 갱신한다(TempleStayReviewService.recalculateTempleRating 참고).
+    rating            DECIMAL(2,1) NULL COMMENT '리뷰 평균 평점(소속 리뷰 없으면 NULL)',
+    -- rating이 몇 건으로 나온 평균인지 - 평점만 보여주면 리뷰 1개짜리 5점과 50개짜리 4.8점을
+    -- 구분 못 해서 신뢰도 판단이 안 된다. rating과 항상 같은 시점에 같이 갱신됨.
+    review_count      INT          NOT NULL DEFAULT 0 COMMENT '평균에 반영된 리뷰 건수',
     -- special_notice가 곧 프로그램의 "유의사항" 역할도 겸함 - 이 사찰이 등록하는 모든
     -- 프로그램에 공통 적용됨(프로그램마다 다시 입력 안 함). refund_policy도 같은 이유로
     -- TEMPLE_STAY_PROGRAM이 아니라 여기 있음. 트리거로 프로그램에 복사해두지 않고, 프로그램
@@ -293,7 +299,6 @@ CREATE TABLE TEMPLE_STAY_REVIEW (
     content         TEXT     NOT NULL COMMENT '리뷰 내용',
     image_urls      JSON     NULL COMMENT '첨부 이미지 목록',
     like_count      INT      NOT NULL DEFAULT 0 COMMENT '추천 수 (캐시값)',
-    view_count      INT      NOT NULL DEFAULT 0 COMMENT '조회수',
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '작성일시',
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
     PRIMARY KEY (review_id),

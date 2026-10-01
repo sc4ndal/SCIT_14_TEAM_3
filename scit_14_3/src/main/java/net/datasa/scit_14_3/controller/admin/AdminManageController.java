@@ -9,6 +9,7 @@ import net.datasa.scit_14_3.service.buddhism.TempleFoodService;
 import net.datasa.scit_14_3.service.integration.CloudinaryService;
 import net.datasa.scit_14_3.service.temple.TempleEventService;
 import net.datasa.scit_14_3.service.temple.TempleService;
+import net.datasa.scit_14_3.service.templestay.TempleStayReviewService;
 import net.datasa.scit_14_3.service.user.UserService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -31,6 +32,7 @@ public class AdminManageController {
 
 	private final UserService userService;
 	private final TempleService templeService;
+	private final TempleStayReviewService templeStayReviewService;
 	private final CloudinaryService cloudinaryService;
 	private final TempleEventService templeEventService;
 	private final TempleFoodService templeFoodService;
@@ -121,6 +123,16 @@ public class AdminManageController {
 		} catch (IllegalStateException e) {
 			redirectAttributes.addFlashAttribute("manageError", e.getMessage());
 		}
+		return "redirect:/admin/manage?tab=temple";
+	}
+
+	/** 사찰 평점(rating/review_count)은 평소엔 리뷰 작성/수정/삭제 시점마다 건건이 갱신되는데,
+	    그 경로를 거치지 않고 들어간 기존 리뷰(시드 데이터 등)는 반영이 안 돼있다 - 그걸 한 번에
+	    DB의 실제 리뷰로 다시 맞추는 수동 트리거. */
+	@PostMapping("/temple/recalculate-ratings")
+	public String recalculateTempleRatings(RedirectAttributes redirectAttributes) {
+		templeStayReviewService.recalculateAllTempleRatings();
+		redirectAttributes.addFlashAttribute("manageSuccess", "전체 사찰의 리뷰 평점을 다시 계산했습니다.");
 		return "redirect:/admin/manage?tab=temple";
 	}
 

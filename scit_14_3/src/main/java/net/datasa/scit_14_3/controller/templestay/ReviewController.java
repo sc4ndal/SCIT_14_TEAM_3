@@ -26,10 +26,15 @@ import java.util.Map;
 public class ReviewController {
 	private final TempleStayReviewService reviewService;
 
-	/** 리뷰 작성 (mypage/reviewWrite.html) - loginId는 요청 바디를 믿지 않고 로그인 정보에서 가져온다. */
+	/** 리뷰 작성 (mypage/reviewWrite.html) - loginId는 요청 바디를 믿지 않고 로그인 정보에서 가져온다.
+	    템플스테이를 실제로 이용하는 건 일반회원뿐이라(관리자·사찰 계정은 예약 자체를 안 함),
+	    리뷰 작성도 toggleLike와 동일한 정책으로 일반회원만 허용한다. */
 	@PostMapping
 	public ResponseEntity<?> write(@AuthenticationPrincipal AppUserDetails principal,
 	                                @RequestBody TempleStayReviewDTO dto) {
+		if (principal.isAdmin() || principal.isTempleAccount()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "일반회원만 리뷰를 작성할 수 있습니다."));
+		}
 		dto.setLoginId(principal.getUsername());
 		try {
 			return ResponseEntity.ok(reviewService.write(dto));
@@ -106,6 +111,9 @@ public class ReviewController {
 	public ResponseEntity<?> update(@AuthenticationPrincipal AppUserDetails principal,
 	                                 @PathVariable Long reviewId,
 	                                 @RequestBody TempleStayReviewDTO dto) {
+		if (principal.isAdmin() || principal.isTempleAccount()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "일반회원만 리뷰를 수정할 수 있습니다."));
+		}
 		try {
 			return ResponseEntity.ok(reviewService.update(reviewId, principal.getUsername(), dto));
 		} catch (EntityNotFoundException e) {

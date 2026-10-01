@@ -17,8 +17,11 @@ import net.datasa.scit_14_3.repository.templestay.TempleStayReservationRepositor
 import net.datasa.scit_14_3.repository.templestay.TempleStayReviewRepository;
 import net.datasa.scit_14_3.repository.user.UserRepository;
 import net.datasa.scit_14_3.service.integration.CloudinaryService;
+import net.datasa.scit_14_3.service.temple.TempleService;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -38,6 +41,7 @@ public class TempleStayReviewService {
 	private final UserRepository userRepository;
 	private final CloudinaryService cloudinaryService;
 	private final FavoriteReviewRepository favoriteReviewRepository;
+	private final TempleService templeService;
 
 	// Cloudinary 무료 플랜(장당 10MB) + 요청 크기 제한 안에서 감당 가능한 최대 첨부 장수
 	public static final int MAX_IMAGES = 5;
@@ -80,7 +84,9 @@ public class TempleStayReviewService {
 					.imageUrls(dto.getImageUrls())
 					.build();
 
-			return toDto(tsrvr.save(entity));
+			TempleStayReviewEntity saved = tsrvr.save(entity);
+			recalculateTempleRating(saved.getReservationId());
+			return toDto(saved);
 		} catch (RuntimeException e) {
 			// 새 리뷰라 dto의 사진은 전부 이번 요청에서 /api/images/upload로 새로 올라간 것들이다.
 			// 저장이 실패했으니 Cloudinary에 고아로 남지 않게 전부 정리 대상으로 삼는다(소유권 확인은 아래서).
@@ -203,7 +209,6 @@ public class TempleStayReviewService {
 					.content(review.getContent())
 					.imageUrls(review.getImageUrls())
 					.likeCount(review.getLikeCount())
-					.viewCount(review.getViewCount())
 					.createdAt(review.getCreatedAt())
 					.updatedAt(review.getUpdatedAt())
 					.liked(likedIds.contains(review.getReviewId()))
@@ -258,6 +263,7 @@ public class TempleStayReviewService {
 			// 컨트롤러가 "유지할 기존 URL + 새로 업로드한 URL"을 합쳐서 넘겨준다 - 그대로 덮어쓰면 첨삭이 반영됨
 			entity.setImageUrls(dto.getImageUrls());
 
+			recalculateTempleRating(entity.getReservationId());
 			return toDto(entity);
 		} catch (RuntimeException e) {
 			// 검증 실패로 저장이 안 됐어도 dto.imageUrls 중 새로 업로드된 것들은 이미 Cloudinary에
@@ -277,13 +283,55 @@ public class TempleStayReviewService {
 		}
 
 		List<String> imageUrls = entity.getImageUrls();
+		Long reservationId = entity.getReservationId();
 		tsrvr.delete(entity);
+		recalculateTempleRating(reservationId);
 
 		// DB 삭제가 우선 - Cloudinary 정리는 부가 작업이라 실패해도 리뷰 삭제 자체는 이미 끝난 뒤다
 		if (imageUrls != null) {
 			for (String url : imageUrls) {
 				cloudinaryService.delete(url);
 			}
+		}
+	}
+
+	/**
+	 * 리뷰 작성/수정/삭제마다 호출 - 소속 사찰의 평균 평점(TEMPLE.rating)을 다시 계산해 반영한다.
+	 * REVIEW -> RESERVATION -> PROGRAM -> TEMPLE 3단계를 거쳐야 사찰을 찾을 수 있어서
+	 * reservationId로 역추적한다. 리뷰 쓰기/수정/삭제는 빈도가 낮아 매번 재계산해도 부담 없다.
+	 * tsrvr.delete()/save() 직후 호출해도 같은 트랜잭션 안에서 Hibernate가 AVG 쿼리 실행 전에
+	 * 자동 flush하므로 방금 반영한 변경사항까지 포함해서 정확히 계산된다.
+	 */
+	private void recalculateTempleRating(Long reservationId) {
+		TempleStayReservationEntity reservation = tsrr.findById(reservationId).orElse(null);
+		if (reservation == null) {
+			return;
+		}
+		TempleStayProgramEntity program = tspr.findById(reservation.getProgramId()).orElse(null);
+		if (program == null || program.getTemple() == null) {
+			return;
+		}
+		recalculateTempleRatingById(program.getTemple().getTempleId());
+	}
+
+	/** templeId를 이미 아는 경우(일괄 재계산)를 위한 버전 - 위 recalculateTempleRating()과
+	    recalculateAllTempleRatings() 둘 다 결국 여기서 같은 계산을 한다. */
+	private void recalculateTempleRatingById(Long templeId) {
+		Double avg = tsrvr.findAverageRatingByTempleId(templeId);
+		long count = tsrvr.countReviewsByTempleId(templeId);
+		BigDecimal rating = avg == null ? null : BigDecimal.valueOf(avg).setScale(1, RoundingMode.HALF_UP);
+		templeService.updateRating(templeId, rating, (int) count);
+	}
+
+	/**
+	 * 모든 사찰의 평점/리뷰 건수를 DB에 있는 리뷰 데이터로 다시 계산한다 - 평소엔 write/update/delete
+	 * 시점마다 건건이 반영되지만, 그 경로를 안 거치고 들어간 기존 데이터(시드/수동 INSERT 등)는
+	 * 이벤트가 없어서 반영이 안 된다. 그런 데이터를 한 번에 따라잡기 위한 관리자용 일괄 재계산.
+	 * 사찰 수가 많지 않은 서비스 규모라 전체 순회해도 부담 없음(isUsedByAnotherReview와 동일한 전제).
+	 */
+	public void recalculateAllTempleRatings() {
+		for (Long templeId : templeService.getAllTempleIds()) {
+			recalculateTempleRatingById(templeId);
 		}
 	}
 
@@ -351,7 +399,6 @@ public class TempleStayReviewService {
 				.content(entity.getContent())
 				.imageUrls(entity.getImageUrls())
 				.likeCount(entity.getLikeCount())
-				.viewCount(entity.getViewCount())
 				.createdAt(entity.getCreatedAt())
 				.updatedAt(entity.getUpdatedAt())
 				.build();

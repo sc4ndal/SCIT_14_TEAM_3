@@ -29,6 +29,8 @@ public class TempleStayProgramDTO {
 	// 환불 규정/유의사항은 프로그램별이 아니라 사찰 공통이라 소속 사찰(TEMPLE)에서 가져옴
 	private String templeRefundPolicy;
 	private String templePrecautions;
+	private BigDecimal templeRating;   // 소속 사찰 리뷰 평균 평점(캐시) - 리뷰 없으면 null
+	private int templeReviewCount;     // 평균에 반영된 리뷰 건수
 	private int price;
 	private String duration;
 	// HTML5 <input type="date">는 값이 무조건 yyyy-MM-dd 형식이어야 함 - 이 지정이 없으면

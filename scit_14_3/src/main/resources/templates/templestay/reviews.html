@@ -26,12 +26,6 @@
 </header>
 
 <main>
-    <a class="back-link" th:href="@{/reservation}" data-pi18n="revBack">&larr; 템플스테이 예약</a>
-
-    <div id="review-list">
-        <div class="review-empty" data-pi18n="revLoadingMsg">후기를 불러오는 중입니다&hellip;</div>
-    </div>
-
     <div class="review-toolbar">
         <select id="review-sort" aria-label="정렬" data-pi18n-aria="revSortAria">
             <option value="latest" data-pi18n="sortLatest">최신순</option>
@@ -43,7 +37,15 @@
         <button type="button" id="review-search-btn" class="search-btn" data-pi18n="revSearchBtn">검색</button>
     </div>
 
+    <hr style="border: none; border-top: 1px solid var(--line); margin: 22px 0;">
+
+    <div id="review-list">
+        <div class="review-empty" data-pi18n="revLoadingMsg">후기를 불러오는 중입니다&hellip;</div>
+    </div>
+
     <div id="review-pagination"></div>
+
+    <a class="back-link" th:href="@{/reservation}" data-pi18n="revBack">&larr; 템플스테이 예약</a>
 </main>
 
 <script th:src="@{/js/temple/templeI18n.js}"></script>

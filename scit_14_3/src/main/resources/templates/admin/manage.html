@@ -73,6 +73,11 @@
 
 	<!-- ===================== 사찰관리 ===================== -->
 	<div th:if="${tab == 'temple'}" class="admin-table-wrap" style="margin-top:16px;padding-bottom:32px;">
+		<!-- 평점/리뷰건수는 보통 리뷰 작성·수정·삭제 때마다 자동 갱신되는데, 그 경로를 거치지
+		     않고 들어간 기존 리뷰(시드데이터 등)는 반영이 안 돼있을 수 있어 수동 재계산 버튼을 둔다. -->
+		<form th:action="@{/admin/manage/temple/recalculate-ratings}" method="post" style="margin-bottom:12px;">
+			<button type="submit" class="btn-check">전체 사찰 평점 재계산</button>
+		</form>
 		<p th:if="${#lists.isEmpty(temples)}" style="text-align:center; color:var(--ink-soft); padding:24px 0;">
 			등록된 사찰이 없습니다.
 		</p>

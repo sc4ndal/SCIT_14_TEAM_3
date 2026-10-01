@@ -46,10 +46,6 @@ public class TempleStayReviewEntity {
 	@Column(name = "like_count", nullable = false)
 	private int likeCount = 0;
 
-	@Builder.Default
-	@Column(name = "view_count", nullable = false)
-	private int viewCount = 0;
-
 	@Column(name = "created_at", insertable = false, updatable = false, nullable = false)
 	private LocalDateTime createdAt;
 

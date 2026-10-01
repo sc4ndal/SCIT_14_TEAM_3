@@ -57,7 +57,17 @@ public class TempleEntity {
 		@Builder.Default
 		@Column(name = "is_temple", nullable = false)
 		private boolean isTemple = true;
-	
+
+		// 리뷰 평균 평점(캐시) - 리뷰 없으면 NULL. TempleStayReviewService.recalculateTempleRating()이
+		// 리뷰 작성/수정/삭제마다 다시 계산해서 갱신함(사찰이 직접 수정하는 값 아님).
+		@Column(name = "rating", precision = 2, scale = 1)
+		private BigDecimal rating;
+
+		// 평점 몇 건으로 나온 평균인지(신뢰도 표시용, "4.3 (리뷰 23개)") - rating과 같은 시점에 같이 갱신됨.
+		@Builder.Default
+		@Column(name = "review_count", nullable = false)
+		private int reviewCount = 0;
+
 		// 사찰별 개별 유의사항 - 이 사찰이 등록하는 모든 프로그램의 "유의사항"으로도 그대로 쓰임
 		// (프로그램마다 따로 안 받음, TempleStayProgramEntity 조회 시 여기서 조인해서 보여줌).
 		@Column(name = "special_notice", columnDefinition = "TEXT")
