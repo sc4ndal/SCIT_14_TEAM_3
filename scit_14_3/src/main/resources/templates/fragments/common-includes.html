@@ -88,8 +88,10 @@
                         <!-- 닉네임에 마우스 올리면 마이페이지 드롭다운이 바로 아래로 뜸(별도 트리거 행 없앰) -->
                         <div class="mypage-menu">
                             <!-- 일반회원은 법명, 사찰계정은 사찰명 (AppUserDetails.getNickname()) -->
-                            <!-- 닉네임 클릭 시 마이페이지로 이동 (사찰/어드민 계정의 경로 오류는 의도된 사항) -->
-                            <a class="userEntity-nickname-link" th:href="@{/mypage}">
+                            <!-- 닉네임 클릭 시 이동 - 역할별로 목적지가 다르다(/mypage는 일반회원 전용이라
+                                 사찰/관리자 계정이 그대로 눌렀을 때 에러났었음, 아래 드롭다운 첫 항목과 동일하게 맞춤). -->
+                            <a class="userEntity-nickname-link"
+                               th:href="${#authorization.expression('hasRole(''ADMIN'')')} ? @{/admin/manage} : (${#authorization.expression('hasRole(''TEMPLE'')')} ? @{/mypage/edit/verify} : @{/mypage})">
                                 <span class="userEntity-nickname"
                                       th:text="${#authentication.principal.nickname}">
                                     닉네임명

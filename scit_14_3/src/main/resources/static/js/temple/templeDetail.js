@@ -15,6 +15,8 @@ kakao.maps.load(function () {
         lng: TEMPLE_LNG,
         name: TEMPLE_NAME,
         address: TEMPLE_ADDRESS,
+        rating: TEMPLE_RATING,
+        reviewCount: TEMPLE_REVIEW_COUNT,
         autoPan: true
     });
 

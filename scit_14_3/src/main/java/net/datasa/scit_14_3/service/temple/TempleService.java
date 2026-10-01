@@ -107,10 +107,29 @@ public class TempleService {
 				.supportUrban(entity.isSupportUrban())
 				.supportEnglish(entity.isSupportEnglish())
 				.isTemple(entity.isTemple())
+				.rating(entity.getRating())
+				.reviewCount(entity.getReviewCount())
 				.specialNotice(entity.getSpecialNotice())
 				.refundPolicy(entity.getRefundPolicy())
 				.favorited(favorited)
 				.build();
+	}
+
+	/** 리뷰 작성/수정/삭제마다 TempleStayReviewService가 호출 - 평균 평점/리뷰 건수를 다시 계산해서
+	    반영한다. getInfo()/getAll()이 "temples" 캐시를 쓰고 있어서, 값만 바꾸고 캐시를 안 지우면
+	    다음 리뷰가 또 바뀌기 전까지 캐시된 옛 값이 계속 보인다 - allEntries=true로 캐시 전체를
+	    비워서 다음 조회 때 새 값을 다시 읽게 한다. */
+	@CacheEvict(value = "temples", allEntries = true)
+	public void updateRating(Long templeId, java.math.BigDecimal rating, int reviewCount) {
+		TempleEntity entity = tr.findById(templeId)
+				.orElseThrow(() -> new EntityNotFoundException("해당되는 데이터가 존재하지 않습니다."));
+		entity.setRating(rating);
+		entity.setReviewCount(reviewCount);
+	}
+
+	/** TempleStayReviewService.recalculateAllTempleRatings()의 일괄 재계산용 - 전체 사찰 id 목록. */
+	public List<Long> getAllTempleIds() {
+		return tr.findAll().stream().map(TempleEntity::getTempleId).toList();
 	}
 
 	// 지도/사찰목록 화면에서 페이지 이동마다 호출되는데 Aiven(원격 DB) 왕복이 느려서 체감이 큼 -
@@ -232,6 +251,8 @@ public class TempleService {
 				.supportUrban(entity.isSupportUrban())
 				.supportEnglish(entity.isSupportEnglish())
 				.isTemple(entity.isTemple())
+				.rating(entity.getRating())
+				.reviewCount(entity.getReviewCount())
 				.specialNotice(entity.getSpecialNotice())
 				.refundPolicy(entity.getRefundPolicy())
 				.loginId(entity.getLoginId())

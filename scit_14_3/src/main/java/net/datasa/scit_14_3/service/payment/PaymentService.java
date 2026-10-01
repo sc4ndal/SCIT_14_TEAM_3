@@ -56,9 +56,16 @@ public class PaymentService {
 	 * @return
 	 */
 	public PaymentDTO reserved(PaymentDTO dto) {
+			// 참가비 0원(무료 프로그램)이면 실제로 주고받는 돈이 없어서 입금 확인 과정 자체가
+			// 의미 없다 - 다만 결제수단은 사용자가 고른 값(계좌이체/카드) 그대로 정확히 저장한다.
+			// CHECK 제약(chk_payment_method_fields)이 완료 상태면 계좌이체는 depositor_name,
+			// 카드는 toss_payment_key가 NOT NULL이어야 해서, 실제 입금/결제가 없는 대신
+			// placeholder 값으로 채워서 제약만 만족시킨다.
+			boolean free = dto.getAmount() == 0;
+
 			// JS 쪽 검증(reservation.js)을 우회해서 요청이 와도 빈 입금자명으로 저장되지 않게 서버에서도 막는다.
 			// depositor_name 컬럼 자체는 NULL 허용이라(DB CHECK도 빈 문자열은 막지 못함) 여기서 확실히 걸러야 한다.
-			if (dto.getPaymentMethod() == PaymentEntity.PaymentMethod.계좌이체
+			if (!free && dto.getPaymentMethod() == PaymentEntity.PaymentMethod.계좌이체
 					&& (dto.getDepositorName() == null || dto.getDepositorName().isBlank())) {
 				throw new IllegalStateException("입금자명을 입력해 주세요.");
 			}
@@ -74,20 +81,37 @@ public class PaymentService {
 			entity.setPaymentMethod(dto.getPaymentMethod());
 			entity.setAmount(dto.getAmount());
 			entity.setStatus(PaymentEntity.Status.완료);
-			entity.setDepositorName(dto.getDepositorName());
-			entity.setTossPaymentKey(null);
+			// 이 메서드로 카드가 들어오는 경우는 free뿐이다(non-free 카드는 토스 SDK가 여는
+			// 결제창 -> confirmTossPayment() 경로로 가고 여긴 안 거침).
+			if (dto.getPaymentMethod() == PaymentEntity.PaymentMethod.카드) {
+				entity.setDepositorName(null);
+				entity.setTossPaymentKey("FREE_0WON");
+			} else {
+				entity.setDepositorName(free ? "무료(0원)" : dto.getDepositorName());
+				entity.setTossPaymentKey(null);
+			}
+			if (free) {
+				entity.setPaidAt(LocalDateTime.now());
+			}
 
 			PaymentEntity saved = pr.save(entity);
-			reservationService.markPendingBankTransfer(dto.getReservationId());
-			sendPendingEmail(dto.getReservationId(), dto.getAmount(), dto.getPaymentMethod().toString());
+			if (free) {
+				// 입금 확인할 게 없으니 예약대기로 내리지 않고(기본값인 예약확정 그대로), 확정 메일을 바로 보낸다.
+				sendReceiptEmail(dto.getReservationId(), dto.getAmount(), displayPaymentMethod(saved));
+			} else {
+				reservationService.markPendingBankTransfer(dto.getReservationId());
+				sendPendingEmail(dto.getReservationId(), dto.getAmount(), dto.getPaymentMethod().toString());
+			}
 
 			return PaymentDTO.builder()
 					.paymentId(saved.getPaymentId())
 					.reservationId(dto.getReservationId())
-					.paymentMethod(dto.getPaymentMethod())
+					.paymentMethod(entity.getPaymentMethod())
 					.amount(dto.getAmount())
 					.status(PaymentEntity.Status.완료)   // 실제 Enum에 있는 값으로
-					.depositorName(dto.getDepositorName())
+					.depositorName(entity.getDepositorName())
+					.paymentDetail(entity.getPaymentDetail())
+					.paidAt(entity.getPaidAt())
 					.build();
 		}
 		public PaymentDTO findByReservationId(Long reservationId){
@@ -232,10 +256,12 @@ public class PaymentService {
 			sendReceiptEmail(reservationId, payment.getAmount(), displayPaymentMethod(payment));
 		}
 
-		/** 메일/화면에 보여줄 결제수단 - 카드결제는 payment_detail(토스에서 받은 실제 카드사/간편결제사명)이
-		    있으면 그걸, 없으면(응답 형식이 달라 못 받은 경우) enum 이름("카드") 그대로 보여준다. */
+		/** 메일/화면에 보여줄 결제수단 - payment_detail(카드결제는 토스에서 받은 실제 카드사/간편결제사명,
+		    무료 예약은 "무료")이 있으면 그걸, 없으면 enum 이름("카드"/"계좌이체") 그대로 보여준다.
+		    무료(0원) 예약은 CHECK 제약 때문에 내부적으로 payment_method를 계좌이체로 저장하지만
+		    (reserved() 참고) 결제수단 선택과 무관하므로 "계좌이체"로 보이면 안 되고 payment_detail로 덮는다. */
 		private String displayPaymentMethod(PaymentEntity payment) {
-			if (payment.getPaymentMethod() == PaymentEntity.PaymentMethod.카드 && payment.getPaymentDetail() != null) {
+			if (payment.getPaymentDetail() != null) {
 				return payment.getPaymentDetail();
 			}
 			return payment.getPaymentMethod().toString();

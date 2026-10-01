@@ -49,6 +49,8 @@ public class TempleStayProgramService {
 				.requiredItems(entity.getRequiredItems())
 				.templeRefundPolicy(entity.getTemple().getRefundPolicy())
 				.templePrecautions(entity.getTemple().getSpecialNotice())
+				.templeRating(entity.getTemple().getRating())
+				.templeReviewCount(entity.getTemple().getReviewCount())
 				.price(entity.getPrice())
 				.duration(entity.getDuration())
 				.openStartDate(entity.getOpenStartDate())

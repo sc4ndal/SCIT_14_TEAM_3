@@ -13,6 +13,12 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+// escapeHtml은 텍스트 노드용이라 "를 안 바꿔줌 - 속성값(src="...") 안에 넣을 땐 이걸 따로 써야
+// 따옴표로 속성을 깨고 나가는 삽입을 막는다(서버가 Cloudinary 소유 URL인지 이미 검증하지만 이중 방어).
+function escapeAttr(str) {
+  return String(str == null ? '' : str).replace(/"/g, '&quot;');
+}
+
 function formatDate(isoString) {
   if (!isoString) return '';
   return isoString.slice(0, 10); // "2026-09-08T12:34:56" -> "2026-09-08"
@@ -65,7 +71,7 @@ async function loadMyReviews() {
         : escapeHtml(programTitle);
       const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
       const images = (review.imageUrls || []).map(url =>
-        `<img src="${url}" alt="리뷰 첨부 이미지">`
+        `<img src="${escapeAttr(url)}" alt="리뷰 첨부 이미지">`
       ).join('');
 
       // 수정한 적 있는 리뷰만 작성일 옆에 수정일을 같이 보여줌 (작성 직후엔 두 값이 동일)

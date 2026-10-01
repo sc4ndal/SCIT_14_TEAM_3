@@ -25,6 +25,8 @@ public class TempleDTO {
 	private boolean supportUrban;
 	private boolean supportEnglish;
 	private boolean isTemple;
+	private BigDecimal rating; // 리뷰 평균 평점(캐시) - 리뷰 없으면 null
+	private int reviewCount;   // 몇 건으로 나온 평균인지(신뢰도 표시용)
 	private String specialNotice;
 	private String refundPolicy;
 	private String loginId;

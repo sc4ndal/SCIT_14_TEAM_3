@@ -675,7 +675,10 @@ async function submitReservation() {
     alert(trUi('alertRepPhone'));
     return;
   }
-  if (state.paymentMethod === '계좌이체' && !state.depositorName.trim()) {
+  // 참가비 0원(무료 프로그램)이면 실제로 주고받는 돈이 없어서 결제수단 선택 자체가 의미 없다 -
+  // 입금자명도 받지 않고 바로 아래에서 결제수단과 무관하게 즉시 확정 처리한다.
+  const isFree = p.price === 0;
+  if (!isFree && state.paymentMethod === '계좌이체' && !state.depositorName.trim()) {
     alert(trUi('alertDepositorName')); // 사전에 없으면 '입금자명을 입력해 주세요.' 같은 문자열 직접 써도 됩니다
     return;
   }
@@ -754,7 +757,7 @@ async function submitReservation() {
       alert(err && err.message ? i18nSrv(err.message) : trUi('failParticipants'));
       return;
     }
-    if (state.paymentMethod === '카드') {
+    if (state.paymentMethod === '카드' && !isFree) {
       // 결제창을 서버가 아니라 토스 SDK가 직접 여니까, 먼저 ready로 결제 행을
       // 대기 상태로 만들어두고 orderId만 받아온다. 이후 흐름은 payments/toss/success 콜백에서 이어짐.
       const readyRes = await fetch('/payments/toss/ready', {
@@ -789,7 +792,10 @@ async function submitReservation() {
       return; // requestPayment가 결제창으로 리다이렉트시킴
     }
 
-    // PAYMENT 생성 요청 (계좌이체 - 무통장입금이라 즉시결제 없이 바로 완료 처리)
+    // PAYMENT 생성 요청 - 계좌이체는 무통장입금이라 즉시결제 없이 바로 완료 처리.
+    // 무료(0원)는 카드를 선택했어도(위에서 !isFree 조건 때문에 토스로 안 가고) 여기로 들어온다 -
+    // 서버(PaymentService.reserved)가 amount=0이면 입금확인 없이 바로 완료 처리하되, 결제수단은
+    // 선택한 그대로(계좌이체/카드) 정확히 저장한다.
     const paymentPayload = {
       reservationId: reservation.reservationId,
       paymentMethod: state.paymentMethod,
@@ -879,10 +885,9 @@ async function renderStep3() {
   resultAmountEl.textContent = trWon(payment.amount);
   const resultMethodEl = document.getElementById('result-payment-method');
   resultMethodEl.classList.add('no-translate');
-  // 카드결제는 토스에서 받은 실제 수단명(paymentDetail - 카드사/간편결제사명)이 있으면 그걸 보여줌
-  resultMethodEl.textContent = (payment.paymentMethod === '카드' && payment.paymentDetail)
-    ? payment.paymentDetail
-    : trPayMethod(payment.paymentMethod);
+  // paymentDetail(카드결제는 토스 실제 수단명, 무료 예약은 "무료")이 있으면 그걸 보여줌 -
+  // 무료 예약은 내부적으로 paymentMethod가 계좌이체로 저장돼있어도 "계좌이체"로 보이면 안 됨
+  resultMethodEl.textContent = payment.paymentDetail || trPayMethod(payment.paymentMethod);
   const resultPaidAtEl = document.getElementById('result-paid-at');
   resultPaidAtEl.classList.add('no-translate');
   // 계좌이체는 사찰이 입금확인 하기 전까진 결제일시가 없음(아직 미입금 확인 상태)

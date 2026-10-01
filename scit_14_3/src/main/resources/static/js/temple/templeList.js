@@ -182,6 +182,8 @@ kakao.maps.load(function () {
                     lng: temple.longitude,
                     name: temple.name,
                     address: temple.address,
+                    rating: temple.rating,
+                    reviewCount: temple.reviewCount,
                     // imageUrl이 없으면(null) 기본 마커 이미지로 대체
                     iconUrl: temple.imageUrl || '/images/temple-marker.svg',
                     favorited: temple.favorited
@@ -265,6 +267,9 @@ kakao.maps.load(function () {
                             resultFavoriteHtml +
                             '</div>' +
                             '<div class="result-address' + (isTempleTextFromDict(temple.name, 'address', listLang) ? ' no-translate' : '') + '">' + displayAddress + '</div>' +
+                            (temple.rating != null
+                                ? '<div class="result-rating no-translate" style="font-size:12px;color:#888;margin-top:2px;">⭐ ' + temple.rating + ' (리뷰 ' + temple.reviewCount + '개)</div>'
+                                : '') +
                             '<div class="result-types" style="margin-top:4px;">' + buildTypeTagsHtml(temple, listLang) + '</div>';
 
                                                 if (!HIDE_TEMPLE_FAVORITE) {

@@ -27,12 +27,11 @@ public class TempleStayReviewListDTO {
 	private Long programId;
 	private String programName;   // 프로그램 제목 - 목록에서 후기 제목 자리에 쓰임
 	private Integer rating;
-	private String title;         // 리뷰 제목 (선택 입력 - 없으면 프론트에서 내용 미리보기로 대체)
+	private String title;         // 리뷰 제목 (선택 입력 - 없으면 프론트에서 "제목 없음" 문구로 대체)
 	private String authorName;    // 작성자 법명(닉네임)
 	private String content;
 	private List<String> imageUrls;
 	private Integer likeCount;
-	private Integer viewCount;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 	private boolean liked; // 현재 로그인한 회원이 이 리뷰를 좋아요 했는지 - 비로그인이면 항상 false

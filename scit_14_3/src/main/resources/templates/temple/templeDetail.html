@@ -28,6 +28,8 @@
 			<button type="button" id="favorite-btn" th:classappend="${favorited} ? ' active'" title="즐겨찾기">★</button>
 		</h1>
 		<p th:text="${temple.address}"></p>
+		<p class="temple-rating" th:if="${temple.rating != null}" th:text="|⭐ ${temple.rating} (리뷰 ${temple.reviewCount}개)|"></p>
+		<p class="temple-rating" th:unless="${temple.rating != null}">아직 등록된 리뷰가 없습니다</p>
 	</div>
 
 	<div style="padding:0 32px 32px;">
@@ -76,6 +78,8 @@
 	const TEMPLE_LNG = /*[[${temple.longitude}]]*/ 0;
 	const TEMPLE_NAME = /*[[${temple.name}]]*/ '';
 	const TEMPLE_ADDRESS = /*[[${temple.address}]]*/ '';
+	const TEMPLE_RATING = /*[[${temple.rating}]]*/ null;
+	const TEMPLE_REVIEW_COUNT = /*[[${temple.reviewCount}]]*/ 0;
 </script>
 <script th:src="@{/js/temple/templeI18n.js}"></script>
 <script th:src="@{/js/mapCommon.js}"></script>

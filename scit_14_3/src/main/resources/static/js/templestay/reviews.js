@@ -230,11 +230,12 @@ async function deleteReview(reviewId) {
 function renderItem(r) {
   const id = r.reviewId ?? '';
   const isOpen = String(state.openId) === String(id);
-  // 접힘 = 요약(제목 또는 내용 미리보기 + 메타줄), 펼침 = 상세박스가 같은 정보를 이미 다 보여주므로
-  // 헤더는 제목만 남기고 미리보기/메타줄은 감춰서 중복을 없앤다(제목이 없는 리뷰는 절 이름으로 대체).
-  // 접힘/펼침 두 가지 제목을 둘 다 그려두고 CSS(.open)로 보이는 쪽만 고른다(위 아코디언 주석 참고)
-  const headingOpen = r.title || r.templeName || trUi('revNoTitle');
-  const headingClosed = r.title || r.content || trUi('revNoContent');
+  // 접힘/펼침 둘 다 "제목"만 보여준다(내용 미리보기 아님) - 펼치면 상세박스에 내용이 따로 나오므로
+  // 헤더에서까지 내용을 보여주면 중복이다. 제목 없는(선택 입력) 리뷰는 "제목 없음"으로 통일.
+  // 접힘/펼침 두 자리에 같은 값을 그려두고 CSS(.open)로 보이는 쪽만 고른다(위 아코디언 주석 참고)
+  const heading = r.title || trUi('revNoTitle');
+  const headingOpen = heading;
+  const headingClosed = heading;
   const templeName = r.templeName ? escapeHtml(r.templeName) : '';
   const programName = r.programName ? escapeHtml(r.programName) : '';
   const authorName = r.authorName ? escapeHtml(r.authorName) : '';
