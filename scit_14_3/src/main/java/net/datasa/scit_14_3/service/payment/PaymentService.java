@@ -14,7 +14,6 @@ import net.datasa.scit_14_3.repository.templestay.ReservationParticipantReposito
 import net.datasa.scit_14_3.service.templestay.TempleStayProgramService;
 import net.datasa.scit_14_3.service.templestay.TempleStayReservationService;
 import net.datasa.scit_14_3.service.user.EmailVerificationService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -27,17 +26,30 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PaymentService {
 	private final PaymentRepository pr;
-	private final KakaoPayService kakaoPayService;
+	private final TossPayService tossPayService;
 	private final TempleStayReservationService reservationService;
 	private final TempleStayProgramService programService;
 	private final ReservationParticipantRepository rpr;
 	private final EmailVerificationService emailVerificationService;
 
-	@Value("${kakaopay.callback-base}")
-	private String callbackBase;
+	/** 토스 confirm() 응답의 card.issuerCode(카드사 두 자리 코드) -> 한글 카드사명.
+	    https://docs.tosspayments.com/codes/org-codes 의 "카드사 코드" 표 그대로. */
+	private static final Map<String, String> CARD_ISSUER_NAMES = Map.ofEntries(
+			Map.entry("3K", "기업BC"), Map.entry("46", "광주카드"), Map.entry("71", "롯데카드"),
+			Map.entry("30", "KDB산업은행"), Map.entry("31", "BC카드"), Map.entry("51", "삼성카드"),
+			Map.entry("38", "새마을금고"), Map.entry("41", "신한카드"), Map.entry("62", "신협"),
+			Map.entry("36", "씨티카드"), Map.entry("33", "우리BC카드"), Map.entry("W1", "우리카드"),
+			Map.entry("37", "우체국예금보험"), Map.entry("39", "저축은행중앙회"), Map.entry("35", "전북은행"),
+			Map.entry("42", "제주은행"), Map.entry("15", "카카오뱅크"), Map.entry("3A", "케이뱅크"),
+			Map.entry("24", "토스뱅크"), Map.entry("21", "하나카드"), Map.entry("61", "현대카드"),
+			Map.entry("11", "KB국민카드"), Map.entry("91", "NH농협카드"), Map.entry("34", "Sh수협은행"),
+			Map.entry("6D", "다이너스클럽"), Map.entry("4M", "마스터카드"), Map.entry("3C", "유니온페이"),
+			Map.entry("7A", "아메리칸익스프레스"), Map.entry("4J", "JCB"), Map.entry("4V", "VISA")
+	);
+
 	/**
-	 * 결제 생성 - 이 메서드는 계좌이체(무통장입금) 전용이다(카카오페이는 readyKakaoPayment/
-	 * approveKakaoPayment 별도 흐름). 실제 입금 여부는 시스템이 확인할 수 없어서 결제 행 자체는
+	 * 결제 생성 - 이 메서드는 계좌이체(무통장입금) 전용이다(카드결제는 readyTossPayment/
+	 * confirmTossPayment 별도 흐름). 실제 입금 여부는 시스템이 확인할 수 없어서 결제 행 자체는
 	 * 완료로 저장하되(입금했다는 사용자 주장을 그대로 기록), 예약은 예약대기로 내려서 사찰이
 	 * 입금을 눈으로 확인하고 확정 처리하게 한다.
 	 * @param dto
@@ -51,14 +63,19 @@ public class PaymentService {
 				throw new IllegalStateException("입금자명을 입력해 주세요.");
 			}
 
-			PaymentEntity entity = PaymentEntity.builder()
-					.reservationId(dto.getReservationId())
-					.paymentMethod(dto.getPaymentMethod())
-					.amount(dto.getAmount())
-					.status(PaymentEntity.Status.완료)
-					.depositorName(dto.getDepositorName())
-					.kakaoTid(dto.getKakaoTid())
-					.build();
+			// 이전에 카드결제로 시도하다가 취소/방치돼 미완료(대기) 상태로 남은 행이 있으면
+			// 재사용한다 - reservation_id가 UNIQUE라 무조건 새로 INSERT하면 그 행과 충돌한다.
+			PaymentEntity existing = pr.findByReservationId(dto.getReservationId()).orElse(null);
+			if (existing != null && existing.getStatus() == PaymentEntity.Status.완료) {
+				throw new IllegalStateException("이미 결제가 완료된 예약입니다.");
+			}
+			PaymentEntity entity = (existing != null ? existing : new PaymentEntity());
+			entity.setReservationId(dto.getReservationId());
+			entity.setPaymentMethod(dto.getPaymentMethod());
+			entity.setAmount(dto.getAmount());
+			entity.setStatus(PaymentEntity.Status.완료);
+			entity.setDepositorName(dto.getDepositorName());
+			entity.setTossPaymentKey(null);
 
 			PaymentEntity saved = pr.save(entity);
 			reservationService.markPendingBankTransfer(dto.getReservationId());
@@ -71,7 +88,6 @@ public class PaymentService {
 					.amount(dto.getAmount())
 					.status(PaymentEntity.Status.완료)   // 실제 Enum에 있는 값으로
 					.depositorName(dto.getDepositorName())
-					.kakaoTid(dto.getKakaoTid())
 					.build();
 		}
 		public PaymentDTO findByReservationId(Long reservationId){
@@ -104,6 +120,25 @@ public class PaymentService {
 			return canceledReservationIds.size();
 		}
 
+		/** 카드결제 이탈(토스 결제창 띄워놓고 탭 닫기 등) 자동취소 배치(TempleStayReservationScheduler)에서
+		    호출. 토스 결제 세션 자체가 30분 지나면 만료되니, graceMinutes를 그보다 짧게 잡으면
+		    "아직 결제 진행 중인데 먼저 취소해버리는" 레이스컨디션이 생길 수 있어 주의해야 한다. */
+		public int cancelStalePendingCardPayments(int graceMinutes) {
+			LocalDateTime cutoff = LocalDateTime.now().minusMinutes(graceMinutes);
+			List<PaymentEntity> stalePayments = pr.findByPaymentMethodAndStatusAndCreatedAtBefore(
+					PaymentEntity.PaymentMethod.카드, PaymentEntity.Status.대기, cutoff);
+			if (stalePayments.isEmpty()) {
+				return 0;
+			}
+			for (PaymentEntity payment : stalePayments) {
+				reservationService.cancelUnpaid(payment.getReservationId());
+				payment.setStatus(PaymentEntity.Status.취소);
+				notifyReservationCanceled(payment.getReservationId());
+			}
+			log.info("카드결제 {}분 초과 미완료로 {}건 자동취소함", graceMinutes, stalePayments.size());
+			return stalePayments.size();
+		}
+
 		/** 예약 취소 안내 메일 - 본인 취소(ReservationController.canceledReservation), 사찰 관리자
 		    취소(TempleProgramManageController.cancelReservation), 입금확인 3일 초과 자동취소
 		    (위 cancelStalePendingBankTransfers) 전부 여기서 보낸다. */
@@ -134,87 +169,110 @@ public class PaymentService {
 					.amount(entity.getAmount())
 					.status(entity.getStatus())
 					.depositorName(entity.getDepositorName())
-					.kakaoTid(entity.getKakaoTid())
+					.tossPaymentKey(entity.getTossPaymentKey())
+					.paymentDetail(entity.getPaymentDetail())
+					.paidAt(entity.getPaidAt())
 					.build();
 		}
 
+		/** 토스페이먼츠 orderId 규칙(영문/숫자/-/_, 6~64자)에 맞춰 예약 ID 기준으로 만든다.
+		    카카오페이의 partner_order_id와 같은 역할 - 예약 1건당 결제 1건이라 이걸로 충분히 고유하다. */
+		public String buildTossOrderId(Long reservationId) {
+			return "reservation-" + reservationId;
+		}
+
 		/**
-		 * 카카오페이 결제 준비. 이 예약에 대한 결제 행을 대기 상태로 만들어두고(재시도 시 기존 행 재사용),
-		 * 카카오에 ready 요청을 보내 사용자를 보낼 결제 페이지 URL을 돌려준다.
+		 * 토스페이먼츠 결제 준비. 토스는 카카오와 달리 결제창을 서버 API가 아니라 클라이언트 SDK가
+		 * 직접 여니까 여기서 외부 API를 부를 필요는 없고, confirmTossPayment가 나중에 찾을 수 있게
+		 * 결제 행을 대기 상태로 미리 만들어두고 orderId만 돌려준다.
 		 */
-		public String readyKakaoPayment(Long reservationId, int amount, String itemName) {
+		public String readyTossPayment(Long reservationId, int amount) {
 			PaymentEntity payment = pr.findByReservationId(reservationId).orElse(null);
 			if (payment != null && payment.getStatus() == PaymentEntity.Status.완료) {
 				throw new IllegalStateException("이미 결제가 완료된 예약입니다.");
 			}
-			String loginId = reservationService.getInfo(reservationId).getLoginId();
-
-			String approvalUrl = callbackBase + "/payments/kakao/approve?reservationId=" + reservationId;
-			String cancelUrl = callbackBase + "/payments/kakao/cancel?reservationId=" + reservationId;
-			String failUrl = callbackBase + "/payments/kakao/fail?reservationId=" + reservationId;
-
-			Map<String, Object> ready;
-			try {
-				ready = kakaoPayService.ready(
-						String.valueOf(reservationId), loginId, itemName, 1, amount,
-						approvalUrl, cancelUrl, failUrl
-				);
-			} catch (RuntimeException e) {
-				// ready 자체가 실패하면(사이트 도메인 미등록 등) 결제창까지 가지도 못한 것이므로,
-				// approveKakaoPayment 실패 때와 동일하게 이미 만들어둔 예약을 취소해서 자리를 비운다.
-				reservationService.cancelUnpaid(reservationId);
-				throw e;
-			}
-			String tid = (String) ready.get("tid");
-			String redirectUrl = (String) ready.get("next_redirect_pc_url");
-
 			if (payment == null) {
 				payment = PaymentEntity.builder()
 						.reservationId(reservationId)
-						.paymentMethod(PaymentEntity.PaymentMethod.카카오페이)
-						.amount(amount)
 						.status(PaymentEntity.Status.대기)
 						.build();
 			}
+			// 이전에 시도했다가 미완료로 남은 행을 재사용하는 경우 대비 - 방식/수단 전용 필드를 매번
+			// 명시적으로 다시 세팅한다. 안 그러면 payment_method는 옛 값 그대로 남은 채 toss_payment_key만
+			// 채워져서, 완료 처리 시 CHECK 제약과 어긋난다.
+			payment.setPaymentMethod(PaymentEntity.PaymentMethod.카드);
 			payment.setAmount(amount);
-			payment.setKakaoTid(tid);
+			payment.setDepositorName(null);
 			pr.save(payment);
-
-			return redirectUrl;
+			return buildTossOrderId(reservationId);
 		}
 
 		/**
-		 * 카카오페이 결제 승인. approval_url로 리다이렉트되어 돌아왔을 때 호출 - 성공하면 결제를 완료
-		 * 처리하고, 카카오 쪽 승인 자체가 실패하면(네트워크 오류 등) 예약을 자동 취소해서 자리를 비워준다.
+		 * 토스페이먼츠 결제 승인. 결제위젯에서 successUrl로 돌아왔을 때 호출 - 성공하면 결제를 완료
+		 * 처리하고, 토스 쪽 승인 자체가 실패하면(네트워크 오류 등) 예약을 자동 취소해서 자리를 비워준다.
 		 */
-		public void approveKakaoPayment(Long reservationId, String pgToken) {
+		public void confirmTossPayment(Long reservationId, String paymentKey, int amount) {
 			PaymentEntity payment = pr.findByReservationId(reservationId)
 					.orElseThrow(() -> new EntityNotFoundException("결제 준비 내역이 없습니다: " + reservationId));
-			TempleStayReservationDTO reservation = reservationService.getInfo(reservationId);
 
+			Map<String, Object> result;
 			try {
-				kakaoPayService.approve(payment.getKakaoTid(), String.valueOf(reservationId), reservation.getLoginId(), pgToken);
+				result = tossPayService.confirm(paymentKey, buildTossOrderId(reservationId), amount);
 			} catch (Exception e) {
-				log.warn("카카오페이 승인 실패 reservationId={}", reservationId, e);
+				log.warn("토스페이 승인 실패 reservationId={}", reservationId, e);
 				reservationService.cancelUnpaid(reservationId);
 				throw new IllegalStateException("결제 승인에 실패했습니다.");
 			}
 
+			payment.setTossPaymentKey(paymentKey);
+			payment.setPaymentDetail(extractPaymentDetail(result));
 			payment.setStatus(PaymentEntity.Status.완료);
 			payment.setPaidAt(LocalDateTime.now());
 			pr.save(payment);
-			sendReceiptEmail(reservationId, payment.getAmount(), payment.getPaymentMethod().toString());
+			sendReceiptEmail(reservationId, payment.getAmount(), displayPaymentMethod(payment));
+		}
+
+		/** 메일/화면에 보여줄 결제수단 - 카드결제는 payment_detail(토스에서 받은 실제 카드사/간편결제사명)이
+		    있으면 그걸, 없으면(응답 형식이 달라 못 받은 경우) enum 이름("카드") 그대로 보여준다. */
+		private String displayPaymentMethod(PaymentEntity payment) {
+			if (payment.getPaymentMethod() == PaymentEntity.PaymentMethod.카드 && payment.getPaymentDetail() != null) {
+				return payment.getPaymentDetail();
+			}
+			return payment.getPaymentMethod().toString();
+		}
+
+		/** 토스 confirm() 응답에서 실제 결제수단을 뽑는다. 최상위 method 필드는 "카드"/"간편결제"
+		    같은 대분류만 주고 실제 카드사/간편결제사명은 안 담겨 있어서(토스 공식 문서 확인함),
+		    간편결제면 easyPay.provider(한글명 그대로 내려옴), 카드면 card.issuerCode(두 자리 코드 ->
+		    CARD_ISSUER_NAMES로 변환)를 따로 봐야 한다. 둘 다 없으면(응답 형식이 달라진 경우)
+		    method 대분류라도 보여주고, 결제 자체는 이미 완료된 상태라 실패시키지 않는다. */
+		private String extractPaymentDetail(Map<String, Object> confirmResult) {
+			Object easyPay = confirmResult.get("easyPay");
+			if (easyPay instanceof Map<?, ?> easyPayMap && easyPayMap.get("provider") != null) {
+				return String.valueOf(easyPayMap.get("provider"));
+			}
+			Object card = confirmResult.get("card");
+			if (card instanceof Map<?, ?> cardMap && cardMap.get("issuerCode") != null) {
+				String issuerCode = String.valueOf(cardMap.get("issuerCode"));
+				return CARD_ISSUER_NAMES.getOrDefault(issuerCode, issuerCode);
+			}
+			Object method = confirmResult.get("method");
+			return method != null ? String.valueOf(method) : null;
 		}
 
 		/** 사찰이 계좌이체 입금을 확인해서 예약대기 -> 예약확정으로 바뀌었을 때 호출 - 이때야
-		    비로소 "확정" 메일을 보낸다(TempleProgramManageController.confirmReservation 참고). */
+		    비로소 "확정" 메일을 보낸다(TempleProgramManageController.confirmReservation 참고).
+		    카드결제는 confirmTossPayment에서 승인 즉시 paid_at을 채우는데, 계좌이체는 입금 확인
+		    자체가 비동기(사찰이 나중에 확인)라 그동안 비어있다가 여기서야 비로소 채워진다. */
 		public void notifyBankTransferConfirmed(Long reservationId) {
 			PaymentEntity payment = pr.findByReservationId(reservationId)
 					.orElseThrow(() -> new EntityNotFoundException("해당된 예약 정보가 없습니다."));
-			sendReceiptEmail(reservationId, payment.getAmount(), payment.getPaymentMethod().toString());
+			payment.setPaidAt(LocalDateTime.now());
+			pr.save(payment);
+			sendReceiptEmail(reservationId, payment.getAmount(), displayPaymentMethod(payment));
 		}
 
-		/** 예약 확정(결제 완료) 안내 메일. 카카오페이는 결제 승인 즉시, 계좌이체는 사찰이 입금을
+		/** 예약 확정(결제 완료) 안내 메일. 카드결제는 결제 승인 즉시, 계좌이체는 사찰이 입금을
 		    확인해서 확정 처리한 시점에 보낸다. */
 		private void sendReceiptEmail(Long reservationId, int amount, String paymentMethod) {
 			sendReservationEmail(reservationId, amount, paymentMethod, false);

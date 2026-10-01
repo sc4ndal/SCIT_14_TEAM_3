@@ -519,7 +519,12 @@ function findSubmitBlockReason(){
     return null;
 }
 
-document.querySelector('form').addEventListener('submit', function(e){
+// 로그인 중에 이 페이지에 들어오면 헤더의 로그아웃 폼도 같이 렌더링되는데, 그게 이 회원가입
+// 폼보다 DOM에서 먼저 나와서(fragments/common-includes.html) 그냥 'form'으로 찾으면 로그아웃
+// 폼을 잘못 잡는다 - 로그아웃 버튼을 눌러도 이 검증 로직이 걸려서 로그아웃이 안 되는 버그가 있었음.
+const signupForm = document.querySelector('form.page-form');
+
+signupForm.addEventListener('submit', function(e){
     const blockReason = findSubmitBlockReason();
     if(blockReason){
         e.preventDefault();
@@ -530,8 +535,8 @@ document.querySelector('form').addEventListener('submit', function(e){
 /* ===== 취소 버튼: 입력 중이던 내용이 있으면 확인창 (더티플래그) ===== */
 let formIsDirty = false;
 
-document.querySelector('form').addEventListener('input', () => { formIsDirty = true; });
-document.querySelector('form').addEventListener('change', () => { formIsDirty = true; });
+signupForm.addEventListener('input', () => { formIsDirty = true; });
+signupForm.addEventListener('change', () => { formIsDirty = true; });
 
 document.querySelector('.btn-cancel').addEventListener('click', function(e){
     e.preventDefault();

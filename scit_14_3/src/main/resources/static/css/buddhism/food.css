@@ -111,6 +111,41 @@
 	display: none;
 }
 
+/* ---------- 무한 스크롤 (food.js) - 불교 행사(events.css)와 동일한 패턴 ---------- */
+
+/* 새로 드러나는 카드는 뚝 나타나지 않고 살짝 떠오르며 페이드인 되게 한다 */
+.food-card--enter {
+	opacity: 0;
+	transform: translateY(10px);
+}
+
+/* 감시용 엘리먼트 - 화면엔 보이지 않지만 IntersectionObserver가 감지할 수 있게
+   높이를 살짝 준다. */
+.food-infinite-sentinel {
+	height: 1px;
+}
+
+/* 다음 묶음을 불러오는 동안 잠깐 보여주는 스피너 - food.js가 sentinel 바로
+   다음에 만들어 넣는다. */
+.food-loading-spinner {
+	display: none;
+	width: 26px;
+	height: 26px;
+	margin: 24px auto 0;
+	border: 3px solid var(--line);
+	border-top-color: var(--brown);
+	border-radius: 50%;
+	animation: food-spin .7s linear infinite;
+}
+
+.food-loading-spinner.is-active {
+	display: block;
+}
+
+@keyframes food-spin {
+	to { transform: rotate(360deg); }
+}
+
 .food-card__image {
 	width: 100%;
 	aspect-ratio: 4 / 3;
@@ -159,8 +194,6 @@
 }
 
 .food-card__recipe-link {
-	display: inline-block;
-	margin-top: 10px;
 	font-size: 13.5px;
 	color: var(--accent);
 	text-decoration: none;
@@ -170,9 +203,13 @@
 	text-decoration: underline;
 }
 
+/* margin-top:auto로 카드 바닥에 항상 고정 - 레시피 길이가 카드마다 달라도 링크/즐겨찾기
+   버튼 위치는 안 밀린다. 링크(왼쪽)-즐겨찾기(오른쪽) 대각선으로 배치. */
 .food-card__footer {
 	margin-top: auto;
 	padding-top: 20px;
 	display: flex;
-	justify-content: flex-end;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
 }

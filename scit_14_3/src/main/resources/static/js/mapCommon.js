@@ -295,7 +295,7 @@ function createTempleMarker(map, temple) {
                .catch(function (error) {
                    console.error(error);
                    alert('로그인 후 즐겨찾기가 가능합니다.')
-                   location.href = '/login';
+                   location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
                });
            }
 
@@ -335,7 +335,7 @@ function createTempleMarker(map, temple) {
                    .catch(function (error) {
                        console.error(error);
                        alert(i18nMsg('favLoginRequired'))
-                       location.href = '/login';
+                       location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
                    });
            });
        }
@@ -393,6 +393,24 @@ function createTempleMarker(map, temple) {
         marker.setZIndex(999); // 다른 마커들 위로 올려서 안 가려지게 함
         currentOpenMarker = marker;
     });
+
+    // 지도 빈 공간(마커 아닌 곳)을 클릭하면 열려있던 정보창을 닫는다 - 마커마다 이 함수가 호출되므로
+    // map 객체에 플래그를 붙여서 지도당 리스너 하나만 걸리게 한다.
+    if (!map.__emptyClickBound) {
+        map.__emptyClickBound = true;
+        kakao.maps.event.addListener(map, 'click', function () {
+            if (currentOpenInfoWindow) {
+                currentOpenInfoWindow.close();
+                currentOpenInfoWindow = null;
+            }
+            if (currentOpenMarker) {
+                currentOpenMarker.setImage(currentOpenMarker.normalImage);
+                currentOpenMarker.setZIndex(1);
+                currentOpenMarker = null;
+            }
+        });
+    }
+
     // 마커 registry에 등록하는 부분
     window.__templeMarkerRegistry.push({
         temple: temple,
@@ -442,15 +460,5 @@ function loadTempleDetailMap(containerId, program, mapState) {
             });
             kakao.maps.event.trigger(mapState.marker, 'click');
         });
-    });
-}
-
-
-/**
- * 지도의 빈 공간(마커 아닌 곳)을 클릭하면 특정 정보창을 닫아주는 헬퍼.
- */
-function closeInfoWindowOnMapClick(map, infowindow) {
-    kakao.maps.event.addListener(map, 'click', function () {
-        infowindow.close();
     });
 }

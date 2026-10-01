@@ -88,6 +88,17 @@
 .chat-toggle__icon-close {
     display: none;
 }
+/* path가 채울 영역 없는 선(line)만으로 된 X라, stroke 없이 기본 fill만으로는 안 보임 */
+.chat-toggle__icon-close svg {
+    width: 24px;
+    height: 24px;
+}
+.chat-toggle__icon-close svg path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
 .chat-toggle__tooltip {
     position: absolute;
     right: calc(100% + 12px);

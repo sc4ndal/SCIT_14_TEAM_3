@@ -87,7 +87,30 @@ public class GlobalExceptionHandler {
 		return ERROR_VIEW;
 	}
 
-	// 6. 그 외 모든 미처리 예외 → 500
+	// 6. 잘못된 요청(경로변수 타입 불일치, 필수 파라미터 누락, 깨진 JSON 본문 등) → 400
+	//    클라이언트 쪽 실수인데도 위 포괄 Exception 핸들러에 잡히면 500(서버 오류)으로 잘못 보인다.
+	@ExceptionHandler({
+			org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+			org.springframework.web.bind.MissingServletRequestParameterException.class,
+			org.springframework.http.converter.HttpMessageNotReadableException.class
+	})
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	public String handleBadRequest(Exception e, HttpServletRequest request, Model model) {
+		String traceId = fillErrorModel(model, HttpStatus.BAD_REQUEST, "요청 형식이 올바르지 않습니다.");
+		log.warn("[{}] 잘못된 요청 {} {} : {}", traceId, request.getMethod(), request.getRequestURI(), e.getMessage());
+		return ERROR_VIEW;
+	}
+
+	// 7. 지원하지 않는 HTTP 메서드로 호출 → 405
+	@ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+	@ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+	public String handleMethodNotAllowed(Exception e, HttpServletRequest request, Model model) {
+		String traceId = fillErrorModel(model, HttpStatus.METHOD_NOT_ALLOWED, "지원하지 않는 요청 방식입니다.");
+		log.warn("[{}] 지원하지 않는 메서드 {} {}", traceId, request.getMethod(), request.getRequestURI());
+		return ERROR_VIEW;
+	}
+
+	// 8. 그 외 모든 미처리 예외 → 500
 	@ExceptionHandler(Exception.class)
 	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
 	public String handleException(Exception e, HttpServletRequest request, Model model) {

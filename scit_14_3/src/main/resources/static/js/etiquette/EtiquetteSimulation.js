@@ -348,6 +348,8 @@ function setBgmMuted(muted) {
         a.muted = muted;
     });
     el('btn-bgm-toggle').classList.toggle('muted', muted);
+    el('bgm-icon-on').style.display = muted ? 'none' : '';
+    el('bgm-icon-off').style.display = muted ? '' : 'none';
     try {
         localStorage.setItem(BGM_KEY, muted ? '1' : '0');
     } catch (e) {
@@ -624,6 +626,10 @@ el('btn-history-back').addEventListener('click', () => {
 el('btn-toggle-dialogue').addEventListener('click', () => {
     const hidden = el('dialogue-dock').classList.toggle('dialogue-hidden');
     el('btn-toggle-dialogue').classList.toggle('active', hidden);
+});
+
+el('btn-bgm-toggle').addEventListener('click', () => {
+    setBgmMuted(!isBgmMuted());
 });
 
 /*----------시뮬레이션 처음으로 돌아가기----------------*/

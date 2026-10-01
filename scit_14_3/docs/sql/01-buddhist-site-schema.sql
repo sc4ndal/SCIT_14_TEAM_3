@@ -254,22 +254,30 @@ CREATE TABLE RESERVATION_PARTICIPANT (
 CREATE TABLE PAYMENT (
     payment_id       BIGINT      NOT NULL AUTO_INCREMENT COMMENT '결제 고유 번호',
     reservation_id   BIGINT      NOT NULL COMMENT '결제 대상 예약(1예약=1결제)',
-    payment_method   ENUM('계좌이체','카카오페이') NOT NULL COMMENT '결제 방식',
+    payment_method   ENUM('계좌이체','카드') NOT NULL COMMENT '결제 방식(카드는 토스페이먼츠 경유 - 그 안에서 실제 카드/간편결제 등 다양한 수단으로 결제됨)',
     amount           INT         NOT NULL COMMENT '결제 금액(원)',
     status           ENUM('대기','완료','취소','환불') NOT NULL DEFAULT '대기' COMMENT '결제 상태',
     depositor_name   VARCHAR(50) NULL COMMENT '입금자명(계좌이체 전용)',
-    kakao_tid        VARCHAR(100) NULL COMMENT '카카오페이 거래번호(카카오페이 전용)',
+    toss_payment_key VARCHAR(200) NULL COMMENT '토스페이먼츠 결제키(카드 전용)',
+    payment_detail   VARCHAR(50) NULL COMMENT '토스 confirm 응답의 실제 결제수단(카드/간편결제 제공자명 등, 카드 전용, 표시용)',
     paid_at          DATETIME    NULL COMMENT '결제 완료 시각',
     created_at       DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '결제 시도 등록일시',
     PRIMARY KEY (payment_id),
     UNIQUE KEY uq_payment_reservation (reservation_id),
     CONSTRAINT fk_payment_reservation
         FOREIGN KEY (reservation_id) REFERENCES TEMPLE_STAY_RESERVATION(reservation_id),
+    -- 카드결제는 결제창을 클라이언트 SDK(토스)가 직접 열어서, 결제 준비(ready) 시점엔
+    -- toss_payment_key를 아직 모른다(결제 완료 후 콜백에서야 받음) - 그래서 이 제약은
+    -- status가 '완료'로 확정된 행에만 걸고, 대기(ready) 중인 행은 필드가 비어있어도 통과시킨다.
     CONSTRAINT chk_payment_method_fields
         CHECK (
-            (payment_method = '계좌이체' AND depositor_name IS NOT NULL AND kakao_tid IS NULL)
+            status != '완료'
             OR
-            (payment_method = '카카오페이' AND kakao_tid IS NOT NULL AND depositor_name IS NULL)
+            (
+                (payment_method = '계좌이체' AND depositor_name IS NOT NULL AND toss_payment_key IS NULL)
+                OR
+                (payment_method = '카드' AND toss_payment_key IS NOT NULL AND depositor_name IS NULL)
+            )
         )
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='예약 결제';
 

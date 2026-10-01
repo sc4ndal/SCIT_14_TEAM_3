@@ -2,6 +2,7 @@ package net.datasa.scit_14_3.repository.templestay;
 
 import net.datasa.scit_14_3.domain.entity.templestay.TempleStayReservationEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -33,7 +34,14 @@ public interface TempleStayReservationRepository extends JpaRepository<TempleSta
 	@org.springframework.data.jpa.repository.Query("select distinct r.programId from TempleStayReservationEntity r where r.status = :status")
 	List<Long> findDistinctProgramIdsByStatus(@org.springframework.data.repository.query.Param("status") TempleStayReservationEntity.Status status);
 
-	// 취소되지 않은 예약들의 참가 인원 합 - 정원 초과 여부 판단용
+	// 취소되지 않은 예약들의 참가 인원 합 - 정원 초과 여부 판단용.
+	// PESSIMISTIC_READ 필수 - 일반 SELECT면 MySQL REPEATABLE READ에서 이 트랜잭션이 이미
+	// 고정해둔 스냅샷(reserved()의 userRepository.existsById가 제일 먼저 읽어서 고정시킴)을
+	// 그대로 읽어버린다. TempleStayProgramEntity 행 자체는 findByIdForUpdate로 잠가도, 이
+	// 쿼리가 보는 RESERVATION 테이블 합계는 그 잠금과 무관하게 옛날 스냅샷 그대로라 동시 요청이
+	// 전부 "자리 있음"으로 통과해버리는 초과예약 버그가 있었다(정원 20명에 21명 들어감, 실측).
+	// 락 거는 읽기는 스냅샷을 무시하고 항상 최신 커밋 데이터를 보므로 이 문제가 없다.
+	@Lock(jakarta.persistence.LockModeType.PESSIMISTIC_READ)
 	@Query("select coalesce(sum(r.participantCount), 0) from TempleStayReservationEntity r " +
 			"where r.programId = :programId and r.status <> :canceled")
 	int sumActiveParticipantCount(@Param("programId") Long programId,
