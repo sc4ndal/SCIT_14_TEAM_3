@@ -949,3 +949,114 @@ h2.type-title:hover {
 .btn-inquiry:hover {
     filter: brightness(0.92);
 }
+
+/*행사 모달*/
+/* ===== 월간 불교 행사 모달 ===== */
+.event-swal {
+    background: #fbf8f3;
+    border: 1px solid #e6dccf;
+    border-radius: 14px;
+    box-shadow: 0 18px 48px rgba(60, 40, 25, .14);
+    padding: 44px 40px 32px;
+}
+.event-swal-close {
+    color: #8a7a6c;
+    font-size: 30px;
+    top: 10px;
+    right: 10px;
+}
+.event-swal-close:hover { color: #3b2a1f; }
+.event-swal-close:focus { box-shadow: none; }
+
+.event-swal-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 27px;
+    font-weight: 500;
+    color: #2e2118;
+    line-height: 1.4;
+    padding: 0;
+    word-break: keep-all;
+}
+.event-swal-body {
+    margin: 18px 0 0;
+    padding: 0;
+    text-align: center;
+}
+
+.event-swal-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px 16px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e6dccf;
+    color: #5a4a3e;
+    font-size: 15px;
+}
+.event-swal-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.event-swal-meta-item svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: #7a4a2e;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.event-swal-meta-sep {
+    width: 1px;
+    height: 14px;
+    background: #d6c8b8;
+}
+
+.event-swal-extra { margin-top: 16px; color: #5a4a3e; font-size: 15px; }
+.event-swal-extra p { margin: 4px 0; }
+.event-swal-extra strong { color: #7a4a2e; font-weight: 600; margin-right: 6px; }
+
+.event-swal-desc {
+    max-width: 400px;
+    margin: 22px auto 0;
+    color: #4a3a2f;
+    font-size: 16px;
+    line-height: 1.75;
+    word-break: keep-all;
+    white-space: pre-line;
+}
+
+.event-swal-actions {
+    gap: 12px;
+    margin-top: 30px;
+}
+.event-swal-confirm,
+.event-swal-cancel {
+    min-width: 132px;
+    height: 46px;
+    padding: 0 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+}
+.event-swal-confirm {
+    background: #7a4a2e;
+    color: #fff;
+    border: 1px solid #7a4a2e;
+}
+.event-swal-confirm:hover { background: #63391f; border-color: #63391f; }
+.event-swal-cancel {
+    background: #fff;
+    color: #7a4a2e;
+    border: 1px solid #c9b5a3;
+}
+.event-swal-cancel:hover { border-color: #7a4a2e; }
+.event-swal-confirm:focus-visible,
+.event-swal-cancel:focus-visible {
+    outline: 2px solid #c9a27e;
+    outline-offset: 2px;
+}
