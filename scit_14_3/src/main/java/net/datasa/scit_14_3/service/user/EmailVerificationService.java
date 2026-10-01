@@ -128,7 +128,7 @@ public class EmailVerificationService {
     private static String paymentMethodText(String lang, String method) {
         return switch (method) {
             case "계좌이체" -> pick(lang, method, "銀行振込", "Bank transfer");
-            case "카카오페이" -> pick(lang, method, "カカオペイ", "KakaoPay");
+            case "카드" -> pick(lang, method, "カード決済", "Card payment");
             default -> method;
         };
     }

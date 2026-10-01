@@ -12,12 +12,14 @@ import net.datasa.scit_14_3.domain.dto.user.KakaoAdditionalRequestDto;
 import net.datasa.scit_14_3.domain.dto.user.LocalSignupRequestDto;
 import net.datasa.scit_14_3.domain.dto.user.UserResponseDto;
 import net.datasa.scit_14_3.exception.DuplicateFieldException;
+import net.datasa.scit_14_3.security.AppUserDetails;
 import net.datasa.scit_14_3.security.SessionLoginService;
 import net.datasa.scit_14_3.service.user.EmailVerificationService;
 import net.datasa.scit_14_3.service.user.KakaoOAuthService;
 import net.datasa.scit_14_3.service.user.PasswordResetService;
 import net.datasa.scit_14_3.service.user.UserService;
 import net.datasa.scit_14_3.util.PasswordPolicy;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindException;
@@ -45,12 +47,14 @@ public class UserController {
 	private static final String PENDING_KAKAO_NICKNAME = "pendingKakaoNickname";
 
 	@GetMapping("/login")
-	public String login() {
+	public String login(@AuthenticationPrincipal AppUserDetails principal) {
+		if (principal != null) return "redirect:/";
 		return "auth/login";
 	}
 
 	@GetMapping("/signupSelect")
-	public String signupSelect() {
+	public String signupSelect(@AuthenticationPrincipal AppUserDetails principal) {
+		if (principal != null) return "redirect:/";
 		return "auth/signupSelect";
 	}
 
@@ -58,13 +62,19 @@ public class UserController {
 	// 어느 탭을 먼저 보여줄지만 다르게 줌 (tab=id 기본값, tab=pw는 로그인 화면의
 	// "비밀번호 찾기" 링크에서 넘어옴). 실제 탭 전환은 화면에서 JS로 처리함.
 	@GetMapping("/findAccount")
-	public String findAccount(@RequestParam(required = false, defaultValue = "id") String tab, Model model) {
+	public String findAccount(@RequestParam(required = false, defaultValue = "id") String tab, Model model,
+							   @AuthenticationPrincipal AppUserDetails principal) {
+		if (principal != null) return "redirect:/";
 		model.addAttribute("activeTab", "pw".equals(tab) ? "pw" : "id");
 		return "auth/findAccount";
 	}
 
 	@GetMapping("/signup")
-	public String signup(@RequestParam(required = false) String mode, Model model, HttpSession session) {
+	public String signup(@RequestParam(required = false) String mode, Model model, HttpSession session,
+						  @AuthenticationPrincipal AppUserDetails principal) {
+		// 카카오 추가정보 입력(mode=kakao)은 아직 회원가입이 안 끝난 상태라 로그인 principal이
+		// 없다 - 이 경우는 로그인 중이 아니므로 건너뛰지 않는다.
+		if (principal != null) return "redirect:/";
 		model.addAttribute("mode", mode); // "local" 또는 "kakao" 또는 null
 
 		if ("kakao".equals(mode)) {

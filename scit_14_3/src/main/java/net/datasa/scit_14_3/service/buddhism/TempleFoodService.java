@@ -28,7 +28,7 @@ public class TempleFoodService {
 
 	public List<TempleFoodDTO> getAllFoods(String loginId) {
 		Set<Long> favoritedIds = favoritedIds(loginId);
-		return templeFoodRepository.findAllByOrderByRecommendationIdAsc().stream()
+		return templeFoodRepository.findAllByOrderByFoodNameAsc().stream()
 				.map(food -> toDto(food, favoritedIds))
 				.toList();
 	}

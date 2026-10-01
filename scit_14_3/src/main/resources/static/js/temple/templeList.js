@@ -86,12 +86,16 @@ kakao.maps.load(function () {
     });
 
     // 지도 확대/축소·이동 범위 제한 - 너무 멀리 축소하거나 한국 밖으로 드래그하면
-    // 카카오 지도가 타일을 못 채워서 화면이 잘려 보이는 구간이 나온다(레벨 13 = 초기 화면 정도가 한계).
+    // 카카오 지도가 타일을 못 채워서 워터마크만 남은 빈 화면이 보인다(레벨 13 = 초기 화면 정도가 한계).
     var MAX_MAP_LEVEL = 13;
     var KOREA_BOUNDS = new kakao.maps.LatLngBounds(
         new kakao.maps.LatLng(32.5, 123.5), // 남서(제주 남쪽)
         new kakao.maps.LatLng(39.0, 132.5)  // 북동(독도 동쪽)
     );
+    // 카카오맵 자체 기능으로 이 레벨을 아예 못 넘어가게 막는다 - 아래 zoom_changed 리스너는
+    // "넘어간 뒤에" 되돌리는 사후 보정이라 워터마크 레벨을 순간적으로 스쳐 지나가며 깜빡이는
+    // 문제가 있었음. setMaxLevel은 그 순간 자체를 없애준다(사후 보정 리스너는 혹시 몰라 유지).
+    map.setMaxLevel(MAX_MAP_LEVEL);
     kakao.maps.event.addListener(map, 'zoom_changed', function () {
         if (map.getLevel() > MAX_MAP_LEVEL) {
             map.setLevel(MAX_MAP_LEVEL);
@@ -103,6 +107,7 @@ kakao.maps.load(function () {
     // (MAX_MAP_LEVEL로 되돌아왔다가도) 한 틱씩 계속 바깥으로 새어나갈 수 있었음.
     // idle은 드래그든 휠 줌이든 지도가 멈출 때마다 항상 한 번 뜨므로 여기로 통일해서
     // 원인 상관없이 항상 잡히게 한다.
+    //
     kakao.maps.event.addListener(map, 'idle', function () {
         var center = map.getCenter();
         if (!KOREA_BOUNDS.contain(center)) {
@@ -313,7 +318,7 @@ kakao.maps.load(function () {
                           .catch(function (error) {
                               console.error(error);
                               alert(i18nMsg('favLoginRequired'));
-                              location.href = '/login';
+                              location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
                           });
                   });
                   }
@@ -484,7 +489,7 @@ kakao.maps.load(function () {
     favoriteFilterBtn.addEventListener('click', function () {
         if (!isLoggedIn) {
             alert(i18nMsg('favLoginToView'));
-            location.href = '/login';
+            location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
             return; // 필터는 켜지지 않음
         }
         // 필터 바뀌면 열려있던 정보창부터 닫기

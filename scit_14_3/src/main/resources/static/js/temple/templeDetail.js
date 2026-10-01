@@ -45,7 +45,7 @@ document.getElementById('favorite-btn').addEventListener('click', function () {
         })
         .catch(function () {
             alert(i18nMsg('favLoginRequired'));
-            location.href = '/login';
+            location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
         });
 });
 }

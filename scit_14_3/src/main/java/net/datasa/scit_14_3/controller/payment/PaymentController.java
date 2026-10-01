@@ -18,54 +18,44 @@ public class PaymentController {
 	private final PaymentService ps;
 	private final TempleStayReservationService reservationService;
 
-	/** 결제 준비 - 성공하면 사용자를 보낼 카카오페이 결제 페이지 URL을 돌려준다(프론트에서 그 URL로 이동). */
-	@PostMapping("/kakao/ready")
-	public ResponseEntity<?> readyKakao(@RequestBody Map<String, Object> body) {
+	/** 토스페이 결제 준비 - 결제 행을 대기 상태로 만들어두고 결제위젯에 넘길 orderId를 돌려준다.
+	    실제 결제창은 프론트(reservation.js)가 토스 SDK로 직접 연다. */
+	@PostMapping("/toss/ready")
+	public ResponseEntity<?> readyToss(@RequestBody Map<String, Object> body) {
 		try {
 			Long reservationId = Long.valueOf(String.valueOf(body.get("reservationId")));
 			int amount = Integer.parseInt(String.valueOf(body.get("amount")));
-			String itemName = String.valueOf(body.get("itemName"));
-			String redirectUrl = ps.readyKakaoPayment(reservationId, amount, itemName);
-			return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl));
+			String orderId = ps.readyTossPayment(reservationId, amount);
+			return ResponseEntity.ok(Map.of("orderId", orderId));
 		} catch (IllegalStateException e) {
 			return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
-		} catch (org.springframework.web.client.HttpStatusCodeException e) {
-			// 카카오 쪽 에러 응답(잘못된 cid/시크릿 키 등)을 그대로 노출 - 원인 파악용
-			log.warn("카카오페이 ready 실패: {} {}", e.getStatusCode(), e.getResponseBodyAsString());
-			return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("message", e.getResponseBodyAsString()));
 		} catch (Exception e) {
-			// 원인 파악용 - 어떤 예외가 났는지 그대로 노출(디버그 끝나면 정리)
-			log.warn("카카오페이 ready 실패(기타)", e);
+			log.warn("토스페이 ready 실패", e);
 			return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
 					.body(Map.of("message", e.getClass().getSimpleName() + ": " + e.getMessage()));
 		}
 	}
 
-	/** 카카오페이 결제 완료 후 돌아오는 콜백(GET, pg_token 쿼리파라미터 포함) - 승인 처리 후 예약 페이지로 리다이렉트. */
-	@GetMapping("/kakao/approve")
-	public ResponseEntity<Void> approveKakao(@RequestParam Long reservationId, @RequestParam("pg_token") String pgToken) {
+	/** 토스페이 결제 완료 후 돌아오는 콜백(GET, paymentKey/orderId/amount 쿼리파라미터 포함) -
+	    승인 처리 후 예약 페이지로 리다이렉트. */
+	@GetMapping("/toss/success")
+	public ResponseEntity<Void> successToss(@RequestParam Long reservationId,
+											 @RequestParam String paymentKey,
+											 @RequestParam int amount) {
 		String redirect;
 		try {
-			ps.approveKakaoPayment(reservationId, pgToken);
+			ps.confirmTossPayment(reservationId, paymentKey, amount);
 			redirect = "/reservation?paid=success&reservationId=" + reservationId;
 		} catch (Exception e) {
-			log.warn("카카오페이 승인 처리 실패 reservationId={}", reservationId, e);
+			log.warn("토스페이 승인 처리 실패 reservationId={}", reservationId, e);
 			redirect = "/reservation?paid=fail&reservationId=" + reservationId;
 		}
 		return ResponseEntity.status(HttpStatus.FOUND).header("Location", redirect).build();
 	}
 
-	/** 사용자가 카카오페이 결제창에서 취소한 경우 - 결제 못 받았으니 예약도 같이 취소해서 자리를 비운다. */
-	@GetMapping("/kakao/cancel")
-	public ResponseEntity<Void> cancelKakao(@RequestParam Long reservationId) {
-		reservationService.cancelUnpaid(reservationId);
-		return ResponseEntity.status(HttpStatus.FOUND)
-				.header("Location", "/reservation?paid=cancel&reservationId=" + reservationId).build();
-	}
-
-	/** 카카오페이 쪽에서 결제 자체가 실패한 경우 - cancel과 동일하게 예약을 취소해서 자리를 비운다. */
-	@GetMapping("/kakao/fail")
-	public ResponseEntity<Void> failKakao(@RequestParam Long reservationId) {
+	/** 토스페이 쪽에서 결제 자체가 실패/취소된 경우 - 예약을 취소해서 자리를 비운다. */
+	@GetMapping("/toss/fail")
+	public ResponseEntity<Void> failToss(@RequestParam Long reservationId) {
 		reservationService.cancelUnpaid(reservationId);
 		return ResponseEntity.status(HttpStatus.FOUND)
 				.header("Location", "/reservation?paid=fail&reservationId=" + reservationId).build();

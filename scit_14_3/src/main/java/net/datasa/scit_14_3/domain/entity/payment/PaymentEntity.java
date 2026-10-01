@@ -22,7 +22,7 @@ public class PaymentEntity {
 	private Long reservationId;
 	
 	public enum PaymentMethod {
-		계좌이체, 카카오페이
+		계좌이체, 카드
 	}
 	@Enumerated(EnumType.STRING)
 	@Column(name = "payment_method", nullable = false)
@@ -42,9 +42,12 @@ public class PaymentEntity {
 	@Column(name = "depositor_name", length = 50)	// 계좌이체 전용
 	private String depositorName;
 	
-	@Column(name = "kakao_tid", length = 100)		// 카카오페이 전용
-	private String kakaoTid;
-	
+	@Column(name = "toss_payment_key", length = 200)	// 카드 결제(토스) 전용
+	private String tossPaymentKey;
+
+	@Column(name = "payment_detail", length = 50)		// 토스 confirm 응답에서 받은 실제 결제수단(카드사명/간편결제사명 등)
+	private String paymentDetail;
+
 	@Column(name = "paid_at")
 	private LocalDateTime paidAt;
 	

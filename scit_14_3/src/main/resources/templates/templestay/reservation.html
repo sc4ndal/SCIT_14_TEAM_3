@@ -8,10 +8,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
     <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=4d97c12d7e3e28e5dd08a2f00a58025d&libraries=services"></script>
+    <script src="https://js.tosspayments.com/v2/standard"></script>
     <link rel="stylesheet" th:href="@{/css/common.css}">
     <link rel="stylesheet" th:href="@{/css/templestay/reservation.css}">
 </head>
-<body>
+<body th:attr="data-toss-client-key=${tossClientKey}">
 <div id="auth-info" style="display:none;"
      sec:authorize="isAuthenticated()"
      th:attr="data-login-id=${#authentication.principal.username}, data-nickname=${#authentication.principal.nickname}, data-temple-account=${#authentication.principal.templeAccount}, data-is-admin=${#authentication.principal.admin}">
@@ -207,7 +208,7 @@
                     <label for="payment-method" data-pi18n="payMethod">결제 방법</label>
                     <select id="payment-method" name="paymentMethod">
                         <option value="계좌이체" data-pi18n="bankTransfer">계좌이체</option>
-                        <option value="카카오페이" data-pi18n="kakaoPay">카카오페이</option>
+                        <option value="카드" data-pi18n="cardPay">카드결제</option>
                     </select>
                 </div>
 
@@ -217,12 +218,6 @@
                     <label for="payment-depositor-name" data-pi18n="depositor">입금자명</label>
                     <input type="text" id="payment-depositor-name" name="depositorName">
                 </div>
-
-                <!-- 카카오페이 선택 시 -->
-<!--                <div class="form-item payment-field" data-method="카카오페이">-->
-<!--                    <label for="payment-kakao-tid">카카오페이 결제 정보</label>-->
-                    <input type="hidden" id="payment-kakao-tid" name="kakaoTid">
-<!--                </div>-->
 
                 <p id="payment-total-amount"><!-- 단가 x 인원 = 총 결제 금액 --></p>
             </fieldset>
@@ -296,6 +291,7 @@
             </div>
             <div class="result-row"><span class="result-label" data-pi18n="totalAmount">결제 금액</span><span id="result-total-amount"></span></div>
             <div class="result-row"><span class="result-label" data-pi18n="paySection">결제 수단</span><span id="result-payment-method"></span></div>
+            <div class="result-row"><span class="result-label" data-pi18n="paidAt">결제 일시</span><span id="result-paid-at"></span></div>
             <div class="result-row"><span class="result-label" data-pi18n="statusLabel">예약 상태</span><span id="result-status"></span></div>
         </div>
         <div class="step3-actions">

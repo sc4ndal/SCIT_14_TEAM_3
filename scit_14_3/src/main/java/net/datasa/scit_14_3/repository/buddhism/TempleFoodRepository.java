@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface TempleFoodRepository extends JpaRepository<TempleFoodEntity, Long> {
 
-	List<TempleFoodEntity> findAllByOrderByRecommendationIdAsc();
+	List<TempleFoodEntity> findAllByOrderByFoodNameAsc();
 }

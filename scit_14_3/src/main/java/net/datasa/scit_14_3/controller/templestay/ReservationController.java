@@ -8,6 +8,7 @@ import net.datasa.scit_14_3.security.AppUserDetails;
 import net.datasa.scit_14_3.service.payment.PaymentService;
 import net.datasa.scit_14_3.service.templestay.ReservationParticipantService;
 import net.datasa.scit_14_3.service.templestay.TempleStayReservationService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,9 +25,15 @@ public class ReservationController {
 	private final TempleStayReservationService tsrs;
 	private final ReservationParticipantService rps;
 	private final PaymentService ps;
-	
+
+	// 토스페이먼츠 클라이언트 키 - 프론트 SDK가 결제창을 열 때 쓰는 공개용 키라 화면에 그대로
+	// 내려줘도 된다(시크릿 키와 달리 노출돼도 안전하게 설계된 값 - 카카오맵 appkey와 같은 성격).
+	@Value("${toss.client-key}")
+	private String tossClientKey;
+
 	@GetMapping("/reservation")
-	public String Reservation() {
+	public String Reservation(Model model) {
+		model.addAttribute("tossClientKey", tossClientKey);
 		return "templestay/reservation";
 	}
 

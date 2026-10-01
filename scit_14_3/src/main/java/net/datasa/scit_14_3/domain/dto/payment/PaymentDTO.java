@@ -20,7 +20,8 @@ public class PaymentDTO {
 	@Builder.Default
 	private PaymentEntity.Status status = PaymentEntity.Status.대기;
 	private String depositorName;
-	private String kakaoTid;
+	private String tossPaymentKey;
+	private String paymentDetail;
 	private LocalDateTime paidAt;
 	private LocalDateTime createdAt;
 }

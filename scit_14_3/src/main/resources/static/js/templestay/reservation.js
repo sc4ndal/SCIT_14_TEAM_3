@@ -37,7 +37,7 @@ const API = {
   createReservation: '/templestayreservations',
 
   // TODO: 결제 등록 API 아직 안 만듦
-  //   POST /payments  body: { reservationId, paymentMethod, depositorName, kakaoTid }
+  //   POST /payments  body: { reservationId, paymentMethod, depositorName }
   createPayment: '/payments',
 };
 
@@ -96,7 +96,6 @@ const state = {
   note: '',
   paymentMethod: '계좌이체',
   depositorName: '',
-  kakaoTid: '',
   reservationResult: null,    // 신청 완료 후 서버 응답 저장
 };
 
@@ -345,17 +344,15 @@ function selectProgram(programId) {
   // 그대로 남아있게 된다(renderStep2가 textarea 값을 state.note로 채우므로 DOM 자체는 항상
   // state와 일치해서 안 맞아 보이진 않지만, 값 자체가 의도치 않게 이어받아짐).
   state.note = '';
-  // 결제 수단도 새 예약 시도마다 기본값(계좌이체)으로 초기화 - 안 그러면 이전에 카카오페이로
-  // 바꿨다가 취소하고 다시 들어왔을 때 <select> DOM은 그대로 카카오페이인 채로 남아있고
+  // 결제 수단도 새 예약 시도마다 기본값(계좌이체)으로 초기화 - 안 그러면 이전에 카드결제로
+  // 바꿨다가 취소하고 다시 들어왔을 때 <select> DOM은 그대로 카드인 채로 남아있고
   // (여긴 한 번도 리셋 안 했었음), state.paymentMethod만 어디선가 계좌이체로 남아있으면
-  // 결제수단은 카카오페이로 보이는데 입금자명 칸(계좌이체 전용)은 그대로 뜨는 것처럼 화면이
+  // 결제수단은 카드로 보이는데 입금자명 칸(계좌이체 전용)은 그대로 뜨는 것처럼 화면이
   // 서로 안 맞아 보이는 문제가 있었다.
   state.paymentMethod = '계좌이체';
   state.depositorName = '';
-  state.kakaoTid = '';
   document.getElementById('payment-method').value = '계좌이체';
   document.getElementById('payment-depositor-name').value = '';
-  document.getElementById('payment-kakao-tid').value = '';
 
   renderStep2();
   goToStep(2);
@@ -642,9 +639,6 @@ document.getElementById('payment-method').addEventListener('change', (e) => {
 document.getElementById('payment-depositor-name').addEventListener('input', (e) => {
   state.depositorName = e.target.value;
 });
-document.getElementById('payment-kakao-tid').addEventListener('input', (e) => {
-  state.kakaoTid = e.target.value;
-});
 
 document.getElementById('step2-back-btn').addEventListener('click', () => {
   goToStep(1);
@@ -760,27 +754,39 @@ async function submitReservation() {
       alert(err && err.message ? i18nSrv(err.message) : trUi('failParticipants'));
       return;
     }
-    if (state.paymentMethod === '카카오페이') {
-      // 페이지를 완전히 떠났다 돌아오므로(카카오 결제창 리다이렉트) state가 사라짐 - 돌아왔을 때는
-      // resumeAfterKakaoPay()가 서버에서 예약을 다시 조회하고, 프로그램 정보는 state.programs(항상
-      // init에서 먼저 불러옴)에서 다시 찾으므로 여기서 따로 남겨둘 값 없음.
-      const readyRes = await fetch('/payments/kakao/ready', {
+    if (state.paymentMethod === '카드') {
+      // 결제창을 서버가 아니라 토스 SDK가 직접 여니까, 먼저 ready로 결제 행을
+      // 대기 상태로 만들어두고 orderId만 받아온다. 이후 흐름은 payments/toss/success 콜백에서 이어짐.
+      const readyRes = await fetch('/payments/toss/ready', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           reservationId: reservation.reservationId,
           amount: totalAmount,
-          itemName: p.title,
         }),
       });
       if (!readyRes.ok) {
         const err = await readyRes.json().catch(() => null);
-        alert(err && err.message ? i18nSrv(err.message) : trUi('failKakaoReady'));
+        alert(err && err.message ? i18nSrv(err.message) : trUi('failTossReady'));
         return;
       }
-      const { redirectUrl } = await readyRes.json();
-      location.href = redirectUrl; // 카카오페이 결제창으로 이동 - 이후 흐름은 payments/kakao/approve 콜백에서 이어짐
-      return;
+      const { orderId } = await readyRes.json();
+      const tossClientKey = document.body.dataset.tossClientKey;
+      const tossPayments = TossPayments(tossClientKey);
+      const payment = tossPayments.payment({ customerKey: reservation.loginId || TossPayments.ANONYMOUS });
+      // 결제창 언어 - 지정 안 하면 토스가 결제통화(KRW) 기준으로 자동 결정해서 사이트 언어와
+      // 안 맞을 수 있음. 지금 화면 언어(preferredLang 쿠키)를 그대로 넘겨서 맞춰준다.
+      const tossLanguage = { ko: 'KO', ja: 'JA', en: 'EN' }[getCookie('preferredLang')] || 'KO';
+      await payment.requestPayment({
+        method: 'CARD',
+        amount: { currency: 'KRW', value: totalAmount },
+        orderId: orderId,
+        orderName: p.title,
+        successUrl: `${location.origin}/payments/toss/success?reservationId=${reservation.reservationId}`,
+        failUrl: `${location.origin}/payments/toss/fail?reservationId=${reservation.reservationId}`,
+        card: { language: tossLanguage },
+      });
+      return; // requestPayment가 결제창으로 리다이렉트시킴
     }
 
     // PAYMENT 생성 요청 (계좌이체 - 무통장입금이라 즉시결제 없이 바로 완료 처리)
@@ -789,7 +795,6 @@ async function submitReservation() {
       paymentMethod: state.paymentMethod,
       amount: totalAmount,
       depositorName: state.depositorName,
-      kakaoTid: null,
     };
 
     const payRes = await fetch(API.createPayment, {
@@ -815,7 +820,7 @@ async function submitReservation() {
     alert(trUi('failGeneric'));
     console.error(err);
   } finally {
-    // 성공 시엔 카카오페이면 페이지를 완전히 떠나고, 계좌이체면 step3로 넘어가서 이 버튼 자체가
+    // 성공 시엔 카드결제면 페이지를 완전히 떠나고, 계좌이체면 step3로 넘어가서 이 버튼 자체가
     // 안 보이니 굳이 안 풀어도 되지만, 실패로 여기 되돌아오는 모든 경로를 한 곳에서 확실히 풀기 위해 finally에 둠.
     state.isSubmitting = false;
     setSubmitLoading(false);
@@ -839,10 +844,10 @@ function setSubmitLoading(loading) {
 // ------------------------- STEP 3: 신청 완료 -------------------------
 async function renderStep3() {
   const { reservation, payment } = state.reservationResult;
-  // 프로그램 정보는 항상 state.programs(init에서 이미 불러온 전체 목록)에서 찾음 - 카카오페이
+  // 프로그램 정보는 항상 state.programs(init에서 이미 불러온 전체 목록)에서 찾음 - 카드결제
   // 결제창을 왕복하고 왔을 때도 loadPrograms()가 먼저 끝난 뒤라 안전하게 찾을 수 있음.
   const program = state.programs.find(p => p.programId === reservation.programId) || state.reservationResult.program || {};
-  // 인원정보는 항상 서버에서 다시 조회함 - 카카오페이 결제창 왕복 후에는 state.participants가
+  // 인원정보는 항상 서버에서 다시 조회함 - 카드결제 결제창 왕복 후에는 state.participants가
   // 비어있어서(페이지를 완전히 떠났다 옴) in-memory 값을 믿을 수 없음.
   let participants = [];
   try {
@@ -874,7 +879,14 @@ async function renderStep3() {
   resultAmountEl.textContent = trWon(payment.amount);
   const resultMethodEl = document.getElementById('result-payment-method');
   resultMethodEl.classList.add('no-translate');
-  resultMethodEl.textContent = trPayMethod(payment.paymentMethod);
+  // 카드결제는 토스에서 받은 실제 수단명(paymentDetail - 카드사/간편결제사명)이 있으면 그걸 보여줌
+  resultMethodEl.textContent = (payment.paymentMethod === '카드' && payment.paymentDetail)
+    ? payment.paymentDetail
+    : trPayMethod(payment.paymentMethod);
+  const resultPaidAtEl = document.getElementById('result-paid-at');
+  resultPaidAtEl.classList.add('no-translate');
+  // 계좌이체는 사찰이 입금확인 하기 전까진 결제일시가 없음(아직 미입금 확인 상태)
+  resultPaidAtEl.textContent = payment.paidAt ? formatAppliedAt(payment.paidAt) : trUi('paidAtPending');
   const resultStatusEl = document.getElementById('result-status');
   resultStatusEl.classList.add('no-translate');
   resultStatusEl.textContent = trStatus(reservation.status);
@@ -1001,7 +1013,7 @@ async function init() {
   renderProgramList();
   goToStep(1);
 
-  await resumeAfterKakaoPay();
+  await resumeAfterRedirectPay();
 
   // 프로그램 상세보기 페이지(programDetail.js)의 "예약 신청" 버튼으로 들어온 경우
   // (?startBooking=X) 목록 단계 건너뛰고 바로 예약 신청(step2)으로 이동.
@@ -1014,9 +1026,9 @@ async function init() {
   }
 }
 
-// 카카오페이 결제창으로 갔다가 돌아왔을 때(?paid=success|cancel|fail&reservationId=..) 이어서 처리.
+// 카드결제창으로 갔다가 돌아왔을 때(?paid=success|cancel|fail&reservationId=..) 이어서 처리.
 // 결제 도중엔 페이지를 완전히 떠나서 state가 비어있으므로, 서버에서 예약/결제를 다시 조회해서 그림.
-async function resumeAfterKakaoPay() {
+async function resumeAfterRedirectPay() {
   const params = new URLSearchParams(location.search);
   const paid = params.get('paid');
   const reservationId = params.get('reservationId');

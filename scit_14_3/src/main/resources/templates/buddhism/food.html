@@ -58,17 +58,17 @@
 				<div class="food-card__recipe" th:if="${food.recipe() != null}">
 					<p class="food-card__recipe-title">레시피</p>
 					<p class="food-card__recipe-text" th:text="${food.recipe()}">레시피 본문</p>
+				</div>
+
+				<!-- footer는 margin-top:auto로 카드 바닥에 항상 고정된다 - 레시피 길이와 무관하게
+				     링크/즐겨찾기 버튼 위치가 안 밀리도록 여기 같이 둔다. 링크(왼쪽)는 누구에게나,
+				     즐겨찾기(오른쪽)는 일반회원(USER)에게만 보인다. -->
+				<div class="food-card__footer">
 					<a class="food-card__recipe-link" th:if="${food.recipeUrl() != null}"
 					   th:href="${food.recipeUrl()}" target="_blank" rel="noopener noreferrer">
 						레시피 참고 링크 →
 					</a>
-				</div>
-
-				<!-- 일반 회원(USER)만 즐겨찾기를 쓸 수 있게 서버(TempleFoodController)에서 막아뒀다 - 버튼만
-				     숨기면 padding-top만 남은 빈 줄이 카드 아래에 생겨서(food-card__footer가
-				     이 버튼 하나만 담는 전용 div), 컨테이너째로 안 그린다. -->
-				<div class="food-card__footer" sec:authorize="hasRole('USER')">
-					<button type="button" class="favorite-toggle"
+					<button type="button" class="favorite-toggle" sec:authorize="hasRole('USER')"
 							th:classappend="${food.favorited()} ? 'is-favorited' : ''"
 							th:attr="data-favorite-url=@{'/info/food/' + ${food.recommendationId()} + '/favorite'}, aria-pressed=${food.favorited()}"
 							th:data-favorited="${food.favorited()}">
@@ -80,6 +80,8 @@
 
 		</article>
 	</div>
+
+	<div id="food-infinite-sentinel" class="food-infinite-sentinel" th:unless="${#lists.isEmpty(foods)}"></div>
 
 	<p class="food-more">
 		<a th:href="@{/mypage/favorites/foods}" sec:authorize="hasRole('USER')">저장한 사찰음식 모아보기 →</a>

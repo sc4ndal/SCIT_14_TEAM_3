@@ -75,11 +75,11 @@ const PROGRAM_I18N = {
             repInfo: '대표자 정보', name: '이름', gender: '성별', genderSelect: '선택', male: '남성', female: '여성',
             email: '이메일', emailPh: '예) abc123@example.com', phone: '연락처', phonePh: '예) 01012345678',
             participantInfo: '참가자 정보', participantHint: '대표자를 제외한 나머지 참가자 정보를 입력해 주세요.',
-            paySection: '결제 수단', payMethod: '결제 방법', bankTransfer: '계좌이체', kakaoPay: '카카오페이',
+            paySection: '결제 수단', payMethod: '결제 방법', bankTransfer: '계좌이체', cardPay: '카드결제',
             depositor: '입금자명', backBtn: '이전', submitBtn: '예약 및 결제 신청', processing: '처리 중...',
             selectedDate: '선택한 날짜:', dayTrip: '(당일)', overnight: '(1박2일)',
             // ---- 신청 완료(step 3) ----
-            doneTitle: '신청 완료', appliedAt: '신청 일시', programName: '프로그램명', resultHeadcount: '인원수',
+            doneTitle: '신청 완료', appliedAt: '신청 일시', paidAt: '결제 일시', paidAtPending: '결제 확인 전', programName: '프로그램명', resultHeadcount: '인원수',
             totalAmount: '결제 금액', statusLabel: '예약 상태', toList: '목록으로', goMyRes: '내 예약 확인하기',
             reservationNo: '예약번호', noParticipantInfo: '참가자 정보 없음',
             statusPending: '예약대기', statusConfirmed: '예약확정', statusCanceled: '취소', statusDone: '이용완료',
@@ -93,7 +93,7 @@ const PROGRAM_I18N = {
             cHeadcount: '인원', cPayMethod: '결제 수단', cDepositor: '입금자명', cNotEntered: '(미입력)', cTotal: '총 금액',
             loadingReserve: '예약을 처리하는 중...',
             failReserve: '예약 신청에 실패했습니다.', failParticipants: '참가자 정보 등록에 실패했습니다.',
-            failKakaoReady: '카카오페이 결제 준비에 실패했습니다.', failPayment: '결제 정보 등록에 실패했습니다.',
+            failTossReady: '카드결제 준비에 실패했습니다.', failPayment: '결제 정보 등록에 실패했습니다.',
             failGeneric: '예약 신청 중 오류가 발생했습니다.',
             payCanceled: '결제를 취소했습니다. 예약도 함께 취소되었습니다.',
             payFailed: '결제에 실패했습니다. 예약도 함께 취소되었습니다.',
@@ -148,10 +148,10 @@ const PROGRAM_I18N = {
             repInfo: '代表者情報', name: '氏名', gender: '性別', genderSelect: '選択', male: '男性', female: '女性',
             email: 'メールアドレス', emailPh: '例）abc123@example.com', phone: '連絡先', phonePh: '例）01012345678',
             participantInfo: '参加者情報', participantHint: '代表者以外の参加者の情報を入力してください。',
-            paySection: '決済手段', payMethod: 'お支払い方法', bankTransfer: '銀行振込', kakaoPay: 'カカオペイ',
+            paySection: '決済手段', payMethod: 'お支払い方法', bankTransfer: '銀行振込', cardPay: 'カード決済',
             depositor: '入金者名', backBtn: '戻る', submitBtn: '予約・決済を申し込む', processing: '処理中...',
             selectedDate: '選択した日付:', dayTrip: '(日帰り)', overnight: '(1泊2日)',
-            doneTitle: '申込完了', appliedAt: '申込日時', programName: 'プログラム名', resultHeadcount: '人数',
+            doneTitle: '申込完了', appliedAt: '申込日時', paidAt: '決済日時', paidAtPending: '入金確認前', programName: 'プログラム名', resultHeadcount: '人数',
             totalAmount: 'お支払い金額', statusLabel: '予約状況', toList: '一覧へ', goMyRes: '予約を確認する',
             reservationNo: '予約番号', noParticipantInfo: '参加者情報なし',
             statusPending: '予約待ち', statusConfirmed: '予約確定', statusCanceled: 'キャンセル', statusDone: '利用済み',
@@ -164,7 +164,7 @@ const PROGRAM_I18N = {
             cHeadcount: '人数', cPayMethod: '決済手段', cDepositor: '入金者名', cNotEntered: '(未入力)', cTotal: '合計金額',
             loadingReserve: '予約を処理しています...',
             failReserve: '予約の申込に失敗しました。', failParticipants: '参加者情報の登録に失敗しました。',
-            failKakaoReady: 'カカオペイの決済準備に失敗しました。', failPayment: '決済情報の登録に失敗しました。',
+            failTossReady: 'カード決済の準備に失敗しました。', failPayment: '決済情報の登録に失敗しました。',
             failGeneric: '予約の申込中にエラーが発生しました。',
             payCanceled: '決済をキャンセルしました。予約もキャンセルされました。',
             payFailed: '決済に失敗しました。予約もキャンセルされました。',
@@ -218,10 +218,10 @@ const PROGRAM_I18N = {
             repInfo: 'Representative Information', name: 'Name', gender: 'Gender', genderSelect: 'Select', male: 'Male', female: 'Female',
             email: 'Email', emailPh: 'e.g. abc123@example.com', phone: 'Phone', phonePh: 'e.g. 01012345678',
             participantInfo: 'Participant Information', participantHint: 'Please enter the information of the other participants (excluding the representative).',
-            paySection: 'Payment', payMethod: 'Payment Method', bankTransfer: 'Bank Transfer', kakaoPay: 'KakaoPay',
+            paySection: 'Payment', payMethod: 'Payment Method', bankTransfer: 'Bank Transfer', cardPay: 'Card Payment',
             depositor: 'Depositor Name', backBtn: 'Back', submitBtn: 'Reserve and Pay', processing: 'Processing...',
             selectedDate: 'Selected date:', dayTrip: '(day trip)', overnight: '(1 night, 2 days)',
-            doneTitle: 'Request Complete', appliedAt: 'Requested At', programName: 'Program', resultHeadcount: 'Participants',
+            doneTitle: 'Request Complete', appliedAt: 'Requested At', paidAt: 'Paid At', paidAtPending: 'Awaiting confirmation', programName: 'Program', resultHeadcount: 'Participants',
             totalAmount: 'Total Amount', statusLabel: 'Status', toList: 'Back to List', goMyRes: 'View My Reservations',
             reservationNo: 'Reservation No.', noParticipantInfo: 'No participant information',
             statusPending: 'Pending', statusConfirmed: 'Confirmed', statusCanceled: 'Canceled', statusDone: 'Completed',
@@ -234,7 +234,7 @@ const PROGRAM_I18N = {
             cHeadcount: 'Participants', cPayMethod: 'Payment method', cDepositor: 'Depositor name', cNotEntered: '(not entered)', cTotal: 'Total',
             loadingReserve: 'Processing your reservation...',
             failReserve: 'Failed to submit the reservation.', failParticipants: 'Failed to register the participant information.',
-            failKakaoReady: 'Failed to prepare the KakaoPay payment.', failPayment: 'Failed to register the payment information.',
+            failTossReady: 'Failed to prepare the card payment.', failPayment: 'Failed to register the payment information.',
             failGeneric: 'An error occurred while submitting the reservation.',
             payCanceled: 'The payment was canceled. The reservation has also been canceled.',
             payFailed: 'The payment failed. The reservation has also been canceled.',
@@ -293,7 +293,7 @@ function trWon(n) {
 
 /** 서버에 보내는 값(value)은 한국어 원문 그대로 두고, 화면에 보이는 글자만 바꾸는 값 번역들 */
 function trGender(v) { return v === '남성' ? trUi('male') : v === '여성' ? trUi('female') : v; }
-function trPayMethod(v) { return v === '계좌이체' ? trUi('bankTransfer') : v === '카카오페이' ? trUi('kakaoPay') : v; }
+function trPayMethod(v) { return v === '계좌이체' ? trUi('bankTransfer') : v === '카드' ? trUi('cardPay') : v; }
 function trStatus(v) {
     var key = { '예약대기': 'statusPending', '예약확정': 'statusConfirmed', '취소': 'statusCanceled', '이용완료': 'statusDone' }[v];
     return key ? trUi(key) : v;

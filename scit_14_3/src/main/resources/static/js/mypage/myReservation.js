@@ -61,6 +61,8 @@
            createdAt: r.createdAt,
            amount: payment ? payment.amount : null,
            paymentMethod: payment ? payment.paymentMethod : null,
+           paymentDetail: payment ? payment.paymentDetail : null,
+           paidAt: payment ? payment.paidAt : null,
            reviewed: reviewedReservationIds.has(r.reservationId),
            program: {
              title: program ? program.title : '(정보 없음)',
@@ -146,7 +148,11 @@
       r.startDate === r.endDate ? `${r.startDate} (당일)` : `${r.startDate} ~ ${r.endDate}`;
     document.getElementById('detail-participant-count').textContent = `${r.participantCount}명`;
     document.getElementById('detail-amount').textContent = r.amount != null ? `${r.amount.toLocaleString()}원` : '결제 정보 없음';
-    document.getElementById('detail-payment-method').textContent = r.paymentMethod || '-';
+    // 카드결제는 토스에서 받은 실제 수단명(payment_detail - 카드사/간편결제사명)이 있으면 그걸 보여줌
+    document.getElementById('detail-payment-method').textContent =
+      (r.paymentMethod === '카드' && r.paymentDetail) ? r.paymentDetail : (r.paymentMethod || '-');
+    // 계좌이체는 사찰이 입금확인 하기 전까진 결제일시가 없음(아직 미입금 확인 상태)
+    document.getElementById('detail-paid-at').textContent = r.paidAt ? formatAppliedAt(r.paidAt) : '결제 확인 전';
 
     // 취소 버튼: 이미 취소됐거나 이용완료된 예약은 다시 취소할 수 없게 막음
     const cancelBtn = document.getElementById('cancel-btn');

@@ -210,7 +210,15 @@ public class TempleStayReservationService {
 	/**
 	 * 결제 실패/취소로 인한 자동 취소 - 사용자가 직접 누른 취소가 아니라서 24시간 컷오프 규칙을
 	 * 적용하지 않는다(결제가 안 됐으니 자리를 바로 비워줘야 다른 사람이 예약할 수 있음).
+	 *
+	 * PaymentService.approveKakaoPayment/confirmTossPayment가 "승인 실패 로그 남기고 ->
+	 * 이걸로 자리 비우고 -> 실패를 알리려고 예외를 다시 던진다" 순서로 호출하는데, 그 예외가
+	 * PaymentService 쪽 트랜잭션(이 메서드 호출도 전파로 같이 묶임)까지 롤백시켜서 방금 한
+	 * 취소 처리 자체가 통째로 없던 일이 돼버렸었다(실패해도 예약이 그대로 '예약확정'으로 남음).
+	 * REQUIRES_NEW로 별도 트랜잭션에서 커밋해서, 호출한 쪽이 나중에 실패를 던지고 롤백되더라도
+	 * 이 취소 처리만은 살아남게 한다.
 	 */
+	@jakarta.transaction.Transactional(jakarta.transaction.Transactional.TxType.REQUIRES_NEW)
 	@CacheEvict(value = {"programs", "programsByTemple", "program"}, allEntries = true)
 	public void cancelUnpaid(Long reservationId) {
 		TempleStayReservationEntity entity = tsrr.findById(reservationId)

@@ -158,6 +158,7 @@ public class MypageController {
 	    "카카오 로그인이냐"는 DB를 다시 조회할 필요 없이, 로그인 시점에 서버가 세션 principal에
 	    이미 심어둔 kakaoAccessToken으로 판단한다(SessionLoginService.loginAs 참고 - 폼로그인 경로는
 	    이 값이 항상 null). */
+	@PreAuthorize("hasAnyRole('USER','TEMPLE')")
 	@GetMapping("/mypage/edit/verify")
 	public String editVerifyForm(@AuthenticationPrincipal AppUserDetails principal, Model model) {
 		if (!principal.isTempleAccount() && principal.getKakaoAccessToken() != null) {
@@ -167,6 +168,7 @@ public class MypageController {
 		return "mypage/verifyPassword";
 	}
 
+	@PreAuthorize("hasAnyRole('USER','TEMPLE')")
 	@PostMapping("/mypage/edit/verify")
 	public String editVerify(@AuthenticationPrincipal AppUserDetails principal,
 							  @RequestParam String password,
@@ -183,6 +185,7 @@ public class MypageController {
 		return "redirect:/mypage/edit";
 	}
 
+	@PreAuthorize("hasAnyRole('USER','TEMPLE')")
 	@GetMapping("/mypage/edit")
 	public String editForm(@AuthenticationPrincipal AppUserDetails principal, Model model) {
 
@@ -201,6 +204,7 @@ public class MypageController {
 
 	/** 일반회원 마이페이지(회원정보수정) 저장. 이메일을 실제로 바꾸는 경우에만 서버가 세션에서
 	    직접 인증 여부를 확인함(클라이언트 값은 안 믿음 - registerLocal과 같은 원칙). */
+	@PreAuthorize("hasRole('USER')")
 	@PostMapping("/mypage/user-info")
 	public String updateUserInfo(@AuthenticationPrincipal AppUserDetails principal,
 								  @RequestParam String nickname,
@@ -221,6 +225,7 @@ public class MypageController {
 
 	/** 사찰 계정 본인이 직접 수정 가능한 값들만 - 이름/주소/위치/지역/장소유형처럼 잘못 넣으면
 	    문제가 생기는 값은 빠져있음(등록 시 검증된 뒤로 고정, 변경 필요하면 문의). */
+	@PreAuthorize("hasRole('TEMPLE')")
 	@PostMapping("/mypage/temple-info")
 	public String updateTempleInfo(@AuthenticationPrincipal AppUserDetails principal,
 									@RequestParam(required = false) MultipartFile imageFile,
@@ -238,6 +243,7 @@ public class MypageController {
 		return "redirect:/mypage/edit";
 	}
 
+	@PreAuthorize("hasRole('TEMPLE')")
 	@PostMapping("/mypage/temple-info/remove-image")
 	public String removeTempleImage(@AuthenticationPrincipal AppUserDetails principal,
 									 RedirectAttributes redirectAttributes) {
@@ -246,6 +252,7 @@ public class MypageController {
 		return "redirect:/mypage/edit";
 	}
 
+	@PreAuthorize("hasRole('TEMPLE')")
 	@PostMapping("/mypage/temple-password")
 	public String changeTemplePassword(@AuthenticationPrincipal AppUserDetails principal,
 										@RequestParam String currentPassword,
