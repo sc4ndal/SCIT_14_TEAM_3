@@ -496,11 +496,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                     title: e.title,
                     location: e.templeName || "",
                     // ISO 날짜 그대로 - 언어별로 다시 쓸 필요 없어서 라벨("기간" 등)은
-                    // 안 붙이고 보여주는 쪽(패널 ◷ 아이콘/모달 "기간" 라벨)에서 붙인다.
+                    // 안 붙이고 보여주는 쪽(패널 ◷ 아이콘)에서 붙인다.
                     time: e.startDate === e.endDate ? "" : `${e.startDate} ~ ${e.endDate}`,
                     description: e.description || "",
                     eventId: e.eventId,
-                    linkUrl: e.linkUrl || ""
+                    linkUrl: e.linkUrl || "",
+                    // 모달 상단 날짜 표기용 - 하루짜리 행사도 날짜를 보여주려고 원본 값을 따로 둔다.
+                    startDate: e.startDate,
+                    endDate: e.endDate
                 });
             });
         } catch (err) {
@@ -926,12 +929,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     openEventModal(event);
                 });
 
-                item.append(
-                    title,
-                    location,
-                    time,
-                    detail
-                );
+                // 하루짜리 행사는 time이 빈 값이라 ◷ 아이콘만 덩그러니 남지 않도록 기간이 있을 때만 붙인다.
+                item.append(title, location);
+                if (event.time) item.append(time);
+                item.append(detail);
 
 
                 eventPanel.appendChild(
@@ -954,18 +955,57 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     }
 
-    // "자세히 보기" 클릭 시 일정 상세를 모달로 보여줌. 템플스테이 프로그램 일정이면
-    // 참가비/체류기간과 예약 페이지 링크까지 같이 보여주고, 불교 명절처럼 프로그램과
-    // 연결 안 된 일정이면 제목/장소만 보여줌.
+
+    /* =====================================================
+       EVENT DETAIL MODAL
+       "자세히 보기" 클릭 시 행사 상세를 SweetAlert2 모달로 보여줌.
+       기본 보라/회색 버튼 대신 사이트 톤(갈색·크림·명조)에 맞춘
+       커스텀 클래스를 씀 - 스타일은 home.css의 .event-swal* 참고.
+    ===================================================== */
+
+    const DATE_LOCALE = { ko: "ko-KR", ja: "ja-JP", en: "en-US" };
+
+    // ko: 2026. 8. 20. (목) / ja: 2026/8/20(木) / en: Thu, Aug 20, 2026
+    function formatModalDate(iso) {
+        const [y, m, d] = iso.split("-").map(Number);
+        return new Date(y, m - 1, d).toLocaleDateString(DATE_LOCALE[currentLang] || "ko-KR", {
+            year: "numeric", month: "numeric", day: "numeric", weekday: "short"
+        });
+    }
+
+    const ICON_CALENDAR = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>`;
+    const ICON_PIN = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/></svg>`;
+
+    // 템플스테이 프로그램 일정이면 참가비/체류기간과 예약 페이지 링크까지 같이 보여주고,
+    // 불교 명절처럼 프로그램과 연결 안 된 일정이면 날짜/장소/소개만 보여줌.
     function openEventModal(event) {
         const t = HOME_TRANSLATIONS[currentLang];
-        const rows = [];
 
-        if (event.location) rows.push(`<p><strong>⌖</strong> ${escapeHtml(trText(event.location))}</p>`);
-        if (event.time) rows.push(`<p><strong>${t.modalPeriodLabel}</strong> ${escapeHtml(event.time)}</p>`);
-        if (event.duration) rows.push(`<p><strong>${t.modalDurationLabel}</strong> ${escapeHtml(event.duration)}</p>`);
-        if (typeof event.price === "number") rows.push(`<p><strong>${t.modalPriceLabel}</strong> ${event.price.toLocaleString()}${currentLang === "ko" ? "원" : currentLang === "ja" ? "円" : " KRW"}</p>`);
-        if (event.description) rows.push(`<p style="white-space:pre-line;">${escapeHtml(trText(event.description))}</p>`);
+        // 날짜 + 장소를 한 줄 메타 정보로
+        const meta = [];
+        if (event.startDate) {
+            const dateText = event.startDate === event.endDate
+                ? formatModalDate(event.startDate)
+                : `${formatModalDate(event.startDate)} ~ ${formatModalDate(event.endDate)}`;
+            meta.push(`<span class="event-swal-meta-item">${ICON_CALENDAR}${escapeHtml(dateText)}</span>`);
+        }
+        if (event.location) {
+            meta.push(`<span class="event-swal-meta-item">${ICON_PIN}${escapeHtml(trText(event.location))}</span>`);
+        }
+
+        let html = "";
+        if (meta.length) {
+            html += `<div class="event-swal-meta">${meta.join('<span class="event-swal-meta-sep" aria-hidden="true"></span>')}</div>`;
+        }
+
+        const extra = [];
+        if (event.duration) extra.push(`<p><strong>${t.modalDurationLabel}</strong> ${escapeHtml(event.duration)}</p>`);
+        if (typeof event.price === "number") extra.push(`<p><strong>${t.modalPriceLabel}</strong> ${event.price.toLocaleString()}${currentLang === "ko" ? "원" : currentLang === "ja" ? "円" : " KRW"}</p>`);
+        if (extra.length) html += `<div class="event-swal-extra">${extra.join("")}</div>`;
+
+        if (event.description) {
+            html += `<p class="event-swal-desc">${escapeHtml(trText(event.description))}</p>`;
+        }
 
         // 우선순위: 템플스테이 프로그램(예약하러 가기) > 사찰행사 공식 링크(자세히 보기) > 그냥 닫기
         const confirmLabel = event.programId ? t.modalGoReserve : (event.linkUrl ? t.modalGoLink : t.modalClose);
@@ -973,10 +1013,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         Swal.fire({
             title: trText(event.title),
-            html: rows.join(""),
+            html,
+            width: 560,
             confirmButtonText: confirmLabel,
             showCancelButton: hasAction,
-            cancelButtonText: t.modalClose
+            cancelButtonText: t.modalClose,
+            showCloseButton: true,
+            buttonsStyling: false,
+            customClass: {
+                popup: "event-swal",
+                title: "event-swal-title",
+                htmlContainer: "event-swal-body",
+                actions: "event-swal-actions",
+                confirmButton: "event-swal-confirm",
+                cancelButton: "event-swal-cancel",
+                closeButton: "event-swal-close"
+            }
         }).then((result) => {
             if (!result.isConfirmed) return;
             if (event.programId) {
