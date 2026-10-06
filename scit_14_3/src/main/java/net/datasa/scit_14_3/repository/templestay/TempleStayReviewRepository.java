@@ -20,6 +20,18 @@ public interface TempleStayReviewRepository extends JpaRepository<TempleStayRevi
 	// 마이페이지 허브 카드의 "리뷰 N건" 배지용
 	long countByLoginId(String loginId);
 
+	// 회원 삭제 시 그 회원의 리뷰를 "탈퇴한 회원" 전용 계정으로 넘긴다 - UserService.erase 참고
+	@org.springframework.data.jpa.repository.Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query("update TempleStayReviewEntity r set r.loginId = :to where r.loginId = :from")
+	int reassignOwner(@Param("from") String from, @Param("to") String to);
+
+	// 좋아요 행(FAVORITE_REVIEW)이 바뀐 리뷰의 like_count를 남아 있는 좋아요 행 수로 다시 맞춘다 - 회원 삭제로 그 회원의 좋아요 행을
+	// 지운 뒤 호출한다. like_count는 따로 저장된 숫자라 행만 지우면 어긋나는데, 줄이는 방식(-1)이 아니라 행을 세어 덮어쓰므로 이미 어긋나 있던 값도 바로잡힌다.
+	@org.springframework.data.jpa.repository.Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query("update TempleStayReviewEntity r set r.likeCount = cast((select count(f) from FavoriteReviewEntity f where f.review.reviewId = r.reviewId) as integer) " +
+			"where r.reviewId in :ids")
+	int refreshLikeCounts(@Param("ids") java.util.Collection<Long> ids);
+
 	// 전체 후기 모아보기 (/reservation/reviews) - 최신순
 	List<TempleStayReviewEntity> findAllByOrderByCreatedAtDesc();
 

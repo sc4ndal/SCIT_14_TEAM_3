@@ -6,8 +6,13 @@ import net.datasa.scit_14_3.domain.dto.user.LocalSignupRequestDto;
 import net.datasa.scit_14_3.domain.dto.user.UserResponseDto;
 import net.datasa.scit_14_3.domain.entity.user.UserEntity;
 import net.datasa.scit_14_3.exception.DuplicateFieldException;
+import net.datasa.scit_14_3.repository.inquiry.InquiryRepository;
+import net.datasa.scit_14_3.repository.inquiry.TempleInquiryRepository;
+import net.datasa.scit_14_3.repository.templestay.FavoriteReviewRepository;
+import net.datasa.scit_14_3.repository.templestay.FavoriteReviewRepository;
+import net.datasa.scit_14_3.repository.templestay.TempleStayReservationRepository;
+import net.datasa.scit_14_3.repository.templestay.TempleStayReviewRepository;
 import net.datasa.scit_14_3.repository.user.UserRepository;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,8 +31,16 @@ public class UserService {
     // 탈퇴 신청 후 실제로 확정(익명화) 처리되기까지의 유예기간 - 그 안에 로그인하면 철회 가능
     public static final int WITHDRAWAL_GRACE_PERIOD_DAYS = 30;
 
+    // 삭제된 회원의 예약/후기를 넘겨받는 "탈퇴한 회원" 전용 계정의 아이디 - 이 아이디로는 가입도 로그인도 못 한다.
+    public static final String WITHDRAWN_PLACEHOLDER_ID = "withdrawn_user";
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TempleStayReservationRepository reservationRepository;
+    private final TempleStayReviewRepository reviewRepository;
+    private final FavoriteReviewRepository favoriteReviewRepository;
+    private final InquiryRepository inquiryRepository;
+    private final TempleInquiryRepository templeInquiryRepository;
 
     // ================= 중복확인 (아이디/닉네임/이메일) =================
     
@@ -79,7 +92,7 @@ public class UserService {
     /** 회원관리 목록 전용 - 사이트 관리자(ADMIN) 계정은 여기서 관리할 대상이 아니라서 뺌. */
     public List<UserResponseDto> getAllRegularUsers() {
         return userRepository.findAll().stream()
-                .filter(u -> u.getRole() == UserEntity.Role.USER)
+                .filter(u -> u.getRole() == UserEntity.Role.USER && !WITHDRAWN_PLACEHOLDER_ID.equals(u.getLoginId()))
                 .map(this::toResponseDto)
                 .toList();
     }
@@ -145,17 +158,65 @@ public class UserService {
         }
     }
 
-    public void delete(String loginId) {
-        try {
-            userRepository.deleteById(loginId);
-        } catch (DataIntegrityViolationException e) {
-            throw new IllegalStateException("이 회원에게 연결된 예약/리뷰 등의 데이터가 있어 삭제할 수 없습니다.");
+    /** 관리자 회원 삭제 - 탈퇴 확정과 같은 erase()로 처리한다.
+        @return 예약/후기 기록이 있어서 "탈퇴한 회원" 계정으로 넘겼으면 true, 기록이 없었으면 false */
+    @Transactional
+    public boolean delete(String loginId) {
+        if (WITHDRAWN_PLACEHOLDER_ID.equals(loginId)) {
+            throw new IllegalStateException("시스템 계정은 삭제할 수 없습니다.");
         }
+        UserEntity user = userRepository.findById(loginId)
+                .orElseThrow(() -> new IllegalStateException("존재하지 않는 회원입니다."));
+        if (user.getRole() == UserEntity.Role.ADMIN) {
+            throw new IllegalStateException("관리자 계정은 삭제할 수 없습니다.");
+        }
+        return erase(user);
+    }
+
+    /** 회원을 실제로 삭제한다 - 탈퇴 유예기간 만료 배치와 관리자 삭제가 같이 쓴다.
+        예약/후기는 USER를 NOT NULL FK(ON DELETE CASCADE 아님)로 참조해서 회원을 지우면 막히고, NULL로도 못 바꾼다.
+        그래서 그 기록의 주인만 "탈퇴한 회원" 전용 계정(WITHDRAWN_PLACEHOLDER_ID)으로 옮기고 회원 행은 지운다 -
+        결제/후기 기록은 남고(작성자는 withdrawnAt이 있는 그 계정이라 화면에 "탈퇴한 회원"으로 표시),
+        아이디/법명/이메일은 완전히 비워져서 같은 사람이든 다른 사람이든 다시 가입할 수 있다.
+        1:1 문의, 사찰 문의, 즐겨찾기 등은 ON DELETE CASCADE라 회원과 같이 지워진다.
+        @return 예약/후기를 "탈퇴한 회원" 계정으로 넘겼으면 true */
+    private boolean erase(UserEntity user) {
+        String loginId = user.getLoginId();
+        boolean hadRecords = reservationRepository.countByLoginId(loginId) > 0 || reviewRepository.countByLoginId(loginId) > 0;
+        if (hadRecords) {
+            ensureWithdrawnPlaceholder();
+            reservationRepository.reassignOwner(loginId, WITHDRAWN_PLACEHOLDER_ID);
+            reviewRepository.reassignOwner(loginId, WITHDRAWN_PLACEHOLDER_ID);
+        }
+        // 이 회원이 누른 좋아요: 좋아요 행만 지우고, 그 리뷰들의 like_count를 남은 행 수로 다시 맞춘다(집계에서 빠지게)
+        java.util.Set<Long> likedReviewIds = favoriteReviewRepository.findFavoritedReviewIds(loginId);
+        favoriteReviewRepository.deleteAllByLoginId(loginId);
+        if (!likedReviewIds.isEmpty()) {
+            reviewRepository.refreshLikeCounts(likedReviewIds);
+        }
+        userRepository.deleteById(loginId);
+        return hadRecords;
+    }
+
+    /** 삭제된 회원의 예약/후기를 넘겨받는 계정 - 로그인 불가(withdrawnAt 있음), 비밀번호 없음. 없으면 만든다. */
+    private void ensureWithdrawnPlaceholder() {
+        if (userRepository.existsById(WITHDRAWN_PLACEHOLDER_ID)) {
+            return;
+        }
+        UserEntity placeholder = new UserEntity();
+        placeholder.setLoginId(WITHDRAWN_PLACEHOLDER_ID);
+        placeholder.setNickname("del_placeholder");
+        placeholder.setName("탈퇴한 회원");
+        placeholder.setEmail("withdrawn@deleted.local");
+        placeholder.setRole(UserEntity.Role.USER);
+        placeholder.setLoginType(UserEntity.LoginType.LOCAL);
+        placeholder.setWithdrawnAt(LocalDateTime.now());
+        userRepository.saveAndFlush(placeholder);
     }
 
     // ================= 회원 탈퇴 =================
-    // 예약/리뷰는 USER를 참조하는 FK가 ON DELETE CASCADE가 아니라서(결제/후기 기록 보존 목적)
-    // 즉시 하드 삭제가 불가능함 - 대신 "탈퇴 신청 -> 30일 유예 -> 확정 시 익명화" 흐름을 쓴다.
+    // 예약/리뷰는 USER를 참조하는 FK가 ON DELETE CASCADE가 아니라서(결제/후기 기록 보존 목적) 그 기록을 "탈퇴한 회원" 전용 계정으로
+    // 넘기고 회원을 삭제한다(erase 참고) - "탈퇴 신청 -> 30일 유예 -> 확정 시 삭제" 흐름을 쓴다.
     // 신청 후 유예기간 안에 로그인하면 WithdrawalGateFilter가 철회 화면으로 보낸다.
 
     /** 마이페이지 탈퇴 신청. 카카오 회원은 비밀번호가 없어 rawPassword를 검사하지 않는다.
@@ -192,29 +253,25 @@ public class UserService {
         return toResponseDto(user);
     }
 
-    /** 유예기간이 끝난 탈퇴 신청을 익명화 처리 - WithdrawalScheduler가 매일 호출한다.
-        하드 삭제 대신 익명화하는 이유는 위 클래스 주석 참고. 닉네임/이메일은 UNIQUE라
-        login_id 기반으로 유일한 값을 만들어 채운다 - login_id 자체가 이미 유일하고 길이도
-        nickname과 같은 VARCHAR(30)이라 그대로 대입하면 잘라내다 겹칠 일이 없다. 화면에
-        "탈퇴한 회원"으로 보여주는 건 이 nickname 문자열이 아니라 withdrawnAt 여부로 판단하는
-        쪽(TempleStayReviewService.authorDisplayName 등)의 몫 - 여긴 유일성만 챙기면 된다. */
+    /** 유예기간이 끝난 탈퇴 신청을 삭제 처리 - WithdrawalScheduler가 매일 호출한다. 삭제 방식은 erase() 참고.
+        예전 방식(익명화만 하고 행을 남김)으로 처리돼 withdrawnAt만 채워진 행도 이 기회에 같이 정리한다. */
     @Transactional
     public int finalizeOverdueWithdrawals() {
         LocalDateTime cutoff = LocalDateTime.now().minusDays(WITHDRAWAL_GRACE_PERIOD_DAYS);
-        List<UserEntity> overdue = userRepository.findByWithdrawalRequestedAtLessThanEqualAndWithdrawnAtIsNull(cutoff);
+        List<UserEntity> targets = new java.util.ArrayList<>(
+                userRepository.findByWithdrawalRequestedAtLessThanEqualAndWithdrawnAtIsNull(cutoff));
+        userRepository.findByWithdrawnAtIsNotNull().stream()
+                .filter(u -> !WITHDRAWN_PLACEHOLDER_ID.equals(u.getLoginId()))
+                .forEach(targets::add);
 
-        for (UserEntity user : overdue) {
-            user.setNickname(user.getLoginId());
-            user.setName("탈퇴한 회원");
-            user.setPhone(null);
-            user.setEmail("withdrawn_" + user.getLoginId() + "@deleted.local");
-            user.setWithdrawnAt(LocalDateTime.now());
+        for (UserEntity user : targets) {
+            erase(user);
         }
 
-        if (!overdue.isEmpty()) {
-            log.info("탈퇴 유예기간 만료로 {}명 확정 처리(익명화)함", overdue.size());
+        if (!targets.isEmpty()) {
+            log.info("탈퇴 확정으로 {}명 삭제 처리함", targets.size());
         }
-        return overdue.size();
+        return targets.size();
     }
 
     // ================= 회원가입 =================

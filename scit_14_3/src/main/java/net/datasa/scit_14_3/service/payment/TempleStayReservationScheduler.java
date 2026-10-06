@@ -26,6 +26,8 @@ public class TempleStayReservationScheduler {
 
 	private static final int GRACE_DAYS = 3;
 	private static final int CARD_GRACE_MINUTES = 30;
+	// 결제 행 없는 예약 정리는 최근 N시간 안에 만들어진 것만 대상 - 이 기능 도입 전 예약/시드 데이터 보호
+	private static final int ORPHAN_LOOKBACK_HOURS = 24;
 
 	private final PaymentService paymentService;
 	private final TempleStayReservationService reservationService;
@@ -57,6 +59,12 @@ public class TempleStayReservationScheduler {
 			paymentService.cancelStalePendingCardPayments(CARD_GRACE_MINUTES);
 		} catch (Exception e) {
 			log.error("카드결제 이탈 자동취소 배치 실행 중 오류", e);
+		}
+		// 위 배치는 결제 행이 있는 예약만 찾는다 - 결제 행 없이 남은 예약은 따로 정리(위 배치가 실패해도 이건 실행).
+		try {
+			paymentService.cancelReservationsWithoutPayment(CARD_GRACE_MINUTES, ORPHAN_LOOKBACK_HOURS);
+		} catch (Exception e) {
+			log.error("결제 행 없는 예약 자동취소 배치 실행 중 오류", e);
 		}
 	}
 }

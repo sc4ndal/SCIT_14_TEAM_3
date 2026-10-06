@@ -304,6 +304,25 @@ public class TempleStayReservationService {
 		return canceledIds;
 	}
 
+	/** 결제 행이 없는 채로 graceMinutes 넘게 예약확정으로 남은 예약을 취소하고 그 ID들을 돌려준다 -
+	    PaymentService.cancelReservationsWithoutPayment가 호출한다. 정상 흐름은 예약 저장 직후(몇 초 안에)
+	    결제 행이 만들어지므로, 이렇게 오래 남은 건 중간에 이탈하거나 실패한 예약이다.
+	    lookbackHours보다 오래된 예약은 건드리지 않는다(기능 도입 전 데이터/시드 보호). */
+	@CacheEvict(value = {"programs", "programsByTemple", "program"}, allEntries = true)
+	public List<Long> findAndCancelReservationsWithoutPayment(int graceMinutes, int lookbackHours) {
+		LocalDateTime now = LocalDateTime.now();
+		List<TempleStayReservationEntity> orphans = tsrr.findWithoutPayment(
+				TempleStayReservationEntity.Status.예약확정,
+				now.minusMinutes(graceMinutes), now.minusHours(lookbackHours));
+
+		List<Long> canceledIds = new ArrayList<>();
+		for (TempleStayReservationEntity entity : orphans) {
+			entity.setStatus(TempleStayReservationEntity.Status.취소);
+			canceledIds.add(entity.getReservationId());
+		}
+		return canceledIds;
+	}
+
 	/**
 	 * 사찰 관리자가 자기 사찰 프로그램에 걸린 예약을 직접 취소.
 	 * 이용자 취소(canceledMyReservation)와 달리 24시간 컷오프(체크인 전날까지만)는 적용하지

@@ -23,6 +23,23 @@ public interface TempleStayReservationRepository extends JpaRepository<TempleSta
 	List<TempleStayReservationEntity> findByStatusAndCreatedAtLessThanEqual(
 			TempleStayReservationEntity.Status status, java.time.LocalDateTime cutoff);
 
+	// 결제 행이 아예 없이 남은 예약 정리 배치용 - 예약 저장(1단계)은 됐는데 참가자 등록이나 결제 준비가 실패하거나
+	// 그 사이에 탭을 닫아서 결제 행이 안 만들어진 예약. 결제 행 기준으로 도는 카드 이탈 배치가 못 찾아서 정원을 계속 차지한다.
+	// since(조회 하한)를 둔 이유: 이 기능이 생기기 전에 만들어진 예약이나 시드 데이터는 결제 행이 없는 게 정상이라,
+	// 하한 없이 돌리면 그런 예약까지 전부 취소해 버린다.
+	@Query("select r from TempleStayReservationEntity r where r.status = :status " +
+			"and r.createdAt <= :cutoff and r.createdAt >= :since " +
+			"and not exists (select 1 from PaymentEntity p where p.reservationId = r.reservationId)")
+	List<TempleStayReservationEntity> findWithoutPayment(
+			@Param("status") TempleStayReservationEntity.Status status,
+			@Param("cutoff") java.time.LocalDateTime cutoff,
+			@Param("since") java.time.LocalDateTime since);
+
+	// 회원 삭제 시 그 회원의 예약을 "탈퇴한 회원" 전용 계정으로 넘긴다 - UserService.erase 참고
+	@org.springframework.data.jpa.repository.Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query("update TempleStayReservationEntity r set r.loginId = :to where r.loginId = :from")
+	int reassignOwner(@Param("from") String from, @Param("to") String to);
+
 	// 이용완료 자동전환 배치용 - 예약확정 상태인데 이용 종료일이 지난 것들
 	List<TempleStayReservationEntity> findByStatusAndEndDateBefore(
 			TempleStayReservationEntity.Status status, java.time.LocalDate date);
