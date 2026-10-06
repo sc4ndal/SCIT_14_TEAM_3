@@ -98,7 +98,7 @@
 			<div class="field">
 				<label for="emailLocal"><span data-i18n>이메일</span><span class="req">*</span></label>
 				<div class="email-row">
-					<input type="text" id="emailLocal" class="email-local" data-i18n-placeholder="emailLocalPlaceholder" placeholder="이메일 아이디" oninput="updateFullEmail(); resetEmailFlow();">
+					<input type="text" id="emailLocal" class="email-local" maxlength="64" data-i18n-placeholder="emailLocalPlaceholder" placeholder="이메일 아이디" oninput="updateFullEmail(); resetEmailFlow();">
 					<span class="at-sign">@</span>
 					<select id="emailDomainSelect" data-i18n-aria="emailDomainSelectAria" aria-label="이메일 도메인 선택" onchange="handleDomainChange()">
 						<option value="naver.com">naver.com</option>
@@ -111,7 +111,7 @@
 						<option value="icloud.com">icloud.com</option>
 						<option value="custom" data-i18n="domainCustomOption">직접입력</option>
 					</select>
-					<input type="text" id="emailDomainCustom" class="domain-custom" style="display:none" data-i18n-placeholder="domainCustomPlaceholder" data-i18n-aria="domainCustomAria" aria-label="도메인 직접 입력" placeholder="도메인 입력" oninput="updateFullEmail(); resetEmailFlow();">
+					<input type="text" id="emailDomainCustom" class="domain-custom" maxlength="35" style="display:none" data-i18n-placeholder="domainCustomPlaceholder" data-i18n-aria="domainCustomAria" aria-label="도메인 직접 입력" placeholder="도메인 입력" oninput="updateFullEmail(); resetEmailFlow();">
 					<button type="button" class="btn-check" data-i18n="btnEmailCheck" onclick="checkEmailDuplicate()">중복조회</button>
 				</div>
 				<span class="check-result" id="emailResult"></span>
@@ -134,7 +134,7 @@
 
 			<div class="field">
 				<label for="phone"><span data-i18n="phoneLabel">연락처</span> <span class="optional-note" data-i18n="phoneOptional">(선택)</span></label>
-				<input type="tel" id="phone" name="phone" data-i18n-placeholder="phonePlaceholder" placeholder="전화번호">
+				<input type="tel" id="phone" name="phone" maxlength="20" data-i18n-placeholder="phonePlaceholder" placeholder="전화번호">
 			</div>
 		</fieldset>
 

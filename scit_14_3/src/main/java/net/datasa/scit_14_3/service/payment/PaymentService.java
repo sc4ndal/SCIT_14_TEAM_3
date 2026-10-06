@@ -61,6 +61,9 @@ public class PaymentService {
 			// CHECK 제약(chk_payment_method_fields)이 완료 상태면 계좌이체는 depositor_name,
 			// 카드는 toss_payment_key가 NOT NULL이어야 해서, 실제 입금/결제가 없는 대신
 			// placeholder 값으로 채워서 제약만 만족시킨다.
+			// 금액은 브라우저(reservation.js)가 계산해서 보낸 값이라 위조할 수 있다 - 서버가 가격 x 인원으로
+			// 직접 계산한 값과 다르면 거절한다(유료 프로그램을 0원으로 바꿔 보내 무료 예약처럼 확정시키는 것도 여기서 막힌다).
+			requireExpectedAmount(dto.getReservationId(), dto.getAmount());
 			boolean free = dto.getAmount() == 0;
 
 			// JS 쪽 검증(reservation.js)을 우회해서 요청이 와도 빈 입금자명으로 저장되지 않게 서버에서도 막는다.
@@ -68,6 +71,11 @@ public class PaymentService {
 			if (!free && dto.getPaymentMethod() == PaymentEntity.PaymentMethod.계좌이체
 					&& (dto.getDepositorName() == null || dto.getDepositorName().isBlank())) {
 				throw new IllegalStateException("입금자명을 입력해 주세요.");
+			}
+			// depositor_name 컬럼이 VARCHAR(50)이라 넘으면 저장 시점에 500으로 터진다 - 미리 안내 메시지로 돌려준다.
+			if (!free && dto.getPaymentMethod() == PaymentEntity.PaymentMethod.계좌이체
+					&& dto.getDepositorName() != null && dto.getDepositorName().length() > 50) {
+				throw new IllegalStateException("입금자명은 50자 이하로 입력해 주세요.");
 			}
 
 			// 이전에 카드결제로 시도하다가 취소/방치돼 미완료(대기) 상태로 남은 행이 있으면
@@ -87,6 +95,8 @@ public class PaymentService {
 				entity.setDepositorName(null);
 				entity.setTossPaymentKey("FREE_0WON");
 			} else {
+				// 무료일 때 예약자명이 아니라 "무료(0원)"을 넣는 이유: 예약자명을 넣으면 실제로는 입금이
+				// 없는데 그 사람이 입금한 기록처럼 남는다. 표시 값으로 두면 DB에서 무료 예약을 바로 구분할 수 있다.
 				entity.setDepositorName(free ? "무료(0원)" : dto.getDepositorName());
 				entity.setTossPaymentKey(null);
 			}
@@ -205,12 +215,20 @@ public class PaymentService {
 			return "reservation-" + reservationId;
 		}
 
+		/** 클라이언트가 보낸 결제 금액이 서버가 계산한 금액(프로그램 가격 x 인원)과 같은지 확인한다. */
+		private void requireExpectedAmount(Long reservationId, int amount) {
+			if (amount != reservationService.calcAmount(reservationId)) {
+				throw new IllegalStateException("결제 금액이 올바르지 않습니다.");
+			}
+		}
+
 		/**
 		 * 토스페이먼츠 결제 준비. 토스는 카카오와 달리 결제창을 서버 API가 아니라 클라이언트 SDK가
 		 * 직접 여니까 여기서 외부 API를 부를 필요는 없고, confirmTossPayment가 나중에 찾을 수 있게
 		 * 결제 행을 대기 상태로 미리 만들어두고 orderId만 돌려준다.
 		 */
 		public String readyTossPayment(Long reservationId, int amount) {
+			requireExpectedAmount(reservationId, amount);
 			PaymentEntity payment = pr.findByReservationId(reservationId).orElse(null);
 			if (payment != null && payment.getStatus() == PaymentEntity.Status.완료) {
 				throw new IllegalStateException("이미 결제가 완료된 예약입니다.");
@@ -238,6 +256,16 @@ public class PaymentService {
 		public void confirmTossPayment(Long reservationId, String paymentKey, int amount) {
 			PaymentEntity payment = pr.findByReservationId(reservationId)
 					.orElseThrow(() -> new EntityNotFoundException("결제 준비 내역이 없습니다: " + reservationId));
+
+			// successUrl 쿼리파라미터의 amount도 브라우저를 거쳐 온 값이라 믿으면 안 된다 - ready 단계를 정상 금액으로
+			// 통과한 뒤 토스 결제창만 직접 열어 100원으로 결제해도, 여기서 서버 계산값과 달라서 승인 자체를 하지 않는다
+			// (승인 전이라 토스에서 실제로 빠져나간 돈은 없다). 위조 시도로 보고 잡아둔 자리도 풀어준다.
+			int expected = reservationService.calcAmount(reservationId);
+			if (amount != expected) {
+				log.warn("토스페이 금액 불일치 reservationId={} 요청={} 서버계산={}", reservationId, amount, expected);
+				reservationService.cancelUnpaid(reservationId);
+				throw new IllegalStateException("결제 금액이 올바르지 않습니다.");
+			}
 
 			Map<String, Object> result;
 			try {

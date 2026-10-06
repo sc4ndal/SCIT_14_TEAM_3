@@ -537,7 +537,7 @@ function renderParticipantRows() {
     row.innerHTML = `
       <div class="form-item">
         <label for="participant-name-${i}" class="no-translate" data-pi18n="name">${trUi('name')}</label>
-        <input type="text" id="participant-name-${i}" data-p-field="name" data-p-index="${i}" value="${pt.name}">
+        <input type="text" id="participant-name-${i}" data-p-field="name" data-p-index="${i}" maxlength="50" value="${pt.name}">
       </div>
       <div class="form-item">
         <label for="participant-gender-${i}" class="no-translate" data-pi18n="gender">${trUi('gender')}</label>
@@ -549,7 +549,7 @@ function renderParticipantRows() {
       </div>
       <div class="form-item">
         <label for="participant-email-${i}" class="no-translate" data-pi18n="email">${trUi('email')}</label>
-        <input type="email" id="participant-email-${i}" data-p-field="email" data-p-index="${i}" value="${pt.email}" data-pi18n-placeholder="emailPh" placeholder="${trUi('emailPh')}">
+        <input type="email" id="participant-email-${i}" data-p-field="email" data-p-index="${i}" maxlength="100" value="${pt.email}" data-pi18n-placeholder="emailPh" placeholder="${trUi('emailPh')}">
       </div>
     `;
     container.appendChild(row);

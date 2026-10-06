@@ -263,7 +263,12 @@ function renderItem(r) {
          <a class="edit-link no-translate" data-pi18n="revEdit" href="/mypage/reviews/write?reservationId=${encodeURIComponent(r.reservationId)}&reviewId=${encodeURIComponent(r.reviewId)}">${trUi('revEdit')}</a>
          <button type="button" class="delete-btn no-translate" data-pi18n="revDelete" data-review-id="${escapeAttr(r.reviewId)}">${trUi('revDelete')}</button>
        </div>`
-    : '';
+    : isAdmin
+      // 관리자는 남의 리뷰를 삭제만 할 수 있다(수정은 불가) - 서버도 DELETE에서 관리자를 허용한다.
+      ? `<div class="review-actions">
+           <button type="button" class="delete-btn no-translate" data-pi18n="revDelete" data-review-id="${escapeAttr(r.reviewId)}">${trUi('revDelete')}</button>
+         </div>`
+      : '';
 
   // 목록에는 축소본(cloudinaryThumb)을 쓰고, 원본 URL은 data-full에 넣어 라이트박스에서 사용한다.
   const images = Array.isArray(r.imageUrls) && r.imageUrls.length

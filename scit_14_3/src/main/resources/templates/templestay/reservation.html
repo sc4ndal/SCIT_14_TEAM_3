@@ -160,7 +160,7 @@
 
             <div class="form-item">
                 <label for="res-note" data-pi18n="rsvNote">요청사항</label>
-                <textarea id="res-note" name="note" data-pi18n-placeholder="rsvNotePh" placeholder="예) 채식 식단이 필요합니다 / 거동이 불편하여 1층 방을 희망합니다 / 반려동물 동반 문의 등 요청사항을 자유롭게 적어주세요"></textarea>
+                <textarea id="res-note" name="note" maxlength="1000" data-pi18n-placeholder="rsvNotePh" placeholder="예) 채식 식단이 필요합니다 / 거동이 불편하여 1층 방을 희망합니다 / 반려동물 동반 문의 등 요청사항을 자유롭게 적어주세요"></textarea>
             </div>
 
             <!-- 대표자 정보 (예약 신청자 본인 = RESERVATION_PARTICIPANT의 첫 번째 행 + 연락처) -->
@@ -170,7 +170,7 @@
                 <div class="participant-row representative-row" data-index="0">
                     <div class="form-item">
                         <label for="participant-name-0" data-pi18n="name">이름</label>
-                        <input type="text" id="participant-name-0" name="participants[0].name">
+                        <input type="text" id="participant-name-0" name="participants[0].name" maxlength="50">
                     </div>
                     <div class="form-item">
                         <label for="participant-gender-0" data-pi18n="gender">성별</label>
@@ -182,11 +182,11 @@
                     </div>
                     <div class="form-item">
                         <label for="participant-email-0" data-pi18n="email">이메일</label>
-                        <input type="email" id="participant-email-0" name="participants[0].email" data-pi18n-placeholder="emailPh" placeholder="예) abc123@example.com">
+                        <input type="email" id="participant-email-0" name="participants[0].email" maxlength="100" data-pi18n-placeholder="emailPh" placeholder="예) abc123@example.com">
                     </div>
                     <div class="form-item">
                         <label for="participant-phone-0" data-pi18n="phone">연락처</label>
-                        <input type="tel" id="participant-phone-0" name="participants[0].phone" data-pi18n-placeholder="phonePh" placeholder="예) 01012345678">
+                        <input type="tel" id="participant-phone-0" name="participants[0].phone" maxlength="20" data-pi18n-placeholder="phonePh" placeholder="예) 01012345678">
                     </div>
                 </div>
             </fieldset>
@@ -216,7 +216,7 @@
                 <!-- TODO: 무통장입금(수동 대사) 방식일 때만 필요한 필드. PG 연동해서 계좌이체도 즉시결제로 처리한다면 제거 검토 -->
                 <div class="form-item payment-field" data-method="계좌이체">
                     <label for="payment-depositor-name" data-pi18n="depositor">입금자명</label>
-                    <input type="text" id="payment-depositor-name" name="depositorName">
+                    <input type="text" id="payment-depositor-name" name="depositorName" maxlength="50">
                 </div>
 
                 <p id="payment-total-amount"><!-- 단가 x 인원 = 총 결제 금액 --></p>

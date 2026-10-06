@@ -37,6 +37,20 @@ public class ReservationParticipantService {
 	 * datasource url의 rewriteBatchedStatements=true가 실제로 한 번에 묶이게 해줌).
 	 */
 	public List<ReservationParticipantDTO> reserved(List<ReservationParticipantDTO> reservationParticipantDTO) {
+		// DB 컬럼 길이(이름 50 / 이메일 100 / 전화 20)를 넘으면 저장 시점에 500으로 터지므로, 미리 확인해서
+		// 이유가 담긴 메시지로 돌려준다(컨트롤러가 IllegalStateException을 409로 변환).
+		for (ReservationParticipantDTO dto : reservationParticipantDTO) {
+			if (dto.getName() != null && dto.getName().length() > 50) {
+				throw new IllegalStateException("참가자 이름은 50자 이하로 입력해 주세요.");
+			}
+			if (dto.getEmail() != null && dto.getEmail().length() > 100) {
+				throw new IllegalStateException("참가자 이메일은 100자 이하로 입력해 주세요.");
+			}
+			if (dto.getPhone() != null && dto.getPhone().length() > 20) {
+				throw new IllegalStateException("전화번호는 20자 이하로 입력해 주세요.");
+			}
+		}
+
 		List<ReservationParticipantEntity> entities = reservationParticipantDTO.stream()
 				.map(dto -> ReservationParticipantEntity.builder()
 						.reservationId(dto.getReservationId())

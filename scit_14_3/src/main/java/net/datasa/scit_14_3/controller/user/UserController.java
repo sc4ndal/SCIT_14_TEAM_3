@@ -227,6 +227,13 @@ public class UserController {
 			return "redirect:/signup?mode=local";
 		}
 
+		// 전화번호/이메일 길이 - DB 컬럼(phone 20, email 100)을 넘으면 저장 시점에 500으로 터진다.
+		String contactError = contactLengthError(request.getPhone(), request.getEmail());
+		if (contactError != null) {
+			redirectAttributes.addFlashAttribute("signupError", contactError);
+			return "redirect:/signup?mode=local";
+		}
+
 		// email_verified hidden 필드는 화면 표시용일 뿐 안 믿음 - 세션에 실제로 인증된 이메일인지 직접 확인.
 		// 이메일은 필수 입력으로 취급함.
 		String email = request.getEmail();
@@ -244,6 +251,17 @@ public class UserController {
 			redirectAttributes.addFlashAttribute("signupError", e.getMessage());
 			return "redirect:/signup";
 		}
+	}
+
+	/** 가입 폼의 전화번호/이메일이 DB 컬럼 길이(phone 20, email 100)를 넘으면 안내 메시지를, 아니면 null을 돌려준다. */
+	private static String contactLengthError(String phone, String email) {
+		if (phone != null && phone.length() > 20) {
+			return "전화번호는 20자 이하로 입력해주세요.";
+		}
+		if (email != null && email.length() > 100) {
+			return "이메일은 100자 이하로 입력해주세요.";
+		}
+		return null;
 	}
 
 	// ================= 카카오 로그인 =================
@@ -352,6 +370,14 @@ public class UserController {
 			session.removeAttribute(PENDING_KAKAO_NICKNAME);
 			session.removeAttribute(KakaoOAuthService.ACCESS_TOKEN_SESSION_KEY);
 			throw new BindException(bindingResult);   // → GlobalExceptionHandler.handleBind()
+		}
+
+		// 길이 초과는 Bean Validation(@Size)으로 두지 않고 여기서 직접 확인한다 - 위 BindException 경로는 카카오
+		// 인증 세션을 폐기하고 에러 화면으로 가버려서, 길이 한 칸 때문에 카카오 로그인부터 다시 해야 하기 때문.
+		String contactError = contactLengthError(request.getPhone(), request.getEmail());
+		if (contactError != null) {
+			redirectAttributes.addFlashAttribute("signupError", contactError);
+			return "redirect:/signup?mode=kakao";
 		}
 
 		// 로컬 회원가입과 동일하게 이메일을 필수로 요구함 - 클라이언트가 보낸 값은 안 믿고

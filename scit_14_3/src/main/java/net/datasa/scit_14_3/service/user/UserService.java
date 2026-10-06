@@ -116,6 +116,11 @@ public class UserService {
         UserEntity user = userRepository.findById(loginId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 회원을 찾을 수 없습니다."));
 
+        // phone 컬럼이 VARCHAR(20)이라 넘으면 저장 시점에 500으로 터진다 - 안내 메시지로 돌려준다.
+        if (phone != null && phone.length() > 20) {
+            throw new IllegalStateException("전화번호는 20자 이하로 입력해주세요.");
+        }
+
         String trimmedNickname = nickname.trim();
         if (!trimmedNickname.equals(user.getNickname()) && userRepository.existsByNickname(trimmedNickname)) {
             throw new IllegalStateException("이미 사용 중인 법명입니다.");

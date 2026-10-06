@@ -130,7 +130,7 @@ public class ReviewController {
 	public ResponseEntity<?> delete(@AuthenticationPrincipal AppUserDetails principal,
 	                                 @PathVariable Long reviewId) {
 		try {
-			reviewService.delete(reviewId, principal.getUsername());
+			reviewService.delete(reviewId, principal.getUsername(), principal.isAdmin());
 			return ResponseEntity.noContent().build();
 		} catch (EntityNotFoundException e) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
