@@ -61,6 +61,10 @@ public class PaymentService {
 			// CHECK 제약(chk_payment_method_fields)이 완료 상태면 계좌이체는 depositor_name,
 			// 카드는 toss_payment_key가 NOT NULL이어야 해서, 실제 입금/결제가 없는 대신
 			// placeholder 값으로 채워서 제약만 만족시킨다.
+			// 금액은 브라우저(reservation.js)가 계산해서 보낸 값이라 위조할 수 있다 - 서버가 가격 x 인원으로
+			// 직접 계산한 값과 다르면 거절한다(유료 프로그램을 0원으로 바꿔 보내 무료 예약처럼 확정시키는 것도 여기서 막힌다).
+			requireActiveReservation(dto.getReservationId());
+			requireExpectedAmount(dto.getReservationId(), dto.getAmount());
 			boolean free = dto.getAmount() == 0;
 
 			// JS 쪽 검증(reservation.js)을 우회해서 요청이 와도 빈 입금자명으로 저장되지 않게 서버에서도 막는다.
@@ -68,6 +72,11 @@ public class PaymentService {
 			if (!free && dto.getPaymentMethod() == PaymentEntity.PaymentMethod.계좌이체
 					&& (dto.getDepositorName() == null || dto.getDepositorName().isBlank())) {
 				throw new IllegalStateException("입금자명을 입력해 주세요.");
+			}
+			// depositor_name 컬럼이 VARCHAR(50)이라 넘으면 저장 시점에 500으로 터진다 - 미리 안내 메시지로 돌려준다.
+			if (!free && dto.getPaymentMethod() == PaymentEntity.PaymentMethod.계좌이체
+					&& dto.getDepositorName() != null && dto.getDepositorName().length() > 50) {
+				throw new IllegalStateException("입금자명은 50자 이하로 입력해 주세요.");
 			}
 
 			// 이전에 카드결제로 시도하다가 취소/방치돼 미완료(대기) 상태로 남은 행이 있으면
@@ -87,6 +96,8 @@ public class PaymentService {
 				entity.setDepositorName(null);
 				entity.setTossPaymentKey("FREE_0WON");
 			} else {
+				// 무료일 때 예약자명이 아니라 "무료(0원)"을 넣는 이유: 예약자명을 넣으면 실제로는 입금이
+				// 없는데 그 사람이 입금한 기록처럼 남는다. 표시 값으로 두면 DB에서 무료 예약을 바로 구분할 수 있다.
 				entity.setDepositorName(free ? "무료(0원)" : dto.getDepositorName());
 				entity.setTossPaymentKey(null);
 			}
@@ -163,6 +174,19 @@ public class PaymentService {
 			return stalePayments.size();
 		}
 
+		/** 결제 행 없이 남은 예약 자동취소 배치(TempleStayReservationScheduler)에서 호출. cancelStalePendingCardPayments는
+		    결제 행(대기)을 기준으로 찾기 때문에, 예약만 저장되고 결제 준비 전에 끊긴 예약은 못 잡는다 - 그런 예약을 취소해서
+		    정원에서 뺀다. graceMinutes는 카드 이탈 배치와 같은 값을 쓴다. */
+		public int cancelReservationsWithoutPayment(int graceMinutes, int lookbackHours) {
+			List<Long> canceledReservationIds = reservationService.findAndCancelReservationsWithoutPayment(graceMinutes, lookbackHours);
+			if (canceledReservationIds.isEmpty()) {
+				return 0;
+			}
+			canceledReservationIds.forEach(this::notifyReservationCanceled);
+			log.info("결제 행 없이 {}분 넘게 남은 예약 {}건 자동취소함", graceMinutes, canceledReservationIds.size());
+			return canceledReservationIds.size();
+		}
+
 		/** 예약 취소 안내 메일 - 본인 취소(ReservationController.canceledReservation), 사찰 관리자
 		    취소(TempleProgramManageController.cancelReservation), 입금확인 3일 초과 자동취소
 		    (위 cancelStalePendingBankTransfers) 전부 여기서 보낸다. */
@@ -205,12 +229,32 @@ public class PaymentService {
 			return "reservation-" + reservationId;
 		}
 
+		/** 이미 취소되었거나 이용이 끝난 예약에는 결제를 받지 않는다. 취소(사용자/관리자 취소, 이탈 자동취소)되면 그 자리는
+		    정원에서 빠져 다른 사람이 가져갈 수 있는데, 이 확인 없이 결제가 들어오면 ① 카드는 돈만 빠져나가고 예약은 취소 상태로 남고
+		    ② 계좌이체는 예약이 정원 확인 없이 예약대기로 되살아나 초과예약이 된다. 카드는 토스 승인 호출 전에 막아야 돈이 안 나간다. */
+		private void requireActiveReservation(Long reservationId) {
+			TempleStayReservationDTO reservation = reservationService.getInfo(reservationId);
+			if (reservation.getStatus() == net.datasa.scit_14_3.domain.entity.templestay.TempleStayReservationEntity.Status.취소
+					|| reservation.getStatus() == net.datasa.scit_14_3.domain.entity.templestay.TempleStayReservationEntity.Status.이용완료) {
+				throw new IllegalStateException("취소되었거나 이용이 끝난 예약이라 결제할 수 없습니다. 다시 예약해 주세요.");
+			}
+		}
+
+		/** 클라이언트가 보낸 결제 금액이 서버가 계산한 금액(프로그램 가격 x 인원)과 같은지 확인한다. */
+		private void requireExpectedAmount(Long reservationId, int amount) {
+			if (amount != reservationService.calcAmount(reservationId)) {
+				throw new IllegalStateException("결제 금액이 올바르지 않습니다.");
+			}
+		}
+
 		/**
 		 * 토스페이먼츠 결제 준비. 토스는 카카오와 달리 결제창을 서버 API가 아니라 클라이언트 SDK가
 		 * 직접 여니까 여기서 외부 API를 부를 필요는 없고, confirmTossPayment가 나중에 찾을 수 있게
 		 * 결제 행을 대기 상태로 미리 만들어두고 orderId만 돌려준다.
 		 */
 		public String readyTossPayment(Long reservationId, int amount) {
+			requireActiveReservation(reservationId);
+			requireExpectedAmount(reservationId, amount);
 			PaymentEntity payment = pr.findByReservationId(reservationId).orElse(null);
 			if (payment != null && payment.getStatus() == PaymentEntity.Status.완료) {
 				throw new IllegalStateException("이미 결제가 완료된 예약입니다.");
@@ -236,8 +280,21 @@ public class PaymentService {
 		 * 처리하고, 토스 쪽 승인 자체가 실패하면(네트워크 오류 등) 예약을 자동 취소해서 자리를 비워준다.
 		 */
 		public void confirmTossPayment(Long reservationId, String paymentKey, int amount) {
+			// 결제창에 머무는 사이 예약이 취소됐으면(배치 자동취소, 본인/사찰 취소) 토스 승인 호출 전에 막는다 - 승인 후면 돈이 빠져나간다.
+			// 이미 취소된 예약이라 cancelUnpaid는 부르지 않는다.
+			requireActiveReservation(reservationId);
 			PaymentEntity payment = pr.findByReservationId(reservationId)
 					.orElseThrow(() -> new EntityNotFoundException("결제 준비 내역이 없습니다: " + reservationId));
+
+			// successUrl 쿼리파라미터의 amount도 브라우저를 거쳐 온 값이라 믿으면 안 된다 - ready 단계를 정상 금액으로
+			// 통과한 뒤 토스 결제창만 직접 열어 100원으로 결제해도, 여기서 서버 계산값과 달라서 승인 자체를 하지 않는다
+			// (승인 전이라 토스에서 실제로 빠져나간 돈은 없다). 위조 시도로 보고 잡아둔 자리도 풀어준다.
+			int expected = reservationService.calcAmount(reservationId);
+			if (amount != expected) {
+				log.warn("토스페이 금액 불일치 reservationId={} 요청={} 서버계산={}", reservationId, amount, expected);
+				reservationService.cancelUnpaid(reservationId);
+				throw new IllegalStateException("결제 금액이 올바르지 않습니다.");
+			}
 
 			Map<String, Object> result;
 			try {

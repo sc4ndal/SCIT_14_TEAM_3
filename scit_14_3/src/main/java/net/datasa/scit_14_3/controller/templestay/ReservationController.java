@@ -58,7 +58,14 @@ public class ReservationController {
 	@PostMapping("/templestayreservations")
 	@ResponseBody
 	public ResponseEntity<?> TempleStayReservation(@RequestBody TempleStayReservationDTO TempleStayReservationDTO,
-			@CookieValue(value = "preferredLang", defaultValue = "ko") String preferredLang) {
+			@CookieValue(value = "preferredLang", defaultValue = "ko") String preferredLang,
+			@AuthenticationPrincipal AppUserDetails principal) {
+		// 이 경로는 PUBLIC_URLS에 열려 있어서 로그인 여부와 예약자를 여기서 직접 확인한다. 요청 본문의
+		// loginId는 클라이언트가 정하는 값이라 믿지 않고, 로그인한 사용자 본인으로 덮어쓴다.
+		if (principal == null) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요합니다."));
+		}
+		TempleStayReservationDTO.setLoginId(principal.getUsername());
 		// 화면 언어는 common.js가 쿠키(preferredLang)로 저장해둠 - 안내 메일을 그 언어로 보내려고 예약에 같이 저장
 		TempleStayReservationDTO.setLang(preferredLang);
 		try {
@@ -75,8 +82,25 @@ public class ReservationController {
 	 */
 	@PostMapping("/reservationparticipants")
 	@ResponseBody
-	public List<ReservationParticipantDTO> ReservationParticipant(@RequestBody List<ReservationParticipantDTO> ReservationParticipantDTO) {
-		return rps.reserved(ReservationParticipantDTO);
+	public ResponseEntity<?> ReservationParticipant(@RequestBody List<ReservationParticipantDTO> ReservationParticipantDTO,
+			@AuthenticationPrincipal AppUserDetails principal) {
+		// 참가자는 본인 예약에만 등록할 수 있다 - reservationId는 요청 본문에서 오는 값이라 소유자를 확인한다.
+		if (principal == null) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요합니다."));
+		}
+		boolean allMine = ReservationParticipantDTO.stream()
+				.map(p -> p.getReservationId())
+				.distinct()
+				.allMatch(id -> tsrs.isOwner(id, principal.getUsername()));
+		if (!allMine) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "본인 예약에만 참가자를 등록할 수 있습니다."));
+		}
+		try {
+			return ResponseEntity.ok(rps.reserved(ReservationParticipantDTO));
+		} catch (IllegalStateException e) {
+			// 길이 초과 등 - reservation.js가 메시지를 그대로 alert로 보여준다
+			return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+		}
 	}
 	
 	/**
@@ -85,7 +109,15 @@ public class ReservationController {
 	 */
 	@PostMapping("/payments")
 	@ResponseBody
-	public ResponseEntity<?> payment(@RequestBody PaymentDTO paymentDTO) {
+	public ResponseEntity<?> payment(@RequestBody PaymentDTO paymentDTO,
+			@AuthenticationPrincipal AppUserDetails principal) {
+		// 결제도 본인 예약에 대해서만 만들 수 있다 - 로그인 여부와 예약 소유자를 여기서 확인한다.
+		if (principal == null) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요합니다."));
+		}
+		if (!tsrs.isOwner(paymentDTO.getReservationId(), principal.getUsername())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "본인 예약만 결제할 수 있습니다."));
+		}
 		try {
 			return ResponseEntity.ok(ps.reserved(paymentDTO));
 		} catch (IllegalStateException e) {

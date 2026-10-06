@@ -93,6 +93,18 @@ public class TempleStayReservationService {
 			throw new IllegalStateException("회원 계정으로만 예약할 수 있습니다. 사찰/관리자 계정은 예약할 수 없습니다.");
 		}
 
+		// 날짜/전달사항 검증 - reservation.js가 종료일을 자동 계산해서 보내지만 API 직접 호출로는 비어 있거나
+		// 시작일보다 빠른 값이 올 수 있고, 그대로 두면 NPE/DB CHECK 위반(500)으로 터진다. 비고(TEXT)는 상한을 둔다.
+		if (dto.getStartDate() == null || dto.getEndDate() == null) {
+			throw new IllegalStateException("이용 시작일과 종료일을 선택해 주세요.");
+		}
+		if (dto.getEndDate().isBefore(dto.getStartDate())) {
+			throw new IllegalStateException("종료일은 시작일보다 빠를 수 없습니다.");
+		}
+		if (dto.getNote() != null && dto.getNote().length() > 1000) {
+			throw new IllegalStateException("전달사항은 1000자 이하로 입력해 주세요.");
+		}
+
 		// 당일 예약 금지 - 최소 내일부터. reservation.js 캘린더에서 이미 당일을 선택 못 하게 막지만,
 		// 그건 화면단 제약이라 API를 직접 호출하면 우회 가능하다 - 서버에서도 한 번 더 막는다.
 		if (!dto.getStartDate().isAfter(LocalDate.now())) {
@@ -101,6 +113,12 @@ public class TempleStayReservationService {
 
 		TempleStayProgramEntity program = tspr.findByIdForUpdate(dto.getProgramId())
 				.orElseThrow(() -> new EntityNotFoundException("해당되는 프로그램이 존재하지 않습니다."));
+
+		// 인원은 1명 이상, 정원 이하여야 한다. reservation.js가 최소 1로 막아 주지만 API 직접 호출로는 0이나 음수가
+		// 올 수 있고, 아래 정원 집계(취소 제외 인원 합)가 그만큼 줄어들어서 다른 예약이 정원을 넘겨 통과하게 된다.
+		if (dto.getParticipantCount() < 1 || dto.getParticipantCount() > program.getMaxParticipant()) {
+			throw new IllegalStateException("참가 인원은 1명 이상 " + program.getMaxParticipant() + "명 이하로 입력해 주세요.");
+		}
 
 		// 예약대기도 자리를 차지한 상태로 쳐야 하므로(그래야 3일 확인 기간 중 다른 사람이 같은
 		// 자리에 또 신청해서 초과예약이 나는 걸 막음) '취소'만 빼고 카운트한다 - 그대로 둠.
@@ -139,6 +157,23 @@ public class TempleStayReservationService {
 				.build();
 	}
 	
+	/** 서버가 직접 계산한 결제 금액(프로그램 가격 x 참가 인원). 결제 금액은 브라우저(reservation.js)가
+	    계산해서 보내는 값이라 위조할 수 있어서, PaymentService가 이 값과 비교해 다르면 거절한다. */
+	public int calcAmount(Long reservationId) {
+		TempleStayReservationEntity reservation = tsrr.findById(reservationId)
+				.orElseThrow(() -> new EntityNotFoundException("해당되는 템플스테이 예약 번호가 존재하지 않습니다."));
+		TempleStayProgramEntity program = tspr.findById(reservation.getProgramId())
+				.orElseThrow(() -> new EntityNotFoundException("해당되는 프로그램이 존재하지 않습니다."));
+		return program.getPrice() * reservation.getParticipantCount();
+	}
+
+	/** 이 예약이 해당 회원 본인의 것인지. 예약 생성 이후 단계(참가자 등록/결제/토스 콜백)는 reservationId를
+	    요청에서 그대로 받아 처리하므로, 컨트롤러가 로그인한 사용자와 비교할 때 쓴다. */
+	public boolean isOwner(Long reservationId, String loginId) {
+		return reservationId != null && loginId != null
+				&& tsrr.findById(reservationId).map(r -> loginId.equals(r.getLoginId())).orElse(false);
+	}
+
 	/** 쿠키/요청에서 들어온 값이라 신뢰할 수 없음 - 지원 언어(ko/ja/en) 외에는 전부 ko로 */
 	private static String normalizeLang(String lang) {
 		return "ja".equals(lang) || "en".equals(lang) ? lang : "ko";
@@ -263,6 +298,25 @@ public class TempleStayReservationService {
 
 		List<Long> canceledIds = new ArrayList<>();
 		for (TempleStayReservationEntity entity : stale) {
+			entity.setStatus(TempleStayReservationEntity.Status.취소);
+			canceledIds.add(entity.getReservationId());
+		}
+		return canceledIds;
+	}
+
+	/** 결제 행이 없는 채로 graceMinutes 넘게 예약확정으로 남은 예약을 취소하고 그 ID들을 돌려준다 -
+	    PaymentService.cancelReservationsWithoutPayment가 호출한다. 정상 흐름은 예약 저장 직후(몇 초 안에)
+	    결제 행이 만들어지므로, 이렇게 오래 남은 건 중간에 이탈하거나 실패한 예약이다.
+	    lookbackHours보다 오래된 예약은 건드리지 않는다(기능 도입 전 데이터/시드 보호). */
+	@CacheEvict(value = {"programs", "programsByTemple", "program"}, allEntries = true)
+	public List<Long> findAndCancelReservationsWithoutPayment(int graceMinutes, int lookbackHours) {
+		LocalDateTime now = LocalDateTime.now();
+		List<TempleStayReservationEntity> orphans = tsrr.findWithoutPayment(
+				TempleStayReservationEntity.Status.예약확정,
+				now.minusMinutes(graceMinutes), now.minusHours(lookbackHours));
+
+		List<Long> canceledIds = new ArrayList<>();
+		for (TempleStayReservationEntity entity : orphans) {
 			entity.setStatus(TempleStayReservationEntity.Status.취소);
 			canceledIds.add(entity.getReservationId());
 		}

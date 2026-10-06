@@ -85,8 +85,10 @@ public class AdminManageController {
 	@PostMapping("/user/{loginId}/delete")
 	public String deleteUser(@PathVariable String loginId, RedirectAttributes redirectAttributes) {
 		try {
-			userService.delete(loginId);
-			redirectAttributes.addFlashAttribute("manageSuccess", "회원이 삭제되었습니다.");
+			boolean keptRecords = userService.delete(loginId);
+			redirectAttributes.addFlashAttribute("manageSuccess", keptRecords
+					? "회원이 삭제되었습니다. 예약/후기 기록은 '탈퇴한 회원'의 기록으로 남겼고, 같은 아이디로 다시 가입할 수 있습니다."
+					: "회원이 삭제되었습니다.");
 		} catch (IllegalStateException e) {
 			redirectAttributes.addFlashAttribute("manageError", e.getMessage());
 		}

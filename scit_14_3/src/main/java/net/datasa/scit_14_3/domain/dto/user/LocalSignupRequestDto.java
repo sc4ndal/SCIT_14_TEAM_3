@@ -36,12 +36,14 @@ public class LocalSignupRequestDto {
     private String nickname;
 
 
-    // 이름: 영문 2~50자 (여권 표기 형식)
+    // 이름: 내국인은 한글 2~5자(공백 없이), 외국인은 영문(로마자) 2~50자 - signup.js의
+    // NAME_PATTERN_KR / NAME_PATTERN_FOREIGN과 같은 규칙이다. 서버가 영문만 허용하고 있어서
+    // 화면에서 한글 이름이 통과해도 서버에서 거절돼 가입 폼이 초기화되는 문제가 있었다.
     @Pattern(
-            regexp = "^[A-Za-z\\s]{2,50}$",
-            message = "이름은 영문으로 2~50자까지 입력해주세요."
+            regexp = "^([A-Za-z\\s]{2,50}|[가-힣]{2,5})$",
+            message = "이름은 한글 2~5자(공백 없이) 또는 영문 2~50자로 입력해주세요."
     )
-    private String name;     // 여권 영문 이름 형식
+    private String name;     // 내국인: 한글 이름, 외국인: 여권 영문 이름 형식
     private String phone;
     private String email;
     private String nationality;   // "KR" 또는 "FOREIGN" - 이름 형식 검증 용도로만 사용, DB 미저장

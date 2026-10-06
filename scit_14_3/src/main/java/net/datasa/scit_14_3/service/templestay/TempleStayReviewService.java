@@ -275,10 +275,12 @@ public class TempleStayReviewService {
 	}
 
 	/** 리뷰 삭제 - 작성자 본인만 가능. */
-	public void delete(Long reviewId, String loginId) {
+	/** 작성자 본인만 삭제할 수 있다. 단, 사이트 관리자(admin)는 모든 리뷰를 삭제할 수 있다(부적절한 리뷰 관리용 -
+	    수정은 작성자만 가능하고 관리자는 못 한다). */
+	public void delete(Long reviewId, String loginId, boolean admin) {
 		TempleStayReviewEntity entity = tsrvr.findById(reviewId)
 				.orElseThrow(() -> new EntityNotFoundException("해당되는 리뷰가 존재하지 않습니다."));
-		if (!entity.getLoginId().equals(loginId)) {
+		if (!admin && !entity.getLoginId().equals(loginId)) {
 			throw new IllegalStateException("본인이 작성한 리뷰만 삭제할 수 있습니다.");
 		}
 
