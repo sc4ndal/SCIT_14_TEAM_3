@@ -405,13 +405,22 @@ function sendHit() {
     }
 }
 
-chatInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && chatInput.value.trim()) {
-        if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({type: 'CHAT', text: chatInput.value.trim()}));
-        }
-        chatInput.value = '';
+// Enter 키와 전송 버튼이 같은 동작을 쓴다.
+function sendChat() {
+    if (!chatInput.value.trim()) return;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({type: 'CHAT', text: chatInput.value.trim()}));
     }
+    chatInput.value = '';
+}
+
+chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendChat();
+});
+
+document.getElementById('chatSendBtn').addEventListener('click', () => {
+    sendChat();
+    chatInput.focus();   // 버튼을 누른 뒤에도 바로 이어서 입력할 수 있게
 });
 
 window.addEventListener('beforeunload', () => {
