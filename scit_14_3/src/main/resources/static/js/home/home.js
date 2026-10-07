@@ -518,10 +518,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     async function translateEventTexts(lang) {
         if (lang === "ko" || !("Translator" in self)) return;
         const texts = new Set();
+        // 한글이 없는 글(이미 일본어/영어로 입력된 행사 정보)은 번역기(한국어 -> 대상 언어)에 넘기면 엉뚱하게 바뀌어서 뺀다.
+        const addIfKorean = (s) => { if (s && /[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(s)) texts.add(s.trim()); };
         Object.values(eventData).forEach(list => list.forEach(ev => {
-            if (ev.title) texts.add(ev.title.trim());
-            if (ev.location) texts.add(ev.location.trim());
-            if (ev.description) texts.add(ev.description.trim());
+            addIfKorean(ev.title);
+            addIfKorean(ev.location);
+            addIfKorean(ev.description);
         }));
         if (!texts.size) return;
         try {

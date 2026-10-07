@@ -59,7 +59,11 @@
             // chatBeginLanguageChange가 언어 버튼 누르자마자 미리 pending(흐리게 보이는) 클래스를
             // 걸어두므로, 여기서 그냥 리턴해버리면 한국어로 돌아왔을 때 그 클래스가 안 지워진 채
             // 영영 흐리게 남아있게 된다 - 항상 지워주고 리턴한다.
-            if (lang === "ko" || typeof ensureTranslated !== "function") {
+            // 한글이 하나도 없는 글(일본어 화면에서 일본어로, 영어 화면에서 영어로 직접 입력한 질문 등)은 한국어 원문이
+            // 아니라서 번역기(한국어 -> 대상 언어)에 넘기면 엉뚱하게 바뀐다 - 이미 그 언어이니 그대로 보여준다.
+            // 봇 답변은 항상 한국어(한글 포함)라 그대로 번역 대상이고, 한국어로 입력한 질문도 번역된다.
+            const hasKorean = /[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(koreanText);
+            if (lang === "ko" || typeof ensureTranslated !== "function" || !hasKorean) {
                 bubble.classList.remove("chat-message--pending");
                 return koreanText;
             }
