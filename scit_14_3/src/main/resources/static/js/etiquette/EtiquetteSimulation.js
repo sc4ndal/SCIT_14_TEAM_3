@@ -638,10 +638,17 @@ function stopBgm() {
 }
 
 el('btn-restart-title').addEventListener('click', () => {
-    const ok = confirm('진행 중인 내용이 사라집니다. 처음 화면으롤 돌아갈까요?');
+    const ok = confirm(t('ui.confirmRestart', '진행 중인 내용이 사라집니다. 처음 화면으로 돌아갈까요?'));
     if(!ok) return;
     stopBgm();
     showScreen('screen-title');
+});
+
+// 메인 사이트(/)로 나가는 버튼 - 진행 중인 내용이 사라지므로 처음 화면으로 돌아갈 때와 똑같이 확인을 받는다.
+el('btn-home-main').addEventListener('click', (e) => {
+    if (!confirm(t('ui.confirmHome', '진행 중인 내용이 사라집니다. 메인 화면으로 이동할까요?'))) {
+        e.preventDefault();
+    }
 });
 
 /* ---------- 엔딩 계산 + 화면 ---------- */

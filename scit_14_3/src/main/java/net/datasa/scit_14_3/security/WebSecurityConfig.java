@@ -32,6 +32,7 @@ public class WebSecurityConfig {
 
 	private final KakaoOAuthService kakaoOAuthService;
 	private final WithdrawalGateFilter withdrawalGateFilter;
+	private final DeletedAccountFilter deletedAccountFilter;
 
 	// 로그인 없이 접근 가능한 경로
 	private static final List<String> PUBLIC_URLS = List.of(
@@ -146,6 +147,8 @@ public class WebSecurityConfig {
 				)
 
 				// 인증(SecurityContext 확정) 이후에 돌아야 principal을 읽을 수 있어서 그 뒤에 붙인다.
+				// 삭제된 계정의 세션은 탈퇴 유예 검사보다 먼저 끊어야 해서 같은 자리에 먼저 등록한다.
+				.addFilterAfter(deletedAccountFilter, UsernamePasswordAuthenticationFilter.class)
 				.addFilterAfter(withdrawalGateFilter, UsernamePasswordAuthenticationFilter.class);
 
 
