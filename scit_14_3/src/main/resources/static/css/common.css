@@ -27,7 +27,7 @@
     --text-muted: rgba(39, 33, 27, .30);
 
     --line: rgba(39, 33, 27, 0.09);
-    --border: rgba(39, 33, 27, .16);   /* 추가 : .admin-tabs / .submit.btn-danger:disabled에서 쓰는데 정의가 없었음 (signup.css를 안 불러오는 페이지에선 테두리가 사라짐) */
+    --border: rgba(39, 33, 27, .16);   /* 추가 : .admin-tabs / .submit.btn-danger:disabled에서 쓰는데 정의가 없었음 (card.css를 안 불러오는 페이지에선 테두리가 사라짐) */
 
     /* 폰트: 가이드 지정값은 Outfit(본문)+Lora(제목)이지만 둘 다 한글 글리프가 없어서
        그대로 적용하면 한글 텍스트가 전부 시스템 폴백 폰트로 깨짐. 최종 폰트 결정 전까지 보류. */

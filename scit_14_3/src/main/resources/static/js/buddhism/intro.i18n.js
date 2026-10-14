@@ -49,7 +49,7 @@ const TRANSLATIONS = {
         step7Subtitle: "읽은 것을 하룻밤 동안 직접 겪어봅니다",
         step7Line0: "여기까지 읽은 내용은 사실 글로 익히는 것보다 한 번 겪어보는 쪽이 훨씬 빠릅니다.",
         step7Line1: "템플스테이에서는 새벽 예불에 앉아보고, 발우공양으로 밥을 먹고, 108배를 하며 절 하나에 생각 하나씩을 내려놓습니다.",
-        step7Line2: "불교를 믿기로 결심하고 가는 자리가 아닙니다. 며칠 조용히 지내고 싶은 사람에게도 산문은 그대로 열려 있습니다.",
+        step7Line2: "불교를 믿기로 결심하고 가는 자리가 아닙니다. 며칠 조용히 지내고 싶은 사람에게도 사찰은 그대로 열려 있습니다.",
 
         canDoTitle: "절에 처음 가면 할 수 있는 것",
         canDo0: "법당에 들어가 부처님께 삼배 올리기",
@@ -126,7 +126,7 @@ const TRANSLATIONS = {
         step7Subtitle: "You experience firsthand, in one night, what you've just read",
         step7Line0: "Everything you've read so far is honestly learned much faster through one direct experience than through words alone.",
         step7Line1: "At a temple stay, you sit through the dawn service, eat using barugongyang (formal monastic meal), and do 108 bows, letting go of one thought with each bow.",
-        step7Line2: "It isn't a place you go having decided to believe in Buddhism. The temple gate is open just as it is, even for those who simply want a few quiet days.",
+        step7Line2: "It isn't a place you go having decided to believe in Buddhism. The temple is open just as it is, even for those who simply want a few quiet days.",
 
         canDoTitle: "What You Can Do on Your First Temple Visit",
         canDo0: "Enter the main hall and offer three bows to the Buddha",
@@ -203,7 +203,7 @@ const TRANSLATIONS = {
         step7Subtitle: "読んだことを一晩かけて実際に体験します",
         step7Line0: "ここまで読んだ内容は、実は文章で学ぶより一度体験する方がずっと早く身につきます。",
         step7Line1: "テンプルステイでは早朝の礼拝に座り、鉢盂供養で食事をし、108拝をしながら一礼ごとに考えを一つずつ手放します。",
-        step7Line2: "仏教を信じると決めて行く場所ではありません。数日静かに過ごしたい人にも山門はそのまま開かれています。",
+        step7Line2: "仏教を信じると決めて行く場所ではありません。数日静かに過ごしたい人にも寺院はそのまま開かれています。",
 
         canDoTitle: "初めてお寺に行ったらできること",
         canDo0: "法堂に入って仏様に三拝すること",

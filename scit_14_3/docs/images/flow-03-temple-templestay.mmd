@@ -1,0 +1,35 @@
+flowchart LR
+  E1(["진입: 메인 · 헤더"]):::ext
+  TP4["<b>사찰 등록 요청</b><br/><span class='sid'>TP-004</span>"]:::scr
+  TP3["<b>불교 행사</b><br/><span class='sid'>TP-003</span>"]:::scr
+  TP1["<b>사찰 찾기 (지도)</b><br/><span class='sid'>TP-001</span>"]:::scr
+  TP2["<b>사찰 상세</b><br/><span class='sid'>TP-002</span>"]:::scr
+  TS1["<b>템플스테이 안내</b><br/><span class='sid'>TS-001</span>"]:::scr
+  TS4["<b>전체 후기</b><br/><span class='sid'>TS-004</span>"]:::scr
+  TS3["<b>프로그램 상세</b><br/><span class='sid'>TS-003</span>"]:::scr
+  TS2["<b>템플스테이 예약<br/>(목록 → 신청서 → 완료)</b><br/><span class='sid'>TS-002</span>"]:::scr
+  TOSS{{"토스페이먼츠 결제창 (외부)<br/>카드 · 토스페이<br/>카카오페이 · 네이버페이"}}:::svc
+  O1(["이탈: 로그인 US-001<br/>(미로그인 시)"]):::ext
+  O2(["이탈: 예약 목록 MY-002"]):::ext
+  O3(["이탈: 메인 HM-001"]):::ext
+  E1 --> TS1
+  E1 --> TS4
+  E1 --> TP1
+  E1 --> TP3
+  E1 --> TP4
+  TP1 -->|"사찰 선택"| TP2
+  TP2 -->|"프로그램 선택"| TS3
+  TP4 -->|"제출 완료"| O3
+  TS1 -->|"예약하기"| TS2
+  TS4 -->|"프로그램명"| TS3
+  TS3 -->|"신청"| TS2
+  TS2 -.->|"신청 — 미로그인"| O1
+  TS2 -->|"토스 결제"| TOSS
+  TOSS -->|"승인 → 완료"| TS2
+  TOSS -.->|"실패 → 예약 취소"| TS2
+  TS2 -->|"예약 목록"| O2
+  classDef scr fill:#ffffff,stroke:#2f5fd0,stroke-width:1.6px,color:#111827
+  classDef ext fill:#f3f4f6,stroke:#9ca3af,stroke-width:1.4px,stroke-dasharray:5 3,color:#374151
+  classDef svc fill:#fff7ed,stroke:#c2410c,stroke-width:1.4px,color:#7c2d12
+  classDef hdr fill:#eef3fb,stroke:#1f3864,stroke-width:1.8px,color:#1f3864
+  linkStyle 11,14 stroke:#8b95a5,stroke-width:1.4px,stroke-dasharray:6 4,color:#4b5563

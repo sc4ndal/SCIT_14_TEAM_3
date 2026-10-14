@@ -1,0 +1,42 @@
+flowchart TB
+  HDR["<b>공통 헤더</b><br/>(모든 화면)"]:::hdr
+  HM["<b>메인</b><br/><span class='sid'>HM-001</span>"]:::scr
+  subgraph G1["알아보기"]
+  direction LR
+  IN1["<b>불교란?</b><br/><span class='sid'>IN-001</span>"]:::scr
+  IN2["<b>불교 용어</b><br/><span class='sid'>IN-002</span>"]:::scr
+  IN3["<b>사찰 음식</b><br/><span class='sid'>IN-003</span>"]:::scr
+  IN4["<b>오늘의 한마디</b><br/><span class='sid'>IN-004</span>"]:::scr
+  end
+  subgraph G2["준비하기"]
+  direction LR
+  IN5["<b>예절 가이드</b><br/><span class='sid'>IN-005</span>"]:::scr
+  IN6["<b>예절 시뮬레이션</b><br/><span class='sid'>IN-006</span>"]:::scr
+  end
+  subgraph G3["체험하기"]
+  IN7["<b>목탁</b><br/><span class='sid'>IN-007</span>"]:::scr
+  end
+  X2(["② 회원"]):::ext
+  X3(["③ 사찰 · 템플스테이 예약"]):::ext
+  X4(["④ 마이페이지"]):::ext
+  X5(["⑤ 사찰 계정"]):::ext
+  X6(["⑥ 관리자"]):::ext
+  HDR -->|"로고"| HM
+  HDR -->|"로그인 · 회원가입"| X2
+  HDR -->|"예약 · 사찰찾기"| X3
+  HDR -->|"일반회원"| X4
+  HDR -->|"사찰 계정"| X5
+  HDR -->|"관리자"| X6
+  HM --> G1
+  HM --> G2
+  HM --> G3
+  HM -->|"찾아보기 · 템플스테이 · 후기"| X3
+  IN5 -->|"시뮬레이션"| IN6
+  IN6 -.->|"안내 보기"| IN5
+  IN3 -.->|"관심 목록"| X4
+  IN4 -.->|"저장 목록"| X4
+  classDef scr fill:#ffffff,stroke:#2f5fd0,stroke-width:1.6px,color:#111827
+  classDef ext fill:#f3f4f6,stroke:#9ca3af,stroke-width:1.4px,stroke-dasharray:5 3,color:#374151
+  classDef svc fill:#fff7ed,stroke:#c2410c,stroke-width:1.4px,color:#7c2d12
+  classDef hdr fill:#eef3fb,stroke:#1f3864,stroke-width:1.8px,color:#1f3864
+  linkStyle 11,12,13 stroke:#8b95a5,stroke-width:1.4px,stroke-dasharray:6 4,color:#4b5563

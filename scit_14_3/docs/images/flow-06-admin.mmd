@@ -1,0 +1,44 @@
+flowchart LR
+  E1(["진입: 헤더 「관리」"]):::ext
+  E1B(["진입: 헤더 「사찰 등록 요청 목록」"]):::ext
+  E1C(["진입: 헤더 「문의 목록」"]):::ext
+  E2(["진입: 사찰 음식 IN-003<br/>불교 행사 TP-003"]):::ext
+  AD11["<b>관리<br/>(회원 · 사찰 · 행사 · 음식 · 한마디 탭)</b><br/><span class='sid'>AD-001-1</span>"]:::scr
+  subgraph GM["회원 · 사찰 관리"]
+  AD12["<b>회원 수정</b><br/><span class='sid'>AD-001-2</span>"]:::scr
+  AD13["<b>사찰 수정</b><br/><span class='sid'>AD-001-3</span>"]:::scr
+  end
+  subgraph GR["사찰 등록 요청"]
+  AD31["<b>등록 요청 목록</b><br/><span class='sid'>AD-003-1</span>"]:::scr
+  AD32["<b>요청 상세 · 승인</b><br/><span class='sid'>AD-003-2</span>"]:::scr
+  end
+  subgraph GQ["문의"]
+  AD41["<b>문의 목록</b><br/><span class='sid'>AD-004-1</span>"]:::scr
+  AD42["<b>문의 상세 · 답변</b><br/><span class='sid'>AD-004-2</span>"]:::scr
+  end
+  subgraph GC["콘텐츠 등록"]
+  AD21["<b>행사 등록</b><br/><span class='sid'>AD-002-1</span>"]:::scr
+  AD22["<b>사찰음식 등록</b><br/><span class='sid'>AD-002-2</span>"]:::scr
+  AD23["<b>불교 한마디 등록</b><br/><span class='sid'>AD-002-3</span>"]:::scr
+  end
+  MAIL{{"사찰 계정 발급 메일"}}:::svc
+  O1(["이탈: 전체 후기 TS-004<br/>(관리자 리뷰 삭제)"]):::ext
+  E1 --> AD11
+  E1B --> AD31
+  E1C --> AD41
+  E2 -.->|"등록 버튼"| AD11
+  AD11 -->|"수정"| GM
+  GM -.->|"저장"| AD11
+  AD11 -->|"등록"| GC
+  GC -.->|"등록 완료"| AD11
+  AD31 -->|"요청 선택"| AD32
+  AD32 -->|"승인"| MAIL
+  AD32 -.->|"목록"| AD31
+  AD41 -->|"문의 선택"| AD42
+  AD42 -.->|"답변 후 목록"| AD41
+  AD42 -->|"리뷰 신고 문의 → 해당 리뷰 삭제"| O1
+  classDef scr fill:#ffffff,stroke:#2f5fd0,stroke-width:1.6px,color:#111827
+  classDef ext fill:#f3f4f6,stroke:#9ca3af,stroke-width:1.4px,stroke-dasharray:5 3,color:#374151
+  classDef svc fill:#fff7ed,stroke:#c2410c,stroke-width:1.4px,color:#7c2d12
+  classDef hdr fill:#eef3fb,stroke:#1f3864,stroke-width:1.8px,color:#1f3864
+  linkStyle 3,5,7,10,12 stroke:#8b95a5,stroke-width:1.4px,stroke-dasharray:6 4,color:#4b5563

@@ -5,7 +5,7 @@
 const TRANSLATIONS = {
     ko: {
         titleLocal: "일반 회원가입", titleKakao: "카카오로 회원가입",
-        subtitle: "사찰 커뮤니티 이용을 위한 정보를 입력해주세요",
+        subtitle: "佛선자 이용을 위한 정보를 입력해주세요",
         requiredNote: "표시는 필수 입력 항목입니다",
         sectionLogin: "로그인 정보", loginIdLabel: "아이디", loginIdPlaceholder: "영문/숫자 6~20자",
         loginIdInvalidMsg: "아이디는 영문 대소문자와 숫자만 사용해 6~20자로 입력해주세요",
@@ -42,7 +42,7 @@ const TRANSLATIONS = {
     },
     ja: {
         titleLocal: "一般会員登録", titleKakao: "Kakaoで会員登録",
-        subtitle: "寺院コミュニティ利用のための情報を入力してください",
+        subtitle: "佛선자利用のための情報を入力してください",
         requiredNote: "は必須入力項目です",
         sectionLogin: "ログイン情報", loginIdLabel: "ID", loginIdPlaceholder: "英数字 6〜20文字",
         loginIdInvalidMsg: "IDは半角英字と数字のみを使用し、6〜20文字で入力してください",
@@ -79,7 +79,7 @@ const TRANSLATIONS = {
     },
     en: {
         titleLocal: "Sign Up with Email", titleKakao: "Sign Up with Kakao",
-        subtitle: "Please enter your information to join the temple community",
+        subtitle: "Please enter your information to join 佛선자",
         requiredNote: "indicates a required field",
         sectionLogin: "Login Info", loginIdLabel: "ID", loginIdPlaceholder: "6-20 letters/numbers",
         loginIdInvalidMsg: "ID must be 6-20 characters using letters and numbers only",

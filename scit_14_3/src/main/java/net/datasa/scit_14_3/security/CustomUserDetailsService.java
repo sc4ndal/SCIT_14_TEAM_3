@@ -19,7 +19,7 @@ import java.util.List;
  * 주의: TempleEntity/TempleRepository는 이 파일에서 새로 만들지 않고, 팀에서 이미 만들어둔
  * net.datasa.scit_14_3.domain.entity.TempleEntity / net.datasa.scit_14_3.repository.TempleRepository를
  * 그대로 가져다 씁니다. TempleRepository.findByLoginId()가 Optional<TempleEntity>를 반환하도록
- * 되어 있어야 합니다(예전에 ScopedValue로 잘못 선언됐던 부분, 이미 고치셨을 거예요).
+ * 되어 있어야 합니다.
  */
 @Service
 @RequiredArgsConstructor
@@ -57,7 +57,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 null, // 폼로그인이라 카카오 토큰 없음
                 false,
                 user.getWithdrawalRequestedAt() != null,
-                user.getWithdrawnAt() == null // 탈퇴 확정(익명화)된 계정이면 false - DaoAuthenticationProvider가
+                user.getWithdrawnAt() == null // 탈퇴 확정된 계정이면 false - DaoAuthenticationProvider가
                                                // preAuthenticationChecks에서 비밀번호 검사보다 먼저 걸러준다.
         );
     }

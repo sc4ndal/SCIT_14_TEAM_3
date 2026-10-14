@@ -48,7 +48,6 @@ public class UserEntity {
     @Column(name = "withdrawal_requested_at")
     private LocalDateTime withdrawalRequestedAt;
 
-    // 탈퇴 확정(익명화) 처리된 일시 - 신청 후 30일이 지나면 WithdrawalScheduler가 채움.
     // 값이 있으면 로그인 자체가 막힘(CustomUserDetailsService).
     @Column(name = "withdrawn_at")
     private LocalDateTime withdrawnAt;

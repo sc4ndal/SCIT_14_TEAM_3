@@ -100,7 +100,7 @@ public class TempleStayProgramService {
 
 	/**
 	 * 예약 페이지 목록 화면에 템플스테이 프로그램 목록 전체조회
-	 프로그램 목록 화면에서 페이지 이동마다 호출되는데 Aiven(원격 DB) 왕복 + 대용량 description
+	 프로그램 목록 화면에서 페이지 이동마다 호출되는데 원격 DB 왕복 + 대용량 description
 	 텍스트 전송이 겹쳐서 체감이 큼 - 캐싱하되, reservedCount(예약된 인원)가 섞여 있어서
 	 예약 생성/취소로도 값이 바뀐다. 그래서 프로그램 등록/수정/삭제뿐 아니라
 	 TempleStayReservationService의 예약 생성/취소 지점들에서도 같은 캐시("programs")를 비운다. */
@@ -143,7 +143,7 @@ public class TempleStayProgramService {
 	/**
 	 * 사찰 계정이 자기 사찰 소속으로 프로그램을 새로 등록.
 	 * support_english/latitude/longitude는 DB 트리거가 소속 TEMPLE 값으로 저장 시점에
-	 * 덮어쓰므로(docs/sql/01-buddhist-site-schema.sql 참고) 여기서 안 채워도 됨.
+	 * 덮어쓰므로(docs/sql/01-schema.sql 참고) 여기서 안 채워도 됨.
 	 */
 	@CacheEvict(value = {"programs", "programsByTemple", "program"}, allEntries = true)
 	public void register(TempleStayProgramDTO dto, Long templeId) {

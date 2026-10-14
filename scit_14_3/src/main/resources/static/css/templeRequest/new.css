@@ -1,12 +1,12 @@
 /* ============================================================
-   templeRequest.css — 사찰 등록 문의 (/temple-requests/new) 전용
-   signup.css는 로그인/회원가입/관리자 페이지도 같이 쓰므로 직접 고치지 않고,
+   new.css — 사찰 등록 문의 (/temple-requests/new) 전용
+   card.css는 로그인/회원가입/관리자 페이지도 같이 쓰므로 직접 고치지 않고,
    이 페이지에서만 불러오는 이 파일에서 덮어쓴다 (다른 페이지엔 영향 없음).
-   위치: static/css/templeRequest/templeRequest.css (templates/templeRequest/new.html과 폴더명 맞춤)
-   new.html에서 signup.css, common.css 다음에 불러와야 덮어쓰기가 적용됨.
+   위치: static/css/templeRequest/new.css (templates/templeRequest/new.html과 폴더명 맞춤)
+   new.html에서 card.css, common.css 다음에 불러와야 덮어쓰기가 적용됨.
    ============================================================ */
 
-/* 안내 문구 : signup.css의 .hint는 ".field .hint"로만 정의돼 있어서, .field 밖에 있는 안내 문구 2개
+/* 안내 문구 : card.css의 .hint는 ".field .hint"로만 정의돼 있어서, .field 밖에 있는 안내 문구 2개
    ("먼저 검색해서 선택하면…", "주소·위도·경도·지역은…")는 스타일이 안 먹고 큰 검정 글씨로 나왔음 */
 .hint {
     font-size: 12px;
@@ -76,7 +76,7 @@
     color: var(--ink);
 }
 
-/* 세로 간격 넓힘 : signup.css 기본값(로그인 폼 기준)이 항목 많은 이 페이지엔 빡빡해서 */
+/* 세로 간격 넓힘 : card.css 기본값(로그인 폼 기준)이 항목 많은 이 페이지엔 빡빡해서 */
 .field {
     margin-bottom: 22px;   /* 14px >> 22px : 항목 사이 */
 }

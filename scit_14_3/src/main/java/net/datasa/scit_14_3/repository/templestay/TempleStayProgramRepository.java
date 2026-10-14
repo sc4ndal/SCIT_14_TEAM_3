@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface TempleStayProgramRepository extends JpaRepository<TempleStayProgramEntity,Long> {
 	// TempleStayProgramEntity.temple이 @ManyToOne(기본 EAGER)이라 findAll()을 그냥 쓰면
 	// row마다 TEMPLE을 별도 쿼리로 불러옴(N+1) - 로컬은 왕복이 거의 0이라 안 보였지만
-	// 원격 DB(Aiven)에서는 이게 그대로 수백 번의 네트워크 왕복이 되어 체감 지연의 원인이었다.
+	// 원격 DB에서는 이게 그대로 수백 번의 네트워크 왕복이 되어 체감 지연의 원인이었다.
 	// JOIN FETCH로 한 번에 같이 가져온다.
 	@Query("select p from TempleStayProgramEntity p join fetch p.temple")
 	List<TempleStayProgramEntity> findAllWithTemple();

@@ -180,9 +180,8 @@ public class TempleStayReviewService {
 		Map<Long, TempleStayProgramEntity> programMap = tspr.findAllByIdInWithTemple(programIds).stream()
 				.collect(Collectors.toMap(TempleStayProgramEntity::getProgramId, Function.identity()));
 
-		// login_id -> 회원 (닉네임/법명 + 탈퇴 여부) - 탈퇴 확정된 회원은 nickname이 익명화 과정에서
-		// login_id 그대로 채워진 내부용 값이라(UserService.finalizeOverdueWithdrawals 참고) 그대로
-		// 보여주지 않고 authorDisplayName()에서 "탈퇴한 회원"으로 바꿔 보여준다.
+		// login_id -> 회원 (닉네임/법명 + 탈퇴 여부) - 탈퇴 확정된 회원은
+		// authorDisplayName()에서 "탈퇴한 회원"으로 바꿔 보여준다.
 		List<String> loginIds = reviews.stream()
 				.map(TempleStayReviewEntity::getLoginId).distinct().toList();
 		Map<String, UserEntity> authorMap = userRepository.findAllById(loginIds).stream()
@@ -217,8 +216,7 @@ public class TempleStayReviewService {
 		return result;
 	}
 
-	/** 탈퇴 확정된 회원은 nickname이 익명화된 내부용 값이라(UserService.finalizeOverdueWithdrawals
-	    참고) 그대로 보여주지 않고 "탈퇴한 회원"으로 표시한다. */
+	/** 탈퇴 확정된 회원은 "탈퇴한 회원"으로 표시한다. */
 	private String authorDisplayName(UserEntity author) {
 		if (author == null) {
 			return null;

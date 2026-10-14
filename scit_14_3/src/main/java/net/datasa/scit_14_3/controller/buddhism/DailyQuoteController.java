@@ -20,7 +20,7 @@ import java.util.Map;
 
 	/info/quote         : 오늘의 한마디 화면 - 전체 한마디 목록도 같이 내려줘서(allQuotes),
 	                       "다른 한마디 보기"를 눌러도 서버 왕복 없이 클라이언트에서 바로 바꾼다
-	                       (Aiven처럼 원격 DB일 때 클릭마다 왕복하면 체감 지연이 커서 바꿈).
+	                       (원격 DB일 때 클릭마다 왕복하면 체감 지연이 커서 바꿈).
 	/info/quote/{id}/favorite : 즐겨찾기 등록/해제 토글(JSON)
 
 	즐겨찾기는 로그인이 필요하지만 /info/**는 전체 공개 경로라(WebSecurityConfig 참고)

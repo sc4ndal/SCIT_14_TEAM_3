@@ -55,7 +55,7 @@ public class MypageController {
 	private final SessionLoginService sessionLoginService;
 	private final ExecutorService mypageCountExecutor;
 
-	// 서로 무관한 배지 카운트 7개를 순차로 조회하면 원격 DB(Aiven) 왕복이 그대로 다 더해져서
+	// 서로 무관한 배지 카운트 7개를 순차로 조회하면 원격 DB 왕복이 그대로 다 더해져서
 	// (왕복 1초씩만 잡아도 7초+) 느렸다 - CompletableFuture로 한 번에 동시에 날려서
 	// 제일 느린 쿼리 하나만큼의 시간으로 줄인다(mypageCountExecutor 참고).
 	@PreAuthorize("hasRole('USER')")
@@ -273,8 +273,7 @@ public class MypageController {
 	}
 
 	// ===== 회원 탈퇴 (일반회원 전용) =====
-	// 예약/리뷰 기록이 있으면 하드 삭제가 불가능해서(UserService 주석 참고) "탈퇴 신청 ->
-	// 30일 유예 -> 확정 시 익명화" 흐름을 쓴다. 유예기간 중 재로그인하면 successHandler가
+	// 유예기간 중 재로그인하면 successHandler가
 	// 이 화면(/mypage/withdrawal/pending)으로 보내고, WithdrawalGateFilter가 그 외 다른 페이지
 	// 접근을 막는다.
 

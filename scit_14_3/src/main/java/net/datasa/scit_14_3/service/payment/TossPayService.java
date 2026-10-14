@@ -14,7 +14,7 @@ import java.util.Map;
 
 /**
  * 토스페이먼츠 결제위젯 연동 (https://docs.tosspayments.com/guides/v2/payment-widget/integration).
- * 카카오페이와 달리 결제창을 여는 건 서버 API가 아니라 클라이언트 JS SDK(TossPayments(clientKey))가
+ * 결제창을 여는 건 서버 API가 아니라 클라이언트 JS SDK(TossPayments(clientKey))가
  * 직접 처리한다 - 서버는 결제창에서 돌아온 뒤 최종 승인(confirm)만 담당한다.
  * clientKey/secretKey는 토스페이먼츠 개발자센터(developers.tosspayments.com) 내 개발정보에서 발급.
  */

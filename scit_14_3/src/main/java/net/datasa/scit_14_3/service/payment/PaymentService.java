@@ -224,7 +224,7 @@ public class PaymentService {
 		}
 
 		/** 토스페이먼츠 orderId 규칙(영문/숫자/-/_, 6~64자)에 맞춰 예약 ID 기준으로 만든다.
-		    카카오페이의 partner_order_id와 같은 역할 - 예약 1건당 결제 1건이라 이걸로 충분히 고유하다. */
+		    예약 1건당 결제 1건이라 이걸로 충분히 고유하다. */
 		public String buildTossOrderId(Long reservationId) {
 			return "reservation-" + reservationId;
 		}

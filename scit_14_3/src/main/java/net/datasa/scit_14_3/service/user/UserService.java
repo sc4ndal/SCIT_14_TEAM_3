@@ -28,7 +28,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserService {
 
-    // 탈퇴 신청 후 실제로 확정(익명화) 처리되기까지의 유예기간 - 그 안에 로그인하면 철회 가능
+    // 탈퇴 신청 후 실제로 확정 처리되기까지의 유예기간 - 그 안에 로그인하면 철회 가능
     public static final int WITHDRAWAL_GRACE_PERIOD_DAYS = 30;
 
     // 삭제된 회원의 예약/후기를 넘겨받는 "탈퇴한 회원" 전용 계정의 아이디 - 이 아이디로는 가입도 로그인도 못 한다.

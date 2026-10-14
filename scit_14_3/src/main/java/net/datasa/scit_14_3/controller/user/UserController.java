@@ -133,7 +133,7 @@ public class UserController {
 	}
 
 	// ================= 아이디 찾기 (DB 등록 확인 후 이메일로 원문 발송) =================
-	// findAccount.js의 sendFoundLoginIdMail()이 호출함. 인증번호 절차 없이, 해당 이메일로
+	// findAccount.js의 findMyIdByEmail()이 호출함. 인증번호 절차 없이, 해당 이메일로
 	// 가입된 계정이 있으면 그 이메일로만 아이디 원문을 보내줌 - 메일함에 접근 가능한
 	// 사람만 결과를 볼 수 있으니 그 자체가 본인 확인 역할을 함.
 
@@ -320,7 +320,7 @@ public class UserController {
 
 		return existing
 				.map(user -> {
-					// 이미 가입된 카카오 회원(그리고 로그인 의도) -> 바로 로그인. 탈퇴 확정(익명화)된
+					// 이미 가입된 카카오 회원(그리고 로그인 의도) -> 바로 로그인. 탈퇴 확정된
 					// 계정이면 loginAs가 세션을 만들지 않고 false를 반환한다(SessionLoginService 참고).
 					boolean loggedIn = sessionLoginService.loginAs(user, token.getAccessToken(), request, response);
 					if (!loggedIn) {
