@@ -80,7 +80,7 @@ public class TempleService {
 		entity.setMustChangePassword(false);
 	}
 
-	// 사찰 상세보기(temple-detail) 페이지마다 매번 원격 DB(Aiven) 왕복이 나서 - getAll()처럼
+	// 사찰 상세보기(temple-detail) 페이지마다 매번 원격 DB 왕복이 나서 - getAll()처럼
 	// 사찰 정보는 관리자/사찰 본인이 수정할 때만 바뀌니 캐싱한다. 같은 evict 지점(getAll() 주석 참고)에서
 	// "temples" 캐시 전체를 비우니 key별로 따로 안 비워줘도 된다.
 	@Cacheable(value = "temples", key = "#templeId")
@@ -132,7 +132,7 @@ public class TempleService {
 		return tr.findAll().stream().map(TempleEntity::getTempleId).toList();
 	}
 
-	// 지도/사찰목록 화면에서 페이지 이동마다 호출되는데 Aiven(원격 DB) 왕복이 느려서 체감이 큼 -
+	// 지도/사찰목록 화면에서 페이지 이동마다 호출되는데 원격 DB 왕복이 느려서 체감이 큼 -
 	// 사찰 정보는 관리자/사찰 본인이 수정할 때만 바뀌므로 캐싱하고, 그 수정 지점들(아래 register/
 	// updateAdmin/updateOwnInfo/removeImage/delete)에서 전체 무효화한다.
 	@Cacheable("temples")

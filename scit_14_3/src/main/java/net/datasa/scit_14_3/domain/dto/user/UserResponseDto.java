@@ -18,5 +18,5 @@ public class UserResponseDto {
     private UserEntity.Role role;
     private UserEntity.LoginType loginType;
     private LocalDateTime withdrawalRequestedAt; // null이 아니면 탈퇴 유예기간 중
-    private LocalDateTime withdrawnAt; // null이 아니면 탈퇴 확정(익명화)됨 - 로그인 불가
+    private LocalDateTime withdrawnAt; // null이 아니면 탈퇴 확정됨 - 로그인 불가
 }

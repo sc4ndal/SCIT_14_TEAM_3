@@ -1,5 +1,5 @@
 /**
- * map-common.js
+ * mapCommon.js
  *
  * 사찰 지도 관련 공통 함수 모음.
  * 사찰 찾아보기 / 템플스테이 상세보기 / 마이페이지 즐겨찾기,
@@ -437,9 +437,7 @@ function createTempleMarker(map, temple) {
  * @param {Object} mapState - { map: kakao.maps.Map|null, marker: kakao.maps.Marker|null } - 페이지에서 만들어서 넘김
  */
 function loadTempleDetailMap(containerId, program, mapState) {
-   console.log('[' + containerId + '] loadTempleDetailMap 호출됨, program =', program);
       if (typeof kakao === 'undefined' || !program.latitude || !program.longitude) {
-          console.log('[' + containerId + '] 가드문에서 리턴됨 - kakao:', typeof kakao, 'lat:', program.latitude, 'lng:', program.longitude);
           return;
          }
     kakao.maps.load(function () {
@@ -451,9 +449,6 @@ function loadTempleDetailMap(containerId, program, mapState) {
         // relayout() 시점에 아직 브라우저가 크기를 확정 못한 상태일 수 있어서
         // 마커가 중심에서 어긋나 보일 수 있음. 한 프레임 뒤로 미뤄서 실제 크기를 잡은 뒤 계산하게 함.
         requestAnimationFrame(function () {
-         var containerEl = document.getElementById(containerId);
-                    console.log('[' + containerId + '] relayout 직전 크기:', containerEl.offsetWidth, 'x', containerEl.offsetHeight);
-                    mapState.map.relayout();
             mapState.map.relayout();
             mapState.map.setCenter(position);
             if (mapState.marker) { mapState.marker.setMap(null); }

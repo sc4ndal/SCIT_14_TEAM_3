@@ -6,7 +6,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * 탈퇴 신청 후 유예기간(30일)이 지난 회원을 매일 찾아 확정(익명화) 처리한다.
+ * 탈퇴 신청 후 유예기간(30일)이 지난 회원을 매일 찾아 확정 처리한다.
  * 실제 로직은 UserService.finalizeOverdueWithdrawals() 참고.
  */
 @Slf4j

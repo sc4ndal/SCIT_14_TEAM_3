@@ -27,22 +27,19 @@ function formatAppliedAt(iso) {
 
 const API = {
   createParticipants: '/reservationparticipants',
-  // TODO: 아직 findAll 안 만들었으니, 이거 만들면 실제 fetch로 교체
   //   GET /temples            -> TempleDTO 목록
   //   GET /templestayprograms -> TempleStayProgramDTO 목록
   temples: '/temples',
   programs: '/templestayprograms',
-  // TODO: 예약 생성 API 아직 안 만듦 (다음 작업 예정)
-  //   POST /templestayreservations  body: ReservationCreateRequest
+  //   POST /templestayreservations  body: TempleStayReservationDTO
   createReservation: '/templestayreservations',
 
-  // TODO: 결제 등록 API 아직 안 만듦
   //   POST /payments  body: { reservationId, paymentMethod, depositorName }
   createPayment: '/payments',
 };
 
-// ------------------------- 목데이터 (findAll 만들기 전까지 임시) -------------------------
-// 실제로는 GET /temples + GET /templestayprograms 응답을 합쳐서 아래와 같은 모양을 만들면 됨.
+// ------------------------- 목데이터 (목록 API 호출이 실패했을 때 쓰는 대체 데이터) -------------------------
+// 평소에는 GET /temples + GET /templestayprograms 응답을 합쳐서 아래와 같은 모양으로 만든다(loadPrograms).
 // TempleStayProgramDTO 필드명(programId, templeId, title, programType, price, duration, maxParticipant,
 // description, schedule, requiredItems, templeRefundPolicy, templePrecautions) 그대로 사용 -
 // 환불규정/주의사항은 프로그램이 아니라 사찰(TEMPLE) 공통값이라 이름이 temple로 시작함.
@@ -82,12 +79,12 @@ const MOCK_PROGRAMS = [
 // ------------------------- state -------------------------
 const state = {
   step: 1,                    // 1: 목록/상세, 2: 예약신청, 3: 신청완료
-  programs: MOCK_PROGRAMS,    // GET /templestayprograms 결과로 교체 예정
+  programs: MOCK_PROGRAMS,    // loadPrograms()가 GET /templestayprograms 결과로 교체한다(실패 시 이 값 유지)
   filter: { region: '', templeId: '', programType: '', supportEnglish: '', headcount: ''},
   page: 1,                    // 프로그램 목록 페이지네이션 (한 페이지 = 3줄 x 3개 = 9개)
   checkedProgramId: null,     // 목록에서 체크박스로 체크해둔 programId
   selectedProgram: null,      // 선택된 program 객체
-  loginId: currentLoginId,      // TODO: 로그인 세션/토큰에서 가져오도록 교체
+  loginId: currentLoginId,      // 로그인한 회원 ID(페이지의 auth 정보에서 읽음)
   startDate: '',
   endDate: '',
   participantCount: 1,
@@ -907,8 +904,7 @@ function loadResultMap(program) {
 }
 
 document.getElementById('go-to-my-reservations-btn').addEventListener('click', () => {
-  // TODO: 마이페이지/내 예약 목록 페이지로 이동
-     location.href = '/mypage/myReservations';
+  location.href = '/mypage/myReservations';
 });
 
 // ------------------------- 필터 -------------------------

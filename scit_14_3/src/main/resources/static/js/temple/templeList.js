@@ -1,6 +1,6 @@
 // templeList.js
 // /api/temples 에서 사찰 목록(JSON)을 받아와서, 사찰마다 마커를 하나씩 지도에 찍는다.
-// 마커 자체를 만드는 로직은 map-common.js의 createTempleMarker 함수를 그대로 재사용한다.
+// 마커 자체를 만드는 로직은 mapCommon.js의 createTempleMarker 함수를 그대로 재사용한다.
 //
 // 추가: 검색창에서 "사찰 검색"/"주소 검색"을 골라 검색하면,
 //       해당 사찰로 지도 중심을 옮기고 마커를 클릭한 것처럼 정보창을 띄운다.

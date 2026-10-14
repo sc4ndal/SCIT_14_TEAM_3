@@ -40,7 +40,7 @@ public class EmailVerificationService {
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
-        message.setSubject("[사찰 커뮤니티] 이메일 인증번호");
+        message.setSubject("[佛선자] 이메일 인증번호");
         message.setText("인증번호: " + code + "\n5분 이내에 입력해주세요.");
         mailSender.send(message);
     }
@@ -71,7 +71,7 @@ public class EmailVerificationService {
     public void sendLoginIdMail(String email, String loginId) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
-        message.setSubject("[사찰 커뮤니티] 아이디 찾기 결과 안내");
+        message.setSubject("[佛선자] 아이디 찾기 결과 안내");
         message.setText("가입하신 아이디: " + loginId);
         mailSender.send(message);
     }
@@ -80,7 +80,7 @@ public class EmailVerificationService {
     public void sendPasswordResetMail(String email, String resetLink) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
-        message.setSubject("[사찰 커뮤니티] 비밀번호 재설정 안내");
+        message.setSubject("[佛선자] 비밀번호 재설정 안내");
         message.setText(
                 "아래 링크에서 비밀번호를 재설정해주세요.\n" + resetLink +
                 "\n\n이 링크는 5분간만 유효합니다."
@@ -92,7 +92,7 @@ public class EmailVerificationService {
     public void sendTempleCredentials(String email, String loginId, String rawPassword) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
-        message.setSubject("[사찰 커뮤니티] 사찰 계정 등록 완료 안내");
+        message.setSubject("[佛선자] 사찰 계정 등록 완료 안내");
         message.setText(
                 "사찰 계정이 등록되었습니다.\n" +
                 "아이디: " + loginId + "\n" +
@@ -166,9 +166,9 @@ public class EmailVerificationService {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject(pick(lang,
-                "[사찰 커뮤니티] 템플스테이 예약이 확정되었습니다",
-                "[寺院コミュニティ] テンプルステイのご予約が確定しました",
-                "[Temple Community] Your Templestay reservation is confirmed"));
+                "[佛선자] 템플스테이 예약이 확정되었습니다",
+                "[佛선자] テンプルステイのご予約が確定しました",
+                "[佛선자] Your Templestay reservation is confirmed"));
         message.setText(
                 pick(lang,
                         "예약이 확정되었습니다. 아래 내용을 확인해주세요.\n\n",
@@ -191,9 +191,9 @@ public class EmailVerificationService {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject(pick(lang,
-                "[사찰 커뮤니티] 템플스테이 예약 신청이 접수되었습니다(입금확인 대기중)",
-                "[寺院コミュニティ] テンプルステイのご予約申込を受け付けました(入金確認待ち)",
-                "[Temple Community] Your Templestay reservation request was received (awaiting payment confirmation)"));
+                "[佛선자] 템플스테이 예약 신청이 접수되었습니다(입금확인 대기중)",
+                "[佛선자] テンプルステイのご予約申込を受け付けました(入金確認待ち)",
+                "[佛선자] Your Templestay reservation request was received (awaiting payment confirmation)"));
         message.setText(
                 pick(lang,
                         "예약 신청이 접수되었습니다. 사찰에서 입금을 확인하면 예약이 확정되며, 확정되면 별도로 안내 메일을 보내드립니다.\n" +
@@ -214,9 +214,9 @@ public class EmailVerificationService {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject(pick(lang,
-                "[사찰 커뮤니티] 템플스테이 예약이 취소되었습니다",
-                "[寺院コミュニティ] テンプルステイのご予約がキャンセルされました",
-                "[Temple Community] Your Templestay reservation has been canceled"));
+                "[佛선자] 템플스테이 예약이 취소되었습니다",
+                "[佛선자] テンプルステイのご予約がキャンセルされました",
+                "[佛선자] Your Templestay reservation has been canceled"));
         message.setText(
                 pick(lang,
                         "아래 예약이 취소되었습니다.\n\n",

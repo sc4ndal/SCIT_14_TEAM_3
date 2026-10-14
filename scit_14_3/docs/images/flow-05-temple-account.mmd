@@ -1,0 +1,30 @@
+flowchart LR
+  E1(["진입: 헤더 닉네임<br/>(사찰 계정)"]):::ext
+  E2(["진입: 로그인 US-001<br/>(임시 비밀번호 계정)"]):::ext
+  MY51["<b>비밀번호 확인</b><br/><span class='sid'>MY-005-1</span>"]:::scr
+  TM3["<b>사찰정보 수정</b><br/><span class='sid'>TM-003</span>"]:::scr
+  subgraph GP["프로그램 · 예약 관리"]
+  TM11["<b>프로그램 관리 (목록)</b><br/><span class='sid'>TM-001-1</span>"]:::scr
+  TM12["<b>프로그램 등록 · 수정</b><br/><span class='sid'>TM-001-2</span>"]:::scr
+  TM13["<b>프로그램 상세 · 예약자</b><br/><span class='sid'>TM-001-3</span>"]:::scr
+  end
+  subgraph GQ["문의 관리"]
+  TM21["<b>사찰 문의 목록</b><br/><span class='sid'>TM-002-1</span>"]:::scr
+  TM22["<b>사찰 문의 상세 · 답변</b><br/><span class='sid'>TM-002-2</span>"]:::scr
+  end
+  E1 -->|"사찰정보수정"| MY51
+  E1 -->|"프로그램 관리"| TM11
+  E1 -->|"1:1 문의"| TM21
+  E2 -->|"로그인 직후"| TM3
+  MY51 -->|"확인 성공"| TM3
+  TM11 -->|"등록 · 수정"| TM12
+  TM11 -->|"프로그램 선택"| TM13
+  TM12 -->|"저장 완료"| TM11
+  TM13 -.->|"입금 확인 · 예약 취소"| TM13
+  TM21 -->|"문의 선택"| TM22
+  TM22 -.->|"답변 등록 후 목록"| TM21
+  classDef scr fill:#ffffff,stroke:#2f5fd0,stroke-width:1.6px,color:#111827
+  classDef ext fill:#f3f4f6,stroke:#9ca3af,stroke-width:1.4px,stroke-dasharray:5 3,color:#374151
+  classDef svc fill:#fff7ed,stroke:#c2410c,stroke-width:1.4px,color:#7c2d12
+  classDef hdr fill:#eef3fb,stroke:#1f3864,stroke-width:1.8px,color:#1f3864
+  linkStyle 8,10 stroke:#8b95a5,stroke-width:1.4px,stroke-dasharray:6 4,color:#4b5563

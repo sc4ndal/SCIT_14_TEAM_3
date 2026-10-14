@@ -1,0 +1,60 @@
+flowchart LR
+  E1(["진입: 헤더 닉네임<br/>(일반회원)"]):::ext
+  E2(["진입: 예약 완료 TS-002"]):::ext
+  MY1["<b>마이페이지</b><br/><span class='sid'>MY-001</span>"]:::scr
+  subgraph GR["예약 · 리뷰"]
+  MY2["<b>예약 목록</b><br/><span class='sid'>MY-002</span>"]:::scr
+  MY3["<b>리뷰 작성 · 수정</b><br/><span class='sid'>MY-003</span>"]:::scr
+  MY4["<b>내가 쓴 리뷰</b><br/><span class='sid'>MY-004</span>"]:::scr
+  end
+  subgraph GQ2["사찰 문의"]
+  MY92["<b>사찰 문의 작성</b><br/><span class='sid'>MY-009-2</span>"]:::scr
+  MY91["<b>사찰 문의 목록</b><br/><span class='sid'>MY-009-1</span>"]:::scr
+  MY93["<b>사찰 문의 상세</b><br/><span class='sid'>MY-009-3</span>"]:::scr
+  end
+  subgraph GI["회원정보 · 탈퇴"]
+  MY51["<b>비밀번호 확인</b><br/><span class='sid'>MY-005-1</span>"]:::scr
+  MY52["<b>회원정보 수정</b><br/><span class='sid'>MY-005-2</span>"]:::scr
+  MY61["<b>회원 탈퇴</b><br/><span class='sid'>MY-006-1</span>"]:::scr
+  MY62["<b>탈퇴 유예</b><br/><span class='sid'>MY-006-2</span>"]:::scr
+  end
+  subgraph GF["관심 목록"]
+  MY71["<b>관심 사찰</b><br/><span class='sid'>MY-007-1</span>"]:::scr
+  MY72["<b>관심 행사</b><br/><span class='sid'>MY-007-2</span>"]:::scr
+  MY73["<b>저장한 불교 한마디</b><br/><span class='sid'>MY-007-3</span>"]:::scr
+  MY74["<b>관심 사찰음식</b><br/><span class='sid'>MY-007-4</span>"]:::scr
+  MY75["<b>좋아요한 리뷰</b><br/><span class='sid'>MY-007-5</span>"]:::scr
+  end
+  subgraph GQ["1:1 문의"]
+  MY81["<b>1:1 문의 목록</b><br/><span class='sid'>MY-008-1</span>"]:::scr
+  MY82["<b>1:1 문의 작성</b><br/><span class='sid'>MY-008-2</span>"]:::scr
+  MY83["<b>1:1 문의 상세</b><br/><span class='sid'>MY-008-3</span>"]:::scr
+  end
+  O1(["이탈: ①·③ 각 화면<br/>(사찰 · 행사 · 한마디 · 음식 · 후기)"]):::ext
+  E1 --> MY1
+  E2 --> MY2
+  MY1 --> MY2
+  MY1 --> MY4
+  MY1 --> MY51
+  MY1 --> GF
+  MY1 --> MY81
+  MY2 -->|"리뷰 쓰기 (이용완료)"| MY3
+  MY2 -->|"사찰에 문의"| MY92
+  MY2 -.->|"예약 취소"| MY2
+  MY3 -->|"등록 완료"| MY2
+  MY4 -->|"수정"| MY3
+  MY92 -->|"등록 완료"| MY91
+  MY91 -->|"문의 선택"| MY93
+  MY51 -->|"확인 성공"| MY52
+  MY52 -->|"회원 탈퇴"| MY61
+  MY61 -->|"탈퇴 신청"| MY62
+  MY62 -.->|"탈퇴 철회"| MY1
+  GF -->|"항목 클릭"| O1
+  MY81 -->|"문의하기"| MY82
+  MY81 -->|"문의 선택"| MY83
+  MY82 -.->|"등록 완료"| MY81
+  classDef scr fill:#ffffff,stroke:#2f5fd0,stroke-width:1.6px,color:#111827
+  classDef ext fill:#f3f4f6,stroke:#9ca3af,stroke-width:1.4px,stroke-dasharray:5 3,color:#374151
+  classDef svc fill:#fff7ed,stroke:#c2410c,stroke-width:1.4px,color:#7c2d12
+  classDef hdr fill:#eef3fb,stroke:#1f3864,stroke-width:1.8px,color:#1f3864
+  linkStyle 9,17,21 stroke:#8b95a5,stroke-width:1.4px,stroke-dasharray:6 4,color:#4b5563

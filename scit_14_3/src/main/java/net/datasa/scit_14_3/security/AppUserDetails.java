@@ -24,7 +24,7 @@ public class AppUserDetails implements UserDetails {
     private final boolean mustChangePassword; // 관리자가 임시 비밀번호를 발급한 사찰 계정만 true - 로그인 성공 시 비밀번호 변경 페이지로 강제 이동시키는 데 씀
     private final boolean withdrawalPending; // 탈퇴 유예기간 중인 일반회원만 true - 로그인 성공 시 철회 화면으로 강제 이동시키고,
                                               // WithdrawalGateFilter가 그 화면 외 다른 곳 접근을 막는 데 씀
-    private final boolean enabled; // 탈퇴 확정(익명화)된 회원만 false - UserDetails 표준 훅이라
+    private final boolean enabled; // 탈퇴 확정된 회원만 false - UserDetails 표준 훅이라
                                     // 폼로그인은 DaoAuthenticationProvider가 비밀번호 검사보다 먼저 자동으로
                                     // 막아준다(preAuthenticationChecks). 카카오 로그인처럼 그 경로를 안 타는
                                     // 곳은 SessionLoginService.loginAs가 이 값을 직접 확인해서 막는다 -

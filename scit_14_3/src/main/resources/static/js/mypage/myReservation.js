@@ -25,7 +25,7 @@
      showLoading('예약 목록을 불러오는 중...');
      try {
        // 예약 목록 + 사찰 목록 + 프로그램 목록 + (본인 예약 전체의) 결제 정보 + 내가 쓴 리뷰 목록을
-       // 한 번에 요청. 예전엔 결제 정보/리뷰 작성 여부를 예약마다 따로(N+1) 불러왔는데, 원격 DB(Aiven)
+       // 한 번에 요청. 예전엔 결제 정보/리뷰 작성 여부를 예약마다 따로(N+1) 불러왔는데, 원격 DB
        // 왕복이 예약 건수만큼 쌓여서 느렸음 - 전부 한 번씩만 왕복하도록 묶음.
        const [resRes, templesRes, programsRes, paymentsRes, reviewsRes] = await Promise.all([
          fetch('/templestayreservations'),

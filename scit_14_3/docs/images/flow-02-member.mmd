@@ -1,0 +1,36 @@
+flowchart LR
+  E1(["진입: 헤더 「로그인」<br/>로그인이 필요한 기능"]):::ext
+  E3(["진입: 헤더 「회원가입」"]):::ext
+  US1["<b>로그인</b><br/><span class='sid'>US-001</span>"]:::scr
+  US21["<b>회원가입 유형 선택</b><br/><span class='sid'>US-002-1</span>"]:::scr
+  US22["<b>회원가입<br/>(일반 / 카카오 추가정보)</b><br/><span class='sid'>US-002-2</span>"]:::scr
+  US31["<b>아이디 · 비밀번호 찾기</b><br/><span class='sid'>US-003-1</span>"]:::scr
+  US32["<b>비밀번호 재설정</b><br/><span class='sid'>US-003-2</span>"]:::scr
+  KAKAO{{"카카오 인증 (외부)"}}:::svc
+  MAIL{{"재설정 링크 메일"}}:::svc
+  O1(["이탈: 원래 보던 화면<br/>(없으면 메인 HM-001)"]):::ext
+  O3(["이탈: 사찰정보 수정 TM-003"]):::ext
+  O4(["이탈: 탈퇴 유예 MY-006-2"]):::ext
+  E1 --> US1
+  E3 --> US21
+  US1 -->|"로그인 성공"| O1
+  US1 -.->|"임시 비밀번호"| O3
+  US1 -.->|"탈퇴 유예 회원"| O4
+  US1 -.->|"실패"| US1
+  US1 -->|"회원가입"| US21
+  US1 -->|"계정 찾기"| US31
+  US1 -->|"카카오 로그인"| KAKAO
+  US21 -->|"일반 가입"| US22
+  US21 -->|"카카오로 시작"| KAKAO
+  KAKAO -->|"가입된 계정"| O1
+  KAKAO -.->|"미가입 계정"| US22
+  US22 -->|"가입 완료"| O1
+  US22 -.->|"검증 실패"| US22
+  US31 -->|"비밀번호 찾기"| MAIL
+  MAIL -->|"링크 클릭"| US32
+  US32 -->|"재설정 완료"| US1
+  classDef scr fill:#ffffff,stroke:#2f5fd0,stroke-width:1.6px,color:#111827
+  classDef ext fill:#f3f4f6,stroke:#9ca3af,stroke-width:1.4px,stroke-dasharray:5 3,color:#374151
+  classDef svc fill:#fff7ed,stroke:#c2410c,stroke-width:1.4px,color:#7c2d12
+  classDef hdr fill:#eef3fb,stroke:#1f3864,stroke-width:1.8px,color:#1f3864
+  linkStyle 3,4,5,12,14 stroke:#8b95a5,stroke-width:1.4px,stroke-dasharray:6 4,color:#4b5563
